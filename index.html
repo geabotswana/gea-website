@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gaborone Employee Association</title>
+
+  <!-- ============================================================ -->
+  <!-- FAVICON                                                      -->
+  <!-- ============================================================ -->
+  <link rel="icon" type="image/png" href="https://storage.googleapis.com/gea-public-assets/gea-logo-round-32.png">
+
+  <!-- ============================================================ -->
+  <!-- FONTS: Source Sans 3 for UI, Roboto Mono for data display   -->
+  <!-- ============================================================ -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================ */
+    /* RESET AND DEFAULTS                                           */
+    /* ============================================================ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      font-family: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      color: #333333;
+      line-height: 1.6;
+    }
+
+    /* ============================================================ */
+    /* COLOR CONSTANTS (from GEA brand)                             */
+    /* ============================================================ */
+    :root {
+      --color-primary: #0A3161;
+      --color-accent: #B31942;
+      --color-white: #FFFFFF;
+      --color-secondary-blue: #ABCAE9;
+      --color-light-gray: #F5F5F5;
+      --color-border-gray: #E0E0E0;
+      --color-medium-gray: #757575;
+      --color-dark-footer: #071f3d;
+    }
+
+    /* ============================================================ */
+    /* NAVIGATION BAR (Sticky)                                      */
+    /* ============================================================ */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--color-primary);
+      border-bottom: 4px solid var(--color-accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    nav .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 4px 8px;
+      transition: background-color 0.2s ease;
+      text-decoration: none;
+      color: var(--color-white);
+    }
+
+    .nav-left:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-logo {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-logo img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    .nav-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-white);
+    }
+
+    .nav-center {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .nav-center a {
+      color: var(--color-white);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav-center a:hover {
+      opacity: 0.8;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-login {
+      background: var(--color-accent);
+      color: var(--color-white);
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-login:hover {
+      background-color: #A01436;
+    }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--color-white);
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* ============================================================ */
+    /* RESPONSIVE NAV (Mobile)                                      */
+    /* ============================================================ */
+    @media (max-width: 768px) {
+      .nav-center {
+        display: none;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        background: var(--color-primary);
+        flex-direction: column;
+        gap: 0;
+        padding: 12px 0;
+        justify-content: flex-start;
+      }
+
+      .nav-center.show {
+        display: flex;
+      }
+
+      .nav-center a {
+        padding: 12px 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+
+      .hamburger {
+        display: block;
+      }
+
+      nav .container {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* ============================================================ */
+    /* CONTAINER & SECTIONS                                         */
+    /* ============================================================ */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section {
+      padding: 80px 0;
+    }
+
+    section h2 {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    section > .container > p:first-of-type {
+      font-size: 16px;
+      color: #666;
+      text-align: center;
+      margin-bottom: 48px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ============================================================ */
+    /* HERO SECTION                                                 */
+    /* ============================================================ */
+    #hero {
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-blue) 100%);
+      color: var(--color-white);
+      padding: 0;
+      min-height: 85vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .hero-content {
+      max-width: 600px;
+      margin: 0 24px;
+    }
+
+    .hero-logo {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-logo img {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+    }
+
+    .hero-name {
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .hero-location {
+      font-size: 18px;
+      opacity: 0.95;
+      margin-bottom: 16px;
+    }
+
+    .hero-tagline {
+      font-size: 18px;
+      opacity: 0.9;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      background: var(--color-accent);
+      color: var(--color-white);
+      padding: 12px 32px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary:hover {
+      background-color: #A01436;
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--color-white);
+      border: 2px solid var(--color-white);
+      padding: 10px 30px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-outline:hover {
+      background: var(--color-white);
+      color: var(--color-primary);
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 600px) {
+      #hero {
+        min-height: auto;
+        padding: 60px 0;
+      }
+
+      .hero-name {
+        font-size: 28px;
+      }
+
+      .hero-location {
+        font-size: 16px;
+      }
+
+      .hero-tagline {
+        font-size: 16px;
+      }
+
+      .hero-ctas {
+        flex-direction: column;
+      }
+
+      .btn-primary, .btn-outline {
+        width: 100%;
+      }
+    }
+
+    /* ============================================================ */
+    /* ABOUT SECTION                                                */
+    /* ============================================================ */
+    #about {
+      background: var(--color-light-gray);
+    }
+
+    .about-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      margin-bottom: 60px;
+    }
+
+    .about-text p {
+      font-size: 15px;
+      color: #666;
+      margin-bottom: 16px;
+      line-height: 1.8;
+    }
+
+    .about-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .about-logo img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .board-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border-gray);
+      border-top: 4px solid var(--color-primary);
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .board-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+
+    .board-card p {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .board-card .email {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 12px;
+      color: var(--color-accent);
+      word-break: break-all;
+    }
+
+    @media (max-width: 768px) {
+      .about-content {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .board-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ============================================================ */
+    /* FACILITIES SECTION                                           */
+    /* ============================================================ */
+    #facilities {
+      background: var(--color-white);
+    }
+
+    .facilities-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .facility-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border-gray);
+      border-top: 4px solid var(--color-primary);
+      border-radius: 6px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: border-top-color 0.3s ease;
+    }
+
+    .facility-card:hover {
+      border-top-color: var(--color-accent);
+    }
+
+    .facility-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .facility-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 12px;
+    }
+
+    .facility-card ul {
+      list-style: none;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .facility-card li {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--color-border-gray);
+    }
+
+    .facility-card li:last-child {
+      border-bottom: none;
+    }
+
+    /* ============================================================ */
+    /* MEMBERSHIP SECTION                                           */
+    /* ============================================================ */
+    #membership {
+      background: var(--color-light-gray);
+    }
+
+    .membership-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .membership-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border-gray);
+      border-top: 4px solid var(--color-primary);
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .membership-card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 12px;
+    }
+
+    .membership-card .details {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.7;
+    }
+
+    .membership-card .detail-row {
+      padding: 4px 0;
+      border-bottom: 1px solid var(--color-border-gray);
+    }
+
+    .membership-card .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-box {
+      background: #EFF6FF;
+      border-left: 5px solid var(--color-primary);
+      padding: 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.8;
+    }
+
+    /* ============================================================ */
+    /* CONTACT & FOOTER                                             */
+    /* ============================================================ */
+    #contact {
+      background: var(--color-primary);
+      color: var(--color-white);
+      padding: 60px 0 0 0;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .contact-col h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .contact-col p {
+      font-size: 13px;
+      line-height: 1.8;
+      opacity: 0.95;
+    }
+
+    .contact-col a {
+      color: var(--color-secondary-blue);
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .contact-col a:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
+    footer {
+      background: var(--color-dark-footer);
+      color: var(--color-white);
+      text-align: center;
+      padding: 20px 24px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    footer a {
+      color: var(--color-secondary-blue);
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    footer a:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+    }
+
+    /* ============================================================ */
+    /* UTILITY CLASSES                                              */
+    /* ============================================================ */
+    .text-center {
+      text-align: center;
+    }
+
+    a {
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ================================================================ -->
+<!-- NAVIGATION BAR (Sticky)                                          -->
+<!-- ================================================================ -->
+<nav>
+  <div class="container">
+    <a href="#hero" class="nav-left">
+      <div class="nav-logo">
+        <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-80.png" alt="GEA Logo">
+      </div>
+      <div class="nav-title">GEA</div>
+    </a>
+
+    <div class="nav-center" id="navMenu">
+      <a href="#about">About</a>
+      <a href="#facilities">Facilities</a>
+      <a href="#membership">Membership</a>
+      <a href="#contact">Contact</a>
+    </div>
+
+    <div class="nav-right">
+      <a href="https://script.google.com/a/macros/geabotswana.org/s/AKfycbxMFqbzFg-X-GDOpvllmnXNOY0Zw-WzHnn05PKDR4pYe0ULZ_qX8deWKIbO45AZBz6-/exec" class="btn-login">Member Login</a>
+      <button class="hamburger" id="hamburger">☰</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ================================================================ -->
+<!-- HERO SECTION                                                    -->
+<!-- ================================================================ -->
+<section id="hero">
+  <div class="hero-content">
+    <div class="hero-logo">
+      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-200.png" alt="GEA Logo">
+    </div>
+    <h1 class="hero-name">Gaborone Employee Association</h1>
+    <p class="hero-location">U.S. Mission to Botswana</p>
+    <p class="hero-tagline">Community, Recreation, and Fellowship for the U.S. Mission Family</p>
+    <div class="hero-ctas">
+      <a href="https://script.google.com/a/macros/geabotswana.org/s/AKfycbxMFqbzFg-X-GDOpvllmnXNOY0Zw-WzHnn05PKDR4pYe0ULZ_qX8deWKIbO45AZBz6-/exec" class="btn-primary">Member Login</a>
+      <a href="#about" class="btn-outline">Learn More ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- ABOUT SECTION                                                   -->
+<!-- ================================================================ -->
+<section id="about">
+  <div class="container">
+    <h2>About GEA</h2>
+    <p>Community, Recreation, and Fellowship</p>
+
+    <div class="about-content">
+      <div class="about-text">
+        <p>
+          The Gaborone Employee Association (GEA) serves the U.S. Mission family in Botswana, fostering community connections through recreational facilities, social events, and member services. Since its founding, GEA has provided a welcoming space for diplomats, staff, and their families to build lasting friendships and create memories.
+        </p>
+        <p>
+          Located at the U.S. Mission to Botswana in Gaborone, GEA offers tennis courts, a reception hall (Leobo), and the whole facility for private events. Our membership includes full, affiliate, associate, diplomatic, community, and temporary categories to serve the diverse needs of the U.S. Mission family.
+        </p>
+      </div>
+
+      <div class="about-logo">
+        <img src="https://storage.googleapis.com/gea-public-assets/gea-logotype-light-800.png" alt="GEA Logotype" style="max-width: 300px;">
+      </div>
+    </div>
+
+    <h3 style="font-size: 18px; color: var(--color-primary); margin-top: 40px; margin-bottom: 24px;">Board Officers</h3>
+
+    <div class="board-grid">
+      <div class="board-card">
+        <h3>Chairperson</h3>
+        <p>Leads the association, oversees major decisions, and represents GEA at diplomatic functions.</p>
+        <div class="email">chair@geabotswana.org</div>
+      </div>
+
+      <div class="board-card">
+        <h3>Treasurer</h3>
+        <p>Manages finances, membership dues, payment verification, and financial reporting.</p>
+        <div class="email">treasurer@geabotswana.org</div>
+      </div>
+
+      <div class="board-card">
+        <h3>Secretary</h3>
+        <p>Handles correspondence, documents, and administrative coordination for the board.</p>
+        <div class="email">secretary@geabotswana.org</div>
+      </div>
+
+      <div class="board-card">
+        <h3>General Board</h3>
+        <p>Supports facility operations, approves reservations, and assists members with requests.</p>
+        <div class="email">board@geabotswana.org</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- FACILITIES SECTION                                              -->
+<!-- ================================================================ -->
+<section id="facilities">
+  <div class="container">
+    <h2>Our Facilities</h2>
+    <p>Professional-grade recreational spaces available to members</p>
+
+    <div class="facilities-grid">
+      <div class="facility-card">
+        <div class="facility-icon">🎾</div>
+        <h3>Tennis Court</h3>
+        <ul>
+          <li>• <strong>Limit:</strong> 3 hours per week</li>
+          <li>• <strong>Max session:</strong> 2 hours</li>
+          <li>• <strong>Approval:</strong> None required</li>
+          <li>• <strong>Booking:</strong> Walk-ins welcome</li>
+          <li>• <strong>Note:</strong> Excess bookings are tentative for up to 1 day</li>
+        </ul>
+      </div>
+
+      <div class="facility-card">
+        <div class="facility-icon">🏛️</div>
+        <h3>Leobo (Reception Hall)</h3>
+        <ul>
+          <li>• <strong>Limit:</strong> 1 per month</li>
+          <li>• <strong>Max duration:</strong> 6 hours</li>
+          <li>• <strong>Approval:</strong> Board approval required</li>
+          <li>• <strong>Guest list:</strong> Due 3 business days prior</li>
+          <li>• <strong>Note:</strong> Excess bookings pending 5 business days</li>
+        </ul>
+      </div>
+
+      <div class="facility-card">
+        <div class="facility-icon">🏟️</div>
+        <h3>Whole Facility</h3>
+        <ul>
+          <li>• <strong>Limit:</strong> Special events</li>
+          <li>• <strong>Approval:</strong> Board approval required</li>
+          <li>• <strong>Capacity:</strong> Full mission use</li>
+          <li>• <strong>Planning:</strong> Contact board directly</li>
+          <li>• <strong>Note:</strong> Requires advance coordination</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- MEMBERSHIP SECTION                                              -->
+<!-- ================================================================ -->
+<section id="membership">
+  <div class="container">
+    <h2>Membership Categories</h2>
+    <p>Choose the membership that fits your needs</p>
+
+    <div class="membership-grid">
+      <div class="membership-card">
+        <h3>🔵 Full Member</h3>
+        <div class="details">
+          <div class="detail-row"><strong>Household:</strong> Individual or family</div>
+          <div class="detail-row"><strong>Voting:</strong> Yes</div>
+          <div class="detail-row"><strong>Eligibility:</strong> Mission staff, families</div>
+          <div class="detail-row"><strong>Dues:</strong> Annual membership fee</div>
+        </div>
+      </div>
+
+      <div class="membership-card">
+        <h3>🔵 Affiliate Member</h3>
+        <div class="details">
+          <div class="detail-row"><strong>Household:</strong> Family unit</div>
+          <div class="detail-row"><strong>Voting:</strong> No</div>
+          <div class="detail-row"><strong>Sponsor:</strong> Full member required</div>
+          <div class="detail-row"><strong>Dues:</strong> Reduced rate</div>
+        </div>
+      </div>
+
+      <div class="membership-card">
+        <h3>🔵 Associate Member</h3>
+        <div class="details">
+          <div class="detail-row"><strong>Household:</strong> Individual</div>
+          <div class="detail-row"><strong>Voting:</strong> No</div>
+          <div class="detail-row"><strong>Sponsor:</strong> Full member required</div>
+          <div class="detail-row"><strong>Dues:</strong> Reduced rate</div>
+        </div>
+      </div>
+
+      <div class="membership-card">
+        <h3>🔵 Diplomatic Member</h3>
+        <div class="details">
+          <div class="detail-row"><strong>Household:</strong> Diplomatic staff</div>
+          <div class="detail-row"><strong>Voting:</strong> No</div>
+          <div class="detail-row"><strong>Sponsor:</strong> Embassy designation</div>
+          <div class="detail-row"><strong>Dues:</strong> Per Embassy agreement</div>
+        </div>
+      </div>
+
+      <div class="membership-card">
+        <h3>🔵 Community Member</h3>
+        <div class="details">
+          <div class="detail-row"><strong>Household:</strong> Family unit</div>
+          <div class="detail-row"><strong>Voting:</strong> No</div>
+          <div class="detail-row"><strong>Sponsor:</strong> Full member required</div>
+          <div class="detail-row"><strong>Dues:</strong> Reduced rate</div>
+        </div>
+      </div>
+
+      <div class="membership-card">
+        <h3>🔵 Temporary Member</h3>
+        <div class="details">
+          <div class="detail-row"><strong>Duration:</strong> Up to 3 months</div>
+          <div class="detail-row"><strong>Sponsor:</strong> Full member required</div>
+          <div class="detail-row"><strong>Facilities:</strong> Limited access</div>
+          <div class="detail-row"><strong>Dues:</strong> Prorated fee</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>How to Apply?</strong> If you're interested in joining GEA, please reach out to our board: <a href="mailto:board@geabotswana.org" style="color: var(--color-primary); font-weight: 600;">board@geabotswana.org</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- CONTACT & FOOTER                                                -->
+<!-- ================================================================ -->
+<section id="contact">
+  <div class="container">
+    <h2 style="color: var(--color-white); margin-bottom: 40px;">Get In Touch</h2>
+
+    <div class="contact-grid">
+      <div class="contact-col">
+        <h3>General Inquiries</h3>
+        <p>
+          For membership questions, reservations, or general information, contact the board:
+        </p>
+        <p>
+          <a href="mailto:board@geabotswana.org">board@geabotswana.org</a>
+        </p>
+      </div>
+
+      <div class="contact-col">
+        <h3>Board Officers</h3>
+        <p>
+          <strong>Chairperson:</strong> <a href="mailto:chair@geabotswana.org">chair@geabotswana.org</a>
+        </p>
+        <p>
+          <strong>Treasurer:</strong> <a href="mailto:treasurer@geabotswana.org">treasurer@geabotswana.org</a>
+        </p>
+        <p>
+          <strong>Secretary:</strong> <a href="mailto:secretary@geabotswana.org">secretary@geabotswana.org</a>
+        </p>
+      </div>
+
+      <div class="contact-col">
+        <h3>Location</h3>
+        <p>
+          U.S. Mission to Botswana<br>
+          Gaborone, Botswana
+        </p>
+        <p>
+          <a href="https://www.geabotswana.org">www.geabotswana.org</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Gaborone Employee Association. All rights reserved. | <a href="https://script.google.com/a/macros/geabotswana.org/s/AKfycbxMFqbzFg-X-GDOpvllmnXNOY0Zw-WzHnn05PKDR4pYe0ULZ_qX8deWKIbO45AZBz6-/exec">Member Portal</a></p>
+  </footer>
+</section>
+
+<!-- ================================================================ -->
+<!-- JAVASCRIPT: Mobile Navigation Toggle                            -->
+<!-- ================================================================ -->
+<script>
+  // Hamburger menu toggle
+  const hamburger = document.getElementById('hamburger');
+  const navMenu = document.getElementById('navMenu');
+
+  hamburger.addEventListener('click', () => {
+    navMenu.classList.toggle('show');
+  });
+
+  // Close menu when a link is clicked
+  navMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      navMenu.classList.remove('show');
+    });
+  });
+
+  // Smooth scrolling for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      const href = this.getAttribute('href');
+      if (href !== '#' && document.querySelector(href)) {
+        e.preventDefault();
+        document.querySelector(href).scrollIntoView({
+          behavior: 'smooth'
+        });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

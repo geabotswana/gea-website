@@ -1,0 +1,10 @@
+# Member data — NEVER commit to a public repo
+*.xlsx
+*.xls
+
+# Clasp credentials
+.clasp.json
+
+# Local tooling
+.claude/
+node_modules/

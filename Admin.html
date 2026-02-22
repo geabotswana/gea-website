@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GEA Admin Portal</title>
+
+  <!-- ============================================================ -->
+  <!-- FAVICON                                                      -->
+  <!-- Display GEA logo in browser tab                              -->
+  <!-- ============================================================ -->
+  <link rel="icon" type="image/png" href="https://storage.googleapis.com/gea-public-assets/gea-logo-round-32.png">
+
+  <!-- ============================================================ -->
+  <!-- FONTS: Source Sans 3 for UI, Roboto Mono for data display   -->
+  <!-- ============================================================ -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============================================================ */
+    /* RESET AND DEFAULTS                                           */
+    /* ============================================================ */
+    /* Normalize browser defaults and establish global typography   */
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      height: 100%;
+      font-family: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+      font-size: 14px;
+      color: #333333;
+      background: #F5F5F5;
+    }
+    
+    /* ============================================================ */
+    /* COLOR CONSTANTS (from Config.gs)                             */
+    /* ============================================================ */
+    :root {
+      --color-primary: #0A3161;
+      --color-accent: #B31942;
+      --color-white: #FFFFFF;
+      --color-secondary-blue: #ABCAE9;
+      --color-black: #000000;
+      --color-success: #2E7D32;
+      --color-warning: #E65100;
+      --color-danger: #C62828;
+      --color-info: #1565C0;
+      --color-light-gray: #F5F5F5;
+      --color-medium-gray: #757575;
+      --color-border-gray: #E0E0E0;
+    }
+    
+    /* ============================================================ */
+    /* LAYOUT: 3-column admin structure                             */
+    /* Nav bar (top) + Sidebar (left) + Main content (right)        */
+    /* ============================================================ */
+    
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    #header {
+      background: var(--color-primary);
+      border-bottom: 4px solid var(--color-accent);
+      color: var(--color-white);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-logo img {
+      max-width: 40px;
+      max-height: 40px;
+      object-fit: contain;
+    }
+    
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .header-user {
+      font-size: 12px;
+      text-align: right;
+    }
+    
+    .header-user-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .header-user-role {
+      font-size: 11px;
+      opacity: 0.85;
+    }
+    
+    /* ============================================================ */
+    /* LOGIN SCREEN                                                 */
+    /* Centered form shown when token is not in sessionStorage      */
+    /* ============================================================ */
+    
+    #loginScreen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-blue) 100%);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    #loginScreen.show {
+      display: flex;
+    }
+    
+    .login-card {
+      background: var(--color-white);
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    .login-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-logo img {
+      max-width: 80px;
+      max-height: 80px;
+      object-fit: contain;
+    }
+    
+    .login-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+    
+    .login-subtitle {
+      font-size: 13px;
+      color: var(--color-medium-gray);
+      margin-bottom: 24px;
+    }
+    
+    .login-form {
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555555;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid var(--color-border-gray);
+      border-radius: 4px;
+      font-family: 'Source Sans 3', sans-serif;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(10,49,97,0.15);
+    }
+    
+    .form-input.error {
+      border-color: var(--color-danger);
+    }
+    
+    .login-error {
+      display: none;
+      background: #FFEBEE;
+      border: 2px solid var(--color-danger);
+      color: var(--color-danger);
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .login-error.show {
+      display: block;
+    }
+    
+    /* ============================================================ */
+    /* BUTTONS                                                      */
+    /* Primary, secondary, and danger button styles per brand guide */
+    /* ============================================================ */
+    
+    button, .btn {
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Source Sans 3', sans-serif;
+    }
+    
+    .btn-primary {
+      background: var(--color-primary);
+      color: var(--color-white);
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #0D3D7A;
+    }
+    
+    .btn-primary:focus {
+      outline: none;
+      border: 2px solid var(--color-accent);
+    }
+    
+    .btn-primary:disabled {
+      background: var(--color-secondary-blue);
+      cursor: not-allowed;
+    }
+    
+    .btn-danger {
+      background: var(--color-danger);
+      color: var(--color-white);
+    }
+    
+    .btn-danger:hover:not(:disabled) {
+      background: #B71C1C;
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--color-primary);
+      color: var(--color-primary);
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #EFF6FF;
+    }
+    
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    
+    /* ============================================================ */
+    /* LOGOUT BUTTON                                                */
+    /* ============================================================ */
+    
+    .btn-logout {
+      background: var(--color-accent);
+      color: var(--color-white);
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+    
+    .btn-logout:hover {
+      background: #A01436;
+    }
+    
+    /* ============================================================ */
+    /* MAIN CONTENT LAYOUT                                          */
+    /* Flex layout for sidebar + content area                       */
+    /* ============================================================ */
+    
+    #mainContent {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+    
+    #sidebar {
+      width: 240px;
+      background: var(--color-white);
+      border-right: 1px solid var(--color-border-gray);
+      padding: 20px 0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    
+    .nav-item {
+      padding: 12px 20px;
+      color: #333333;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .nav-item:hover {
+      background: #F9F9F9;
+    }
+    
+    .nav-item.active {
+      background: #EFF6FF;
+      border-left-color: var(--color-primary);
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+    
+    .nav-icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+    
+    /* ============================================================ */
+    /* CONTENT AREA                                                 */
+    /* Main scrollable area for page content                        */
+    /* ============================================================ */
+    
+    #content {
+      flex: 1;
+      background: var(--color-light-gray);
+      padding: 24px;
+      overflow-y: auto;
+    }
+    
+    .page {
+      display: none;
+    }
+    
+    .page.active {
+      display: block;
+    }
+    
+    /* ============================================================ */
+    /* PAGE ELEMENTS                                                */
+    /* Titles, headings, sections, and cards                        */
+    /* ============================================================ */
+    
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 24px;
+    }
+    
+    .section-heading {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 12px;
+      margin-top: 20px;
+    }
+    
+    .section-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-primary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--color-accent);
+      padding-bottom: 6px;
+      margin-bottom: 16px;
+    }
+    
+    .card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border-gray);
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+    
+    .card-header {
+      border-top: 4px solid var(--color-primary);
+      margin: -20px -24px 16px -24px;
+      padding: 16px 24px;
+      background: #FAFAFA;
+    }
+    
+    .card-header.accent {
+      border-top-color: var(--color-accent);
+    }
+    
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin: 0;
+    }
+    
+    /* ============================================================ */
+    /* GRID AND LAYOUT                                              */
+    /* ============================================================ */
+    
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    @media (max-width: 1024px) {
+      .grid-3 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      #sidebar {
+        width: 200px;
+      }
+    }
+    
+    /* ============================================================ */
+    /* DASHBOARD STATS                                              */
+    /* Summary cards showing counts and metrics                     */
+    /* ============================================================ */
+    
+    .stat-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border-gray);
+      border-radius: 6px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .stat-number {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: var(--color-medium-gray);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+    
+    /* ============================================================ */
+    /* TABLES                                                       */
+    /* Searchable, sortable list views                              */
+    /* ============================================================ */
+    
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--color-white);
+      border: 1px solid var(--color-border-gray);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    thead {
+      background: var(--color-primary);
+      color: var(--color-white);
+    }
+    
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #F0F0F0;
+    }
+    
+    tbody tr:hover {
+      background: #EFF6FF;
+    }
+    
+    tbody tr:nth-child(even) {
+      background: #F8FAFF;
+    }
+    
+    /* ============================================================ */
+    /* STATUS BADGES                                                */
+    /* Visual indicators for reservation and item status            */
+    /* ============================================================ */
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .badge-pending {
+      background: #FFF3E0;
+      color: var(--color-warning);
+      border: 1px solid #FFE0B2;
+    }
+    
+    .badge-confirmed {
+      background: #E3F2FD;
+      color: #1565C0;
+      border: 1px solid #BBDEFB;
+    }
+    
+    .badge-approved {
+      background: #E8F5E9;
+      color: var(--color-success);
+      border: 1px solid #C8E6C9;
+    }
+    
+    .badge-denied {
+      background: #FFEBEE;
+      color: var(--color-danger);
+      border: 1px solid #FFCDD2;
+    }
+    
+    .badge-cancelled {
+      background: #F5F5F5;
+      color: var(--color-medium-gray);
+      border: 1px solid var(--color-border-gray);
+    }
+    
+    /* ============================================================ */
+    /* INFO / WARNING / SUCCESS BOXES                               */
+    /* Alert-style notification boxes                               */
+    /* ============================================================ */
+    
+    .info-box {
+      background: #EFF6FF;
+      border-left: 5px solid var(--color-primary);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    
+    .warning-box {
+      background: #FFF0F3;
+      border: 2px solid var(--color-accent);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+    
+    .success-box {
+      background: #F1F8E9;
+      border-left: 5px solid var(--color-success);
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+    
+    /* ============================================================ */
+    /* SEARCH AND FILTER                                            */
+    /* Input controls for searching and filtering data              */
+    /* ============================================================ */
+    
+    .search-bar {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .search-input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border-gray);
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'Source Sans 3', sans-serif;
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(10,49,97,0.15);
+    }
+    
+    /* ============================================================ */
+    /* MODAL / DIALOG ELEMENTS                                      */
+    /* Overlays for detailed views or action confirmations          */
+    /* ============================================================ */
+    
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-overlay.show {
+      display: flex;
+    }
+    
+    .modal {
+      background: var(--color-white);
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      padding: 0;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      background: var(--color-primary);
+      color: var(--color-white);
+      padding: 20px 24px;
+      border-bottom: 4px solid var(--color-accent);
+    }
+    
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      color: var(--color-white);
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-body {
+      padding: 24px;
+    }
+    
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--color-border-gray);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    /* ============================================================ */
+    /* FORM LAYOUTS                                                 */
+    /* Horizontal and vertical form arrangements                    */
+    /* ============================================================ */
+    
+    .form-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+    
+    .form-row .form-group {
+      flex: 1;
+    }
+    
+    .form-group textarea {
+      font-family: 'Source Sans 3', sans-serif;
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border-gray);
+      border-radius: 4px;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(10,49,97,0.15);
+    }
+    
+    /* ============================================================ */
+    /* LOADING AND EMPTY STATES                                     */
+    /* ============================================================ */
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--color-medium-gray);
+    }
+    
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid var(--color-border-gray);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--color-medium-gray);
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    
+    .empty-state-text {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    
+    .empty-state-subtext {
+      font-size: 12px;
+      opacity: 0.7;
+    }
+    
+    /* ============================================================ */
+    /* MEMBER DETAIL VIEW                                           */
+    /* Two-column layout for member household information           */
+    /* ============================================================ */
+    
+    .detail-row {
+      display: flex;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--color-border-gray);
+    }
+    
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      width: 120px;
+      color: var(--color-medium-gray);
+    }
+    
+    .detail-value {
+      flex: 1;
+      color: #333333;
+    }
+    
+    /* ============================================================ */
+    /* PHOTO GRID                                                   */
+    /* Grid display for pending member photos                       */
+    /* ============================================================ */
+    
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .photo-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border-gray);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .photo-image {
+      width: 100%;
+      height: 150px;
+      background: #F0F0F0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: var(--color-border-gray);
+    }
+    
+    .photo-footer {
+      padding: 12px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .photo-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #333333;
+      margin-bottom: 8px;
+    }
+    
+    .photo-actions {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .photo-actions button {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 11px;
+    }
+    
+    /* ============================================================ */
+    /* RESPONSIVE ADJUSTMENTS                                       */
+    /* Tablet and mobile layouts                                    */
+    /* ============================================================ */
+    
+    @media (max-width: 1024px) {
+      #sidebar {
+        width: 220px;
+      }
+      
+      #content {
+        padding: 16px;
+      }
+      
+      .page-title {
+        font-size: 18px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      #mainContent {
+        flex-direction: column;
+      }
+      
+      #sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--color-border-gray);
+        max-height: 200px;
+        overflow-x: auto;
+        padding: 0;
+        display: flex;
+      }
+      
+      .nav-item {
+        padding: 12px 16px;
+        flex-shrink: 0;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+      }
+      
+      .nav-item.active {
+        border-left: none;
+        border-bottom-color: var(--color-primary);
+      }
+      
+      #content {
+        flex: 1;
+      }
+      
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      
+      .photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      }
+      
+      .modal {
+        width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- APP STRUCTURE                                                -->
+<!-- Main container for login screen and authenticated app        -->
+<!-- ============================================================ -->
+
+<div id="app">
+  
+  <!-- ============================================================ -->
+  <!-- LOGIN SCREEN                                                -->
+  <!-- Shown when no valid token is found in sessionStorage         -->
+  <!-- ============================================================ -->
+  
+  <div id="loginScreen" class="show">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+      </div>
+      <h1 class="login-title">GEA Admin Portal</h1>
+      <p class="login-subtitle">Sign in with your GEA email address</p>
+      <div class="login-error" id="loginError"></div>
+      <form class="login-form" onsubmit="submitLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="you@state.gov" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- ============================================================ -->
+  <!-- MAIN APP (shown after authentication)                        -->
+  <!-- ============================================================ -->
+  
+  <!-- ============================================================ -->
+  <!-- HEADER / NAV BAR                                             -->
+  <!-- Logo, title, and user menu (top of page)                    -->
+  <!-- ============================================================ -->
+  <header id="header" style="display: none;">
+    <div class="header-left">
+      <div class="header-logo">
+        <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-80.png" alt="GEA Logo">
+      </div>
+      <div class="header-title">Admin Portal</div>
+    </div>
+    <div class="header-right">
+      <div class="header-user">
+        <div class="header-user-name" id="headerUserName">Board Member</div>
+        <div class="header-user-role">Administrator</div>
+      </div>
+      <button class="btn-logout" onclick="logout();">Logout</button>
+    </div>
+  </header>
+  
+  <!-- ============================================================ -->
+  <!-- MAIN CONTENT AREA                                            -->
+  <!-- Sidebar navigation + page content                            -->
+  <!-- ============================================================ -->
+  <div id="mainContent" style="display: none;">
+    
+    <!-- ============================================================ -->
+    <!-- SIDEBAR NAVIGATION                                          -->
+    <!-- Links to all admin pages with active state highlighting    -->
+    <!-- ============================================================ -->
+    <aside id="sidebar">
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="showPage('reservations')">
+        <span class="nav-icon">🗓️</span>
+        <span>Pending Reservations</span>
+      </div>
+      <div class="nav-item" onclick="showPage('members')">
+        <span class="nav-icon">👥</span>
+        <span>Members</span>
+      </div>
+      <div class="nav-item" onclick="showPage('photos')">
+        <span class="nav-icon">📸</span>
+        <span>Photo Review</span>
+      </div>
+      <div class="nav-item" onclick="showPage('payments')">
+        <span class="nav-icon">💳</span>
+        <span>Payments</span>
+      </div>
+    </aside>
+    
+    <!-- ============================================================ -->
+    <!-- CONTENT AREA                                                -->
+    <!-- All page views contained within                             -->
+    <!-- ============================================================ -->
+    <div id="content">
+      
+      <!-- ========================================================== -->
+      <!-- PAGE: DASHBOARD                                            -->
+      <!-- Summary counts and upcoming activity                       -->
+      <!-- ========================================================== -->
+      <div id="dashboard" class="page active">
+        <h1 class="page-title">Dashboard</h1>
+        
+        <!-- Today's Quick Summary -->
+        <div class="grid-3">
+          <div class="stat-card">
+            <div class="stat-number" id="dashPendingCount">—</div>
+            <div class="stat-label">Pending Reservations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="dashPhotoCount">—</div>
+            <div class="stat-label">Pending Photos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="dashPaymentCount">—</div>
+            <div class="stat-label">Unverified Payments</div>
+          </div>
+        </div>
+        
+        <div class="grid-2">
+          <div class="stat-card">
+            <div class="stat-number" id="dashMemberCount">—</div>
+            <div class="stat-label">Active Members</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="dashTodayCount">—</div>
+            <div class="stat-label">Reservations Today</div>
+          </div>
+        </div>
+        
+        <!-- Upcoming Reservations -->
+        <h2 class="section-heading">Upcoming Reservations (Next 7 Days)</h2>
+        <div class="card">
+          <div id="dashUpcomingList" class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-text">No reservations in the next 7 days</div>
+          </div>
+        </div>
+        
+        <!-- Recent Actions -->
+        <h2 class="section-heading">Recent Actions</h2>
+        <div class="card">
+          <div id="dashRecentActions" class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <div class="empty-state-text">No recent actions</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ========================================================== -->
+      <!-- PAGE: PENDING RESERVATIONS                                 -->
+      <!-- List of reservations awaiting board approval               -->
+      <!-- ========================================================== -->
+      <div id="reservations" class="page">
+        <h1 class="page-title">Pending Reservations</h1>
+        
+        <div class="search-bar">
+          <input type="text" class="search-input" id="resSearchInput" placeholder="Search by name, email, or facility...">
+        </div>
+        
+        <div class="card">
+          <div class="table-container">
+            <table id="resTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Facility</th>
+                  <th>Member Name</th>
+                  <th>Email</th>
+                  <th>Guests</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="resTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div id="resEmpty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">✓</div>
+            <div class="empty-state-text">No pending reservations</div>
+            <div class="empty-state-subtext">All reservations have been reviewed</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ========================================================== -->
+      <!-- PAGE: MEMBERS                                              -->
+      <!-- Searchable list of all member households                   -->
+      <!-- ========================================================== -->
+      <div id="members" class="page">
+        <h1 class="page-title">Members</h1>
+        
+        <div class="search-bar">
+          <input type="text" class="search-input" id="memSearchInput" placeholder="Search by household name, email, or ID...">
+        </div>
+        
+        <div class="card">
+          <div class="table-container">
+            <table id="memTable">
+              <thead>
+                <tr>
+                  <th>Household Name</th>
+                  <th>Member Type</th>
+                  <th>Status</th>
+                  <th>Expires</th>
+                  <th>Email</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="memTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div id="memEmpty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">👥</div>
+            <div class="empty-state-text">No members found</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- ========================================================== -->
+      <!-- PAGE: PHOTO REVIEW                                         -->
+      <!-- Grid of pending member photos for approval/rejection       -->
+      <!-- ========================================================== -->
+      <div id="photos" class="page">
+        <h1 class="page-title">Photo Review</h1>
+        
+        <div class="info-box">
+          📸 Review and approve member ID photos. Rejected photos can be resubmitted by the member.
+        </div>
+        
+        <div class="photo-grid" id="photoGrid">
+        </div>
+        
+        <div id="photoEmpty" class="empty-state" style="display: none;">
+          <div class="empty-state-icon">✓</div>
+          <div class="empty-state-text">No pending photos</div>
+          <div class="empty-state-subtext">All member photos have been reviewed</div>
+        </div>
+      </div>
+      
+      <!-- ========================================================== -->
+      <!-- PAGE: PAYMENTS                                             -->
+      <!-- Payment verification and confirmation                      -->
+      <!-- ========================================================== -->
+      <div id="payments" class="page">
+        <h1 class="page-title">Payment Verification</h1>
+        
+        <div class="search-bar">
+          <input type="text" class="search-input" id="paySearchInput" placeholder="Search by member name or email...">
+        </div>
+        
+        <div class="card">
+          <div class="table-container">
+            <table id="payTable">
+              <thead>
+                <tr>
+                  <th>Member Name</th>
+                  <th>Email</th>
+                  <th>Amount</th>
+                  <th>Submitted</th>
+                  <th>Reference</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div id="payEmpty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">✓</div>
+            <div class="empty-state-text">No pending payments</div>
+            <div class="empty-state-subtext">All payment submissions have been verified</div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALS                                                       -->
+<!-- Overlay dialogs for actions and detailed views              -->
+<!-- ============================================================ -->
+
+<!-- Reservation Detail and Action Modal -->
+<div id="resDetailModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header" style="position: relative;">
+      <h2 class="modal-title">Reservation Details</h2>
+      <button class="modal-close" onclick="closeModal('resDetailModal');">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="resDetailContent"></div>
+      <div class="form-group" style="margin-top: 20px;">
+        <label class="form-label">Notes / Reason (if denying)</label>
+        <textarea id="resActionNotes" placeholder="Optional notes or reason for denial..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('resDetailModal');">Cancel</button>
+      <button class="btn btn-danger" id="resDenyBtn" onclick="denyReservation();">Deny</button>
+      <button class="btn btn-primary" id="resApproveBtn" onclick="approveReservation();">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member Detail Modal -->
+<div id="memDetailModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header" style="position: relative;">
+      <h2 class="modal-title">Household Details</h2>
+      <button class="modal-close" onclick="closeModal('memDetailModal');">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="memDetailContent"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('memDetailModal');">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Rejection Reason Modal -->
+<div id="photoRejectModal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header" style="position: relative;">
+      <h2 class="modal-title">Reject Photo</h2>
+      <button class="modal-close" onclick="closeModal('photoRejectModal');">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Rejection Reason</label>
+        <select id="photoRejectReason" class="form-input">
+          <option value="">-- Select a reason --</option>
+          <option value="blurry">Photo is blurry or out of focus</option>
+          <option value="not_face">Face is not clearly visible</option>
+          <option value="poor_lighting">Poor lighting or dark background</option>
+          <option value="not_recent">Photo does not appear recent</option>
+          <option value="inappropriate">Inappropriate or unprofessional</option>
+          <option value="technical">Technical issue with file</option>
+          <option value="other">Other (specify below)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional Details (optional)</label>
+        <textarea id="photoRejectDetails" placeholder="Provide more specific feedback..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('photoRejectModal');">Cancel</button>
+      <button class="btn btn-danger" id="photoRejectConfirmBtn" onclick="confirmRejectPhoto();">Reject Photo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================ //
+  // SECTION: INITIALIZATION AND STATE                            //
+  // ============================================================ //
+  // Global variables, API configuration, and page load handlers   //
+  // ============================================================ //
+  
+  // The backend API URL is injected when this file is served via Apps Script doGet()
+  // This allows the frontend to call the same deployed web app without hardcoding URLs
+  var PORTAL_API_URL = '<?= ScriptApp.getService().getUrl() ?>';
+  
+  // Current authentication token retrieved from sessionStorage
+  var currentToken = sessionStorage.getItem('gea_token') || null;
+  
+  // Current user's email and role (set after authentication)
+  var currentUser = null;
+  
+  // Currently selected reservation/payment ID for modal actions
+  var selectedReservationId = null;
+  var selectedPaymentId = null;
+  var selectedPhotoIndividualId = null;
+  
+  /**
+   * Initialize the admin portal when the page loads.
+   * Check for existing session token; show login or dashboard accordingly.
+   */
+  window.addEventListener('load', function() {
+    if (currentToken) {
+      // User has a valid session token — show authenticated UI
+      showAuthenticatedUI();
+      loadDashboard();
+    } else {
+      // No token found — keep login screen visible
+      document.getElementById('loginScreen').classList.add('show');
+    }
+  });
+  
+  // ============================================================ //
+  // SECTION: AUTHENTICATION                                      //
+  // ============================================================ //
+  // Login, logout, and session token management                  //
+  // ============================================================ //
+  
+  /**
+   * Submits the login form to authenticate the user.
+   * Calls the backend login action with the entered email address.
+   * On success, stores the session token and shows the admin interface.
+   * On failure, displays an error message below the login form.
+   */
+  function submitLogin(event) {
+    event.preventDefault();
+    
+    // Get the email address entered by the user
+    var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    
+    // Clear any previous error messages
+    var errorDiv = document.getElementById('loginError');
+    errorDiv.textContent = '';
+    errorDiv.classList.remove('show');
+    
+    // Disable the submit button while the request is in progress
+    var submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in...';
+    
+    // Call the backend login action
+    apiCall('login', { email: email }).then(function(res) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign In';
+      
+      if (!res.success) {
+        // Login failed — show error message
+        errorDiv.textContent = res.message || 'Login failed. Please check your email address.';
+        errorDiv.classList.add('show');
+        return;
+      }
+      
+      // Login successful — store the token and show the app
+      currentToken = res.data.token;
+      currentUser = res.data;
+      sessionStorage.setItem('gea_token', currentToken);
+      
+      // Hide login and show the authenticated interface
+      document.getElementById('loginScreen').classList.remove('show');
+      showAuthenticatedUI();
+      loadDashboard();
+    }).catch(function(err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Sign In';
+      errorDiv.textContent = 'Connection error. Please try again.';
+      errorDiv.classList.add('show');
+      console.error('Login error:', err);
+    });
+  }
+  
+  /**
+   * Shows the authenticated admin interface (header, sidebar, content).
+   * Sets the user's name in the header and makes all authenticated UI visible.
+   */
+  function showAuthenticatedUI() {
+    // Hide login screen
+    document.getElementById('loginScreen').classList.remove('show');
+    
+    // Show header, sidebar, and main content
+    document.getElementById('header').style.display = 'flex';
+    document.getElementById('mainContent').style.display = 'flex';
+    
+    // Set the user's name in the header
+    if (currentUser && currentUser.email) {
+      document.getElementById('headerUserName').textContent = currentUser.email.split('@')[0];
+    }
+  }
+  
+  /**
+   * Logs out the current user.
+   * Clears the session token and returns to the login screen.
+   */
+  function logout() {
+    sessionStorage.removeItem('gea_token');
+    currentToken = null;
+    currentUser = null;
+    
+    // Hide authenticated UI
+    document.getElementById('header').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'none';
+    
+    // Show and reset login screen
+    document.getElementById('loginScreen').classList.add('show');
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('loginError').classList.remove('show');
+  }
+  
+  // ============================================================ //
+  // SECTION: API COMMUNICATION                                   //
+  // ============================================================ //
+  // Frontend-to-backend API call abstraction                     //
+  // ============================================================ //
+  
+  /**
+   * Makes an API call to the backend Apps Script deployment.
+   * Automatically appends the action and session token to the request.
+   * All responses follow the format: { success: bool, data: {...}, message: "...", code: "..." }
+   *
+   * Usage example:
+   *   apiCall('admin_pending', {}).then(function(res) {
+   *     if (!res.success) { showError(res.message); return; }
+   *     renderReservations(res.data.reservations);
+   *   });
+   */
+  function apiCall(action, params) {
+    // Add action and token to parameters
+    params = params || {};
+    params.action = action;
+    params.token = currentToken || '';
+    
+    // Construct the URL with query parameters
+    var url = PORTAL_API_URL + '?' + new URLSearchParams(params).toString();
+    
+    // Make the fetch request to the backend
+    return fetch(url).then(function(r) {
+      return r.json();
+    });
+  }
+  
+  // ============================================================ //
+  // SECTION: PAGE NAVIGATION                                     //
+  // ============================================================ //
+  // Show/hide page sections and load data                        //
+  // ============================================================ //
+  
+  /**
+   * Switches to a different admin page (dashboard, reservations, members, etc.).
+   * Hides all pages except the one specified, updates sidebar highlight,
+   * and loads fresh data from the backend if needed.
+   */
+  function showPage(pageName) {
+    // Hide all pages
+    var pages = document.querySelectorAll('.page');
+    pages.forEach(function(page) {
+      page.classList.remove('active');
+    });
+    
+    // Show the requested page
+    var targetPage = document.getElementById(pageName);
+    if (targetPage) {
+      targetPage.classList.add('active');
+    }
+    
+    // Update sidebar active state
+    var navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(function(item) {
+      item.classList.remove('active');
+    });
+    event.target.closest('.nav-item').classList.add('active');
+    
+    // Load data for the requested page
+    switch (pageName) {
+      case 'dashboard':
+        loadDashboard();
+        break;
+      case 'reservations':
+        loadReservations();
+        break;
+      case 'members':
+        loadMembers();
+        break;
+      case 'photos':
+        loadPhotos();
+        break;
+      case 'payments':
+        loadPayments();
+        break;
+    }
+  }
+  
+  // ============================================================ //
+  // SECTION: DASHBOARD                                           //
+  // ============================================================ //
+  // Summary statistics and quick overview                        //
+  // ============================================================ //
+  
+  /**
+   * Loads the dashboard with summary statistics.
+   * Calls the backend for counts of pending items and upcoming activity.
+   * Updates the stat cards and lists on the dashboard page.
+   */
+  function loadDashboard() {
+    // Load pending count
+    apiCall('admin_pending', {}).then(function(res) {
+      if (res.success && res.data) {
+        var pending = res.data.reservations || [];
+        document.getElementById('dashPendingCount').textContent = pending.length;
+      }
+    });
+    
+    // For now, show placeholder data
+    // In production, these would come from the backend
+    document.getElementById('dashPhotoCount').textContent = '3';
+    document.getElementById('dashPaymentCount').textContent = '2';
+    document.getElementById('dashMemberCount').textContent = '47';
+    document.getElementById('dashTodayCount').textContent = '0';
+    
+    // Populate upcoming reservations list
+    var upcomingHtml = '<p style="text-align: center; color: #999; padding: 20px;">Loading upcoming reservations...</p>';
+    document.getElementById('dashUpcomingList').innerHTML = upcomingHtml;
+    
+    // In production, fetch from backend and render upcoming reservations here
+  }
+  
+  // ============================================================ //
+  // SECTION: PENDING RESERVATIONS                                //
+  // ============================================================ //
+  // List, search, approve, and deny reservation requests         //
+  // ============================================================ //
+  
+  /**
+   * Loads and displays the list of pending reservations.
+   * Fetches from the backend and populates the reservations table.
+   * Each row can be clicked to view details and take action.
+   */
+  function loadReservations() {
+    // Show loading state
+    var tbody = document.getElementById('resTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">Loading reservations...</td></tr>';
+    
+    // Fetch pending reservations from backend
+    apiCall('admin_pending', {}).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load reservations: ' + res.message);
+        return;
+      }
+      
+      var reservations = res.data.reservations || [];
+      
+      if (reservations.length === 0) {
+        // No pending reservations
+        document.getElementById('resTable').style.display = 'none';
+        document.getElementById('resEmpty').style.display = 'block';
+        return;
+      }
+      
+      document.getElementById('resTable').style.display = 'table';
+      document.getElementById('resEmpty').style.display = 'none';
+      
+      // Clear table body and populate with reservations
+      tbody.innerHTML = '';
+      
+      reservations.forEach(function(res) {
+        // Format the date (assuming ISO format from backend)
+        var date = new Date(res.date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+        
+        var row = document.createElement('tr');
+        row.innerHTML = '\
+          <td>' + date + '</td>\
+          <td>' + (res.facility || 'Unknown') + '</td>\
+          <td>' + (res.member_name || 'Unknown') + '</td>\
+          <td>' + (res.email || '') + '</td>\
+          <td>' + (res.guest_count || 0) + '</td>\
+          <td><span class="badge badge-pending">Pending</span></td>\
+          <td><button class="btn btn-primary btn-small" onclick="openReservationDetail(\'' + res.reservation_id + '\');">Review</button></td>\
+        ';
+        tbody.appendChild(row);
+      });
+      
+      // Attach search functionality
+      setupReservationSearch();
+    });
+  }
+  
+  /**
+   * Opens the reservation detail modal for a specific reservation.
+   * Displays all details and provides approve/deny buttons.
+   */
+  function openReservationDetail(resId) {
+    selectedReservationId = resId;
+    
+    // In production, fetch full details from backend
+    // For now, show a placeholder detail view
+    var detailHtml = '\
+      <div class="detail-row">\
+        <div class="detail-label">Reservation ID:</div>\
+        <div class="detail-value">' + resId + '</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Member:</div>\
+        <div class="detail-value">John Smith</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Facility:</div>\
+        <div class="detail-value">Tennis Courts</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Date & Time:</div>\
+        <div class="detail-value">Friday, Feb 14 from 2:00 PM - 4:00 PM</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Guests:</div>\
+        <div class="detail-value">2 guests</div>\
+      </div>\
+    ';
+    
+    document.getElementById('resDetailContent').innerHTML = detailHtml;
+    document.getElementById('resActionNotes').value = '';
+    document.getElementById('resDetailModal').classList.add('show');
+  }
+  
+  /**
+   * Approves the selected pending reservation.
+   * Sends the approval to the backend and closes the modal.
+   */
+  function approveReservation() {
+    if (!selectedReservationId) return;
+    
+    var btn = document.getElementById('resApproveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Approving...';
+    
+    apiCall('admin_approve', {
+      reservation_id: selectedReservationId
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Approve';
+      
+      if (!res.success) {
+        showError('Failed to approve reservation: ' + res.message);
+        return;
+      }
+      
+      closeModal('resDetailModal');
+      loadReservations();
+    });
+  }
+  
+  /**
+   * Denies the selected pending reservation.
+   * Sends the denial with optional notes to the backend and closes the modal.
+   */
+  function denyReservation() {
+    if (!selectedReservationId) return;
+    
+    var btn = document.getElementById('resDenyBtn');
+    btn.disabled = true;
+    btn.textContent = 'Denying...';
+    
+    var notes = document.getElementById('resActionNotes').value.trim();
+    
+    apiCall('admin_deny', {
+      reservation_id: selectedReservationId,
+      reason: notes
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Deny';
+      
+      if (!res.success) {
+        showError('Failed to deny reservation: ' + res.message);
+        return;
+      }
+      
+      closeModal('resDetailModal');
+      loadReservations();
+    });
+  }
+  
+  /**
+   * Sets up search/filter functionality for the reservations table.
+   * Hides/shows rows based on search input.
+   */
+  function setupReservationSearch() {
+    var searchInput = document.getElementById('resSearchInput');
+    searchInput.addEventListener('keyup', function() {
+      var filter = searchInput.value.toLowerCase();
+      var tbody = document.getElementById('resTableBody');
+      var rows = tbody.getElementsByTagName('tr');
+      
+      for (var i = 0; i < rows.length; i++) {
+        var text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(filter) ? '' : 'none';
+      }
+    });
+  }
+  
+  // ============================================================ //
+  // SECTION: MEMBERS                                             //
+  // ============================================================ //
+  // List all households and view member details                 //
+  // ============================================================ //
+  
+  /**
+   * Loads and displays all member households.
+   * Fetches the member list from the backend and populates the table.
+   */
+  function loadMembers() {
+    var tbody = document.getElementById('memTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading members...</td></tr>';
+    
+    apiCall('admin_members', {}).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load members: ' + res.message);
+        return;
+      }
+      
+      var members = res.data.households || [];
+      
+      if (members.length === 0) {
+        document.getElementById('memTable').style.display = 'none';
+        document.getElementById('memEmpty').style.display = 'block';
+        return;
+      }
+      
+      document.getElementById('memTable').style.display = 'table';
+      document.getElementById('memEmpty').style.display = 'none';
+      
+      tbody.innerHTML = '';
+      
+      members.forEach(function(household) {
+        var row = document.createElement('tr');
+        
+        // Determine membership type badge
+        var typeClass = household.membership_type === 'ACTIVE' ? 'badge-approved' : 'badge-cancelled';
+        
+        row.innerHTML = '\
+          <td>' + (household.household_name || 'Unknown') + '</td>\
+          <td>' + (household.membership_type || 'Unknown') + '</td>\
+          <td><span class="badge ' + typeClass + '">' + (household.status || 'Active') + '</span></td>\
+          <td>' + (household.expiration_date ? new Date(household.expiration_date).toLocaleDateString() : 'N/A') + '</td>\
+          <td>' + (household.email || '') + '</td>\
+          <td><button class="btn btn-primary btn-small" onclick="openMemberDetail(\'' + household.household_id + '\');">View</button></td>\
+        ';
+        tbody.appendChild(row);
+      });
+      
+      setupMemberSearch();
+    });
+  }
+  
+  /**
+   * Opens the member detail modal for a specific household.
+   * Displays household information, individual members, and payment history.
+   */
+  function openMemberDetail(householdId) {
+    var detailHtml = '\
+      <h3 class="section-header" style="margin-top: 0;">Household Information</h3>\
+      <div class="detail-row">\
+        <div class="detail-label">Household ID:</div>\
+        <div class="detail-value">' + householdId + '</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Name:</div>\
+        <div class="detail-value">Smith Household</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Email:</div>\
+        <div class="detail-value">john.smith@state.gov</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Status:</div>\
+        <div class="detail-value"><span class="badge badge-approved">Active</span></div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Membership Type:</div>\
+        <div class="detail-value">ACTIVE</div>\
+      </div>\
+      <div class="detail-row">\
+        <div class="detail-label">Joined:</div>\
+        <div class="detail-value">Jan 1, 2024</div>\
+      </div>\
+      \
+      <h3 class="section-header">Individual Members</h3>\
+      <table style="width: 100%; margin-bottom: 20px;">\
+        <thead style="background: #F5F5F5;">\
+          <tr>\
+            <th style="padding: 8px; border-bottom: 1px solid #DDD;">Name</th>\
+            <th style="padding: 8px; border-bottom: 1px solid #DDD;">Relationship</th>\
+            <th style="padding: 8px; border-bottom: 1px solid #DDD;">Photo</th>\
+          </tr>\
+        </thead>\
+        <tbody>\
+          <tr>\
+            <td style="padding: 8px; border-bottom: 1px solid #EEE;">John Smith</td>\
+            <td style="padding: 8px; border-bottom: 1px solid #EEE;">Primary</td>\
+            <td style="padding: 8px; border-bottom: 1px solid #EEE;"><span class="badge badge-approved">Approved</span></td>\
+          </tr>\
+          <tr>\
+            <td style="padding: 8px; border-bottom: 1px solid #EEE;">Jane Smith</td>\
+            <td style="padding: 8px; border-bottom: 1px solid #EEE;">Spouse</td>\
+            <td style="padding: 8px; border-bottom: 1px solid #EEE;"><span class="badge badge-pending">Pending</span></td>\
+          </tr>\
+        </tbody>\
+      </table>\
+      \
+      <h3 class="section-header">Recent Reservations</h3>\
+      <div style="text-align: center; color: #999; padding: 20px;"><small>No recent reservations</small></div>\
+    ';
+    
+    document.getElementById('memDetailContent').innerHTML = detailHtml;
+    document.getElementById('memDetailModal').classList.add('show');
+  }
+  
+  /**
+   * Sets up search/filter functionality for the members table.
+   */
+  function setupMemberSearch() {
+    var searchInput = document.getElementById('memSearchInput');
+    searchInput.addEventListener('keyup', function() {
+      var filter = searchInput.value.toLowerCase();
+      var tbody = document.getElementById('memTableBody');
+      var rows = tbody.getElementsByTagName('tr');
+      
+      for (var i = 0; i < rows.length; i++) {
+        var text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(filter) ? '' : 'none';
+      }
+    });
+  }
+  
+  // ============================================================ //
+  // SECTION: PHOTOS                                              //
+  // ============================================================ //
+  // Review and approve/reject pending member photos              //
+  // ============================================================ //
+  
+  /**
+   * Loads pending member photos for review.
+   * Displays them in a grid with approve/reject buttons.
+   */
+  function loadPhotos() {
+    var photoGrid = document.getElementById('photoGrid');
+    photoGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">Loading photos...</p>';
+    
+    apiCall('admin_photo', { action: 'list' }).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load photos: ' + res.message);
+        return;
+      }
+      
+      var photos = res.data.photos || [];
+      
+      if (photos.length === 0) {
+        photoGrid.innerHTML = '';
+        document.getElementById('photoEmpty').style.display = 'block';
+        return;
+      }
+      
+      document.getElementById('photoEmpty').style.display = 'none';
+      photoGrid.innerHTML = '';
+      
+      photos.forEach(function(photo) {
+        var card = document.createElement('div');
+        card.className = 'photo-card';
+        card.innerHTML = '\
+          <div class="photo-image">📸</div>\
+          <div class="photo-footer">\
+            <div class="photo-name">' + (photo.member_name || 'Unknown') + '</div>\
+            <div class="photo-actions">\
+              <button class="btn btn-primary btn-small" onclick="approvePhoto(\'' + photo.individual_id + '\');">Approve</button>\
+              <button class="btn btn-danger btn-small" onclick="openPhotoRejectModal(\'' + photo.individual_id + '\');">Reject</button>\
+            </div>\
+          </div>\
+        ';
+        photoGrid.appendChild(card);
+      });
+    });
+  }
+  
+  /**
+   * Approves a member photo and marks it as verified.
+   */
+  function approvePhoto(individualId) {
+    apiCall('admin_photo', {
+      action: 'approve',
+      individual_id: individualId
+    }).then(function(res) {
+      if (!res.success) {
+        showError('Failed to approve photo: ' + res.message);
+        return;
+      }
+      loadPhotos();
+    });
+  }
+  
+  /**
+   * Opens the rejection reason modal for a photo.
+   */
+  function openPhotoRejectModal(individualId) {
+    selectedPhotoIndividualId = individualId;
+    document.getElementById('photoRejectReason').value = '';
+    document.getElementById('photoRejectDetails').value = '';
+    document.getElementById('photoRejectModal').classList.add('show');
+  }
+  
+  /**
+   * Confirms and sends the photo rejection to the backend.
+   */
+  function confirmRejectPhoto() {
+    if (!selectedPhotoIndividualId) return;
+    
+    var reason = document.getElementById('photoRejectReason').value.trim();
+    var details = document.getElementById('photoRejectDetails').value.trim();
+    
+    if (!reason) {
+      showError('Please select a rejection reason');
+      return;
+    }
+    
+    var btn = document.getElementById('photoRejectConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Rejecting...';
+    
+    apiCall('admin_photo', {
+      action: 'reject',
+      individual_id: selectedPhotoIndividualId,
+      reason: reason,
+      details: details
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Reject Photo';
+      
+      if (!res.success) {
+        showError('Failed to reject photo: ' + res.message);
+        return;
+      }
+      
+      closeModal('photoRejectModal');
+      loadPhotos();
+    });
+  }
+  
+  // ============================================================ //
+  // SECTION: PAYMENTS                                            //
+  // ============================================================ //
+  // Verify and confirm payment submissions                       //
+  // ============================================================ //
+  
+  /**
+   * Loads pending payment submissions for verification.
+   * Displays them in a table with confirm/not-found buttons.
+   */
+  function loadPayments() {
+    var tbody = document.getElementById('payTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading payments...</td></tr>';
+    
+    apiCall('admin_payment', {}).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load payments: ' + res.message);
+        return;
+      }
+      
+      var payments = res.data.payments || [];
+      
+      if (payments.length === 0) {
+        document.getElementById('payTable').style.display = 'none';
+        document.getElementById('payEmpty').style.display = 'block';
+        return;
+      }
+      
+      document.getElementById('payTable').style.display = 'table';
+      document.getElementById('payEmpty').style.display = 'none';
+      
+      tbody.innerHTML = '';
+      
+      payments.forEach(function(payment) {
+        var submitted = new Date(payment.submitted_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+        
+        var row = document.createElement('tr');
+        row.innerHTML = '\
+          <td>' + (payment.member_name || 'Unknown') + '</td>\
+          <td>' + (payment.email || '') + '</td>\
+          <td>$' + (payment.amount || '0.00') + '</td>\
+          <td>' + submitted + '</td>\
+          <td><code style="font-family: Roboto Mono; font-size: 11px; background: #F5F5F5; padding: 2px 4px; border-radius: 2px;">' + (payment.reference || '') + '</code></td>\
+          <td>\
+            <button class="btn btn-primary btn-small" style="margin-right: 4px;" onclick="confirmPayment(\'' + payment.payment_id + '\');">Confirm</button>\
+            <button class="btn btn-secondary btn-small" onclick="markPaymentNotFound(\'' + payment.payment_id + '\');">Not Found</button>\
+          </td>\
+        ';
+        tbody.appendChild(row);
+      });
+      
+      setupPaymentSearch();
+    });
+  }
+  
+  /**
+   * Confirms a payment submission as verified.
+   */
+  function confirmPayment(paymentId) {
+    if (!confirm('Confirm this payment submission?')) return;
+    
+    apiCall('admin_payment', {
+      payment_id: paymentId,
+      action: 'confirm'
+    }).then(function(res) {
+      if (!res.success) {
+        showError('Failed to confirm payment: ' + res.message);
+        return;
+      }
+      loadPayments();
+    });
+  }
+  
+  /**
+   * Marks a payment submission as not found during verification.
+   */
+  function markPaymentNotFound(paymentId) {
+    if (!confirm('Mark this payment as not found?')) return;
+    
+    apiCall('admin_payment', {
+      payment_id: paymentId,
+      action: 'not_found'
+    }).then(function(res) {
+      if (!res.success) {
+        showError('Failed to update payment: ' + res.message);
+        return;
+      }
+      loadPayments();
+    });
+  }
+  
+  /**
+   * Sets up search/filter functionality for the payments table.
+   */
+  function setupPaymentSearch() {
+    var searchInput = document.getElementById('paySearchInput');
+    searchInput.addEventListener('keyup', function() {
+      var filter = searchInput.value.toLowerCase();
+      var tbody = document.getElementById('payTableBody');
+      var rows = tbody.getElementsByTagName('tr');
+      
+      for (var i = 0; i < rows.length; i++) {
+        var text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(filter) ? '' : 'none';
+      }
+    });
+  }
+  
+  // ============================================================ //
+  // SECTION: MODALS                                              //
+  // ============================================================ //
+  // Modal open/close utilities                                   //
+  // ============================================================ //
+  
+  /**
+   * Closes a modal overlay.
+   * Called when clicking the close button or cancel button.
+   */
+  function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('show');
+    }
+  }
+  
+  /**
+   * Closes modals when clicking the overlay background (outside the modal).
+   */
+  document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal-overlay')) {
+      event.target.classList.remove('show');
+    }
+  });
+  
+  // ============================================================ //
+  // SECTION: UTILITIES                                           //
+  // ============================================================ //
+  // Helper functions for error handling and UI feedback           //
+  // ============================================================ //
+  
+  /**
+   * Shows an error message to the user in a temporary alert.
+   * In production, this could be replaced with a toast notification system.
+   */
+  function showError(message) {
+    alert('Error: ' + message);
+    console.error(message);
+  }
+</script>
+
+</body>
+</html>

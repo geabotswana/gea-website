@@ -2,6 +2,9 @@
 *.xlsx
 *.xls
 
+# Temporary/test HTML files
+0*.html
+
 # Clasp credentials
 .clasp.json
 

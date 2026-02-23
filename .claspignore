@@ -1,0 +1,11 @@
+**/**
+!**/*.gs
+!**/*.js
+!**/*.html
+!**/*.json
+!appsscript.json
+0*.html
+index.html
+.git
+.claude
+node_modules

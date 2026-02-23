@@ -196,49 +196,13 @@
 <!-- IFRAME CONTAINER (Full-Page Portal Embed)                       -->
 <!-- ================================================================ -->
 <div id="iframe-container">
-  <div class="loading">
-    <div class="spinner"></div>
-    <p>Loading Member Portal...</p>
-  </div>
+  <iframe
+    id="member-portal"
+    src="https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec"
+    title="GEA Member Portal"
+    allow="same-origin"
+  ></iframe>
 </div>
-
-<!-- ================================================================ -->
-<!-- IFRAME EMBED                                                    -->
-<!-- ================================================================ -->
-<iframe
-  id="member-portal"
-  src="https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec"
-  title="GEA Member Portal"
-  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-  style="display: none;"
-></iframe>
-
-<!-- ================================================================ -->
-<!-- JAVASCRIPT: Handle Loading State                               -->
-<!-- ================================================================ -->
-<script>
-  const iframe = document.getElementById('member-portal');
-  const container = document.getElementById('iframe-container');
-
-  // Show iframe when it loads
-  iframe.addEventListener('load', () => {
-    iframe.style.display = 'block';
-    container.innerHTML = '';
-    container.appendChild(iframe);
-  });
-
-  // Handle iframe errors
-  iframe.addEventListener('error', () => {
-    container.innerHTML = '<div class="loading" style="color: #C62828;"><p>⚠️ Unable to load Member Portal</p><p style="font-size: 13px; margin-top: 8px;">Please try refreshing the page or contact support at board@geabotswana.org</p></div>';
-  });
-
-  // Start loading the iframe
-  setTimeout(() => {
-    iframe.style.display = 'block';
-    container.innerHTML = '';
-    container.appendChild(iframe);
-  }, 500);
-</script>
 
 </body>
 </html>

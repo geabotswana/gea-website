@@ -28,98 +28,13 @@
     }
 
     /* ============================================================ */
-    /* CONTAINER LAYOUT                                             */
-    /* ============================================================ */
-    #container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      width: 100vw;
-    }
-
-    /* ============================================================ */
-    /* HEADER BAR (GEA Branding)                                    */
-    /* ============================================================ */
-    header {
-      background: #0A3161;
-      border-bottom: 4px solid #B31942;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 0 24px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      z-index: 10;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: white;
-      cursor: pointer;
-      border-radius: 4px;
-      padding: 4px 8px;
-      transition: background-color 0.2s ease;
-    }
-
-    .header-left:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .logo {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .logo img {
-      width: 40px;
-      height: 40px;
-      object-fit: contain;
-    }
-
-    .title {
-      font-size: 18px;
-      font-weight: 600;
-      color: white;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .back-link {
-      color: white;
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 500;
-      padding: 8px 12px;
-      border-radius: 4px;
-      transition: background-color 0.2s ease;
-    }
-
-    .back-link:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    /* ============================================================ */
-    /* IFRAME CONTAINER                                             */
+    /* IFRAME CONTAINER (Full Page)                                 */
     /* ============================================================ */
     #iframe-container {
-      flex: 1;
+      height: 100vh;
+      width: 100%;
       overflow: hidden;
       position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #F5F5F5;
     }
 
     iframe {
@@ -128,72 +43,14 @@
       border: none;
       display: block;
     }
-
-    /* ============================================================ */
-    /* LOADING STATE                                                */
-    /* ============================================================ */
-    .loading {
-      text-align: center;
-      color: #0A3161;
-      font-size: 16px;
-      font-weight: 500;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #E0E0E0;
-      border-top: 4px solid #0A3161;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 16px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* ============================================================ */
-    /* MOBILE RESPONSIVE                                            */
-    /* ============================================================ */
-    @media (max-width: 600px) {
-      header {
-        padding: 0 16px;
-      }
-
-      .title {
-        font-size: 16px;
-      }
-
-      .back-link {
-        font-size: 12px;
-        padding: 6px 10px;
-      }
-    }
   </style>
 </head>
 
 <body>
 
 <!-- ================================================================ -->
-<!-- HEADER WITH GEA BRANDING                                         -->
-<!-- ================================================================ -->
-<header>
-  <a href="/" class="header-left">
-    <div class="logo">
-      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-80.png" alt="GEA Logo">
-    </div>
-    <div class="title">GEA Member Portal</div>
-  </a>
-
-  <div class="header-right">
-    <a href="/" class="back-link">← Back to Website</a>
-  </div>
-</header>
-
-<!-- ================================================================ -->
 <!-- IFRAME CONTAINER (Full-Page Portal Embed)                       -->
+<!-- Full-height iframe that loads the GAS Member Portal             -->
 <!-- ================================================================ -->
 <div id="iframe-container">
   <iframe

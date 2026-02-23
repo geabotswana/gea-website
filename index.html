@@ -537,6 +537,19 @@
       border-bottom: none;
     }
 
+    .facility-card .subtitle {
+      font-size: 12px;
+      color: var(--color-medium-gray);
+      font-weight: normal;
+      margin-top: -4px;
+      padding: 4px 0 6px 0;
+      border-bottom: 1px solid var(--color-border-gray);
+    }
+
+    .facility-card li:has(+ .subtitle):last-of-type {
+      border-bottom: none;
+    }
+
     /* ============================================================ */
     /* MEMBERSHIP SECTION                                           */
     /* ============================================================ */
@@ -804,9 +817,10 @@
         <h3>Tennis Court / Basketball Court</h3>
         <ul>
           <li>• <strong>Location:</strong> Presidents Drive (6am–8pm daily)</li>
-          <li>• <strong>Reservation limits:</strong> To promote fair use</li>
-          <li>• <strong>Max reserved session:</strong> 2 hours</li>
           <li>• <strong>Access:</strong> By reservation or walk-in</li>
+          <li>• <strong>Equipment:</strong> Full-size tennis court and open-air basketball court</li>
+          <li>• <strong>Max Reserved Session:</strong> 2 hours</li>
+          <div class="subtitle">Reservation limits to promote fair use</div>
         </ul>
       </div>
 
@@ -816,7 +830,7 @@
         <ul>
           <li>• <strong>Location:</strong> Presidents Drive (6am–8pm daily)</li>
           <li>• <strong>Access:</strong> Freely available, reservations not permitted</li>
-          <li>• <strong>Features:</strong> Large play area with multiple equipment</li>
+          <li>• <strong>Equipment:</strong> Swings, slides, and climbing structures</li>
         </ul>
       </div>
 
@@ -825,9 +839,10 @@
         <h3>Leobo (Thatch-Roofed Meeting Area)</h3>
         <ul>
           <li>• <strong>Location:</strong> Presidents Drive (6am–8pm daily)</li>
-          <li>• <strong>Reservation limits:</strong> To promote fair use</li>
-          <li>• <strong>Max reserved session:</strong> 6 hours</li>
           <li>• <strong>Access:</strong> By advance reservation only</li>
+          <li>• <strong>Equipment:</strong> Covered area with adjacent charcoal/wood-fueled braai and barbecues</li>
+          <li>• <strong>Max Reserved Session:</strong> 6 hours</li>
+          <div class="subtitle">Reservation limits to promote fair use</div>
         </ul>
       </div>
 

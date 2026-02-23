@@ -9,9 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **GEA Management System** is a Google Apps Script web application for the Gaborone Employee Association. It manages memberships, facility reservations, payments, document verification, and member communications. The system consists of:
 
 - **Backend:** Google Apps Script (V8) with 9 service modules
-- **Frontend:** Two responsive HTML interfaces (member portal + admin panel)
+- **Frontend:** Four responsive HTML interfaces:
+  - **Authenticated:** Portal.html (member), Admin.html (board)
+  - **Public:** index.html (informational website)
+  - **Hybrid:** member.html (portal wrapper with iframe, domain masking)
+- **Public Website:** Deployed to GitHub Pages at geabotswana.org
 - **Database:** 4 Google Sheets spreadsheets (members, reservations, payments, system backend)
-- **Deployment:** Clasp with @HEAD live deployment for HTML (Portal.html, Admin.html)
+- **Deployment:** Clasp with @HEAD live deployment for Portal.html, Admin.html; GitHub Pages for public site
 - **Timezone:** Africa/Johannesburg (GMT+2)
 
 ---
@@ -205,7 +209,33 @@ var auth = requireAuth(p.token, "board");  // Validates token & role
 
 ## Frontend Structure
 
-### Portal.html (Member Interface)
+### Public Website Files
+
+#### index.html (Public Informational Website)
+- **URL:** https://geabotswana.org
+- **Deployment:** GitHub Pages (automatic on `git push`)
+- **No authentication required** — informational landing page
+- **6 main sections:**
+  - Navigation (sticky, with "Member Login" link)
+  - Hero (tagline, CTAs)
+  - About GEA (mission, facilities overview, board officers)
+  - Facilities (Tennis Court/Basketball, Playground, Leobo, Gym)
+  - Contact & Footer
+- **Self-contained:** All CSS in one `<style>` block, minimal vanilla JS for mobile menu
+- **Responsive:** Mobile-friendly (375px+), smooth scroll anchors
+
+#### member.html (Member Portal Wrapper)
+- **URL:** https://geabotswana.org/member.html
+- **Purpose:** Domain masking for authenticated member portal
+- **Deployment:** GitHub Pages (same as index.html)
+- **Implementation:** Full-page iframe embedding GAS web app
+- **UX Benefit:** Users see geabotswana.org in address bar (not script.google.com)
+- **Back link:** "Back to Website" for easy return to public site
+- **Single iframe:** `<iframe src="https://script.google.com/a/macros/geabotswana.org/s/[DEPLOYMENT_ID]/exec">`
+
+### Authenticated Interface Files
+
+#### Portal.html (Member Interface)
 - **Single-page app** with 4 main sections: Dashboard, Reservations, Profile, Membership Card
 - Login screen: Email + password (no sign-up; created by board)
 - Client-side API: `google.script.run.handlePortalApi(action, params)` (avoids CORS)
@@ -223,7 +253,7 @@ var auth = requireAuth(p.token, "board");  // Validates token & role
 - `loadProfile()` → Fetches member data & displays in Personal Information section
 - `savePhoneNumbers()` → Updates phone fields (Individuals sheet)
 
-### Admin.html (Board Interface)
+#### Admin.html (Board Interface)
 - **3-column layout:** Sidebar navigation + main content + optional details pane
 - Same login, but requires role="board"
 - Key admin functions:
@@ -286,12 +316,33 @@ GEA Admin reviews & approves
 
 ### Facilities & Booking Rules
 
-**Five Facilities:**
-1. **Tennis Court/Basketball Court (TC/BC)** — Dual-use outdoor court at Rec Center (reservable)
-2. **Covered Meeting Area (Leobo)** — Sheltered gathering space at Rec Center (reservable)
-3. **Rec Center (Whole Facility)** — Entire facility booking, includes TC/BC + Leobo only (reservable)
-4. **Playground** — Walk-up only, no reservations, at Rec Center
-5. **Gym** — Walk-up only, no reservations, separate location
+**Four Main Facilities:**
+1. **Tennis Court / Basketball Court (Dual-Use)** — Combined outdoor court (reservable)
+   - Location: Presidents Drive plot
+   - Max reserved session: 2 hours per booking
+   - Access: By reservation or walk-in
+   - Reservation limits: To promote fair use (3 hours per week per household)
+
+2. **Leobo (Thatch-Roofed Meeting Area)** — Covered gathering space (reservable)
+   - Location: Presidents Drive plot
+   - Max reserved session: 6 hours per booking
+   - Access: By advance reservation only
+   - Reservation limits: To promote fair use (1 per month per household)
+   - Equipment: Charcoal/wood-fueled braai and barbecues
+
+3. **Gym (Multi-Machine)** — Fitness equipment facility (freely available)
+   - Location: North Ring Road plot
+   - Access: Freely available, no reservations
+   - Hours: 6am–8pm daily
+   - Equipment: Multiple machines for cardio & strength training
+
+4. **Children's Playground** — Recreational play equipment (freely available)
+   - Location: Presidents Drive plot
+   - Access: Freely available, no reservations
+   - Hours: 6am–8pm daily
+   - Equipment: Swings, slides, climbing structures
+
+**Note:** "Whole Facility" bookings are reservation combinations (not a separate facility); members coordinate multiple facilities through the portal.
 
 **Booking Time Slots & Duration:**
 - Time slots: :00, :15, :30, :45 intervals

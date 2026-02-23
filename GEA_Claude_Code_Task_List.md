@@ -22,26 +22,26 @@ This task list is organized into **Phases** (logical groupings) and **Sessions**
 
 These are low-complexity, high-impact items with no dependencies. Complete these first.
 
-### 1.0 — Update .gitignore (Git Housekeeping)
+### 1.0 — Commit .md Files to Repository
 
-**What:** Remove any restrictions on .md files so documentation and schema files are tracked in version control.
+**What:** Commit any .md documentation files to Git that aren't already in the repo (e.g., GEA_Claude_Code_Task_List.md, GEA_Reservations_Process_Spec.md, GEA_Board_Bios.md, and any others created).
 
-**Location:** GitHub repo root; `.gitignore` file
+**Location:** GitHub repo root and appropriate subdirectories
 
 **Implementation:**
-- Remove or comment out any lines that exclude `.md` files
-- Common problematic patterns to remove: `*.md`, `**/*.md` (unless there's a specific reason to exclude them)
-- Example: change `*.md` → `# *.md` or delete the line entirely
+- Check what .md files are untracked: `git status`
+- Add them: `git add *.md` or `git add [specific files]`
+- Commit with descriptive message: `git commit -m "Add documentation: task list, reservations spec, board bios"`
+- Push to GitHub: `git push`
 
-**Why:** Schema documents, API specs, and documentation should be version-controlled so they're available to collaborators and future maintainers. This will prevent the issue of losing documentation when switching between machines.
+**Why:** Documentation files should be version-controlled so they're available to collaborators and future maintainers. This ensures the task list, specifications, and bios are preserved in the repo history.
 
 **Complexity:** ⭐ Very Low (~2 minutes)
 
 **Testing:**
-- Make a small edit to a .md file
-- Verify it shows as modified in `git status`
-- Commit and push to GitHub
-- Verify it appears in the repo on GitHub
+- Verify files appear in `git status` as tracked
+- Check GitHub repo to confirm files are there
+- Confirm files are accessible from the repo for future reference
 
 **Successor Impact:** ✅ High positive impact; enables documentation to be tracked and maintained alongside code
 
@@ -543,4 +543,3 @@ All prep tasks are listed in the Reservations Process Spec document (Part 10b-10
 | Date | Author | Change |
 |------|--------|--------|
 | 2026-02-23 | Michael Raney & Claude | Initial comprehensive task list; ready for Phase 1 |
-

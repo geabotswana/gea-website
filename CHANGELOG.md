@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+#### Documentation Organization
+- **docs/** folder structure with organized documentation:
+  - `docs/policies/` — GEA policies (Membership, Reservations, Payments, Guest List, Document Submission, Data Management, Security/Privacy, Communications, Audit/Compliance)
+  - `docs/reference/` — Quick reference materials (Facility Rules, Membership Categories Matrix, Roles/Permissions Matrix)
+  - `docs/development/` — Development standards and repository organization guidelines
+  - `docs/decisions/` — Board decisions and policy evaluations
+  - `docs/implementation/` — Implementation guides (planned)
+  - `docs/workflows/` — Workflow documentation (planned)
+  - `docs/archive/` — Archived content
+- **docs/README.md** — Master documentation index with navigation, status tracking, and document relationships
+
+### Removed
+
+#### Redundant Documentation
+- **MEMBERSHIP_LEVELS.md** — Removed from root; superseded by `docs/reference/MEMBERSHIP_CATEGORIES_MATRIX.md` (newer, more detailed version with regulatory basis)
+
+### Changed
+
+#### .gitignore
+- Added `*.bak` to ignore backup files
+
+---
+
 ## [1.0.0] — 2026-02-23
 
 ### Added

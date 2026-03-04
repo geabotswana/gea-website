@@ -5,6 +5,9 @@
 # Temporary/test HTML files
 0*.html
 
+# Backup files
+*.bak
+
 # Clasp credentials
 .clasp.json
 

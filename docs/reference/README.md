@@ -22,3 +22,10 @@ Quick reference documents for board members, developers, and administrators.
 |----------|---------|----------|
 | [**Email Templates Inventory**](EMAIL_TEMPLATES.md) | All 30+ email templates with template IDs, triggers, placeholders, and purposes | Developers, board |
 
+## Comprehensive Technical References
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [**GEA System Schema**](GEA_System_Schema.md) | Complete database schema (households, individuals, membership levels, relationships, audit fields) | Developers, architects, board |
+| [**GEA Reservations Process Spec**](GEA_Reservations_Process_Spec.md) | Complete 10-step reservation lifecycle, approval routing, bumping logic, guest list workflow, configuration | Developers |
+

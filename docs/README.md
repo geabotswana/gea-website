@@ -65,10 +65,10 @@ These technical references support multiple audiences and are referenced through
 
 | Document | Purpose | Format | Status |
 |----------|---------|--------|--------|
-| **GEA_System_Schema.md** | Complete database schema (households, individuals, membership levels, relationships) | Markdown | ✅ Exists |
+| **reference/GEA_System_Schema.md** | Complete database schema (households, individuals, membership levels, relationships) | Markdown | ✅ Exists |
 | **reference/MEMBERSHIP_ELIGIBILITY_FLOW.md** | Sequential 4-question decision tree; every applicant gets exactly ONE category | Markdown | ✅ Exists |
 | **reference/MEMBERSHIP_CATEGORIES_MATRIX.md** | Configuration table: six categories, regulatory basis, voting rights, guest invitation authority, facility access, active status | Markdown | ✅ Exists |
-| **GEA_Reservations_Process_Spec.md** | Complete 10-step reservation lifecycle, approval routing, bumping logic, guest list workflow | Markdown | ✅ Exists |
+| **reference/GEA_Reservations_Process_Spec.md** | Complete 10-step reservation lifecycle, approval routing, bumping logic, guest list workflow | Markdown | ✅ Exists |
 | **reference/EMAIL_TEMPLATES.md** | All 30+ templates with triggers, placeholders, and purposes | Markdown | ✅ Exists |
 | **reference/FACILITY_RULES_QUICK_CARD.md** | Hours, capacities, reservation limits, guest policies, usage tracking, closure info by facility (Tennis/Basketball, Leobo, Gym, Playground) | Board, members | ✅ Complete |
 | **reference/ROLES_PERMISSIONS_MATRIX.md** | Who can do what (Member, Treasurer, Board, RSO, Applicant); approval authority; communication requirements | Board, developers | ✅ Complete |

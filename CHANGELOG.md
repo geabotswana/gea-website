@@ -24,8 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-#### Redundant Documentation
+#### Redundant & Temporary Documentation
 - **MEMBERSHIP_LEVELS.md** — Removed from root; superseded by `docs/reference/MEMBERSHIP_CATEGORIES_MATRIX.md` (newer, more detailed version with regulatory basis)
+- **GEA_Board_Bios.md** — Removed from root; temporary reference file (board bios integrated into index.html)
 
 ### Changed
 

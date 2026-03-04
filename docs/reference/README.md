@@ -1,8 +1,24 @@
-# Reference
+# Reference Materials
 
-## Contents
+Quick reference documents for board members, developers, and administrators.
 
-- [Facility Rules Quick Card](FACILITY_RULES_QUICK_CARD.md)
-- [Roles & Permissions Matrix](ROLES_PERMISSIONS_MATRIX.md)
-- [Membership Categories Matrix](MEMBERSHIP_CATEGORIES_MATRIX.md)
+## Quick Reference Guides
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [**Facility Rules Quick Card**](FACILITY_RULES_QUICK_CARD.md) | Hours, capacities, reservation limits, guest policies, usage tracking by facility | Board, members |
+| [**Roles & Permissions Matrix**](ROLES_PERMISSIONS_MATRIX.md) | Who can do what (Member, Treasurer, Board, RSO, Applicant); approval authority; communication requirements | Board, developers |
+| [**Membership Categories Matrix**](MEMBERSHIP_CATEGORIES_MATRIX.md) | All six membership categories, eligibility, sponsor requirements, dues, voting/board rights, facility access | Board, members, applicants |
+
+## Decision Trees & Workflows
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [**Membership Eligibility Flow**](MEMBERSHIP_ELIGIBILITY_FLOW.md) | Sequential decision tree for determining membership category (6 questions, mutually exclusive outcomes) | Board, applicants, staff |
+
+## Email & Communication Templates
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [**Email Templates Inventory**](EMAIL_TEMPLATES.md) | All 30+ email templates with template IDs, triggers, placeholders, and purposes | Developers, board |
 

@@ -36,15 +36,15 @@ Implementation guides, workflows, and technical references.
 
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
-| **CLAUDE_Membership_Implementation.md** | Coding guide for membership app & approval workflow | Developers | 📋 Planned |
-| **CLAUDE_Reservations_Implementation.md** | Coding guide for booking system, limits, waitlisting | Developers | 📋 Planned |
-| **CLAUDE_Payments_Implementation.md** | Coding guide for payment tracking & verification | Developers | 📋 Planned |
-| **CLAUDE_Authentication_RBAC.md** | Session management, role-based access control | Developers | 📋 Planned |
-| **CLAUDE_Google_APIs_Integration.md** | Sheets, Drive, Calendar, Storage APIs in Apps Script | Developers | 📋 Planned |
-| **CLAUDE_Deployment.md** | clasp workflow, GitHub sync, testing, rollback | Developers | 📋 Planned |
-| **CLAUDE_Security.md** | Secure coding, auth, encryption, data protection | Developers | 📋 Planned |
-| **CLAUDE_DisasterRecovery.md** | Backup procedures, recovery testing, restoration | Developers | 📋 Planned |
-| **GEA_System_Architecture.md** | Design patterns, request/response flow, modules | Developers | 📋 Planned |
+| **CLAUDE_Membership_Implementation.md** | Coding guide for membership app & approval workflow | Developers | ✅ Complete (Phase 1) |
+| **CLAUDE_Reservations_Implementation.md** | Coding guide for booking system, limits, waitlisting | Developers | ✅ Complete (Phase 1) |
+| **CLAUDE_Payments_Implementation.md** | Coding guide for payment tracking & verification | Developers | 📋 60% Ready (Phase 3) |
+| **CLAUDE_Authentication_RBAC.md** | Session management, role-based access control | Developers | ✅ Complete (Phase 1) |
+| **CLAUDE_Google_APIs_Integration.md** | Sheets, Drive, Calendar, Storage APIs in Apps Script | Developers | 📋 60% Ready (Phase 3) |
+| **CLAUDE_Deployment.md** | clasp workflow, GitHub sync, testing, rollback | Developers | ✅ Complete (Phase 2) |
+| **CLAUDE_Security.md** | Secure coding, auth, encryption, data protection | Developers | ✅ Complete (Phase 2) |
+| **CLAUDE_DisasterRecovery.md** | Backup procedures, recovery testing, restoration | Developers | 📋 50% Ready (Phase 3) |
+| **GEA_System_Architecture.md** | Design patterns, request/response flow, modules | Developers | ✅ Complete (Phase 2) |
 
 ### For New Members & Applicants
 Public-facing information about joining, reserving facilities, and using the portal.

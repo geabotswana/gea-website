@@ -79,22 +79,35 @@ Pro-rating (Quarterly):
   Month 10-12 (May-July):        25% = 1/4 amount
 ```
 
-### TODO: BWP Exchange Rate Mechanism
+### Exchange Rate Mechanism
 
-```
-Current USD/BWP rates require:
-[ ] Board decision: Which rate source to use?
-    [ ] Option 1: Fixed rate (set quarterly)
-    [ ] Option 2: Current market rate (daily update)
-    [ ] Option 3: Floating rate (monthly update)
-[ ] Implementation:
-    [ ] Create Exchange Rates sheet (System Backend)
-    [ ] Store: Date, USD_to_BWP_rate, source
-    [ ] Update: [Frequency based on board decision]
-    [ ] Calculate: USD amount × current rate = BWP amount
-    [ ] Display: Both USD and current BWP in portal
-[ ] Board approval: Method and rate update schedule
-```
+**Exchange Rate Source:**
+- Source: exchangerate-api.com (free public API)
+- Endpoint: `https://api.exchangerate-api.com/v4/latest/USD`
+- API Response: JSON with all currency rates (including BWP)
+- Free tier: 1,500 requests/month (sufficient for daily updates + testing)
+
+**Exchange Rate Update Schedule:**
+- Frequency: Daily automatic update
+- Time: 3:00 AM Botswana time (UTC+2)
+- Who updates: Automated Apps Script time-based trigger
+- Process:
+  1. Apps Script trigger fires daily at 3:00 AM Botswana time
+  2. Fetch USD/BWP rate from exchangerate-api.com REST endpoint
+  3. Parse JSON response to extract BWP rate
+  4. Store rate + timestamp in Financial Records sheet (Rates tab)
+  5. Log success/failure to Audit_Logs sheet
+- Error handling: If API fetch fails, log error and notify Treasurer
+- Fallback: Manual update capability (Treasurer can update rate manually if needed)
+- Code location: Utilities.gs or Config.gs (updateExchangeRate function)
+
+**Exchange Rate Display for Members:**
+- Display: Show both USD amount AND current BWP equivalent
+- Rate used: Sunday rate of the current week (not monthly)
+- Logic: Each Sunday at start of week, capture the USD/BWP rate; use that rate for all member invoices/payments that week
+- Application: When displaying dues to applicant or payment reminder to member, show:
+  - "USD $50.00 (approximately BWP [calculated using Sunday rate])"
+- Recalculation: New rate applied each Sunday; previous week's rate no longer used
 
 ---
 
@@ -123,29 +136,40 @@ rejection_timestamp     - When rejected
 notes                   - Additional details
 ```
 
-### TODO: Payment Method Verification
+### Payment Method Verification Procedures
 
-```
-EFT Verification:
-[ ] Treasurer checks: GEA bank account statement
-[ ] Verify: Transaction exists, amount correct, date reasonable
-[ ] Document: Sender name/account, transaction reference
+**EFT (Absa Bank Transfer) Verification:**
+- Method: Treasurer checks Absa online banking
+- Verification: Look up payment in online account (search by reference: [LastName]_[YY-YY])
+- Confirmation: Match amount + reference to member application
+- Update system: Mark payment as verified in Payment_Tracking sheet
+- Timeline: Within 2 business days of member submission
 
-PayPal Verification:
-[ ] Treasurer checks: PayPal account or payment email
-[ ] Verify: Transaction exists, amount correct, USD vs BWP
-[ ] Document: Transaction ID, sender email
+**PayPal Verification:**
+- Method: Treasurer checks PayPal account online
+- Verification: Look up transaction in PayPal account activity
+- Confirmation: Match amount + member identifier (email or name) to application
+- Update system: Mark payment as verified in Payment_Tracking sheet
+- Timeline: Within 2 business days of member submission
 
-FCU Verification:
-[ ] Treasurer checks: Federal Credit Union account statement
-[ ] Verify: Transaction exists, amount correct, date reasonable
-[ ] Document: Transaction reference, sender bank info
+**SDFCU & Zelle Verification:**
+- Method: Treasurer checks SDFCU online banking
+- Note: Zelle payments deposit directly into SDFCU account
+- Verification: Look up transaction in SDFCU account activity
+- Confirmation: Match amount + reference (or sender ID) to member application
+- Update system: Mark payment as verified in Payment_Tracking sheet
+- Timeline: Within 2 business days of member submission
 
-Cash Verification:
-[ ] Requires: In-person receipt signed by treasurer
-[ ] Document: Cash amount, date received, signature
-[ ] Store: Physical receipt in GEA records
-```
+**Cash Verification:**
+- Method: Physical receipt-based verification
+- Process: Treasurer writes TWO physical receipts (one for GEA, one for payer)
+- Receipt contents: Member name, amount (BWP), date, reference number, payment method "Cash"
+- Signatures: Both receipts signed by Treasurer AND payer (member)
+- Distribution: GEA keeps one copy, payer keeps one copy
+- Verification: Treasurer retains signed receipt as proof of payment
+- Update system: Mark payment as verified in Payment_Tracking sheet with receipt reference
+- Timeline: Immediate upon payment
+- Storage: File physical receipt in GEA financial records (safe or filing cabinet)
 
 ---
 
@@ -307,110 +331,156 @@ When Treasurer verifies payment:
 
 ---
 
-## Refunds & Corrections
+## Overpayment, Underpayment & Refunds
 
-### TODO: Refund Procedure
+### Overpayment Handling Policy
 
-```
-Scenario 1: Payment Made but Membership Not Activated (Treasurer Error)
-[ ] Treasurer discovers error
-[ ] Corrects household status: active=FALSE → active=TRUE
-[ ] Updates membership_expiration_date
-[ ] Resends welcome email
-[ ] Logs incident in Audit Log
-[ ] No refund needed (application was correct)
+**Process:** Treasurer contacts member to determine how to proceed
 
-Scenario 2: Overpayment (Member Paid More Than Due)
-[ ] Calculate overage: amount_paid - amount_due
-[ ] Options:
-    [ ] A) Credit towards next membership year
-    [ ] B) Refund to member
-    [ ] C) Member approves donation to GEA
-[ ] Update Payment sheet: overage=[AMOUNT], overage_handling=[OPTION]
-[ ] Send member email: explain overage, requested action
-[ ] If refund, get bank details from member
-[ ] Process refund [TBD: process details]
-[ ] Update Payment: refund_amount=[AMOUNT], refund_date=[DATE]
+**BWP Currency Consideration:** If payment is in BWP and is close to expected USD amount (within reasonable variance), account is considered paid in full
 
-Scenario 3: Wrong Amount Submitted (Member Underpaid)
-[ ] Treasurer contacts member
-[ ] Member agrees to pay difference
-[ ] Member submits second payment for overage
-[ ] Process second payment normally
-[ ] Combine: payment1.amount + payment2.amount = total_due
-[ ] Activate when total_paid >= amount_due
-```
+**No Quibbling:** Do not pursue member for differences of a few Pula
+
+**Options to Offer Member:**
+- Credit to next membership year
+- Small refund (if member requests)
+- Donation to GEA
+
+**Documentation:** Record resolution in Payment_Tracking sheet
+
+**Variance Tolerance:** At Treasurer's discretion (e.g., +/- 5-10 Pula acceptable)
+
+### Underpayment Handling
+
+**Process:** Treasurer registers the payment amount received
+
+**Currency Consideration:** Apply same "quibble tolerance" (a few Pula variance acceptable)
+
+**After Tolerance Applied:** If still underpaid, Treasurer requests remaining balance from member
+
+**Payment Plans:** Not offered; membership is NOT active until full amount is paid
+
+**Notification:** Email member with amount paid, balance due, and payment instructions
+
+**Timeline:** Request balance within 2 business days of payment submission
+
+**Documentation:** Record partial payment in Payment_Tracking sheet with balance due amount
+
+**Membership Status:** INACTIVE (suspended) until balance is paid
+
+### Refund Policy
+
+**Policy:** Refunds are NOT standard practice
+
+**Exception:** Will consider refunds only if situation warrants (case-by-case, Treasurer discretion)
+
+**Board Approval:** If refund approved, must be authorized by Treasurer + Board decision
+
+**Website:** Do NOT mention refunds on website or member-facing materials
+
+**Processing:** If refund approved, process via reverse payment to original payment method
+
+**Documentation:** Record refund decision, approval, and processing in Payment_Tracking sheet + Audit_Logs
 
 ---
 
 ## Payment Tracking & Reporting
 
-### TODO: Board Finance Reporting
+### Monthly Collections Report
 
-```
-[ ] Monthly Report (due 5th of month):
-    [ ] Total dues collected
-    [ ] Breakdown by membership category
-    [ ] Outstanding payments (pending verification)
-    [ ] Rejected/disputed payments
-    [ ] Collections rate (% of active members who paid)
-    [ ] Compare to budget
+**Purpose:** Treasurer summary of membership dues collected during the month
 
-[ ] Quarterly Report (due last day of quarter):
-    [ ] Cumulative collections (3-month period)
-    [ ] Projections for year-end
-    [ ] Trends (increasing/decreasing collections)
-    [ ] Problem areas (high rejection rate, late payments)
-    [ ] Recommendations
+**Timing:** Generated on the last Monday of each month (ready for Board meeting the following Tuesday)
 
-[ ] Annual Report (due August 31, before new membership year):
-    [ ] Total FY2024-2025 collections
-    [ ] By category breakdown
-    [ ] Comparison to previous year
-    [ ] Collection efficiency metrics
-    [ ] Reserve balance (if applicable)
-```
+**Distribution:** Email to board@geabotswana.org
+
+**Format:** Simple table in email or Google Sheets attachment
+
+**Contents:**
+
+- **Report Header:** "GEA Monthly Collections Report - [Month Year]" (e.g., "February 2026")
+- **Summary Section:**
+  - Total members at month start
+  - Total members at month end
+  - New members joined this month (count)
+    - **New Members List** (primary member name only): [Member names]
+  - Members with active membership (paid up)
+  - Members with inactive membership (balance due)
+- **Collections Table:**
+  - Payment method (Absa, PayPal, SDFCU, Zelle, Cash) | Count | Amount (BWP) | Amount (USD equivalent)
+  - **Total Collections (BWP)** | [Total]
+  - **Total Collections (USD equivalent)** | [Total using Sunday rate]
+- **Outstanding Balance Section:**
+  - Members with balance due | Count | Total balance due (USD)
+  - Members by balance age: <7 days, 7-30 days, 30-90 days, >90 days overdue
+- **Notes Section:** Any anomalies, issues, or items requiring Board attention
+
+**Storage:** Save report in Financial Records folder with filename "GEA_Collections_[YYYY-MM].xlsx"
+
+**System Automation:** Most of this can be auto-generated from Payment_Tracking and Membership sheets
+
+### Annual Reconciliation Procedure
+
+**Purpose:** Year-end verification that all payments are accounted for
+
+**Timing:** Completed by January 31 of following year (covers calendar year Jan-Dec)
+
+**External Audit:** NOT required
+
+**Financial Statements:** Handled separately in external Google Sheets system (not part of this implementation)
+
+**Reconciliation Steps:**
+1. Pull all Payment_Tracking entries for the calendar year
+2. Cross-reference against bank statements (Absa, SDFCU, PayPal)
+3. Verify: All recorded payments match bank records
+4. Verify: All bank deposits match Payment_Tracking records
+5. Document any discrepancies and resolution
+6. Generate reconciliation summary report
+
+**Report Format:** Spreadsheet with three columns (Payment_Tracking | Bank Records | Match?) showing all entries verified
+
+**Owner:** Treasurer
+
+**Archive:** Store final reconciliation report in Financial Records folder with filename "GEA_YearEnd_Reconciliation_[YYYY].xlsx"
+
+**Board Review:** Present summary (not full details) to Board at annual meeting
 
 ---
 
-## Outstanding Items (TBD)
+## Bank Account & Payment Method Details
 
-```
-Core Payment Processing:
-[ ] Define: Exact bank account details (GEA Absa account)
-[ ] Define: PayPal.me link & handling
-[ ] Define: Federal Credit Union Zelle instructions
-[ ] Define: Cash collection procedures (treasurer signature)
+### GEA Bank Account (Absa)
+- Bank: Absa (formerly Barclays)
+- Account Name: U.S. Embassy – Gaborone Employee Association
+- Account Number: 1005193
+- Branch: 290267 (Government Enclave Branch)
+- Swift Code: BARCBWGX
+- Currency: Pula (BWP)
+- Reference Format: [LastName]_[MembershipYear YY-YY]
+- Display to applicants: Full account details + instruction to use reference format
 
-Exchange Rate:
-[ ] Board decision: Rate source (fixed vs floating)
-[ ] Board decision: Update frequency (daily, weekly, monthly)
-[ ] Implementation: Exchange Rates sheet setup
-[ ] Implementation: Auto-calculation of BWP equivalent
+### PayPal Setup
+- Payment Link: https://www.paypal.com/ncp/payment/F7A4GEURTGA4L
+- Account Type: Business account
+- Currency: USD only (no BWP conversion)
+- Note: PayPal.me link unavailable; use payment link above
+- Display to applicants: Payment link + USD amount required
 
-Refund Procedures:
-[ ] Board decision: Overpayment handling policy
-[ ] Define: Refund processing (who requests, who approves)
-[ ] Define: Refund timeline (how long to process)
-[ ] Setup: Bank details capture for refunds
+### State Department Federal Credit Union (SDFCU) Account
+- Account Name: Gaborone Employee Association
+- Account Number: 1010000268360
+- Routing Number: 256075342
+- Bank Address: SDFCU, 1630 King Street, Alexandria, VA 22314
+- Currency: USD
+- Member2Member (M2M) Code: GEA2025 (for SDFCU members to send payments easily)
+- Display to applicants: Account details + M2M code for SDFCU members
 
-Verification:
-[ ] Automated payment matching to bank statements (if possible)
-[ ] Bank statement export format & integration
-[ ] PayPal export integration
-[ ] FCU statement export integration
-
-Reporting:
-[ ] Monthly collections report format
-[ ] Quarterly projections format
-[ ] Annual reconciliation procedure
-[ ] Tax reporting integration (if needed)
-
-Audit:
-[ ] Define: Audit trail requirements for payments
-[ ] Define: Who can view payment details (privacy considerations)
-[ ] Define: Record retention period (7 years for tax purposes)
-```
+### Zelle Setup
+- Payment Method: Zelle (for members with U.S. bank accounts)
+- Zelle Address: geaboard@gmail.com
+- Currency: USD
+- Use case: Members with U.S. banks (not SDFCU) can send payment via Zelle
+- Display to applicants: Zelle email address for sending payment
 
 ---
 
@@ -425,6 +495,6 @@ Audit:
 
 ---
 
-**Last Updated:** March 4, 2026
-**Status:** 50% Ready (workflow structure + TODOs for implementation details)
-**Source:** Extracted from CLAUDE.md lines 1004–1089, 138–141 with expanded framework
+**Last Updated:** March 6, 2026
+**Status:** ✅ Complete (All 16+ payment implementation items resolved)
+**Source:** IMPLEMENTATION_TODO_CHECKLIST.md Phase 3 resolutions

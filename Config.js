@@ -59,6 +59,7 @@ var TAB_HOUSEHOLDS          = "Households";
 var TAB_INDIVIDUALS         = "Individuals";
 var TAB_FILE_SUBMISSIONS    = "File Submissions";
 var TAB_MEMBERSHIP_LEVELS   = "Membership Levels";
+var TAB_MEMBERSHIP_APPLICATIONS = "Membership Applications";  // NOTE: In MEMBER_DIRECTORY_ID, not SYSTEM_BACKEND_ID
 
 // GEA Reservations tabs
 var TAB_RESERVATIONS        = "Reservations";
@@ -69,7 +70,6 @@ var TAB_USAGE_TRACKING      = "Usage Tracking";
 var TAB_CONFIGURATION       = "Configuration";
 var TAB_EMAIL_TEMPLATES     = "Email Templates";
 var TAB_AUDIT_LOG           = "Audit Log";
-var TAB_MEMBERSHIP_APPLICATIONS = "Membership Applications";
 var TAB_HOLIDAY_CALENDAR    = "Holiday Calendar";
 var TAB_SESSIONS            = "Sessions";
 
@@ -531,6 +531,49 @@ var AUDIT_HOUSEHOLD_PHONE_SYNC  = "HOUSEHOLD_PHONE_SYNC";
 var AUDIT_HOUSEHOLD_PHONE_SYNC_SKIPPED  = "HOUSEHOLD_PHONE_SYNC_SKIPPED";
 var AUDIT_HOUSEHOLD_PHONE_SYNC_COMPLETE = "HOUSEHOLD_PHONE_SYNC_COMPLETE";
 var AUDIT_HOUSEHOLD_PHONE_SYNC_FAILED   = "HOUSEHOLD_PHONE_SYNC_FAILED";
+var AUDIT_APPLICATION_CREATED             = "APPLICATION_CREATED";
+var AUDIT_APPLICATION_DOCS_CONFIRMED      = "APPLICATION_DOCS_CONFIRMED";
+var AUDIT_APPLICATION_BOARD_INITIAL       = "APPLICATION_BOARD_INITIAL";
+var AUDIT_APPLICATION_RSO_REVIEWED        = "APPLICATION_RSO_REVIEWED";
+var AUDIT_APPLICATION_BOARD_FINAL         = "APPLICATION_BOARD_FINAL";
+var AUDIT_APPLICATION_PAYMENT_SUBMITTED   = "APPLICATION_PAYMENT_SUBMITTED";
+var AUDIT_APPLICATION_ACTIVATED           = "APPLICATION_ACTIVATED";
+var AUDIT_APPLICATION_DENIED              = "APPLICATION_DENIED";
+var AUDIT_FILE_SUBMISSION_CREATED         = "FILE_SUBMISSION_CREATED";
+var AUDIT_FILE_SUBMISSION_RSO_APPROVED    = "FILE_SUBMISSION_RSO_APPROVED";
+var AUDIT_FILE_SUBMISSION_RSO_REJECTED    = "FILE_SUBMISSION_RSO_REJECTED";
+var AUDIT_FILE_SUBMISSION_GEA_APPROVED    = "FILE_SUBMISSION_GEA_APPROVED";
+var AUDIT_FILE_SUBMISSION_GEA_REJECTED    = "FILE_SUBMISSION_GEA_REJECTED";
+
+
+// ============================================================
+// SECTION 18A: MEMBERSHIP APPLICATION STATUSES
+// ============================================================
+// Application workflow stages and status values.
+// Used to track membership applications from submission through activation.
+// ============================================================
+
+var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
+var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
+var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
+var APP_STATUS_RSO_REVIEW               = "rso_review";
+var APP_STATUS_BOARD_FINAL_REVIEW       = "board_final_review";
+var APP_STATUS_APPROVED_PENDING_PAYMENT = "approved_pending_payment";
+var APP_STATUS_PAYMENT_SUBMITTED        = "payment_submitted";
+var APP_STATUS_PAYMENT_VERIFIED         = "payment_verified";
+var APP_STATUS_ACTIVATED                = "activated";
+var APP_STATUS_DENIED                   = "denied";
+var APP_STATUS_WITHDRAWN                = "withdrawn";
+
+// Payment reference format for membership dues
+// Format: {LAST_NAME}_{MEMBERSHIP_YEAR}
+// Example: RANEY_25-26 for 2025-2026 membership year
+var PAYMENT_REFERENCE_FORMAT = "{LAST_NAME}_{MEMBERSHIP_YEAR}";
+
+// Membership year configuration
+// All memberships expire on July 31
+var MEMBERSHIP_EXPIRY_MONTH  = 7;   // July
+var MEMBERSHIP_EXPIRY_DAY    = 31;  // 31
 
 
 // ============================================================

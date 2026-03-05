@@ -551,18 +551,19 @@ Deletion:
 
 ### Backup Security
 
-```
-Backups are handled by Google Workspace:
-- Google Drive backups are automatic
-- Manual backups: Export spreadsheets to external drive (encrypted)
-- Test restoration: Periodically verify backups can be restored
-- Storage: Offline backup stored in secure location (board member's possession)
+**Automated Daily Backups:**
+- Location: Google Cloud Storage (gea-public-assets bucket)
+- Frequency: Daily at 2:00 AM Botswana time
+- Retention: Rolling 30-day retention (older backups auto-deleted)
+- Method: Apps Script time-based trigger exports sheets as .xlsx files
+- Encryption: Google Cloud Storage encryption at rest (automatic, handled by Google)
 
-Disaster recovery:
-- RTO (Recovery Time Objective): [TBD - hours to restore]
-- RPO (Recovery Point Objective): [TBD - data loss window]
-- Runbook: [TBD - Step-by-step restoration procedures]
-```
+**Disaster Recovery Targets:**
+- RTO (Recovery Time Objective): 24 hours (1 business day acceptable downtime)
+- RPO (Recovery Point Objective): 24 hours (up to 1 day of data loss acceptable)
+- Runbook: See CLAUDE_DisasterRecovery.md for complete restoration procedures
+- Testing: Quarterly restoration tests (last week of March, June, Sept, Dec)
+- Annual test: Full system restoration in November
 
 ---
 
@@ -594,5 +595,6 @@ Disaster recovery:
 
 ---
 
-**Last Updated:** March 4, 2026
-**Source:** Extracted from CLAUDE.md lines 76–91, 153–158, 104–107, 1266–1285, 194–195
+**Last Updated:** March 6, 2026
+**Status:** ✅ Complete (Disaster recovery RTO/RPO resolved; runbook complete)
+**Source:** IMPLEMENTATION_TODO_CHECKLIST.md Phase 2 resolutions

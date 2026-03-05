@@ -954,6 +954,53 @@
         width: 95%;
       }
     }
+
+    /* Filter buttons for applications and other list pages */
+    .filter-btn {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+      background: #e8e8e8;
+    }
+
+    .filter-btn.active {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: white;
+    }
+
+    /* Badge styling for sidebar notifications */
+    .badge {
+      display: inline-block;
+      background: var(--color-danger);
+      color: white;
+      border-radius: 12px;
+      padding: 2px 6px;
+      font-size: 11px;
+      margin-left: auto;
+      font-weight: bold;
+    }
+
+    .nav-item .badge {
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -1034,6 +1081,11 @@
       <div class="nav-item" onclick="showPage('members')">
         <span class="nav-icon">👥</span>
         <span>Members</span>
+      </div>
+      <div class="nav-item" onclick="showPage('applications')">
+        <span class="nav-icon">📋</span>
+        <span>Applications</span>
+        <span id="applications-badge" class="badge">0</span>
       </div>
       <div class="nav-item" onclick="showPage('photos')">
         <span class="nav-icon">📸</span>
@@ -1232,7 +1284,50 @@
           </div>
         </div>
       </div>
-      
+
+      <!-- ========================================================== -->
+      <!-- PAGE: APPLICATIONS                                         -->
+      <!-- Membership application management and approvals            -->
+      <!-- ========================================================== -->
+      <div id="applications" class="page">
+        <h1 class="page-title">Membership Applications</h1>
+
+        <!-- Status Filter Tabs -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto;">
+          <button class="filter-btn active" onclick="filterApplications('');">All</button>
+          <button class="filter-btn" onclick="filterApplications('awaiting_docs');">Awaiting Docs</button>
+          <button class="filter-btn" onclick="filterApplications('docs_confirmed');">Board Review</button>
+          <button class="filter-btn" onclick="filterApplications('rso_review');">RSO Review</button>
+          <button class="filter-btn" onclick="filterApplications('board_final_review');">Final Review</button>
+          <button class="filter-btn" onclick="filterApplications('approved_pending_payment');">Awaiting Payment</button>
+          <button class="filter-btn" onclick="filterApplications('payment_submitted');">Payment Submitted</button>
+        </div>
+
+        <div class="card">
+          <div class="table-container">
+            <table id="applicationsTable">
+              <thead>
+                <tr>
+                  <th>Applicant Name</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Submitted</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="applicationsTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div id="appEmpty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No applications</div>
+            <div class="empty-state-subtext">All applications have been processed</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1309,6 +1404,15 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('photoRejectModal');">Cancel</button>
       <button class="btn btn-danger" id="photoRejectConfirmBtn" onclick="confirmRejectPhoto();">Reject Photo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Application Detail Modal -->
+<div id="appDetailModal" class="modal-overlay" style="display: none;">
+  <div class="modal" style="max-width: 600px;">
+    <div id="appDetailContent">
+      <p style="text-align: center; padding: 20px;">Loading...</p>
     </div>
   </div>
 </div>
@@ -1525,6 +1629,9 @@
         break;
       case 'payments':
         loadPayments();
+        break;
+      case 'applications':
+        loadApplications('');
         break;
     }
   }
@@ -2122,7 +2229,205 @@
       event.target.classList.remove('show');
     }
   });
-  
+
+  // ============================================================ //
+  // SECTION: APPLICATIONS MANAGEMENT                            //
+  // ============================================================ //
+
+  var currentApplicationStatusFilter = '';
+
+  function loadApplications(statusFilter) {
+    currentApplicationStatusFilter = statusFilter;
+
+    // Update filter button state
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    apiCall('admin_applications', { status_filter: statusFilter }).then(function(res) {
+      if (res.success && res.data && res.data.applications) {
+        var apps = res.data.applications;
+        var html = '';
+
+        if (apps.length === 0) {
+          document.getElementById('appEmpty').style.display = 'block';
+          document.getElementById('applicationsTable').style.display = 'none';
+        } else {
+          document.getElementById('appEmpty').style.display = 'none';
+          document.getElementById('applicationsTable').style.display = 'table';
+
+          apps.forEach(function(app) {
+            var submittedDate = new Date(app.submitted_date).toLocaleDateString();
+            html += '<tr onclick="openApplicationDetail(\'' + app.application_id + '\');" style="cursor: pointer;">' +
+              '<td>' + app.applicant_name + '</td>' +
+              '<td>' + app.membership_category + '</td>' +
+              '<td>' + app.household_type + '</td>' +
+              '<td>' + submittedDate + '</td>' +
+              '<td><span class="status-badge" style="background: ' + _getStatusColor(app.status) + '; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">' + _formatStatus(app.status) + '</span></td>' +
+              '<td style="white-space: nowrap;"><button class="btn btn-small btn-primary" onclick="event.stopPropagation(); openApplicationDetail(\'' + app.application_id + '\');">Review</button></td>' +
+              '</tr>';
+          });
+        }
+
+        document.getElementById('applicationsTableBody').innerHTML = html;
+
+        // Update badge count
+        document.getElementById('applications-badge').textContent = res.data.total || apps.length;
+      }
+    }).catch(function(err) {
+      showError('Error loading applications: ' + err.message);
+    });
+  }
+
+  function openApplicationDetail(applicationId) {
+    apiCall('admin_application_detail', { application_id: applicationId }).then(function(res) {
+      if (res.success && res.data) {
+        var app = res.data.application;
+        var html = '<div class="modal-header">' +
+          '<h2>' + app.first_name + ' ' + app.last_name + '</h2>' +
+          '<button class="modal-close" onclick="closeModal();">✕</button>' +
+          '</div>';
+
+        html += '<div style="padding: 20px; max-height: 600px; overflow-y: auto;">';
+
+        // Application Info
+        html += '<div style="margin-bottom: 20px;"><strong>Category:</strong> ' + app.membership_category + ' | ' +
+          '<strong>Type:</strong> ' + app.household_type + '</div>';
+
+        // Contact Info
+        html += '<div style="margin-bottom: 20px;"><strong>Email:</strong> ' + app.email + '<br>' +
+          '<strong>Phone:</strong> ' + app.phone_number + '</div>';
+
+        // Status
+        html += '<div style="margin-bottom: 20px; padding: 12px; background: #f0f4ff; border-radius: 6px;">' +
+          '<strong>Status:</strong> ' + _formatStatus(app.status) + '<br>' +
+          '<strong>Submitted:</strong> ' + new Date(app.submitted_date).toLocaleDateString() + '</div>';
+
+        // Review Actions
+        html += '<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">';
+
+        if (app.status === 'docs_confirmed') {
+          html += '<button class="btn btn-primary" onclick="approveApplicationStage(\'' + applicationId + '\', \'board_initial\');">Approve for RSO Review</button>' +
+            '<button class="btn btn-danger" onclick="denyApplicationStage(\'' + applicationId + '\', \'board_initial\');">Deny Application</button>';
+        } else if (app.status === 'rso_review') {
+          html += '<p style="color: #666; font-size: 13px;">Documents sent to RSO for review. Awaiting RSO decision.</p>';
+        } else if (app.status === 'board_final_review') {
+          html += '<button class="btn btn-primary" onclick="approveApplicationStage(\'' + applicationId + '\', \'board_final\');">Final Approve & Request Payment</button>' +
+            '<button class="btn btn-danger" onclick="denyApplicationStage(\'' + applicationId + '\', \'board_final\');">Final Deny</button>';
+        } else if (app.status === 'payment_submitted') {
+          html += '<button class="btn btn-primary" onclick="verifyPayment(\'' + applicationId + '\');">Verify Payment & Activate</button>';
+        }
+
+        html += '</div></div>';
+
+        document.getElementById('appDetailContent').innerHTML = html;
+        document.getElementById('appDetailModal').style.display = 'block';
+      }
+    }).catch(function(err) {
+      showError('Error loading application details: ' + err.message);
+    });
+  }
+
+  function filterApplications(status) {
+    loadApplications(status);
+  }
+
+  function approveApplicationStage(applicationId, stage) {
+    var notes = prompt('Add optional notes for internal record:');
+    apiCall('admin_approve_application', {
+      application_id: applicationId,
+      stage: stage,
+      notes: notes || ''
+    }).then(function(res) {
+      if (res.success) {
+        closeModal();
+        loadApplications(currentApplicationStatusFilter);
+        showNotification('Application approved!');
+      } else {
+        showError(res.message || 'Error approving application');
+      }
+    }).catch(function(err) {
+      showError('Error: ' + err.message);
+    });
+  }
+
+  function denyApplicationStage(applicationId, stage) {
+    var reason = prompt('Reason for denial:');
+    if (!reason) return;
+
+    apiCall('admin_deny_application', {
+      application_id: applicationId,
+      stage: stage,
+      reason: reason,
+      notes: ''
+    }).then(function(res) {
+      if (res.success) {
+        closeModal();
+        loadApplications(currentApplicationStatusFilter);
+        showNotification('Application denied');
+      } else {
+        showError(res.message || 'Error denying application');
+      }
+    }).catch(function(err) {
+      showError('Error: ' + err.message);
+    });
+  }
+
+  function verifyPayment(applicationId) {
+    if (confirm('Verify payment and activate membership?')) {
+      apiCall('admin_verify_payment', { application_id: applicationId }).then(function(res) {
+        if (res.success) {
+          closeModal();
+          loadApplications(currentApplicationStatusFilter);
+          showNotification('Membership activated!');
+        } else {
+          showError(res.message || 'Error verifying payment');
+        }
+      }).catch(function(err) {
+        showError('Error: ' + err.message);
+      });
+    }
+  }
+
+  function _getStatusColor(status) {
+    switch(status) {
+      case 'awaiting_docs': return '#FFA500';
+      case 'docs_confirmed': return '#2196F3';
+      case 'board_initial_review': return '#2196F3';
+      case 'rso_review': return '#9C27B0';
+      case 'board_final_review': return '#2196F3';
+      case 'approved_pending_payment': return '#4CAF50';
+      case 'payment_submitted': return '#FF9800';
+      case 'activated': return '#2E7D32';
+      case 'denied': return '#C62828';
+      default: return '#666';
+    }
+  }
+
+  function _formatStatus(status) {
+    var statusLabels = {
+      'awaiting_docs': 'Awaiting Docs',
+      'docs_confirmed': 'Board Review',
+      'board_initial_review': 'Board Review',
+      'rso_review': 'RSO Review',
+      'board_final_review': 'Final Review',
+      'approved_pending_payment': 'Awaiting Payment',
+      'payment_submitted': 'Payment Submitted',
+      'activated': 'Activated',
+      'denied': 'Denied'
+    };
+    return statusLabels[status] || status;
+  }
+
+  function closeModal() {
+    document.getElementById('appDetailModal').style.display = 'none';
+  }
+
+  function showNotification(message) {
+    alert(message);
+  }
+
   // ============================================================ //
   // SECTION: UTILITIES                                           //
   // ============================================================ //

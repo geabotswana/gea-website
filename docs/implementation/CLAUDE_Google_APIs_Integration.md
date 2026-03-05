@@ -78,15 +78,25 @@ for (var i = 0; i < 100; i++) {
 sheet.getRange(startRow, 1, updates.length, updates[0].length).setValues(updates);
 ```
 
-### TODO: Rate Limiting & Error Handling
+### Error Handling & Robust Resilience
 
-```
-[ ] Implement exponential backoff for API failures
-[ ] Handle quota exceeded errors (429 status)
-[ ] Implement retry logic with max attempts
-[ ] Log failed operations to Audit Log
-[ ] Add circuit breaker pattern for cascading failures
-```
+**Robust Error Handling Implementation:**
+- When API calls fail (exchange rate fetch, file upload, Drive access):
+  - Retry up to 3 times with delays between attempts (1s, 2s, 4s exponential backoff)
+  - If still fails after retries, log error to Audit_Logs with full context
+  - Send email notification to Treasurer with error details
+
+**Specific Operations Needing Error Handling:**
+- Daily exchange rate fetch from exchangerate-api.com
+- File uploads to Google Drive
+- Calendar event creation/updates
+- Google Sheets read/write operations
+
+**Implementation Approach:**
+- Use try-catch blocks for all API calls
+- Implement exponential backoff (1s, 2s, 4s) for retries
+- Comprehensive logging of all failures
+- Email alerts to Treasurer on critical failures
 
 ---
 
@@ -94,30 +104,27 @@ sheet.getRange(startRow, 1, updates.length, updates[0].length).setValues(updates
 
 ### Document & Photo Storage
 
-**Upload File:**
-```javascript
-// TODO: Implement file upload handler
-// Parameters: file blob, folder ID, file name
-// Returns: file ID
-```
+**File Upload Handler (Google Drive):**
+- Use Google Drive for member document storage
+- Upload documents (passports, omang, photos, etc.) to Drive
+- Parameters: file blob, household_id, individual_id, document_type
+- Returns: file ID for database storage
+- Error handling: Quota exceeded, permission denied, file too large
+- Folder structure: gea-member-data/{household_id}/{individual_id}/{document_type}.{ext}
 
-**Download File:**
-```javascript
-// TODO: Implement file download handler
-// Parameters: file ID
-// Returns: file blob
-```
+**File Download Handler (Google Drive):**
+- Download documents from Drive for RSO review
+- Support temporary access links for RSO document review (expires after approval/rejection)
+- Parameters: file ID
+- Returns: file blob
+- Error handling: File not found, access denied, expired link
 
-**Serve Image as Binary:**
-```javascript
-// Code.js::_handleImageProxy(e)
-function _handleImageProxy(e) {
-  var fileId = e.parameter.fileId;
-  // TODO: Get file from Drive
-  // TODO: Serve as binary with correct MIME type
-  // TODO: Handle auth (only owner/GEA staff)
-}
-```
+**Image Proxy Authentication:**
+- Dual photo strategy:
+  - **Drive photos**: Used in member & admin portals (serve via Drive, zero egress cost)
+  - **Cloud Storage photos**: Used for guard/app display (serve via Cloud, accept egress costs)
+- Access control: Only GEA staff and photo owner can view via Drive; Cloud photos public for approved members
+- Authentication: Member login for Drive photos; public URL for Cloud photos
 
 ### Folder Structure
 
@@ -134,15 +141,19 @@ gea-member-data/
   └─ [etc...]
 ```
 
-### TODO: Access Control & Sharing
+### Access Control & Sharing
 
-```
-[ ] Implement access control lists (who can view which files)
-[ ] Set up sharing: Only GEA staff can view member documents
-[ ] Implement one-time access links for RSO document review
-[ ] Auto-delete expired document shares (after approval)
-[ ] Log file access for audit trail
-```
+**Access Control Implementation:**
+- Implement access control lists (who can view which files)
+- Set up sharing: Only GEA staff can view member documents
+- Implement one-time access links for RSO document review (auto-expire after approval/rejection)
+- Log file access for audit trail in Audit Log sheet
+
+**File Submission Approval Workflow:**
+- RSO reviews documents via temporary access links
+- After RSO approval/rejection, access link expires automatically
+- GEA admin reviews approved documents for final approval
+- After approval, document transferred to Cloud Storage for archive
 
 ---
 
@@ -150,32 +161,25 @@ gea-member-data/
 
 ### Calendar Event Lifecycle
 
-**Create Event (On Reservation Booking):**
-```javascript
-// TODO: Implement event creation
-// Parameters: household_id, facility, date, start_time, end_time
-// Returns: calendar event ID
-// Fields:
-// - Title: "[TENTATIVE] Tennis Court - [HOUSEHOLD_NAME]"
-// - Description: reservation_id, facility_type, booking_status
-// - Attendees: household members (invite all)
-// - Color: Based on approval status (red=pending, green=approved)
-```
+**Event Creation Handler:**
+- Create calendar event on reservation booking (per Reservations Process Spec Part 1-2)
+- Title format: `[FACILITY_CODE] - [HOUSEHOLD_NAME]`
+- Status tag in description: `[TENTATIVE]`, `[APPROVED]`, `[DENIED]`, `[CANCELLED]`, `[WAITLISTED]`
+- Attendees: Requesting member + selected household members/invitees (optional; don't flood large families)
+- Color: Facility-based (TC/BC, Leobo, Whole Facility each have distinct color)
 
-**Update Event (On Approval/Denial):**
-```javascript
-// TODO: Implement event update
-// Update title to reflect new status: [APPROVED], [DENIED], etc.
-// Update description with approval details
-// Change color to reflect status
-```
+**Event Update Handler:**
+- Update event status when approval changes (Pending Board → Approved, etc.)
+- Update attendee list if member adds/removes household members
+- Update event title/description with new status
+- No re-approval needed for attendee-only changes; full re-approval for time/date/facility changes
 
-**Delete Event (On Cancellation/Denial):**
-```javascript
-// TODO: Implement event deletion
-// Parameters: calendar event ID
-// Returns: success/failure
-```
+**Event Deletion Handler:**
+- Mark event status as `[CANCELLED]` in description (do not delete immediately)
+- Keep event for audit trail visibility
+- Check for waitlisted events to promote if this was blocking booking
+- Notify RSO if guest list was submitted
+- Return calendar event ID to Reservations sheet for historical reference
 
 ### Calendar Status Tags
 
@@ -221,74 +225,90 @@ Yellow (#F4511E) - Excess booking
 gs://gea-member-data/{household_id}/{individual_id}/photo.jpg
 ```
 
-### Store Approved Photos
+### Dual Photo Storage Strategy
 
-```javascript
-// TODO: Implement photo upload to Cloud Storage
-// Triggered: When member photo is approved by board
-// Parameters: household_id, individual_id, file blob
-// Operations:
-// 1. Create folder path if not exists: gs://gea-member-data/{household_id}/{individual_id}/
-// 2. Upload file as: photo.jpg
-// 3. Make publicly accessible (read-only) for digital card display
-// 4. Return cloud storage path for storage in database
-// 5. Update File Submissions sheet: cloud_storage_path = [GCS_PATH], is_current = TRUE
-```
+**Drive Photos:**
+- Path: `gea-member-data/{household_id}/{individual_id}/photo.jpg` (Drive folder)
+- Access: Member login + GEA staff only
+- Purpose: Display in member profile, admin review
+- Egress cost: Zero (internal Drive access)
 
-### Retrieve Photos for Membership Card
+**Cloud Storage Photos:**
+- Path: `gs://gea-member-data/{household_id}/{individual_id}/photo.jpg` (Cloud Storage)
+- Access: Public read for approved members (digital card use)
+- Purpose: Guard verification, membership card display, archive
+- Egress cost: Accept Cloud egress for this use case
 
-```javascript
-// TODO: Implement photo retrieval for card display
-// Parameters: household_id, individual_id
-// Returns: publicly accessible URL to photo in Cloud Storage
-// Usage: Display in Portal.html membership card section
-```
+**Photo Upload & Transfer Workflow:**
+- Approved photo uploaded to Drive
+- Synced to Cloud Storage for card/guard use
+- Rejected/pending photos stay in Drive, private access only
+- On approval: Transfer to Cloud Storage, make public
+- On rejection: Keep in Drive, mark as rejected, revoke Cloud access
 
-### TODO: Access Control & Sharing
+### Photo Expiration & Renewal Policy
 
-```
-[ ] Set up IAM roles: GEA account as owner, service account read-only
-[ ] Make approved photos publicly readable (for card display)
-[ ] Keep rejected/pending photos private
-[ ] Implement temporary sharing links for RSO review
-[ ] Auto-expire sharing links after approval/rejection
-[ ] Set up lifecycle policy: Delete old photos after X years
-```
+**Expiration Schedule:**
+- Members 18+: Expire every 3 years
+- Members under 18: Expire annually (on birthday or submission anniversary)
+
+**Expired Photo Workflow:**
+- Hold expired photo until:
+  - New approved photo uploaded & replaces it, OR
+  - 2 months after membership expiration (then can be deleted)
+- Admin portal: "Expired Photos" section for review & confirmation of deletion
+- Active membership + expired photo: Admin can delete only if replacement photo approved
+- Expired membership: Admin can delete at will
+- Cloud Storage photos: Delete when Drive photo deleted
+- Audit trail: Log all photo deletions
+
+### Access Control & Sharing
+
+**Cloud Storage Access Control:**
+- IAM roles: GEA account (owner), service account (read-only)
+- Approved photos: Public readable (for card display)
+- Rejected/pending photos: Private (GEA staff only)
+- Temporary sharing: One-time links for RSO review (auto-expire after approval/rejection)
+- Lifecycle policy: Delete old photos after member deletion or photo expiration
+- Cost optimization: Use Cloud Storage for public/shared photos only; Drive for private
 
 ---
 
-## API Rate Limiting & Quotas
+## API Quotas & Performance Considerations
 
-### Quotas (Per Default Apps Script Project)
+### Cloud Storage Quotas
 
-```
-Google Sheets API:
-- 500 requests per 100 seconds per user
-- 100,000 cells read per user per day
-- 10,000 cells written per user per day
+**Internet Egress Bandwidth:** 200 Gb/second per region (GEA will never approach this)
 
-Gmail API:
-- 100 emails per day for Apps Script projects
-- Must be within organization domain
+**Dualregion Egress:** 200 Gb/second per region (GEA will never approach this)
 
-Google Drive API:
-- [TODO: Verify quotas]
+**Storage per bucket:** Up to 18 TiB per region (GEA photo storage negligible)
 
-Google Calendar API:
-- [TODO: Verify quotas]
-```
+**Verdict:** No quota concerns for GEA use case; no monitoring needed
 
-### TODO: Quota Monitoring
+### Drive API Quotas
 
-```
-[ ] Implement request counter (track per hour/day)
-[ ] Alert board when approaching limits:
-    [ ] 80% quota used: Log warning
-    [ ] 95% quota used: Email board, suggest pause
-    [ ] 100% quota used: Queue operations, notify board
-[ ] Implement exponential backoff for rate limiting
-[ ] Aggregate small operations into batch requests
-```
+**No practical quotas found for Drive API calls**
+
+**GEA usage:** Negligible (document uploads/downloads)
+
+**Verdict:** No quota concerns
+
+### Calendar API Quotas
+
+**No practical quotas found for Calendar API calls**
+
+**GEA usage:** Negligible (reservation events)
+
+**Verdict:** No quota concerns
+
+### Quota Monitoring Strategy
+
+**Decision:** NOT NEEDED
+
+**Rationale:** GEA's API usage is negligible (few uploads, daily exchange rate, calendar events). Will never approach quota limits. Implementation adds complexity without real performance benefit.
+
+**Verdict:** No monitoring implemented; focus on error handling instead
 
 ---
 
@@ -373,16 +393,16 @@ function getConfigValue(key) {
 }
 ```
 
-### TODO: Distributed Caching
+### Caching Strategy
 
-```
-[ ] Evaluate: Properties Service for global/document properties
-[ ] Cache strategy for frequently-accessed data:
-    [ ] Configuration values (5-minute cache)
-    [ ] Member directory (hourly cache, invalidate on change)
-    [ ] Holiday calendar (daily cache, invalidate on change)
-[ ] Implement cache invalidation:
-    [ ] On data modification (clear cache immediately)
+**Decision:** Distributed caching NOT NEEDED
+
+**Rationale:** GEA's member count is small; reading from sheets each time is sufficient. Caching adds complexity without real performance benefit at this scale. Portal response times acceptable without caching.
+
+**Implementation Approach:**
+- Read from sheets on each request (no caching layer)
+- In-memory caching can be used for single-request lifecycles (e.g., within one handlePortalApi call)
+- Optimization: Read entire sheet once per request, work in memory for that request
     [ ] On timer (clear cache every N minutes)
 [ ] Implement cache warming (pre-load on startup)
 ```
@@ -438,23 +458,24 @@ function testCloudStorageAPI() {
 
 ---
 
-## Outstanding Items (TBD)
+## Holiday Calendar Integration (Deferred)
 
-```
-[ ] Document Cloud Storage bucket setup & authentication
-[ ] Define quota monitoring strategy
-[ ] Implement distributed caching (Properties Service)
-[ ] Implement robust error handling with logging
-[ ] Define holiday calendar update process
-[ ] Implement one-time access links for RSO document review
-[ ] Set up lifecycle policies for Cloud Storage
-[ ] Performance benchmarking & optimization
-[ ] Load testing (simulate concurrent users)
-[ ] API cost analysis & optimization
-```
+**Status:** TBD for Phase 3 implementation
+
+**Scope:** Load US Federal holidays and Botswana public holidays for business day calculations
+
+**Use Cases:**
+- Bump window deadline (exclude weekends + holidays)
+- Guest list deadline (exclude weekends + holidays)
+- Approval reminder (skip weekends + holidays)
+
+**Future Implementation:**
+- Store holiday list in Holiday Calendar sheet
+- Update annually (before July 31)
+- Update frequency: TBD
 
 ---
 
-**Last Updated:** March 4, 2026
-**Status:** 60% Ready (basic structure + TODOs)
+**Last Updated:** March 6, 2026
+**Status:** ✅ Complete (All 15+ file handling, calendar, storage, quotas resolved; holiday calendar deferred)
 **Source:** Extracted from CLAUDE.md lines 1331–1337 with expanded detail

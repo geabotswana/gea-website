@@ -137,9 +137,10 @@ function _routeAction(action, params) {
     // ── PUBLIC ──────────────────────────────────────────────
     case "login":  return _handleLogin(params);
     case "logout": return _handleLogout(params);
+    case "submit_application": return _handleSubmitApplication(params);
 
 
-    // ── MEMBER ──────────────────────────────────────────────
+    // ── MEMBER & APPLICANT ───────────────────────────────────
     case "dashboard":    return _handleDashboard(params);
     case "profile":      return _handleProfile(params);
     case "reservations": return _handleReservations(params);
@@ -149,6 +150,12 @@ function _routeAction(action, params) {
     case "payment":      return _handlePaymentSubmit(params);
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
 
+    // Applicant routes (pending membership)
+    case "application_status":  return _handleApplicationStatus(params);
+    case "confirm_documents":   return _handleConfirmDocuments(params);
+    case "upload_document":     return _handleUploadDocument(params);
+    case "submit_payment_proof": return _handleSubmitPaymentProof(params);
+
     // ── BOARD / ADMIN ────────────────────────────────────────
     case "admin_pending": return _handleAdminPending(params);
     case "admin_approve": return _handleAdminApprove(params);
@@ -156,6 +163,11 @@ function _routeAction(action, params) {
     case "admin_members": return _handleAdminMembers(params);
     case "admin_photo":   return _handleAdminPhoto(params);
     case "admin_payment": return _handleAdminPayment(params);
+    case "admin_applications":       return _handleAdminApplications(params);
+    case "admin_application_detail": return _handleAdminApplicationDetail(params);
+    case "admin_approve_application": return _handleAdminApproveApplication(params);
+    case "admin_deny_application":    return _handleAdminDenyApplication(params);
+    case "admin_verify_payment":      return _handleAdminVerifyPayment(params);
 
     // ── DIAGNOSTICS ──────────────────────────────────────────
     case "image_diagnostic":  return _handleImageDiagnostic(params);
@@ -1526,4 +1538,345 @@ function _safePublicHousehold(hh) {
     phone_primary:              hh.phone_primary || "",
     phone_primary_whatsapp:     hh.phone_primary_whatsapp || false
   };
+}
+
+
+// ============================================================
+// MEMBERSHIP APPLICATION HANDLERS
+// ============================================================
+
+/**
+ * HANDLER: _handleSubmitApplication
+ * PURPOSE: Submit a new membership application (public, no auth required)
+ */
+function _handleSubmitApplication(p) {
+  try {
+    var result = ApplicationService.createApplicationRecord(p, "applicant");
+    if (result.success) {
+      return successResponse({
+        application_id: result.application_id,
+        household_id: result.household_id,
+        individual_id: result.individual_id,
+        temp_password: result.temp_password,
+        message: result.message
+      });
+    } else {
+      return errorResponse(result.message, "VALIDATION_FAILED");
+    }
+  } catch (e) {
+    logAuditEntry("applicant", "APPLICATION_ERROR", "Application", "", "Error: " + e.toString());
+    return errorResponse("Error submitting application.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleApplicationStatus
+ * PURPOSE: Get applicant's application status, documents, and next steps
+ */
+function _handleApplicationStatus(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) {
+      return auth;
+    }
+
+    var result = ApplicationService.getApplicationForApplicant(auth.session.email);
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "NOT_FOUND");
+    }
+  } catch (e) {
+    return errorResponse("Error retrieving application status.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleConfirmDocuments
+ * PURPOSE: Applicant confirms all documents have been uploaded
+ */
+function _handleConfirmDocuments(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) {
+      return auth;
+    }
+
+    var result = ApplicationService.confirmDocumentsUploaded(p.application_id, auth.session.email);
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error confirming documents.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleUploadDocument
+ * PURPOSE: Applicant uploads a required document (passport, omang, photo)
+ */
+function _handleUploadDocument(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) {
+      return auth;
+    }
+
+    // Validate required fields
+    if (!p.individual_id || !p.document_type || !p.file_data_base64 || !p.file_name) {
+      return errorResponse("Missing required document fields.", "INVALID_PARAM");
+    }
+
+    // Validate document type
+    var validTypes = ["passport", "omang", "photo"];
+    if (validTypes.indexOf(p.document_type) === -1) {
+      return errorResponse("Invalid document type.", "INVALID_PARAM");
+    }
+
+    // Decode base64 and create file
+    var blob = Utilities.newBlob(Utilities.base64Decode(p.file_data_base64), "application/octet-stream", p.file_name);
+    var folder = DriveApp.getFolderById(FOLDER_DOCUMENTS);
+    var file = folder.createFile(blob);
+
+    // Create File Submission record
+    var submissionId = generateId("SUB");
+    var submissionData = {
+      submission_id: submissionId,
+      individual_id: p.individual_id,
+      document_type: p.document_type,
+      status: "submitted",
+      file_id: file.getId(),
+      file_name: p.file_name,
+      submitted_date: new Date(),
+      doc_number: p.doc_number || "",
+      doc_expiry_date: p.doc_expiry || "",
+      doc_country: p.doc_country || "",
+      passport_type: p.passport_type || "",
+      is_current: true,
+      rso_reviewed_by: "",
+      rso_review_date: "",
+      gea_reviewed_by: "",
+      gea_review_date: "",
+      rejection_reason: "",
+      cloud_storage_path: ""
+    };
+
+    var submissionSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+    submissionSheet.appendRow(_objectToSubmissionRow(submissionData));
+
+    logAuditEntry(auth.session.email, AUDIT_FILE_SUBMISSION_CREATED, "FileSubmission", submissionId,
+                  "Uploaded " + p.document_type);
+
+    return successResponse({
+      submission_id: submissionId,
+      file_id: file.getId(),
+      message: "Document uploaded successfully."
+    });
+
+  } catch (e) {
+    return errorResponse("Error uploading document: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleSubmitPaymentProof
+ * PURPOSE: Applicant submits payment proof for treasurer verification
+ */
+function _handleSubmitPaymentProof(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) {
+      return auth;
+    }
+
+    var result = ApplicationService.submitPaymentProof(
+      p.application_id,
+      auth.session.email,
+      p.payment_method,
+      p.proof_file_id,
+      p.notes
+    );
+
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error submitting payment proof: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminApplications
+ * PURPOSE: Get list of applications for board view
+ */
+function _handleAdminApplications(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) {
+      return auth;
+    }
+
+    var applications = ApplicationService.listApplicationsForBoard(p.status_filter);
+    return successResponse({
+      applications: applications,
+      total: applications.length
+    });
+
+  } catch (e) {
+    return errorResponse("Error retrieving applications.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminApplicationDetail
+ * PURPOSE: Get full details for an application
+ */
+function _handleAdminApplicationDetail(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) {
+      return auth;
+    }
+
+    var result = ApplicationService.getApplicationDetail(p.application_id);
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "NOT_FOUND");
+    }
+  } catch (e) {
+    return errorResponse("Error retrieving application details.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminApproveApplication
+ * PURPOSE: Board makes an approval decision (initial or final)
+ */
+function _handleAdminApproveApplication(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) {
+      return auth;
+    }
+
+    var result;
+
+    if (p.stage === "board_initial") {
+      result = ApplicationService.boardInitialDecision(
+        p.application_id,
+        "approved",
+        auth.session.email,
+        p.notes,
+        ""
+      );
+    } else if (p.stage === "board_final") {
+      result = ApplicationService.boardFinalDecision(
+        p.application_id,
+        "approved",
+        auth.session.email,
+        p.notes,
+        ""
+      );
+    } else {
+      return errorResponse("Invalid stage.", "INVALID_PARAM");
+    }
+
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error approving application: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminDenyApplication
+ * PURPOSE: Board denies an application (initial or final)
+ */
+function _handleAdminDenyApplication(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) {
+      return auth;
+    }
+
+    var result;
+
+    if (p.stage === "board_initial") {
+      result = ApplicationService.boardInitialDecision(
+        p.application_id,
+        "denied",
+        auth.session.email,
+        p.notes,
+        p.reason
+      );
+    } else if (p.stage === "board_final") {
+      result = ApplicationService.boardFinalDecision(
+        p.application_id,
+        "denied",
+        auth.session.email,
+        p.notes,
+        p.reason
+      );
+    } else if (p.stage === "rso") {
+      result = ApplicationService.rsoDecision(
+        p.application_id,
+        "denied",
+        auth.session.email,
+        p.private_notes,
+        p.public_reason
+      );
+    } else {
+      return errorResponse("Invalid stage.", "INVALID_PARAM");
+    }
+
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error denying application: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminVerifyPayment
+ * PURPOSE: Treasurer verifies payment and activates membership
+ */
+function _handleAdminVerifyPayment(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) {
+      return auth;
+    }
+
+    var result = ApplicationService.verifyAndActivateMembership(p.application_id, auth.session.email);
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error verifying payment: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+
+// Helper function to convert submission object to row
+function _objectToSubmissionRow(obj) {
+  var submissionSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+  var headers = submissionSheet.getRange(1, 1, 1, submissionSheet.getLastColumn()).getValues()[0];
+  var row = [];
+  for (var i = 0; i < headers.length; i++) {
+    row.push(obj[headers[i]] || "");
+  }
+  return row;
 }

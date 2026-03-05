@@ -82,10 +82,10 @@ Version info recorded in Config.js header for tracking
 - Accessible at: `https://script.google.com/a/macros/geabotswana.org/s/{@HEAD_DEPLOYMENT_ID}/exec`
 
 **Versioned Deployment (Production):**
-- ID: [Specific ID TBD]
-- Created manually when ready for production
+- ID: `AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ`
 - Used on geabotswana.org website
 - Does NOT update automatically; updates only on manual deployment
+- Update frequency: Create new versioned deployment when Phase 1/2/3 features are production-ready
 
 ---
 

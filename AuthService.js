@@ -86,12 +86,28 @@ function login(email, password) {
     return { success: false, message: "Invalid email or password." };
   }
 
-  // Verify household is active (not expired, not denied)
-  var check = isActiveMember(email);
-  if (!check.isActive) {
+  // Check household status and membership application
+  // Allow login for both active members AND applicants (pending application)
+  // Only block if application was denied or withdrawn
+  var household = getHouseholdById(member.household_id);
+  var isApplicant = false;
+
+  if (!household) {
     logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
-                  "Failed login attempt: " + check.status);
-    return { success: false, message: check.message };
+                  "Failed login attempt: household not found");
+    return { success: false, message: "Invalid email or password." };
+  }
+
+  // Check if this is an applicant (in-progress application)
+  if (household.active !== true) {
+    var appStatus = household.application_status;
+    if (appStatus === "Denied" || appStatus === "Withdrawn") {
+      logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
+                    "Failed login attempt: application " + appStatus);
+      return { success: false, message: "Your application was not approved. Please contact board@geabotswana.org for details." };
+    }
+    // This is an applicant in-progress application — allow login
+    isApplicant = true;
   }
 
   // All checks passed — create a session token
@@ -108,23 +124,33 @@ function login(email, password) {
   updateMemberField(member.individual_id, "last_login_date", new Date(), "system");
 
   // Log the successful login
-  logAuditEntry(email, AUDIT_LOGIN, "Individual", member.individual_id,
-                "Login successful (role: " + role + ")");
+  var logMsg = "Login successful (role: " + role + ")";
+  if (isApplicant) {
+    logMsg += " [Applicant - Application Status: " + household.application_status + "]";
+  }
+  logAuditEntry(email, AUDIT_LOGIN, "Individual", member.individual_id, logMsg);
 
-  // Fetch household data to include household_name in response
-  var household = getHouseholdById(member.household_id);
+  // Build member data to include household_name in response
   var memberData = _safePublicMember(member);
   if (household) {
     memberData.household_name = household.household_name;
   }
 
-  // Return success with token and member data
-  return {
+  // Return success with token, member data, and applicant flag if applicable
+  var response = {
     success: true,
     token:   token,
     role:    role,
-    member:  memberData
+    member:  memberData,
+    is_applicant: isApplicant
   };
+
+  // Include application status for applicants
+  if (isApplicant) {
+    response.application_status = household.application_status;
+  }
+
+  return response;
 }
 
 

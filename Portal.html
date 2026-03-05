@@ -895,6 +895,95 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ============================================================ */
+    /* APPLICATION FORM STYLES                                      */
+    /* ============================================================ */
+
+    #applicationFormScreen {
+      display: none !important;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0.5;
+    }
+
+    .step-item.active {
+      opacity: 1;
+    }
+
+    .step-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #ddd;
+      color: #666;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .step-item.active .step-number {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .step-label {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+
+    .app-step {
+      display: none;
+    }
+
+    .app-step.active {
+      display: block;
+    }
+
+    .category-card input[type="radio"] {
+      margin-right: 12px;
+    }
+
+    .category-card label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .category-card:hover {
+      background: #f0f4ff;
+      border-color: var(--color-primary);
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 11px;
+    }
+
+    #applicationReview {
+      line-height: 1.8;
+    }
+
+    .status-completed {
+      color: #2E7D32;
+    }
+
+    .status-current {
+      color: var(--color-primary);
+      font-weight: bold;
+    }
+
+    .status-pending {
+      color: #999;
+    }
   </style>
 </head>
 <body>
@@ -934,8 +1023,239 @@
     <p style="font-size: 12px; color: #999; margin-top: 16px;">
       Passwords must be at least 12 characters.
     </p>
+    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+      <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Not a member yet?</p>
+      <button type="button" class="btn btn-secondary" onclick="showApplicationForm();" style="width: 100%;">Apply for Membership →</button>
+    </div>
   </div>
-</div> 
+</div>
+
+
+<!-- ============================================================ -->
+<!-- APPLICATION FORM SCREEN                                      -->
+<!-- Multi-step membership application form                        -->
+<!-- ============================================================ -->
+
+<div id="applicationFormScreen" style="display: none; padding: 40px 20px; min-height: 100vh; background: #F5F5F5;">
+  <div class="login-card" style="max-width: 600px;">
+    <div class="login-logo">
+      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+    </div>
+    <h1 class="login-title">Apply for Membership</h1>
+    <p class="login-subtitle">Join the Gaborone Employee Association</p>
+
+    <!-- Application Error Message -->
+    <div class="login-error" id="applicationError" style="display: none;"></div>
+
+    <!-- Step Indicator -->
+    <div id="stepIndicator" style="display: flex; justify-content: space-between; margin: 30px 0; font-size: 12px;">
+      <div class="step-item active" data-step="1"><span class="step-number">1</span><span class="step-label">Category</span></div>
+      <div class="step-item" data-step="2"><span class="step-number">2</span><span class="step-label">Info</span></div>
+      <div class="step-item" data-step="3"><span class="step-number">3</span><span class="step-label">Sponsor</span></div>
+      <div class="step-item" data-step="4"><span class="step-number">4</span><span class="step-label">Family</span></div>
+      <div class="step-item" data-step="5"><span class="step-number">5</span><span class="step-label">Staff</span></div>
+      <div class="step-item" data-step="6"><span class="step-number">6</span><span class="step-label">Review</span></div>
+    </div>
+
+    <!-- Step 1: Category Selection -->
+    <div id="appStep1" class="app-step active">
+      <h3 style="margin-bottom: 20px;">Select Your Membership Category</h3>
+      <div id="categoryCards" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
+          <input type="radio" name="membership_category" value="Full" required> <strong>Full Member</strong> (US Embassy, USAID, or American company)
+        </label>
+        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
+          <input type="radio" name="membership_category" value="Associate"> <strong>Associate</strong> (Other US government agencies)
+        </label>
+        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
+          <input type="radio" name="membership_category" value="Affiliate"> <strong>Affiliate</strong> (Non-US organization, requires sponsor)
+        </label>
+        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
+          <input type="radio" name="membership_category" value="Diplomatic"> <strong>Diplomatic</strong> (Embassy/diplomatic mission)
+        </label>
+        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
+          <input type="radio" name="membership_category" value="Community"> <strong>Community</strong> (Botswana resident, requires sponsor)
+        </label>
+        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
+          <input type="radio" name="membership_category" value="Temporary"> <strong>Temporary</strong> (Short-term visitor, 1-6 months)
+        </label>
+      </div>
+      <div style="margin-top: 24px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Applicant Info -->
+    <div id="appStep2" class="app-step" style="display: none;">
+      <h3 style="margin-bottom: 20px;">Your Information</h3>
+      <div class="form-group">
+        <label class="form-label">First Name *</label>
+        <input type="text" id="appFirstName" class="form-input" placeholder="Jane" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name *</label>
+        <input type="text" id="appLastName" class="form-input" placeholder="Doe" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input type="email" id="appEmail" class="form-input" placeholder="jane@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number *</label>
+        <div style="display: flex; gap: 10px;">
+          <select id="appCountryCode" class="form-input" style="flex: 0 0 100px;" required>
+            <option value="">Country</option>
+            <option value="BW">Botswana (BW)</option>
+            <option value="US">United States (US)</option>
+            <option value="GB">United Kingdom (GB)</option>
+            <option value="ZA">South Africa (ZA)</option>
+            <option value="AU">Australia (AU)</option>
+            <option value="IE">Ireland (IE)</option>
+            <option value="TZ">Tanzania (TZ)</option>
+          </select>
+          <input type="tel" id="appPhone" class="form-input" placeholder="71234567" style="flex: 1;" required>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 8px; font-size: 13px;">
+          <input type="checkbox" id="appPhoneWhatsApp">
+          This number is available on WhatsApp
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date of Birth</label>
+        <input type="date" id="appDOB" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job Title (if applicable)</label>
+        <input type="text" id="appJobTitle" class="form-input" placeholder="E.g. Project Manager">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Posting Date (if applicable)</label>
+        <input type="date" id="appPostingDate" class="form-input">
+      </div>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="appUSCitizen">
+          US Citizen
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Country of Citizenship</label>
+        <input type="text" id="appCitizenship" class="form-input" placeholder="United States">
+      </div>
+      <div style="margin-top: 24px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Sponsor (conditional) -->
+    <div id="appStep3" class="app-step" style="display: none;">
+      <h3 style="margin-bottom: 20px;">Sponsor Information</h3>
+      <p style="margin-bottom: 16px; font-size: 13px; color: #666;">Your sponsor must be an active Full GEA member.</p>
+      <div class="form-group">
+        <label class="form-label">Sponsor Name</label>
+        <input type="text" id="appSponsorName" class="form-input" placeholder="John Smith">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sponsor Email</label>
+        <input type="email" id="appSponsorEmail" class="form-input" placeholder="john@example.com">
+      </div>
+      <div style="margin-top: 24px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Family Members (conditional) -->
+    <div id="appStep4" class="app-step" style="display: none;">
+      <h3 style="margin-bottom: 20px;">Household Members</h3>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="appIsFamilyHousehold">
+          This is a Family membership (add family members)
+        </label>
+      </div>
+      <div id="familyMembersContainer" style="display: none; margin-top: 20px;">
+        <div id="familyMembersList"></div>
+        <button type="button" class="btn btn-secondary" onclick="addFamilyMember();" style="width: 100%; margin-top: 12px;">+ Add Family Member</button>
+      </div>
+      <div style="margin-top: 24px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 5: Household Staff (conditional) -->
+    <div id="appStep5" class="app-step" style="display: none;">
+      <h3 style="margin-bottom: 20px;">Household Staff</h3>
+      <div class="form-group">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="appHasStaff">
+          Add household staff member
+        </label>
+      </div>
+      <div id="staffContainer" style="display: none; margin-top: 16px;">
+        <div class="form-group">
+          <label class="form-label">Staff Member Name</label>
+          <input type="text" id="appStaffName" class="form-input" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Omang Number</label>
+          <input type="text" id="appStaffOmang" class="form-input" placeholder="ID number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" id="appStaffDOB" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Employment Start Date</label>
+          <input type="date" id="appStaffStartDate" class="form-input">
+        </div>
+      </div>
+      <div style="margin-top: 24px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">Next</button>
+      </div>
+    </div>
+
+    <!-- Step 6: Review & Submit -->
+    <div id="appStep6" class="app-step" style="display: none;">
+      <h3 style="margin-bottom: 20px;">Review & Submit</h3>
+      <div id="applicationReview" style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; max-height: 300px; overflow-y: auto; font-size: 13px;"></div>
+      <div class="form-group">
+        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="appCertify" required>
+          <span>I certify that all information provided is accurate and complete.</span>
+        </label>
+      </div>
+      <div id="applicationSubmitError" style="color: #C62828; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+      <div style="margin-top: 24px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-primary" onclick="submitApplication();" style="flex: 1; background: #2E7D32;">Submit Application</button>
+      </div>
+    </div>
+
+    <!-- Application Confirmation -->
+    <div id="appConfirmation" style="display: none; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+      <h2 style="color: #2E7D32; margin-bottom: 16px;">Application Submitted!</h2>
+      <p style="margin-bottom: 20px; color: #666;">We've received your membership application. Check your email for login credentials.</p>
+      <div style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; text-align: left; font-size: 13px;">
+        <p><strong>Next Steps:</strong></p>
+        <ol style="margin-left: 20px; margin-top: 8px;">
+          <li>Log in to the member portal</li>
+          <li>Upload required documents (passport, omang, photo)</li>
+          <li>Wait for board and security review (5-7 business days)</li>
+          <li>Submit payment once approved</li>
+          <li>Receive confirmation of active membership</li>
+        </ol>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="showLoginScreen();" style="width: 100%;">Go to Login</button>
+    </div>
+
+  </div>
+</div>
 
 
   <!-- ============================================================ -->
@@ -1273,6 +1593,16 @@
         </div>
 
         <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: APPLICANT PORTAL                                    -->
+      <!-- Restricted view for users with pending membership         -->
+      <!-- ========================================================== -->
+      <div id="applicant" class="page">
+        <div id="applicantContent">
+          <p style="text-align: center; color: #999; padding: 20px;">Loading application status...</p>
+        </div>
       </div>
 
     </div>
@@ -1727,11 +2057,19 @@ function submitLogin(event) {
     currentToken = res.data.token;
     currentUser = res.data;
     sessionStorage.setItem('gea_token', currentToken);
-    
-    // Hide login and show the authenticated interface
-    document.getElementById('loginScreen').classList.remove('show');
-    showAuthenticatedUI();
-    loadDashboard();
+
+    // Check if this is an applicant (pending membership)
+    if (res.data.is_applicant) {
+      // Hide login and show applicant view
+      document.getElementById('loginScreen').classList.remove('show');
+      showAuthenticatedUI();
+      loadApplicantPortal();
+    } else {
+      // Regular member - show full portal
+      document.getElementById('loginScreen').classList.remove('show');
+      showAuthenticatedUI();
+      loadDashboard();
+    }
   }).catch(function(err) {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Sign In';
@@ -1825,26 +2163,298 @@ function submitLogin(event) {
   }
   
   // ============================================================ //
+  // SECTION: MEMBERSHIP APPLICATION FORM                         //
+  // ============================================================ //
+
+  var applicationFormData = {
+    membership_category: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    country_code_primary: 'US',
+    phone_primary: '',
+    phone_primary_whatsapp: false,
+    date_of_birth: '',
+    employment_job_title: '',
+    employment_posting_date: '',
+    us_citizen: false,
+    citizenship_country: '',
+    household_type: 'Individual',
+    sponsor_name: '',
+    sponsor_email: '',
+    family_members: [],
+    has_staff: false,
+    staff_name: '',
+    staff_omang: '',
+    staff_dob: '',
+    staff_start_date: ''
+  };
+
+  var currentApplicationStep = 1;
+
+  function showApplicationForm() {
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('applicationFormScreen').style.display = 'block';
+    currentApplicationStep = 1;
+    updateApplicationStep();
+  }
+
+  function showLoginScreen() {
+    document.getElementById('applicationFormScreen').style.display = 'none';
+    document.getElementById('loginScreen').classList.add('show');
+  }
+
+  function cancelApplication() {
+    if (confirm('Cancel membership application? Any entered data will be lost.')) {
+      showLoginScreen();
+      applicationFormData = {};
+    }
+  }
+
+  function updateApplicationStep() {
+    // Hide all steps
+    for (var i = 1; i <= 6; i++) {
+      document.getElementById('appStep' + i).style.display = 'none';
+    }
+
+    // Show current step
+    document.getElementById('appStep' + currentApplicationStep).style.display = 'block';
+
+    // Update step indicator
+    document.querySelectorAll('.step-item').forEach(function(item) {
+      item.classList.remove('active');
+    });
+    document.querySelector('[data-step="' + currentApplicationStep + '"]').classList.add('active');
+
+    // Handle conditional steps
+    if (currentApplicationStep === 3) {
+      var category = document.querySelector('input[name="membership_category"]:checked').value;
+      var needsSponsor = ['Affiliate', 'Associate', 'Diplomatic', 'Community'].includes(category);
+      if (!needsSponsor) {
+        currentApplicationStep++;
+        updateApplicationStep();
+      }
+    }
+
+    if (currentApplicationStep === 4) {
+      document.getElementById('familyMembersContainer').style.display = document.getElementById('appIsFamilyHousehold').checked ? 'block' : 'none';
+    }
+
+    if (currentApplicationStep === 5) {
+      document.getElementById('staffContainer').style.display = document.getElementById('appHasStaff').checked ? 'block' : 'none';
+    }
+  }
+
+  function nextApplicationStep() {
+    // Validate current step fields
+    if (!validateApplicationStep(currentApplicationStep)) {
+      return;
+    }
+
+    // Save current step data
+    saveApplicationStepData(currentApplicationStep);
+
+    // Move to next step
+    if (currentApplicationStep < 6) {
+      currentApplicationStep++;
+      updateApplicationStep();
+    } else if (currentApplicationStep === 6) {
+      // Prepare review
+      prepareApplicationReview();
+    }
+  }
+
+  function prevApplicationStep() {
+    saveApplicationStepData(currentApplicationStep);
+    if (currentApplicationStep > 1) {
+      currentApplicationStep--;
+      updateApplicationStep();
+    }
+  }
+
+  function validateApplicationStep(step) {
+    var errorDiv = document.getElementById('applicationError');
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+
+    switch(step) {
+      case 1:
+        if (!document.querySelector('input[name="membership_category"]:checked')) {
+          errorDiv.textContent = 'Please select a membership category.';
+          errorDiv.style.display = 'block';
+          return false;
+        }
+        break;
+      case 2:
+        var firstName = document.getElementById('appFirstName').value.trim();
+        var lastName = document.getElementById('appLastName').value.trim();
+        var email = document.getElementById('appEmail').value.trim();
+        var phone = document.getElementById('appPhone').value.trim();
+
+        if (!firstName || !lastName || !email || !phone) {
+          errorDiv.textContent = 'Please fill in all required fields.';
+          errorDiv.style.display = 'block';
+          return false;
+        }
+
+        if (!email.includes('@')) {
+          errorDiv.textContent = 'Please enter a valid email address.';
+          errorDiv.style.display = 'block';
+          return false;
+        }
+        break;
+      case 3:
+        var needsSponsor = ['Affiliate', 'Associate', 'Diplomatic', 'Community'].includes(applicationFormData.membership_category);
+        if (needsSponsor) {
+          var sponsorName = document.getElementById('appSponsorName').value.trim();
+          var sponsorEmail = document.getElementById('appSponsorEmail').value.trim();
+          if (!sponsorName || !sponsorEmail) {
+            errorDiv.textContent = 'Please provide sponsor information.';
+            errorDiv.style.display = 'block';
+            return false;
+          }
+        }
+        break;
+    }
+
+    return true;
+  }
+
+  function saveApplicationStepData(step) {
+    switch(step) {
+      case 1:
+        applicationFormData.membership_category = document.querySelector('input[name="membership_category"]:checked').value;
+        break;
+      case 2:
+        applicationFormData.first_name = document.getElementById('appFirstName').value;
+        applicationFormData.last_name = document.getElementById('appLastName').value;
+        applicationFormData.email = document.getElementById('appEmail').value;
+        applicationFormData.country_code_primary = document.getElementById('appCountryCode').value || 'US';
+        applicationFormData.phone_primary = document.getElementById('appPhone').value;
+        applicationFormData.phone_primary_whatsapp = document.getElementById('appPhoneWhatsApp').checked;
+        applicationFormData.date_of_birth = document.getElementById('appDOB').value;
+        applicationFormData.employment_job_title = document.getElementById('appJobTitle').value;
+        applicationFormData.employment_posting_date = document.getElementById('appPostingDate').value;
+        applicationFormData.us_citizen = document.getElementById('appUSCitizen').checked;
+        applicationFormData.citizenship_country = document.getElementById('appCitizenship').value;
+        break;
+      case 3:
+        applicationFormData.sponsor_name = document.getElementById('appSponsorName').value;
+        applicationFormData.sponsor_email = document.getElementById('appSponsorEmail').value;
+        break;
+      case 4:
+        applicationFormData.household_type = document.getElementById('appIsFamilyHousehold').checked ? 'Family' : 'Individual';
+        break;
+      case 5:
+        applicationFormData.has_staff = document.getElementById('appHasStaff').checked;
+        if (applicationFormData.has_staff) {
+          applicationFormData.staff_name = document.getElementById('appStaffName').value;
+          applicationFormData.staff_omang = document.getElementById('appStaffOmang').value;
+          applicationFormData.staff_dob = document.getElementById('appStaffDOB').value;
+          applicationFormData.staff_start_date = document.getElementById('appStaffStartDate').value;
+        }
+        break;
+    }
+  }
+
+  function prepareApplicationReview() {
+    saveApplicationStepData(6);
+    var review = '<strong>Category:</strong> ' + applicationFormData.membership_category + '<br>';
+    review += '<strong>Name:</strong> ' + applicationFormData.first_name + ' ' + applicationFormData.last_name + '<br>';
+    review += '<strong>Email:</strong> ' + applicationFormData.email + '<br>';
+    review += '<strong>Phone:</strong> +' + (applicationFormData.country_code_primary || 'US') + ' ' + applicationFormData.phone_primary;
+    if (applicationFormData.phone_primary_whatsapp) {
+      review += ' (WhatsApp available)';
+    }
+    review += '<br>';
+    if (applicationFormData.household_type === 'Family') {
+      review += '<strong>Household:</strong> Family<br>';
+    }
+    review += '<br>';
+    document.getElementById('applicationReview').innerHTML = review;
+  }
+
+  function submitApplication() {
+    if (!document.getElementById('appCertify').checked) {
+      document.getElementById('applicationSubmitError').textContent = 'Please certify that your information is accurate.';
+      document.getElementById('applicationSubmitError').style.display = 'block';
+      return;
+    }
+
+    // Call backend API
+    apiCall('submit_application', applicationFormData)
+      .then(function(response) {
+        if (response.success) {
+          // Show confirmation
+          document.getElementById('appStep6').style.display = 'none';
+          document.getElementById('appConfirmation').style.display = 'block';
+
+          // Reset form data
+          applicationFormData = {};
+        } else {
+          document.getElementById('applicationSubmitError').textContent = response.message || 'Error submitting application.';
+          document.getElementById('applicationSubmitError').style.display = 'block';
+        }
+      })
+      .catch(function(error) {
+        document.getElementById('applicationSubmitError').textContent = 'Error: ' + error.message;
+        document.getElementById('applicationSubmitError').style.display = 'block';
+      });
+  }
+
+  function addFamilyMember() {
+    var memberId = 'fam_' + Date.now();
+    var html = '<div id="' + memberId + '" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ddd;">' +
+      '<input type="text" placeholder="First name" class="form-input" style="margin-bottom: 8px;" />' +
+      '<input type="text" placeholder="Last name" class="form-input" style="margin-bottom: 8px;" />' +
+      '<input type="text" placeholder="Relationship (e.g., Spouse, Child)" class="form-input" style="margin-bottom: 8px;" />' +
+      '<input type="date" class="form-input" style="margin-bottom: 8px;" />' +
+      '<button type="button" class="btn btn-danger" onclick="document.getElementById(\'' + memberId + '\').remove();" style="width: 100%; font-size: 12px;">Remove</button>' +
+      '</div>';
+    document.getElementById('familyMembersList').insertAdjacentHTML('beforeend', html);
+  }
+
+  // Update dependent visibility when checkboxes change
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('appIsFamilyHousehold')) {
+      document.getElementById('appIsFamilyHousehold').addEventListener('change', function() {
+        document.getElementById('familyMembersContainer').style.display = this.checked ? 'block' : 'none';
+      });
+    }
+    if (document.getElementById('appHasStaff')) {
+      document.getElementById('appHasStaff').addEventListener('change', function() {
+        document.getElementById('staffContainer').style.display = this.checked ? 'block' : 'none';
+      });
+    }
+  });
+
+  // ============================================================ //
   // SECTION: PAGE NAVIGATION                                     //
   // ============================================================ //
-  
+
   /**
    * Switches to a different member page (dashboard, reservations, etc.).
    * Hides all pages except the one specified and loads fresh data.
    */
   function showPage(pageName) {
+    // Check if applicant is trying to access member-only pages
+    if (currentUser && currentUser.is_applicant && ['dashboard', 'reservations', 'profile', 'card', 'payment'].includes(pageName)) {
+      // Applicants can only view their application status
+      pageName = 'applicant';
+    }
+
     // Hide all pages
     var pages = document.querySelectorAll('.page');
     pages.forEach(function(page) {
       page.classList.remove('active');
     });
-    
+
     // Show the requested page
     var targetPage = document.getElementById(pageName);
     if (targetPage) {
       targetPage.classList.add('active');
     }
-    
+
     // Load data for the requested page
     switch (pageName) {
       case 'dashboard':
@@ -1861,6 +2471,9 @@ function submitLogin(event) {
         break;
       case 'payment':
         // Payment page doesn't need to load data
+        break;
+      case 'applicant':
+        loadApplicantPortal();
         break;
     }
     
@@ -2151,6 +2764,197 @@ function submitLogin(event) {
       '</div></div></div>';
 
     document.getElementById('facilityQuotas').innerHTML = html;
+  }
+
+  /**
+   * APPLICANT PORTAL VIEW
+   * Shows restricted interface for users with pending membership applications
+   */
+  function loadApplicantPortal() {
+    // Show special applicant dashboard instead of regular member dashboard
+    showPage('applicant');
+
+    apiCall('application_status', {}).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load application status: ' + res.message);
+        return;
+      }
+
+      var app = res.data;
+      var html = '<h1 style="margin-bottom: 30px;">Your Membership Application</h1>';
+
+      // Status Timeline
+      var statuses = ['awaiting_docs', 'docs_confirmed', 'board_initial_review', 'rso_review', 'board_final_review', 'approved_pending_payment', 'payment_submitted', 'activated'];
+      var statusLabels = ['Submitted', 'Docs Uploaded', 'Board Review', 'RSO Review', 'Final Approval', 'Payment', 'Processing', 'Active'];
+      var currentStatusIndex = statuses.indexOf(app.status);
+
+      html += '<div style="margin-bottom: 30px;">' +
+        '<div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px;">';
+
+      for (var i = 0; i < statuses.length; i++) {
+        var isCompleted = i < currentStatusIndex;
+        var isCurrent = i === currentStatusIndex;
+        var statusClass = isCompleted ? 'status-completed' : isCurrent ? 'status-current' : 'status-pending';
+        html += '<div class="' + statusClass + '" style="text-align: center; flex: 1;">' +
+          '<div style="width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 4px; line-height: 24px; ' +
+          (isCompleted ? 'background: #2E7D32; color: white;' : isCurrent ? 'background: #0A3161; color: white;' : 'background: #ddd; color: #999;') + '">' +
+          (isCompleted ? '✓' : i + 1) + '</div>' +
+          '<div style="font-size: 11px;">' + statusLabels[i] + '</div></div>';
+      }
+
+      html += '</div></div>';
+
+      // Current Status Message
+      var statusMsg = {
+        'awaiting_docs': 'Please upload your required documents below.',
+        'docs_confirmed': 'Your documents have been submitted for review by the board.',
+        'board_initial_review': 'Your application is under initial review. We will notify you of next steps.',
+        'rso_review': 'Your documents have been sent to our security team for review.',
+        'board_final_review': 'Your application is under final board review.',
+        'approved_pending_payment': 'Congratulations! Please submit payment to activate your membership.',
+        'payment_submitted': 'Your payment has been received. Awaiting Treasurer verification (2 business days).',
+        'activated': 'Your membership is active! Welcome to GEA.'
+      };
+
+      html += '<div class="card" style="background: #f0f4ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">' +
+        '<p style="color: #0A3161; font-weight: 500;">' + (statusMsg[app.status] || 'Membership application in progress.') + '</p>' +
+        '</div>';
+
+      // Document Checklist
+      html += '<div class="card" style="margin-bottom: 20px;"><div class="card-header"><h3 class="card-title">Document Checklist</h3></div>';
+      html += '<div style="padding: 16px;">';
+
+      if (app.individuals && app.individuals.length > 0) {
+        app.individuals.forEach(function(ind) {
+          html += '<div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;"><strong>' + ind.first_name + ' ' + ind.last_name + '</strong><div style="margin-top: 8px;">';
+
+          var requiredDocs = ['passport', 'omang', 'photo'];
+          requiredDocs.forEach(function(docType) {
+            var submissions = (app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+            var approved = submissions.find(function(s) { return s.status === 'verified' || s.is_current; });
+            var submitted = submissions.length > 0;
+
+            var statusIcon = approved ? '✅ Approved' : submitted ? '📤 Submitted' : '⏳ Pending';
+            html += '<div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">' +
+              '<span>' + docType.charAt(0).toUpperCase() + docType.slice(1) + ': ' + statusIcon + '</span>';
+
+            if (!approved) {
+              html += '<button class="btn btn-small" onclick="triggerDocumentUpload(\'' + ind.individual_id + '\', \'' + docType + '\');" style="font-size: 11px; padding: 4px 8px;">Upload</button>';
+            }
+            html += '</div>';
+          });
+
+          html += '</div></div>';
+        });
+      }
+
+      html += '</div></div>';
+
+      // Confirm Documents Button
+      if (app.status === 'awaiting_docs') {
+        html += '<button class="btn btn-primary" onclick="confirmDocuments(\'' + app.application_id + '\');" style="width: 100%; margin-bottom: 20px;">All Documents Uploaded</button>';
+      }
+
+      // Payment Section (if approved pending payment)
+      if (app.status === 'approved_pending_payment') {
+        html += '<div class="card" style="margin-bottom: 20px;"><div class="card-header"><h3 class="card-title">Payment Instructions</h3></div>' +
+          '<div style="padding: 16px;">' +
+          '<p style="margin-bottom: 12px;"><strong>Membership Dues:</strong> Varies by category</p>' +
+          '<p style="margin-bottom: 12px;"><strong>Payment Methods:</strong></p>' +
+          '<ul style="margin-left: 20px; margin-bottom: 12px;">' +
+          '<li>Bank Transfer</li><li>PayPal</li><li>SDFCU</li><li>Zelle</li><li>Cash</li>' +
+          '</ul>' +
+          '<button class="btn btn-primary" onclick="submitPaymentProof(\'' + app.application_id + '\');" style="width: 100%;">Submit Payment Proof</button>' +
+          '</div></div>';
+      }
+
+      document.getElementById('applicantContent').innerHTML = html;
+
+    }).catch(function(err) {
+      showError('Error loading application: ' + err.message);
+    });
+  }
+
+  function confirmDocuments(applicationId) {
+    apiCall('confirm_documents', { application_id: applicationId }).then(function(res) {
+      if (res.success) {
+        showError('Documents confirmed! Board will review your application.', 'success');
+        loadApplicantPortal();
+      } else {
+        showError('Error: ' + res.message);
+      }
+    }).catch(function(err) {
+      showError('Error: ' + err.message);
+    });
+  }
+
+  function triggerDocumentUpload(individualId, docType) {
+    // Create a temporary file input and trigger it
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,.pdf';
+    input.onchange = function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+
+      var reader = new FileReader();
+      reader.onload = function(evt) {
+        var base64 = evt.target.result.split(',')[1];
+        apiCall('upload_document', {
+          individual_id: individualId,
+          document_type: docType,
+          file_data_base64: base64,
+          file_name: file.name
+        }).then(function(res) {
+          if (res.success) {
+            showError('Document uploaded successfully!', 'success');
+            loadApplicantPortal();
+          } else {
+            showError('Error uploading document: ' + res.message);
+          }
+        }).catch(function(err) {
+          showError('Error: ' + err.message);
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+
+  function submitPaymentProof(applicationId) {
+    var method = prompt('Payment method (Bank Transfer / PayPal / SDFCU / Zelle / Cash):');
+    if (!method) return;
+
+    // Create a temporary file input for proof image
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+
+      var reader = new FileReader();
+      reader.onload = function(evt) {
+        var base64 = evt.target.result.split(',')[1];
+        apiCall('submit_payment_proof', {
+          application_id: applicationId,
+          payment_method: method,
+          proof_file_id: 'uploaded',
+          notes: ''
+        }).then(function(res) {
+          if (res.success) {
+            showError('Payment submitted! Awaiting Treasurer verification.', 'success');
+            loadApplicantPortal();
+          } else {
+            showError('Error: ' + res.message);
+          }
+        }).catch(function(err) {
+          showError('Error: ' + err.message);
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
   }
 
   function loadDashboard() {

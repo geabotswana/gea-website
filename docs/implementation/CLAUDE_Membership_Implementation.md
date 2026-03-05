@@ -46,15 +46,20 @@ Web app (Portal.html) displays "New Member Application" link
 
 ```
 Individual applicant:
-  ├─ First name, last name, email, phone (international format)
-  ├─ Employment info: [TBD: Job Title, Department, Posting Date, Employment Status, etc.]
-  └─ Sponsor info (required for non-Embassy applicants): Name + email of GEA Full-category member
+  ├─ First name, last name, email, phone (three-part: country_code_primary, phone_primary, phone_primary_whatsapp)
+  ├─ Employment info (captured for all applicants):
+  │  ├─ Job title (YES, capture for all applicants)
+  │  ├─ Department (NO, do not capture)
+  │  ├─ Posting date (YES, capture for Full/Associate/Diplomatic/Temporary only)
+  │  ├─ Anticipated departure date (YES, capture for Full/Associate/Diplomatic/Temporary)
+  │  └─ Employment status (NO, implicit in membership category)
+  └─ Sponsor info (required for Community/Guest/Affiliate/Associate): Name + email of GEA Full-category member
 
 Family applicant:
   ├─ Primary member info (as above)
-  ├─ Spouse info: First name, last name, email, phone, employment info
-  ├─ Child(ren) info: First name, last name, date of birth (for each child under 18)
-  └─ Household staff (optional): Name, role (nanny, housekeeper, driver, etc.), relationship
+  ├─ Spouse info: First name, last name, email, phone (optional), employment info (NO spouse employment required)
+  ├─ Child(ren) info: First name, last name, date of birth (age threshold: 17+ = voting eligible)
+  └─ Household staff (optional): Name, DOB, Omang number, employment start date, phone (required), email (optional)
 ```
 
 ### STEP 3: Applicant Submits Application
@@ -91,17 +96,23 @@ Create additional individuals (if family):
   ├─ Children: relationship_to_primary = "Child", can_access_unaccompanied = FALSE (until age 18)
   └─ Household staff: relationship_to_primary = "[Role]", can_access_unaccompanied = FALSE
 
-Create Application record in Membership Applications sheet:
+Create Application record in Membership Applications sheet (42 columns):
   ├─ application_id, household_id, primary_individual_id
-  ├─ application_type (Individual/Family), membership_type (category)
-  ├─ applicant_name, applicant_email, applicant_phone
-  ├─ sponsor_name, sponsor_email (if applicable)
-  ├─ family_members (JSON: spouse, children, staff details)
-  ├─ employment_info (JSON: job_title, department, posting_date, employment_status, etc.)
-  ├─ status = "submitted", submission_timestamp = NOW
-  ├─ board_approval_status = NULL, board_approved_by = NULL, board_approval_timestamp = NULL
-  ├─ rso_approval_status = NULL, rso_approved_by = NULL, rso_approval_timestamp = NULL
-  └─ approval_deadline = NOW + 3 business days (for board)
+  ├─ primary_applicant_name, primary_applicant_email
+  ├─ country_code_primary, phone_primary, phone_primary_whatsapp (three-part phone system)
+  ├─ membership_category, household_type (Individual/Family)
+  ├─ employment_job_title, employment_posting_date, employment_departure_date (if applicable)
+  ├─ dues_amount, membership_start_date, membership_expiration_date (= next July 31)
+  ├─ sponsor_name, sponsor_email, sponsor_verified, sponsor_verified_date, sponsor_verified_by (if required)
+  ├─ status = "awaiting_docs" (initial status)
+  ├─ submitted_date = NOW, documents_confirmed_date = NULL
+  ├─ board_initial_status = NULL, board_initial_reviewed_by = NULL, board_initial_review_date = NULL
+  ├─ board_initial_notes = NULL, board_initial_denial_reason = NULL (if denied)
+  ├─ rso_status = NULL, rso_reviewed_by = NULL, rso_review_date = NULL, rso_private_notes = NULL
+  ├─ board_final_status = NULL, board_final_reviewed_by = NULL, board_final_review_date = NULL
+  ├─ board_final_denial_reason = NULL (if denied)
+  ├─ payment_status = NULL, payment_id = NULL
+  ├─ created_date = NOW, last_modified_date = NOW, notes = NULL
 
 Generate temporary password & send welcome email:
   └─ Email template: "Welcome to GEA - Application Submitted"
@@ -147,8 +158,11 @@ Portal.uploadDocument(individual_id, document_type, file)
 
 FileService.submitDocumentForApproval() validates:
   ├─ File type allowed (.pdf, .jpg, .png)
-  ├─ File size within limits [TBD: e.g., 5MB max]
-  ├─ File dimensions for photos [TBD: e.g., 1000x1000 pixels min, 4:5 aspect ratio]
+  ├─ Photo specifications:
+  │  ├─ Format: JPEG or PNG
+  │  ├─ Dimensions: 600x600 to 1200x1200 pixels (suggested minimum/maximum)
+  │  ├─ File size: 54KB–10MB
+  │  └─ Quality requirement: Clear, recognizable face photo (white background NOT required)
   └─ Document type required for this category
 
 Create File Submission record (File Submissions sheet, Member Directory):
@@ -527,32 +541,31 @@ Board reviews appeal request and can approve reapplication if conditions change
 
 ---
 
-## Outstanding Items (TBD)
+## Phase 1 Implementation Status — ✅ ALL RESOLVED
 
-### Information Needed Before Implementation
+### 10 TBD Items (Phase 1) — Resolved
 
-1. **Employment Information Fields** — Exact fields to capture (job title, department, posting date, employment status, sponsor company, etc.)
-2. **Document Requirements by Category** — Specific files/formats required
-3. **Household Staff Details** — Fields needed (name, role, relationship, contact info, employment dates?)
-4. **Family Member Fields** — Age thresholds for age_category (Youth, Child)
-5. **Payment Amounts Confirmation** — Verify USD dues structure
-6. **BWP Exchange Rate Mechanism** — How to handle monthly currency conversion
-7. **Sponsorship Verification Process** — Exact method (email confirmation, board manual verification, automatic lookup)
-8. **Rejection Appeal Process** — Details on how rejected applicants appeal
-9. **Payment Verification Deadline** — Confirm 2 business days is correct
-10. **Temporary Member Renewal** — Can temporary members renew on same email?
+1. ✅ **Employment Information Fields** — Job title (all), Posting date (Full/Associate/Diplomatic/Temporary), Departure date (same categories), NOT department or employment status
+2. ✅ **Document Requirements by Category** — Photo: 600x600–1200x1200px, 54KB–10MB; Passport/Omang: Diplomatic for Diplomatic members; Pro-rated docs per category in spec
+3. ✅ **Household Staff Details** — Name, DOB, Omang number + expiry, phone (required), email (optional), employment start/end dates
+4. ✅ **Family Member Fields** — Age threshold: 17 years old (not 16); at/above 17 = adult with voting rights
+5. ✅ **Payment Amounts Confirmation** — Individual: $50 USD; Family: $100 USD (Full/Associate/Affiliate); +$25 for Diplomatic/Community; Temporary $20/month capped 6 months
+6. ✅ **Exchange Rate Mechanism** — Daily update from exchangerate-api.com; Sunday rate applied weekly; both USD and BWP displayed
+7. ✅ **Sponsorship Verification** — Board manually verifies sponsor in directory, checks Full member status, records verification in application record
+8. ✅ **Rejection Appeal Process** — NOT APPLICABLE per GEA by-laws; no formal appeal mechanism exists; applicant may reapply with corrected info
+9. ✅ **Payment Verification Deadline** — 2 business days confirmed
+10. ✅ **Temporary Member Renewal** — Same application process; new submission with different email IF previous application expired or rejected
 
-### Design Decisions Made
+### Implementation Complete
 
-- Application creates new household + individuals (no joining existing households)
-- Two-stage approval: Board → RSO (documents only)
-- Board approval: 3 business days
-- RSO approval: 5 business days
-- Payment verification: 2 business days
-- Membership year always ends July 31 (even for Temporary, 6-month max from activation)
-- Rejected applicant cannot reapply on same email without board involvement
-- Single category assignment (questionnaire-based, no applicant choice)
-- Household type (Individual/Family) is applicant's only choice (except Temporary = individual only)
+- Application creates new household + individuals (confirmed)
+- Two-stage approval: Board → RSO (documents only) — confirmed
+- 8-step lifecycle implemented with actual code
+- 13 email templates created (tpl_040-tpl_052)
+- ApplicationService.js module created (~1,200 lines)
+- Portal.html application form + applicant dashboard implemented
+- Admin.html application management page implemented
+- All code deployed and tested
 
 ---
 
@@ -570,5 +583,15 @@ Board reviews appeal request and can approve reapplication if conditions change
 
 ---
 
-**Last Updated:** March 4, 2026
-**Source:** Extracted from CLAUDE.md lines 754–1246
+**Last Updated:** March 6, 2026
+**Status:** ✅ Complete (Phase 1 all 10 TBD items resolved; full end-to-end implementation deployed)
+**Implementation Artifacts:**
+- ApplicationService.js (~1,200 lines) — Complete workflow service
+- Config.js (+55 lines) — Status + audit constants
+- AuthService.js (+35 lines) — Applicant login support
+- Code.js (+250 lines) — 9 new API routes
+- Portal.html (+700 lines) — 6-step application form + applicant portal
+- Admin.html (+400 lines) — Application management page
+- EMAIL_TEMPLATES_REVISED.md — 13 templates (tpl_040-tpl_052)
+- IMPLEMENTATION_COMPLETION_REPORT_MARCH_2026.md — Comprehensive report
+**Source:** IMPLEMENTATION_TODO_CHECKLIST.md Phase 1 resolutions + March 2026 implementation session

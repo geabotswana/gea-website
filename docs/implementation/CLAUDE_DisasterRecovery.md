@@ -9,15 +9,13 @@ Backup procedures, recovery testing, incident response, and restoration playbook
 ### RTO & RPO Targets
 
 ```
-RTO (Recovery Time Objective): [TBD]
+RTO (Recovery Time Objective): 24 hours (1 business day)
+  └─ GEA can afford to be unavailable for up to 1 day
   └─ Maximum time to restore service after failure
 
-RPO (Recovery Point Objective): [TBD]
-  └─ Maximum acceptable data loss (in time or transactions)
-
-Examples:
-  RTO: 4 hours (service restored within 4 hours of failure)
-  RPO: 1 hour (lose up to 1 hour of data)
+RPO (Recovery Point Objective): 24 hours (1 day of data)
+  └─ GEA can afford to lose up to 1 day of data
+  └─ Daily automated backups are sufficient for GEA's needs
 ```
 
 ---
@@ -37,43 +35,28 @@ Google automatically backs up:
 - No manual backup point selection
 - Cannot selectively restore (must restore entire Drive)
 
-### Manual Backups
+### Automated Backup Infrastructure
 
-```
-Weekly Backup Procedure (Every Friday):
-1. Export Member Directory spreadsheet to CSV
-   └─ Download as: gea-members-YYYY-MM-DD.csv
+**Target:** Google Sheets data only (Member Directory, Reservations, Payments, Guest Lists)
 
-2. Export Reservations spreadsheet to CSV
-   └─ Download as: gea-reservations-YYYY-MM-DD.csv
+**Frequency:** Daily at 2:00 AM Botswana time (before 3 AM exchange rate update)
 
-3. Export System Backend spreadsheet to CSV
-   └─ Download as: gea-system-YYYY-MM-DD.csv
+**Method:** Apps Script time-based trigger exports sheets to Cloud Storage as .xlsx files
 
-4. Export Payment Tracking spreadsheet to CSV
-   └─ Download as: gea-payments-YYYY-MM-DD.csv
+**File Naming:**
+- `GEA_MemberDirectory_[YYYY-MM-DD].xlsx`
+- `GEA_Reservations_[YYYY-MM-DD].xlsx`
+- `GEA_Payments_[YYYY-MM-DD].xlsx`
+- `GEA_GuestLists_[YYYY-MM-DD].xlsx`
 
-5. Store on encrypted external drive
-   └─ Location: [TBD - Board member secure location]
-   └─ Encryption: [TBD - BitLocker / FileVault / VeraCrypt]
-   └─ Retention: 90 days (12 backups)
+**Retention:** Rolling 30-day retention (older backups auto-deleted)
 
-6. Test restoration (quarterly)
-   └─ Import CSV into test spreadsheet
-   └─ Verify data integrity
-   └─ Document any issues
-```
+**Storage Location:** Google Cloud Storage (gea-public-assets bucket or dedicated backup bucket)
 
-### TODO: Automated Backup
-
-```
-[ ] Evaluate: Google Apps Script scheduler for weekly backups
-[ ] Implement: Automated export to Cloud Storage
-[ ] Implement: Email backup files to board treasurer (encrypted)
-[ ] Implement: Backup integrity checks (row count, hash verification)
-[ ] Implement: Automated cleanup (delete backups older than 90 days)
-[ ] Set up: Google Drive file version history (30-day retention)
-```
+**Note:**
+- GitHub code is already version-controlled (no backup needed)
+- Cloud Storage images have Google redundancy (no backup needed)
+- Apps Script creates files in Cloud Storage using automated trigger
 
 ---
 
@@ -83,16 +66,17 @@ Weekly Backup Procedure (Every Friday):
 
 | System | Type | Backup | RPO | Notes |
 |--------|------|--------|-----|-------|
-| Member Directory | Spreadsheet | Manual CSV | 7 days | Contains member records, auth data |
-| Reservations | Spreadsheet | Manual CSV | 7 days | Facility bookings, approval status |
-| System Backend | Spreadsheet | Manual CSV | 7 days | Config, sessions, audit log, email templates |
-| Payment Tracking | Spreadsheet | Manual CSV | 7 days | Payment records, verification status |
+| Member Directory | Spreadsheet | Automated Cloud Storage (.xlsx) | 24 hours | Daily at 2 AM Botswana time |
+| Reservations | Spreadsheet | Automated Cloud Storage (.xlsx) | 24 hours | Daily at 2 AM Botswana time |
+| System Backend | Spreadsheet | Automated Cloud Storage (.xlsx) | 24 hours | Config, sessions, audit log, email templates |
+| Payments | Spreadsheet | Automated Cloud Storage (.xlsx) | 24 hours | Payment records, verification status |
+| Guest Lists | Spreadsheet | Automated Cloud Storage (.xlsx) | 24 hours | Event guest lists per reservation |
 | Google Apps Script | Code | GitHub | Continuous | Source code version controlled |
 | Portal.html | HTML | GitHub | Continuous | Member portal UI |
 | Admin.html | HTML | GitHub | Continuous | Admin portal UI |
 | index.html | HTML | GitHub | Continuous | Public website |
-| Member photos | Cloud Storage | Auto (GCS lifecycle) | 30 days | Approved member photos |
-| Uploaded documents | Drive | Auto (Google backup) | 25 days | Member-submitted documents |
+| Member photos | Cloud Storage | Google-managed encryption | Continuous | Approved member photos, encrypted at rest |
+| Uploaded documents | Drive | Google-managed backup | 25 days | Member-submitted documents |
 
 ---
 
@@ -107,13 +91,21 @@ Weekly Backup Procedure (Every Friday):
 - Nightly tasks don't run
 
 **Detection triggers:**
-```javascript
-// TODO: Implement monitoring
-// [ ] Health check endpoint: GET /health
-// [ ] Response: {status: "ok", timestamp: "..."}
-// [ ] Failure: No response or HTTP error
-// [ ] Alert: Email board treasurer on failure
-```
+
+1. **Daily Health Check** — Automated Apps Script function
+   - Frequency: Daily at 4:00 AM Botswana time (after backup completes)
+   - What: Test reading from Member Directory sheet
+   - Failure: Sheet read fails or returns error
+   - Alert: If health check fails 3+ times in 1 hour, email Treasurer + board@geabotswana.org
+
+2. **Manual Monitoring Option**
+   - Alternative: Monthly manual check (Treasurer clicks through each portal, verifies load)
+   - Note: No traditional GET /health endpoint needed (portals are Apps Script web apps, not servers)
+
+3. **Exchange Rate Fetch Monitoring**
+   - Frequency: Daily at 3:00 AM Botswana time
+   - Failure: API call to exchangerate-api.com fails
+   - Alert: Email Treasurer with error details if fetch fails
 
 ### Immediate Actions (First 15 Minutes)
 
@@ -260,8 +252,8 @@ Step 7: Decommission Old Spreadsheets (24 hours)
   └─ If no issues appear, delete permanently
   └─ Verify again that new sheets are working correctly
 
-Total Recovery Time: ~45 minutes (within 4-hour RTO target)
-Data Loss: Up to 7 days (latest manual backup)
+Total Recovery Time: ~45 minutes (within 24-hour RTO target)
+Data Loss: Up to 24 hours (daily automated backup)
 ```
 
 ---
@@ -320,50 +312,48 @@ Data Loss: Up to 7 days (latest manual backup)
 
 ## Testing & Validation
 
-### Quarterly Restoration Test
+### Quarterly Restoration Testing
 
-```
-Q1 (Jan-Mar): Test Member Directory restoration
-  └─ Download latest backup
-  └─ Create test spreadsheet
-  └─ Import backup data
-  └─ Verify row count
-  └─ Spot-check 10 rows
-  └─ Calculate hash (MD5 of exported CSV)
-  └─ Document results
+**Schedule:** Last week of March, June, September, December
 
-Q2 (Apr-Jun): Test Reservations restoration
-  └─ Same procedure as Q1
+**Who:** Treasurer + one Board member
 
-Q3 (Jul-Sep): Test System Backend restoration
-  └─ Same procedure as Q1
-  └─ Verify Configuration sheet has all keys
-  └─ Verify Email Templates sheet has all templates
+**Procedure:**
+1. Download one backup file from Cloud Storage (rotate which sheet each quarter)
+2. Create temp test spreadsheet
+3. Import backup data into test sheet
+4. Validate data integrity:
+   - Verify row count matches expected
+   - Spot-check 10 random rows against current production
+   - Verify column headers match GEA_System_Schema.md
+5. Document results in brief test report
+6. File report in Financial Records folder
 
-Q4 (Oct-Dec): Test Payment Tracking restoration
-  └─ Same procedure as Q1
-```
+**Success Criteria:** Data matches current production exactly
+
+**Time Allocation:** 30 minutes per quarter
 
 ### Annual Full System Restoration Test
 
-```
-Once annually (Q4):
-  1. Set up isolated Google Drive folder
-  2. Create 4 new blank spreadsheets
-  3. Restore all 4 backup files
-  4. Update test Config.js with new IDs
-  5. Deploy to test Apps Script project
-  6. Run full integration test:
-     └─ Login with test account
-     └─ Create new reservation
-     └─ Approve reservation
-     └─ Submit application
-     └─ Approve application
-     └─ Verify payment
-     └─ Send emails
-  7. Document results and time taken
-  8. If issues found, fix and re-test
-```
+**Schedule:** November (Q4, before year-end)
+
+**Procedure:**
+1. Restore all backup sheets from Cloud Storage into test spreadsheet
+2. Test accessing portals:
+   - Verify Apps Script web app loads and responds
+   - Try test login
+3. Verify GitHub repo:
+   - All current code committed
+   - Latest version deployed
+4. Verify Cloud Storage images:
+   - Approved member photos accessible
+   - No permission errors
+5. Document results and time taken
+6. If any issues, fix and re-test
+
+**Success Criteria:** All sheets restore correctly, portals load, GitHub current, images accessible
+
+**Time Allocation:** 2-3 hours
 
 ---
 
@@ -423,22 +413,76 @@ GEA Administration
 
 ---
 
-## TODO: Disaster Recovery Infrastructure
+## Incident Response Procedures
 
-```
-[ ] Define RTO & RPO targets (currently TBD)
-[ ] Establish backup schedule (weekly vs daily)
-[ ] Set up automated backups to Cloud Storage
-[ ] Implement health check monitoring
-[ ] Create incident response runbook (detailed step-by-step)
-[ ] Establish escalation procedures (who to contact when)
-[ ] Train board member on recovery procedures
-[ ] Test annual restoration (before July 31 membership year end)
-[ ] Set up monitoring alerts (email on failure)
-[ ] Create postmortem template for incidents
-[ ] Document lessons learned from incidents
-[ ] Update disaster recovery plan annually
-```
+### Detection & Notification
+
+**Method:** Email alerts only (no Slack or complex systems)
+
+**Alert Triggers:**
+- Daily health check fails (Apps Script sheet connectivity)
+- Automated backup fails (Cloud Storage write error)
+- Exchange rate fetch fails (exchangerate-api.com API call)
+
+**Alert Thresholds:** Trigger immediately on failure (no threshold delay)
+
+**Recipients:** Treasurer + board@geabotswana.org
+
+**Escalation:** If alert repeats within 1 hour, send escalation email
+
+### Response Process
+
+**Immediate Actions (First 15 minutes):**
+1. Treasurer receives alert email
+2. Confirm outage is real (not local network issue)
+3. Check Google Workspace status page for wider outages
+4. Email board with situation summary
+5. If GAS outage (external): Monitor status page, provide updates every 30 min
+6. If data issue (internal): Proceed to diagnosis
+
+**Diagnosis (15 minutes – 1 hour):**
+1. Run Tests.js > runDiagnostics() in Apps Script editor
+2. Check Apps Script execution logs
+3. Verify spreadsheet IDs in Config.js are correct
+4. Try logging in with test account
+5. Check Audit Log for suspicious activity
+6. Determine root cause (GAS failure vs data corruption vs GWS outage)
+
+**Recovery & Communication (1 hour – 24 hours):**
+1. Execute appropriate recovery procedure (see "Complete Restoration Scenario" above)
+2. Test restored system with sample operations
+3. Document incident: Timeline, cause, resolution, prevention
+4. Email board when resolved with resolution summary
+5. Schedule post-mortem meeting within 7 days
+
+### Postmortem Process
+
+**Trigger:** After any incident is resolved
+
+**Documentation (within 24 hours):**
+- Treasurer documents:
+  - What failed
+  - When detected
+  - How fixed
+  - Duration of downtime
+  - Root cause
+  - Prevention for future
+
+**Review:** Board reviews postmortem at next monthly meeting
+
+**Improvement:** Update runbook if procedures need adjustment
+
+**Archive:** Store postmortem in Financial Records folder
+
+### Incident Log
+
+**Storage:** Simple Google Sheet in Financial Records folder
+
+**Columns:** Date | Time | Description | Impact | Resolution | Duration (minutes) | Lessons Learned
+
+**Retention:** Keep for 3 years (matches financial record retention)
+
+**Review:** Treasurer reviews at end of each quarter to identify patterns
 
 ---
 
@@ -452,6 +496,6 @@ GEA Administration
 
 ---
 
-**Last Updated:** March 4, 2026
-**Status:** 50% Ready (basic framework + TODOs)
-**Source:** Extracted from CLAUDE.md lines 1289–1310 with expanded detail
+**Last Updated:** March 6, 2026
+**Status:** ✅ Complete (All disaster recovery infrastructure resolved)
+**Source:** IMPLEMENTATION_TODO_CHECKLIST.md Phase 2 & 3 resolutions

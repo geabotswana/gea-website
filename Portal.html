@@ -1047,6 +1047,11 @@
     <!-- Application Error Message -->
     <div class="login-error" id="applicationError" style="display: none;"></div>
 
+    <!-- Load Test Data Button (DEV MODE) -->
+    <div style="margin-bottom: 20px; text-align: center;">
+      <button type="button" class="btn btn-secondary" onclick="loadTestData();" style="background: #e8f4f8; color: #0066cc; font-size: 12px;">⚡ Load Test Data (Dev)</button>
+    </div>
+
     <!-- Step Indicator -->
     <div id="stepIndicator" style="display: flex; justify-content: space-between; margin: 30px 0; font-size: 12px;">
       <div class="step-item active" data-step="1"><span class="step-number">1</span><span class="step-label">Eligibility</span></div>
@@ -2698,6 +2703,116 @@ function submitLogin(event) {
 
   var currentApplicationStep = 1;
 
+  /**
+   * Load test data into the application form for development/testing
+   */
+  function loadTestData() {
+    // Set form data with comprehensive test data
+    applicationFormData = {
+      membership_category: 'Full',
+      household_type: 'Family',
+      first_name: 'Test',
+      last_name: 'User',
+      email: 'michael+test' + Math.floor(Math.random() * 10000) + '@raneyworld.com',
+      country_code_primary: 'BW',
+      phone_primary: '71234567',
+      phone_primary_whatsapp: true,
+      employment_office: 'U.S. Embassy Gaborone',
+      employment_job_title: 'Project Manager',
+      employment_posting_date: '2024-01-15',
+      employment_departure_date: '2026-12-31',
+      citizenship_country: 'US',
+      sponsor_name: '',
+      sponsor_email: '',
+      family_members: [
+        {
+          first_name: 'Spouse',
+          last_name: 'Test',
+          relationship_to_primary: 'Spouse',
+          citizenship_country: 'US'
+        },
+        {
+          first_name: 'Child',
+          last_name: 'Test',
+          relationship_to_primary: 'Child',
+          citizenship_country: 'US'
+        }
+      ],
+      has_staff: true,
+      staff_first_name: 'Maria',
+      staff_last_name: 'Helper',
+      staff_citizenship: 'BW'
+    };
+
+    // Go to step 1 and show form
+    currentApplicationStep = 1;
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('applicationFormScreen').style.display = 'block';
+
+    // Populate country dropdowns
+    populateCountryDropdown('appCountryCode');
+    populateCountryDropdown('appCitizenship');
+    populateCountryDropdown('appStaffCitizenship');
+
+    // Fill in Step 2: Applicant Info
+    document.getElementById('appFirstName').value = applicationFormData.first_name;
+    document.getElementById('appLastName').value = applicationFormData.last_name;
+    document.getElementById('appEmail').value = applicationFormData.email;
+    document.getElementById('appCountryCode').value = applicationFormData.country_code_primary;
+    document.getElementById('appPhone').value = applicationFormData.phone_primary;
+    document.getElementById('appPhoneWhatsApp').checked = applicationFormData.phone_primary_whatsapp;
+    document.getElementById('appEmploymentOffice').value = applicationFormData.employment_office;
+    document.getElementById('appJobTitle').value = applicationFormData.employment_job_title;
+    document.getElementById('appPostingDate').value = applicationFormData.employment_posting_date;
+    document.getElementById('appDepartureDate').value = applicationFormData.employment_departure_date;
+    document.getElementById('appCitizenship').value = applicationFormData.citizenship_country;
+
+    // Fill in Step 4: Family Members
+    var familyList = document.getElementById('familyMembersList');
+    familyList.innerHTML = ''; // Clear existing
+    applicationFormData.family_members.forEach(function(member) {
+      var memberId = 'fam_' + Date.now() + '_' + Math.random();
+      var html = '<div id="' + memberId + '" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ddd;">' +
+        '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">' +
+        '<input type="text" value="' + member.first_name + '" class="form-input fam-first-name" placeholder="First name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
+        '<input type="text" value="' + member.last_name + '" class="form-input fam-last-name" placeholder="Last name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
+        '</div>' +
+        '<div style="display: flex; gap: 16px; margin-bottom: 8px;">' +
+        '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Spouse" class="fam-relationship"' + (member.relationship_to_primary === 'Spouse' ? ' checked' : '') + '> Spouse</label>' +
+        '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Child" class="fam-relationship"' + (member.relationship_to_primary === 'Child' ? ' checked' : '') + '> Child</label>' +
+        '</div>' +
+        '<select class="form-input fam-citizenship" style="margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"><option value="">-- Select citizenship --</option></select>' +
+        '<button type="button" class="btn btn-danger" onclick="document.getElementById(\'' + memberId + '\').remove();" style="width: 100%; font-size: 12px;">Remove</button>' +
+        '</div>';
+      familyList.insertAdjacentHTML('beforeend', html);
+
+      // Populate citizenship dropdown
+      var citizenshipSelect = document.getElementById(memberId).querySelector('.fam-citizenship');
+      getCitizenshipCountries().forEach(function(country) {
+        var option = document.createElement('option');
+        option.value = country.code;
+        option.textContent = country.name + ' (' + country.code + ')';
+        if (country.code === member.citizenship_country) {
+          option.selected = true;
+        }
+        citizenshipSelect.appendChild(option);
+      });
+    });
+
+    // Fill in Step 5: Household Staff
+    document.getElementById('appHasStaff').checked = applicationFormData.has_staff;
+    if (applicationFormData.has_staff) {
+      document.getElementById('appStaffFirstName').value = applicationFormData.staff_first_name;
+      document.getElementById('appStaffLastName').value = applicationFormData.staff_last_name;
+      document.getElementById('appStaffCitizenship').value = applicationFormData.staff_citizenship;
+    }
+
+    // Show the form and go to step 1
+    currentApplicationStep = 1;
+    updateApplicationStep();
+    console.log('[DEBUG] Test data loaded and form fields populated:', applicationFormData);
+  }
+
   function showApplicationForm() {
     document.getElementById('loginScreen').classList.remove('show');
     document.getElementById('applicationFormScreen').style.display = 'block';
@@ -3080,8 +3195,10 @@ function submitLogin(event) {
     saveApplicationStepData(5);
 
     // Call backend API
+    console.log('[DEBUG] Submitting application with data:', applicationFormData);
     apiCall('submit_application', applicationFormData)
       .then(function(response) {
+        console.log('[DEBUG] Submit response:', response);
         if (response.success) {
           // Show confirmation
           document.getElementById('appStep6').style.display = 'none';
@@ -3091,11 +3208,13 @@ function submitLogin(event) {
           applicationFormData = {};
         } else {
           var errorMsg = response.message || response.error || 'Error submitting application.';
+          console.log('[DEBUG] Submission failed:', errorMsg);
           document.getElementById('applicationSubmitError').textContent = errorMsg;
           document.getElementById('applicationSubmitError').style.display = 'block';
         }
       })
       .catch(function(error) {
+        console.log('[DEBUG] API error:', error);
         var errorMsg = 'Error: ' + (error.message || error);
         document.getElementById('applicationSubmitError').textContent = errorMsg;
         document.getElementById('applicationSubmitError').style.display = 'block';

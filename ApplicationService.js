@@ -42,10 +42,14 @@
  */
 function createApplicationRecord(formData, createdBy) {
   try {
+    Logger.log("[DEBUG] createApplicationRecord called with formData:", JSON.stringify(formData));
+    Logger.log("[DEBUG] createdBy:", createdBy);
+
     // Validate required fields
     var required = ["first_name", "last_name", "email", "country_code_primary", "phone_primary", "membership_category"];
     for (var i = 0; i < required.length; i++) {
       if (!formData[required[i]]) {
+        Logger.log("[DEBUG] Missing required field: " + required[i]);
         return { success: false, message: "Missing required field: " + required[i] };
       }
     }
@@ -67,18 +71,26 @@ function createApplicationRecord(formData, createdBy) {
     // Generate temporary password
     var tempPassword = _generateTemporaryPassword();
 
+    // Create primary Individual record FIRST so we have the ID for household
+    var individualId = generateId("IND");
+
     // Create Household record with three-part phone system
     var householdId = generateId("HSH");
     var householdType = formData.household_type || HOUSEHOLD_INDIVIDUAL;
     var primaryApplicantName = capitalizeName(formData.first_name) + " " + capitalizeName(formData.last_name);
 
+    // Format dates as YYYY-MM-DD
+    var today = new Date();
+    var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+
     var householdData = {
       household_id: householdId,
+      primary_member_id: individualId,
       household_name: capitalizeName(formData.last_name) + " Household",
-      primary_member_email: formData.email,
-      active: false,
+      membership_type: formData.membership_category,
       membership_category: formData.membership_category,
-      household_type: householdType,
+      membership_level_id: _getMembershipLevelId(formData.membership_category, householdType),
+      active: false,
       application_status: "Awaiting Documents",
       application_id: applicationId,
       country_code_primary: formData.country_code_primary || "BW",
@@ -88,7 +100,7 @@ function createApplicationRecord(formData, createdBy) {
       membership_expiration_date: "",
       approved_by: "",
       approved_date: "",
-      created_date: new Date(),
+      created_date: todayStr,
       created_by: createdBy,
       notes: "Auto-created from membership application"
     };
@@ -96,9 +108,6 @@ function createApplicationRecord(formData, createdBy) {
     // Append household to Households tab
     var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
     householdSheet.appendRow(_objectToRow(householdData, TAB_HOUSEHOLDS));
-
-    // Create primary Individual record with three-part phone system
-    var individualId = generateId("IND");
     var individualData = {
       individual_id: individualId,
       household_id: householdId,
@@ -119,7 +128,7 @@ function createApplicationRecord(formData, createdBy) {
       arrival_date: formData.employment_posting_date || "",
       departure_date: formData.employment_departure_date || "",
       password_hash: hashPassword(tempPassword),
-      created_date: new Date(),
+      created_date: todayStr,
       created_by: createdBy
     };
 
@@ -147,10 +156,10 @@ function createApplicationRecord(formData, createdBy) {
         phone_primary_whatsapp: false,
         employment_office: "",
         employment_job_title: "",
-        arrival_date: new Date(), // Auto-populate with application submission date (employment start date)
+        arrival_date: todayStr, // Auto-populate with application submission date (employment start date)
         departure_date: "",
         password_hash: "", // Staff don't log in
-        created_date: new Date(),
+        created_date: todayStr,
         created_by: createdBy
       };
       individualSheet.appendRow(_objectToRow(staffIndividualData, TAB_INDIVIDUALS));
@@ -247,9 +256,11 @@ function createApplicationRecord(formData, createdBy) {
     };
 
   } catch (e) {
+    var errorMsg = "Error creating application: " + e.toString() + " | " + (e.stack || "no stack");
+    Logger.log("[ERROR] " + errorMsg);
     logAuditEntry(createdBy, "APPLICATION_ERROR", "Application", "",
-                  "Error creating application: " + e.toString());
-    return { success: false, message: "Error creating application. Please try again." };
+                  errorMsg);
+    return { success: false, message: "Error creating application: " + e.toString() };
   }
 }
 
@@ -1001,6 +1012,18 @@ function _generatePaymentReference(lastName) {
   var nextYear = year + 1;
   var yearStr = year.toString().slice(-2) + "-" + nextYear.toString().slice(-2);
   return (lastName || "MEMBER").toUpperCase() + "_" + yearStr;
+}
+
+function _getMembershipLevelId(category, householdType) {
+  // Look up membership level ID from Membership Levels sheet based on category and household type
+  // Format: category_householdtype (e.g., "full_indiv", "full_family", "community_indiv")
+  try {
+    var levelType = (householdType === 'Family' ? 'family' : 'indiv').toLowerCase();
+    var levelId = (category || 'Community').toLowerCase() + '_' + levelType;
+    return levelId;
+  } catch (e) {
+    return 'community_indiv'; // Default fallback
+  }
 }
 
 function _calculateDuesAmount(category, householdType) {

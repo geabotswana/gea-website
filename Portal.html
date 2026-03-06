@@ -2541,12 +2541,14 @@ function submitLogin(event) {
           // Reset form data
           applicationFormData = {};
         } else {
-          document.getElementById('applicationSubmitError').textContent = response.message || 'Error submitting application.';
+          var errorMsg = response.message || response.error || 'Error submitting application.';
+          document.getElementById('applicationSubmitError').textContent = errorMsg;
           document.getElementById('applicationSubmitError').style.display = 'block';
         }
       })
       .catch(function(error) {
-        document.getElementById('applicationSubmitError').textContent = 'Error: ' + error.message;
+        var errorMsg = 'Error: ' + (error.message || error);
+        document.getElementById('applicationSubmitError').textContent = errorMsg;
         document.getElementById('applicationSubmitError').style.display = 'block';
       });
   }

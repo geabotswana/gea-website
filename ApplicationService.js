@@ -42,29 +42,22 @@
  */
 function createApplicationRecord(formData, createdBy) {
   try {
-    Logger.log("createApplicationRecord called with:", JSON.stringify(formData));
-
     // Validate required fields
     var required = ["first_name", "last_name", "email", "country_code_primary", "phone_primary", "membership_category"];
     for (var i = 0; i < required.length; i++) {
       if (!formData[required[i]]) {
-        var msg = "Missing required field: " + required[i];
-        Logger.log(msg);
-        return { success: false, message: msg };
+        return { success: false, message: "Missing required field: " + required[i] };
       }
     }
 
     // Validate email format
     if (!isValidEmail(formData.email)) {
-      Logger.log("Invalid email format: " + formData.email);
       return { success: false, message: "Invalid email address." };
     }
 
     // Check if email already exists
-    Logger.log("Checking if email exists: " + formData.email);
     var existingMember = getMemberByEmail(formData.email);
     if (existingMember) {
-      Logger.log("Email already exists");
       return { success: false, message: "An account with this email already exists." };
     }
 

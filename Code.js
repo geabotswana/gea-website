@@ -1565,10 +1565,9 @@ function _handleSubmitApplication(p) {
       return errorResponse(result.message, "VALIDATION_FAILED");
     }
   } catch (e) {
-    var errorMsg = "Error: " + e.toString() + " | Stack: " + e.stack;
-    Logger.log("Application submission error: " + errorMsg);
+    var errorMsg = "Error: " + e.toString();
     logAuditEntry("applicant", "APPLICATION_ERROR", "Application", "", errorMsg);
-    return errorResponse("Error submitting application: " + e.toString(), "SERVER_ERROR");
+    return errorResponse("Error submitting application.", "SERVER_ERROR");
   }
 }
 

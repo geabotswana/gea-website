@@ -1629,20 +1629,13 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
-    // Support both ?mode=apply (query) and #mode=apply (fragment) for compatibility
-    var params = new URLSearchParams(window.location.search || '');
-    var startMode = (params.get('mode') || '').toLowerCase();
-
-    // If no query parameter, check for fragment parameter
-    if (!startMode && window.location.hash) {
-      params = new URLSearchParams(window.location.hash.substring(1));
-      startMode = (params.get('mode') || '').toLowerCase();
-    }
+    // Check for intended mode (set by localStorage before OAuth redirect)
+    var startMode = localStorage.getItem('intendedMode') || '';
+    startMode = startMode.toLowerCase();
 
     // Debug logging for application form issue
     console.log('[DEBUG] Page load - URL:', window.location.href);
-    console.log('[DEBUG] Search string:', window.location.search);
-    console.log('[DEBUG] Mode parameter:', startMode);
+    console.log('[DEBUG] intendedMode from localStorage:', startMode);
     console.log('[DEBUG] Current token exists:', !!currentToken);
 
     if (currentToken) {
@@ -1650,7 +1643,8 @@
       showAuthenticatedUI();
       loadDashboard();
     } else if (startMode === 'apply') {
-      console.log('[DEBUG] Showing application form (mode=apply)');
+      console.log('[DEBUG] Showing application form (intendedMode=apply)');
+      localStorage.removeItem('intendedMode'); // Clear the flag
       showApplicationForm();
     } else {
       console.log('[DEBUG] Showing login screen (default)');

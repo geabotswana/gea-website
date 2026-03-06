@@ -277,7 +277,7 @@ function createApplicationRecord(formData, createdBy) {
       "MEMBERSHIP_CATEGORY": formData.membership_category,
       "HOUSEHOLD_TYPE": householdType,
       "APPLICATION_ID": applicationId,
-      "SUBMITTED_DATE": formatDate(new Date(), "GMT+2", "yyyy-MM-dd")
+      "SUBMITTED_DATE": formatDate(new Date(), true)
     });
 
     return {

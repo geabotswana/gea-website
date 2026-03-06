@@ -1629,25 +1629,10 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
-    // Check for intended mode (set by localStorage before OAuth redirect)
-    var startMode = localStorage.getItem('intendedMode') || '';
-    startMode = startMode.toLowerCase();
-
-    // Debug logging for application form issue
-    console.log('[DEBUG] Page load - URL:', window.location.href);
-    console.log('[DEBUG] intendedMode from localStorage:', startMode);
-    console.log('[DEBUG] Current token exists:', !!currentToken);
-
     if (currentToken) {
-      console.log('[DEBUG] Showing authenticated UI (token exists)');
       showAuthenticatedUI();
       loadDashboard();
-    } else if (startMode === 'apply') {
-      console.log('[DEBUG] Showing application form (intendedMode=apply)');
-      localStorage.removeItem('intendedMode'); // Clear the flag
-      showApplicationForm();
     } else {
-      console.log('[DEBUG] Showing login screen (default)');
       document.getElementById('loginScreen').classList.add('show');
     }
   });

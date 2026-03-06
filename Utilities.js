@@ -258,9 +258,24 @@ function dialCodeToCountryCode(dialCode) {
  */
 function generateId(prefix) {
   var year = new Date().getFullYear();
-  var ts   = String(new Date().getTime()).slice(-5);
-  var rand = String(Math.floor(Math.random() * 9000) + 1000);
-  return prefix + "-" + year + "-" + ts + rand;
+  var testMode = getConfigValue("TEST_MODE") === true || getConfigValue("TEST_MODE") === "TRUE";
+
+  // Get counter from Config sheet
+  var counterKey = prefix + "_COUNTER";
+  var counter = getConfigValue(counterKey) || 0;
+  counter++;
+
+  // Update counter in Config
+  setConfigValue(counterKey, counter);
+
+  // Format: [TEST-]PREFIX-YEAR-00001
+  var id = prefix + "-" + year + "-" + String(counter).padStart(5, '0');
+
+  if (testMode) {
+    id = "TEST-" + id;
+  }
+
+  return id;
 }
 
 

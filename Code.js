@@ -1882,3 +1882,144 @@ function _objectToSubmissionRow(obj) {
   }
   return row;
 }
+
+/**
+ * TEST FUNCTION: Send all email templates to treasurer@geabotswana.org
+ * Reads all templates from the Email Templates sheet and sends them with test variables
+ * Run this via: Apps Script Editor → Select function → Run
+ * Check the Logs to see results
+ */
+function testSendSingleEmailTemplate(templateId) {
+  if (!templateId) templateId = "tpl_040"; // Default to Application Received
+  var testEmail = "treasurer@geabotswana.org";
+
+  // Common test variables used for templates
+  var commonVars = {
+    FIRST_NAME: "John",
+    FULL_NAME: "John Test",
+    EMAIL: "john@example.com",
+    PHONE: "+267 71234567",
+    MEMBERSHIP_LEVEL: "Full",
+    HOUSEHOLD_TYPE: "Individual",
+    APPLICATION_ID: "APP-2026-00001",
+    FAMILY_MEMBERS_COUNT: "1",
+    SPONSOR_NAME: "Jane Smith",
+    SPONSOR_EMAIL: "jane@example.com",
+    TEMP_PASSWORD: "TempPass123456!",
+    PORTAL_URL: "https://geabotswana.org/member.html",
+    SUBMITTED_DATE: new Date().toLocaleDateString(),
+    CONFIRMED_DATE: new Date().toLocaleDateString(),
+    DOCUMENTS_LIST: "- Passport\n- Photo\n- Employment Verification",
+    DENIAL_REASON: "Eligibility requirements not met.",
+    RSO_ISSUES: "- Passport photo quality insufficient",
+    RSO_APPROVAL_DATE: new Date().toLocaleDateString(),
+    APPROVAL_DATE: new Date().toLocaleDateString(),
+    DUES_USD: "50",
+    DUES_BWP: "680",
+    PAYMENT_REFERENCE: "TEST_25-26",
+    PAYMENT_METHOD: "Bank Transfer",
+    PAYMENT_DATE: new Date().toLocaleDateString(),
+    START_DATE: new Date().toLocaleDateString(),
+    EXPIRATION_DATE: "July 31, 2027",
+    ACTIVATION_DATE: new Date().toLocaleDateString()
+  };
+
+  try {
+    Logger.log("=== SINGLE EMAIL TEMPLATE TEST ===");
+    Logger.log("Testing template: " + templateId);
+    Logger.log("Recipient: " + testEmail);
+    Logger.log("");
+
+    sendEmail(templateId, testEmail, commonVars);
+
+    Logger.log("✓ SUCCESS: " + templateId + " sent to " + testEmail);
+    Logger.log("Check your email inbox to verify formatting and content.");
+    return { success: true, template: templateId, message: "Email sent successfully to " + testEmail };
+
+  } catch (e) {
+    Logger.log("✗ ERROR: " + e.toString());
+    Logger.log("Stack trace: " + e.stack);
+    return { success: false, template: templateId, error: e.toString() };
+  }
+}
+
+function testSendAllEmailTemplates() {
+  var testEmail = "treasurer@geabotswana.org";
+  var results = [];
+
+  // Common test variables used for all templates
+  var commonVars = {
+    FIRST_NAME: "John",
+    FULL_NAME: "John Test",
+    EMAIL: "john@example.com",
+    PHONE: "+267 71234567",
+    MEMBERSHIP_LEVEL: "Full",
+    HOUSEHOLD_TYPE: "Individual",
+    APPLICATION_ID: "APP-2026-00001",
+    FAMILY_MEMBERS_COUNT: "1",
+    SPONSOR_NAME: "Jane Smith",
+    SPONSOR_EMAIL: "jane@example.com",
+    TEMP_PASSWORD: "TempPass123456!",
+    PORTAL_URL: "https://geabotswana.org/member.html",
+    SUBMITTED_DATE: new Date().toLocaleDateString(),
+    CONFIRMED_DATE: new Date().toLocaleDateString(),
+    DOCUMENTS_LIST: "- Passport\n- Photo\n- Employment Verification",
+    DENIAL_REASON: "Eligibility requirements not met.",
+    RSO_ISSUES: "- Passport photo quality insufficient",
+    RSO_APPROVAL_DATE: new Date().toLocaleDateString(),
+    APPROVAL_DATE: new Date().toLocaleDateString(),
+    DUES_USD: "50",
+    DUES_BWP: "680",
+    PAYMENT_REFERENCE: "TEST_25-26",
+    PAYMENT_METHOD: "Bank Transfer",
+    PAYMENT_DATE: new Date().toLocaleDateString(),
+    START_DATE: new Date().toLocaleDateString(),
+    EXPIRATION_DATE: "July 31, 2027",
+    ACTIVATION_DATE: new Date().toLocaleDateString()
+  };
+
+  // Read all templates from Email Templates sheet
+  try {
+    var systemBackendSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_EMAIL_TEMPLATES);
+    var data = systemBackendSheet.getRange(2, 1, systemBackendSheet.getLastRow() - 1, systemBackendSheet.getLastColumn()).getValues();
+
+    Logger.log("=== EMAIL TEMPLATE TEST START ===");
+    Logger.log("Reading templates from Email Templates sheet...");
+    Logger.log("Test recipient: " + testEmail);
+    Logger.log("");
+
+    var sentCount = 0;
+    var failedCount = 0;
+
+    for (var i = 0; i < data.length; i++) {
+      var templateId = data[i][0];
+
+      // Skip empty rows
+      if (!templateId) continue;
+
+      try {
+        sendEmail(templateId, testEmail, commonVars);
+        results.push("✓ " + templateId + " sent successfully");
+        Logger.log("✓ " + templateId + " sent successfully");
+        sentCount++;
+      } catch (e) {
+        results.push("✗ " + templateId + " FAILED: " + e.toString());
+        Logger.log("✗ " + templateId + " FAILED: " + e.toString());
+        failedCount++;
+      }
+    }
+
+    Logger.log("");
+    Logger.log("=== TEST SUMMARY ===");
+    Logger.log("Total templates tested: " + (sentCount + failedCount));
+    Logger.log("Successfully sent: " + sentCount);
+    Logger.log("Failed: " + failedCount);
+    Logger.log("Test email: " + testEmail);
+
+  } catch (e) {
+    Logger.log("ERROR: " + e.toString());
+    Logger.log("Make sure TAB_EMAIL_TEMPLATES is defined in Config.js");
+  }
+
+  return results;
+}

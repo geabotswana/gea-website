@@ -725,6 +725,11 @@ var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "Sequential membership eligibility flow with sponsor requirements and monthly exchange rate mechanism";
 
+// TEST MODE: Set to TRUE to prefix all generated IDs with "TEST-" for easy cleanup before production
+// When TEST_MODE is enabled, all IDs look like: TEST-APP-2026-00001, TEST-HSH-2026-00001, etc.
+// Before go-live: Set TEST_MODE to FALSE and delete all TEST- prefixed records
+var TEST_MODE               = true;
+
 // ============================================================
 // END OF CONFIGURATION FILE
 // ============================================================

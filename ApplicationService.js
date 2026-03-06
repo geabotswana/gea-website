@@ -111,7 +111,6 @@ function createApplicationRecord(formData, createdBy) {
       passport_number: "",
       omang_number: "",
       country_of_citizenship: formData.citizenship_country || "",
-      us_citizen: formData.us_citizen || false,
       country_code_primary: formData.country_code_primary || "BW",
       phone_primary: formData.phone_primary || "",
       phone_primary_whatsapp: formData.phone_primary_whatsapp || false,
@@ -123,6 +122,37 @@ function createApplicationRecord(formData, createdBy) {
     // Append individual to Individuals tab
     var individualSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_INDIVIDUALS);
     individualSheet.appendRow(_objectToRow(individualData, TAB_INDIVIDUALS));
+
+    // Create household staff individual if provided
+    if (formData.has_staff && formData.staff_first_name && formData.staff_last_name) {
+      var staffIndividualId = generateId("IND");
+      var staffIndividualData = {
+        individual_id: staffIndividualId,
+        household_id: householdId,
+        first_name: formData.staff_first_name,
+        last_name: formData.staff_last_name,
+        email: "", // Staff members don't have email
+        relationship_to_primary: "Household Staff",
+        active: false,
+        date_of_birth: formData.staff_dob || "",
+        passport_number: "",
+        omang_number: formData.staff_omang || "",
+        country_of_citizenship: "",
+        country_code_primary: formData.staff_country_code_primary || "",
+        phone_primary: formData.staff_phone_primary || "",
+        phone_primary_whatsapp: formData.staff_phone_primary_whatsapp || false,
+        country_code_secondary: formData.staff_country_code_secondary || "",
+        phone_secondary: formData.staff_phone_secondary || "",
+        phone_secondary_whatsapp: formData.staff_phone_secondary_whatsapp || false,
+        password_hash: "", // Staff don't log in
+        created_date: new Date(),
+        created_by: createdBy,
+        employment_start_date: formData.staff_start_date || ""
+      };
+      individualSheet.appendRow(_objectToRow(staffIndividualData, TAB_INDIVIDUALS));
+      logAuditEntry(createdBy, AUDIT_APPLICATION_CREATED, "Household Staff", staffIndividualId,
+                    "Household staff member added: " + formData.staff_first_name + " " + formData.staff_last_name);
+    }
 
     // Create application record using the three-part phone system
     var applicationData = {

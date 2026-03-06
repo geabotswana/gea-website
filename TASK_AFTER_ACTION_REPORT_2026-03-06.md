@@ -1,37 +1,33 @@
-# Task After-Action Report — Membership Application Access Fix
-**Date:** 2026-03-06  
-**Scope:** Remove perceived login requirement for first-time applicants and provide a direct anonymous application entry point.
+# Task After-Action Report — 2026-03-06 (Follow-up Fix)
 
-## Problem Statement
-A new member attempting to apply experienced a login-first entry path, which conflicts with the intended flow where credentials are generated only after application submission.
+## Task
+Resolve the broken new-member application entry path where users were still landing on login (or a blank screen) instead of the application form.
+
+## Problem Observed
+- `/new-member.html` loaded, but users still saw the login-first experience.
+- The login-screen "Apply for Membership" path could render a blank page in the browser environment used for testing.
 
 ## Root Cause
-- The member portal supports anonymous application via an in-page "Apply for Membership" action, but the default portal entry opens on the login screen.
-- The public website did not provide a dedicated direct URL that opens the membership application form immediately.
+- `new-member.html` was embedding a previously deployed Apps Script web app URL in an iframe.
+- That deployed URL did not reliably produce the intended `mode=apply` startup behavior during live testing, so applicants were not guaranteed to land directly on the form.
+- Because the issue happened inside the remote embedded portal, browser behavior could appear inconsistent (login-first vs blank render).
 
-## Actions Taken
-1. **Added URL-driven pre-auth application entry in `Portal.html`.**
-   - Added `?mode=apply` handling on page load.
-   - If no session token exists and mode is `apply`, the portal opens directly to the application form (no login step).
-
-2. **Created a dedicated public page: `new-member.html`.**
-   - New wrapper page embeds the production Apps Script web app with `?mode=apply`.
-   - Provides a stable route for first-time applicants.
-
-3. **Updated public website entry points in `index.html`.**
-   - Added an **Apply** button in top navigation linking to `/new-member.html`.
-   - Updated hero CTAs to include **Apply for Membership** and retained **Member Login**.
-   - Updated membership section “How to Apply?” text to point to the new direct application page.
+## Corrective Actions
+1. **Removed dependency on the embedded remote portal for new applicants.**
+   - Replaced `new-member.html` iframe implementation with a direct redirect to `/Portal.html?mode=apply`.
+2. **Updated public-site apply links to use the direct application route.**
+   - Updated top-nav Apply button, hero Apply CTA, and membership "How to Apply" link in `index.html`.
+3. **Kept backward compatibility for existing links.**
+   - `new-member.html` remains available as a stable URL and now forwards applicants to the correct path.
 
 ## Validation Performed
-- Verified diffs to confirm mode-based portal startup logic and new page wiring.
-- Confirmed no changes were made to authentication rules for members/applicants; this is a routing/entry-point correction.
+- Confirmed all public apply links now target `/Portal.html?mode=apply`.
+- Confirmed `new-member.html` performs an immediate redirect to `/Portal.html?mode=apply` and includes a fallback manual link.
+- Performed whitespace and diff sanity checks.
 
 ## Outcome
-First-time applicants now have a clear direct path to start the application without needing existing credentials. Existing member login behavior remains unchanged.
+- Applicants can now enter directly into the membership application form without requiring pre-existing login credentials.
+- The previous iframe-related behavior is removed from the public new-member flow.
 
-## Follow-up Recommendations
-- In a future deployment checklist, include UX smoke tests for:
-  - `/member.html` (login-first path)
-  - `/new-member.html` (direct application path)
-- Consider adding a short note on the login screen clarifying that new applicants should use the direct application link.
+## Follow-up Recommendation
+- Keep `/new-member.html` as the published marketing URL, but continue redirecting internally to `/Portal.html?mode=apply` to avoid drift between static site links and the active portal behavior.

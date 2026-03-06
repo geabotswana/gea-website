@@ -2746,7 +2746,7 @@ function submitLogin(event) {
     if (currentApplicationStep === 3) {
       // Sponsor step: only show if category requires sponsor
       var category = applicationFormData.membership_category;
-      var needsSponsor = ['Affiliate', 'Associate', 'Diplomatic', 'Community'].includes(category);
+      var needsSponsor = category === 'Community';
       if (!needsSponsor) {
         currentApplicationStep++;
         updateApplicationStep();
@@ -2919,7 +2919,7 @@ function submitLogin(event) {
         }
         break;
       case 3:
-        var needsSponsor = ['Affiliate', 'Associate', 'Diplomatic', 'Community'].includes(applicationFormData.membership_category);
+        var needsSponsor = applicationFormData.membership_category === 'Community';
         if (needsSponsor) {
           var sponsorName = document.getElementById('appSponsorName').value.trim();
           var sponsorEmail = document.getElementById('appSponsorEmail').value.trim();

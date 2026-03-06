@@ -218,7 +218,7 @@ function createApplicationRecord(formData, createdBy) {
       sponsor_verified: false,
       sponsor_verified_date: "",
       sponsor_verified_by: "",
-      submitted_date: new Date(),
+      submitted_date: todayStr,
       status: APP_STATUS_AWAITING_DOCS,
       documents_confirmed_date: "",
       board_initial_status: "",
@@ -242,8 +242,8 @@ function createApplicationRecord(formData, createdBy) {
       dues_amount: 0,
       membership_start_date: "",
       membership_expiration_date: "",
-      created_date: new Date(),
-      last_modified_date: new Date(),
+      created_date: todayStr,
+      last_modified_date: todayStr,
       notes: ""
     };
 

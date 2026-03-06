@@ -1632,12 +1632,21 @@
     var params = new URLSearchParams(window.location.search || '');
     var startMode = (params.get('mode') || '').toLowerCase();
 
+    // Debug logging for application form issue
+    console.log('[DEBUG] Page load - URL:', window.location.href);
+    console.log('[DEBUG] Search string:', window.location.search);
+    console.log('[DEBUG] Mode parameter:', startMode);
+    console.log('[DEBUG] Current token exists:', !!currentToken);
+
     if (currentToken) {
+      console.log('[DEBUG] Showing authenticated UI (token exists)');
       showAuthenticatedUI();
       loadDashboard();
     } else if (startMode === 'apply') {
+      console.log('[DEBUG] Showing application form (mode=apply)');
       showApplicationForm();
     } else {
+      console.log('[DEBUG] Showing login screen (default)');
       document.getElementById('loginScreen').classList.add('show');
     }
   });

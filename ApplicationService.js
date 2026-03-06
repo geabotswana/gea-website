@@ -167,6 +167,40 @@ function createApplicationRecord(formData, createdBy) {
                     "Household staff member added: " + formData.staff_first_name + " " + formData.staff_last_name);
     }
 
+    // Create family member individuals if provided
+    if (formData.family_members && formData.family_members.length > 0) {
+      formData.family_members.forEach(function(familyMember) {
+        var familyIndividualId = generateId("IND");
+        var familyIndividualData = {
+          individual_id: familyIndividualId,
+          household_id: householdId,
+          first_name: capitalizeName(familyMember.first_name),
+          last_name: capitalizeName(familyMember.last_name),
+          email: "", // Family members don't have email during application
+          relationship_to_primary: familyMember.relationship_to_primary || "Other",
+          active: false,
+          date_of_birth: "",
+          passport_number: "",
+          omang_number: "",
+          country_of_citizenship: familyMember.citizenship_country || "",
+          country_code_primary: "",
+          phone_primary: "",
+          phone_primary_whatsapp: false,
+          employment_office: "",
+          employment_job_title: "",
+          arrival_date: "",
+          departure_date: "",
+          password_hash: "", // Family members don't log in during application
+          created_date: todayStr,
+          created_by: createdBy
+        };
+        individualSheet.appendRow(_objectToRow(familyIndividualData, TAB_INDIVIDUALS));
+        logAuditEntry(createdBy, AUDIT_APPLICATION_CREATED, "Family Member", familyIndividualId,
+                      "Family member added: " + familyMember.first_name + " " + familyMember.last_name +
+                      " (" + familyMember.relationship_to_primary + ")");
+      });
+    }
+
     // Create application record using the three-part phone system
     var applicationData = {
       application_id: applicationId,

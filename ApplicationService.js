@@ -93,6 +93,7 @@ function createApplicationRecord(formData, createdBy) {
       active: false,
       application_status: "Awaiting Documents",
       application_id: applicationId,
+      application_date: todayStr,
       country_code_primary: formData.country_code_primary || "BW",
       phone_primary: formData.phone_primary || "",
       phone_primary_whatsapp: formData.phone_primary_whatsapp || false,
@@ -268,6 +269,7 @@ function createApplicationRecord(formData, createdBy) {
       "FIRST_NAME": formData.first_name,
       "EMAIL": formData.email,
       "TEMP_PASSWORD": tempPassword,
+      "TEMP_PASSWORD_DISPLAY": "<strong style=\"font-family: monospace; background: #f0f0f0; padding: 4px 8px; border-radius: 3px;\">" + tempPassword + "</strong>",
       "LOGIN_URL": "https://geabotswana.org/member.html"
     });
 

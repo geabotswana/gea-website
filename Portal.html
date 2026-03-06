@@ -1629,8 +1629,15 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
+    // Support both ?mode=apply (query) and #mode=apply (fragment) for compatibility
     var params = new URLSearchParams(window.location.search || '');
     var startMode = (params.get('mode') || '').toLowerCase();
+
+    // If no query parameter, check for fragment parameter
+    if (!startMode && window.location.hash) {
+      params = new URLSearchParams(window.location.hash.substring(1));
+      startMode = (params.get('mode') || '').toLowerCase();
+    }
 
     // Debug logging for application form issue
     console.log('[DEBUG] Page load - URL:', window.location.href);

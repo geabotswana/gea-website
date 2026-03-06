@@ -42,22 +42,29 @@
  */
 function createApplicationRecord(formData, createdBy) {
   try {
+    Logger.log("createApplicationRecord called with:", JSON.stringify(formData));
+
     // Validate required fields
     var required = ["first_name", "last_name", "email", "country_code_primary", "phone_primary", "membership_category"];
     for (var i = 0; i < required.length; i++) {
       if (!formData[required[i]]) {
-        return { success: false, message: "Missing required field: " + required[i] };
+        var msg = "Missing required field: " + required[i];
+        Logger.log(msg);
+        return { success: false, message: msg };
       }
     }
 
     // Validate email format
     if (!isValidEmail(formData.email)) {
+      Logger.log("Invalid email format: " + formData.email);
       return { success: false, message: "Invalid email address." };
     }
 
     // Check if email already exists
+    Logger.log("Checking if email exists: " + formData.email);
     var existingMember = getMemberByEmail(formData.email);
     if (existingMember) {
+      Logger.log("Email already exists");
       return { success: false, message: "An account with this email already exists." };
     }
 
@@ -182,12 +189,12 @@ function createApplicationRecord(formData, createdBy) {
     var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
 
     // Email to applicant with credentials
-    EmailService.sendEmail("tpl_040", formData.email, {
+    sendEmail("tpl_040", formData.email, {
       "FIRST_NAME": formData.first_name,
       "APPLICATION_ID": applicationId
     });
 
-    EmailService.sendEmail("tpl_041", formData.email, {
+    sendEmail("tpl_041", formData.email, {
       "FIRST_NAME": formData.first_name,
       "EMAIL": formData.email,
       "TEMP_PASSWORD": tempPassword,
@@ -195,12 +202,12 @@ function createApplicationRecord(formData, createdBy) {
     });
 
     // Email to board
-    EmailService.sendEmail("tpl_042", boardEmail, {
+    sendEmail("tpl_042", boardEmail, {
       "APPLICANT_NAME": formData.first_name + " " + formData.last_name,
       "MEMBERSHIP_CATEGORY": formData.membership_category,
       "HOUSEHOLD_TYPE": householdType,
       "APPLICATION_ID": applicationId,
-      "SUBMITTED_DATE": Utilities.formatDate(new Date(), "GMT+2", "yyyy-MM-dd")
+      "SUBMITTED_DATE": formatDate(new Date(), "GMT+2", "yyyy-MM-dd")
     });
 
     return {
@@ -307,7 +314,7 @@ function confirmDocumentsUploaded(applicationId, email) {
 
     // Notify board
     var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
-    EmailService.sendEmail("tpl_043", boardEmail, {
+    sendEmail("tpl_043", boardEmail, {
       "APPLICANT_NAME": application.first_name + " " + application.last_name,
       "APPLICATION_ID": applicationId,
       "MEMBERSHIP_CATEGORY": application.membership_category
@@ -435,13 +442,13 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
 
       // Notify RSO and applicant
       var rsoEmail = getConfigValue("RSO_EMAIL") || "rso@geabotswana.org";
-      EmailService.sendEmail("tpl_044", rsoEmail, {
+      sendEmail("tpl_044", rsoEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId,
         "EMAIL": application.email
       });
 
-      EmailService.sendEmail("tpl_044", application.email, {
+      sendEmail("tpl_044", application.email, {
         "APPLICANT_NAME": application.first_name,
         "APPLICATION_ID": applicationId,
         "STATUS": "Your documents have been forwarded to our security team for review."
@@ -463,7 +470,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Denied at initial review. Reason: " + (reason || ""));
 
       // Notify applicant
-      EmailService.sendEmail("tpl_045", application.email, {
+      sendEmail("tpl_045", application.email, {
         "APPLICANT_NAME": application.first_name,
         "REASON": reason || "Your application does not meet membership requirements at this time.",
         "CONTACT": "board@geabotswana.org"
@@ -510,7 +517,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
       // Notify board
       var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
-      EmailService.sendEmail("tpl_047", boardEmail, {
+      sendEmail("tpl_047", boardEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId
       });
@@ -528,13 +535,13 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
       // Notify board and applicant
       var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
-      EmailService.sendEmail("tpl_046", boardEmail, {
+      sendEmail("tpl_046", boardEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId,
         "RSO_NOTES": privateNotes || ""
       });
 
-      EmailService.sendEmail("tpl_046", application.email, {
+      sendEmail("tpl_046", application.email, {
         "APPLICANT_NAME": application.first_name,
         "REASON": publicReason || "Your submitted documents did not meet our security requirements.",
         "NEXT_STEP": "Please resubmit corrected documents through the member portal."
@@ -584,7 +591,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       var duesAmount = _calculateDuesAmount(application.membership_category, application.household_type);
 
       // Notify applicant with payment instructions
-      EmailService.sendEmail("tpl_048", application.email, {
+      sendEmail("tpl_048", application.email, {
         "APPLICANT_NAME": application.first_name,
         "PAYMENT_REFERENCE": paymentRef,
         "DUES_AMOUNT": duesAmount,
@@ -596,7 +603,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
 
       // Notify treasurer
       var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
-      EmailService.sendEmail("tpl_050", treasurerEmail, {
+      sendEmail("tpl_050", treasurerEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId,
         "PAYMENT_REFERENCE": paymentRef,
@@ -619,7 +626,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Final denial. Reason: " + (reason || ""));
 
       // Notify applicant
-      EmailService.sendEmail("tpl_049", application.email, {
+      sendEmail("tpl_049", application.email, {
         "APPLICANT_NAME": application.first_name,
         "REASON": reason || "Your application was not approved for final membership.",
         "CONTACT": "board@geabotswana.org"
@@ -692,15 +699,15 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
                   "Payment submitted: " + paymentMethod);
 
     // Notify applicant and treasurer
-    EmailService.sendEmail("tpl_050", email, {
+    sendEmail("tpl_050", email, {
       "APPLICANT_NAME": application.first_name,
       "PAYMENT_METHOD": paymentMethod,
-      "PAYMENT_DATE": Utilities.formatDate(new Date(), "GMT+2", "yyyy-MM-dd"),
+      "PAYMENT_DATE": formatDate(new Date(), "GMT+2", "yyyy-MM-dd"),
       "NEXT_STEP": "Your payment will be verified by our Treasurer within 2 business days."
     });
 
     var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
-    EmailService.sendEmail("tpl_050", treasurerEmail, {
+    sendEmail("tpl_050", treasurerEmail, {
       "APPLICANT_NAME": application.first_name + " " + application.last_name,
       "APPLICATION_ID": applicationId,
       "PAYMENT_METHOD": paymentMethod,
@@ -789,14 +796,14 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     // Send welcome emails
     var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
 
-    EmailService.sendEmail("tpl_051", application.email, {
+    sendEmail("tpl_051", application.email, {
       "APPLICANT_NAME": application.first_name,
       "MEMBERSHIP_CATEGORY": application.membership_category,
-      "EXPIRATION_DATE": Utilities.formatDate(expirationDate, "GMT+2", "MMMM dd, yyyy"),
+      "EXPIRATION_DATE": formatDate(expirationDate, "GMT+2", "MMMM dd, yyyy"),
       "PORTAL_URL": "https://geabotswana.org/member.html"
     });
 
-    EmailService.sendEmail("tpl_052", boardEmail, {
+    sendEmail("tpl_052", boardEmail, {
       "APPLICANT_NAME": application.first_name + " " + application.last_name,
       "MEMBERSHIP_CATEGORY": application.membership_category,
       "HOUSEHOLD_TYPE": application.household_type

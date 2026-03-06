@@ -1629,9 +1629,14 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
+    var params = new URLSearchParams(window.location.search || '');
+    var startMode = (params.get('mode') || '').toLowerCase();
+
     if (currentToken) {
       showAuthenticatedUI();
       loadDashboard();
+    } else if (startMode === 'apply') {
+      showApplicationForm();
     } else {
       document.getElementById('loginScreen').classList.add('show');
     }

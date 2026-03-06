@@ -258,13 +258,16 @@ function createApplicationRecord(formData, createdBy) {
 
     // Send confirmation emails
     var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
+    Logger.log("[DEBUG] Sending emails - boardEmail: " + boardEmail);
 
     // Email to applicant with credentials
+    Logger.log("[DEBUG] Sending tpl_040 to " + formData.email);
     sendEmail("tpl_040", formData.email, {
       "FIRST_NAME": formData.first_name,
       "APPLICATION_ID": applicationId
     });
 
+    Logger.log("[DEBUG] Sending tpl_041 to " + formData.email);
     sendEmail("tpl_041", formData.email, {
       "FIRST_NAME": formData.first_name,
       "EMAIL": formData.email,
@@ -274,13 +277,16 @@ function createApplicationRecord(formData, createdBy) {
     });
 
     // Email to board
-    sendEmail("tpl_042", boardEmail, {
+    Logger.log("[DEBUG] Sending tpl_042 to " + boardEmail);
+    var boardEmailVars = {
       "APPLICANT_NAME": formData.first_name + " " + formData.last_name,
       "MEMBERSHIP_CATEGORY": formData.membership_category,
       "HOUSEHOLD_TYPE": householdType,
       "APPLICATION_ID": applicationId,
       "SUBMITTED_DATE": formatDate(new Date(), true)
-    });
+    };
+    Logger.log("[DEBUG] Board email variables:", JSON.stringify(boardEmailVars));
+    sendEmail("tpl_042", boardEmail, boardEmailVars);
 
     return {
       success: true,

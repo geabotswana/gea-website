@@ -1049,7 +1049,7 @@
 
     <!-- Step Indicator -->
     <div id="stepIndicator" style="display: flex; justify-content: space-between; margin: 30px 0; font-size: 12px;">
-      <div class="step-item active" data-step="1"><span class="step-number">1</span><span class="step-label">Category</span></div>
+      <div class="step-item active" data-step="1"><span class="step-number">1</span><span class="step-label">Eligibility</span></div>
       <div class="step-item" data-step="2"><span class="step-number">2</span><span class="step-label">Info</span></div>
       <div class="step-item" data-step="3"><span class="step-number">3</span><span class="step-label">Sponsor</span></div>
       <div class="step-item" data-step="4"><span class="step-number">4</span><span class="step-label">Family</span></div>
@@ -1057,37 +1057,85 @@
       <div class="step-item" data-step="6"><span class="step-number">6</span><span class="step-label">Review</span></div>
     </div>
 
-    <!-- Step 1: Category Selection -->
+    <!-- Step 1: Eligibility Questionnaire -->
     <div id="appStep1" class="app-step active">
-      <h3 style="margin-bottom: 20px;">Select Your Membership Category</h3>
-      <div id="categoryCards" style="display: grid; grid-template-columns: 1fr; gap: 12px;">
-        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
-          <input type="radio" name="membership_category" value="Full" required> <strong>Full Member</strong> (US Embassy, USAID, or American company)
-        </label>
-        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
-          <input type="radio" name="membership_category" value="Associate"> <strong>Associate</strong> (Other US government agencies)
-        </label>
-        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
-          <input type="radio" name="membership_category" value="Affiliate"> <strong>Affiliate</strong> (Non-US organization, requires sponsor)
-        </label>
-        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
-          <input type="radio" name="membership_category" value="Diplomatic"> <strong>Diplomatic</strong> (Embassy/diplomatic mission)
-        </label>
-        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
-          <input type="radio" name="membership_category" value="Community"> <strong>Community</strong> (Botswana resident, requires sponsor)
-        </label>
-        <label class="category-card" style="padding: 16px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center;">
-          <input type="radio" name="membership_category" value="Temporary"> <strong>Temporary</strong> (Short-term visitor, 1-6 months)
-        </label>
+      <h3 style="margin-bottom: 20px;">Eligibility Screening</h3>
+      <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Please answer the following questions to determine your membership category.</p>
+
+      <!-- Q1: USG Direct-Hire -->
+      <div id="questionQ1Container" style="margin-bottom: 24px;">
+        <p style="font-weight: 600; margin-bottom: 12px;">Q1: Are you a U.S. Direct-Hire employee of the United States Government?</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 12px;">This includes Department of State and other USG departments and agencies.</p>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="handleQ1Answer(true);" style="flex: 1; background: #f5f5f5; color: #333;">Yes</button>
+          <button type="button" class="btn btn-secondary" onclick="handleQ1Answer(false);" style="flex: 1; background: #f5f5f5; color: #333;">No</button>
+        </div>
       </div>
+
+      <!-- Q1b: Temporary Duty (shown only if Q1=YES) -->
+      <div id="questionQ1bContainer" style="display: none; margin-bottom: 24px;">
+        <p style="font-weight: 600; margin-bottom: 12px;">Q1b: Are you in Botswana on temporary duty or as an official visitor?</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Temporary duty = short-term assignment (typically 6 months or less). Permanent assignment = assigned to the Botswana mission as your duty station.</p>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="handleQ1bAnswer(true);" style="flex: 1; background: #f5f5f5; color: #333;">Yes (Temporary Duty)</button>
+          <button type="button" class="btn btn-secondary" onclick="handleQ1bAnswer(false);" style="flex: 1; background: #f5f5f5; color: #333;">No (Permanent)</button>
+        </div>
+      </div>
+
+      <!-- Q2: Embassy Staff from Outside OR USG Contractor (shown if Q1=NO) -->
+      <div id="questionQ2Container" style="display: none; margin-bottom: 24px;">
+        <p style="font-weight: 600; margin-bottom: 12px;">Q2: Are you a direct employee of the U.S. Embassy in Gaborone recruited from OUTSIDE Botswana? OR are you a U.S. citizen employed by a USG-funded contractor or implementing USG-funded programs?</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Examples: Embassy staff hired from abroad, US contractor for USAID, NGO implementing US-funded programs.</p>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="handleQ2Answer(true);" style="flex: 1; background: #f5f5f5; color: #333;">Yes</button>
+          <button type="button" class="btn btn-secondary" onclick="handleQ2Answer(false);" style="flex: 1; background: #f5f5f5; color: #333;">No</button>
+        </div>
+      </div>
+
+      <!-- Q3: Embassy Local Hire (shown if Q2=NO) -->
+      <div id="questionQ3Container" style="display: none; margin-bottom: 24px;">
+        <p style="font-weight: 600; margin-bottom: 12px;">Q3: Are you a direct employee of the U.S. Embassy in Gaborone and were recruited IN Botswana?</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 12px;">This includes HCN (host country nationals) and TCN hired locally in Botswana.</p>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="handleQ3Answer(true);" style="flex: 1; background: #f5f5f5; color: #333;">Yes</button>
+          <button type="button" class="btn btn-secondary" onclick="handleQ3Answer(false);" style="flex: 1; background: #f5f5f5; color: #333;">No</button>
+        </div>
+      </div>
+
+      <!-- Q4: Diplomatic Status (shown if Q3=NO) -->
+      <div id="questionQ4Container" style="display: none; margin-bottom: 24px;">
+        <p style="font-weight: 600; margin-bottom: 12px;">Q4: Are you a registered diplomat of another diplomatic or international-organization mission in Botswana?</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 12px;">Examples: Embassy/consulate staff with diplomatic passport, UN/African Union/SADC staff.</p>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="handleQ4Answer(true);" style="flex: 1; background: #f5f5f5; color: #333;">Yes</button>
+          <button type="button" class="btn btn-secondary" onclick="handleQ4Answer(false);" style="flex: 1; background: #f5f5f5; color: #333;">No</button>
+        </div>
+      </div>
+
+      <!-- Hidden field to store assigned category -->
+      <input type="hidden" id="assignedMembershipCategory">
+
+      <!-- Household Type Selection (shown after category is determined) -->
+      <div id="householdTypeContainer" style="display: none; margin-bottom: 24px;">
+        <p style="font-weight: 600; margin-bottom: 12px;">Will this be an individual or family membership?</p>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('individual');" style="flex: 1; background: #f5f5f5; color: #333;">Individual</button>
+          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('family');" style="flex: 1; background: #f5f5f5; color: #333;">Family</button>
+        </div>
+      </div>
+
       <div style="margin-top: 24px; display: flex; gap: 10px;">
-        <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Back</button>
-        <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">Next</button>
+        <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
+        <button type="button" class="btn btn-primary" id="appStep1NextBtn" onclick="nextApplicationStep();" style="flex: 1; display: none;">Next</button>
       </div>
     </div>
 
     <!-- Step 2: Applicant Info -->
     <div id="appStep2" class="app-step" style="display: none;">
+      <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0A3161;">
+        <p style="margin: 0; font-size: 12px; color: #666;">Your membership category:</p>
+        <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 600; color: #0A3161;" id="appStep2CategoryDisplay">—</p>
+      </div>
       <h3 style="margin-bottom: 20px;">Your Information</h3>
       <div class="form-group">
         <label class="form-label">First Name *</label>
@@ -2226,9 +2274,16 @@ function submitLogin(event) {
     });
     document.querySelector('[data-step="' + currentApplicationStep + '"]').classList.add('active');
 
+    // Display assigned category in step 2
+    if (currentApplicationStep === 2) {
+      var categoryDisplay = applicationFormData.membership_category || '—';
+      document.getElementById('appStep2CategoryDisplay').textContent = categoryDisplay;
+    }
+
     // Handle conditional steps
     if (currentApplicationStep === 3) {
-      var category = document.querySelector('input[name="membership_category"]:checked').value;
+      // Sponsor step: only show if category requires sponsor
+      var category = applicationFormData.membership_category;
       var needsSponsor = ['Affiliate', 'Associate', 'Diplomatic', 'Community'].includes(category);
       if (!needsSponsor) {
         currentApplicationStep++;
@@ -2237,12 +2292,105 @@ function submitLogin(event) {
     }
 
     if (currentApplicationStep === 4) {
-      document.getElementById('familyMembersContainer').style.display = document.getElementById('appIsFamilyHousehold').checked ? 'block' : 'none';
+      // Family step: only show if household type is Family
+      var isFamily = applicationFormData.household_type === 'Family';
+      document.getElementById('familyMembersContainer').style.display = isFamily ? 'block' : 'none';
+      // If individual membership, skip to step 5
+      if (!isFamily) {
+        currentApplicationStep++;
+        updateApplicationStep();
+      }
     }
 
     if (currentApplicationStep === 5) {
       document.getElementById('staffContainer').style.display = document.getElementById('appHasStaff').checked ? 'block' : 'none';
     }
+  }
+
+  /**
+   * Questionnaire handler functions for eligibility determination
+   */
+
+  function handleQ1Answer(isYes) {
+    if (isYes) {
+      // Q1=YES: Show Q1b (temporary duty question)
+      document.getElementById('questionQ1Container').style.display = 'none';
+      document.getElementById('questionQ1bContainer').style.display = 'block';
+    } else {
+      // Q1=NO: Show Q2 (embassy staff from outside / USG contractor)
+      document.getElementById('questionQ1Container').style.display = 'none';
+      document.getElementById('questionQ2Container').style.display = 'block';
+    }
+  }
+
+  function handleQ1bAnswer(isYes) {
+    if (isYes) {
+      // Q1=YES, Q1b=YES: TEMPORARY MEMBERSHIP
+      assignMembershipCategory('Temporary');
+    } else {
+      // Q1=YES, Q1b=NO: FULL MEMBERSHIP
+      assignMembershipCategory('Full');
+    }
+  }
+
+  function handleQ2Answer(isYes) {
+    if (isYes) {
+      // Q2=YES: ASSOCIATE MEMBERSHIP
+      assignMembershipCategory('Associate');
+    } else {
+      // Q2=NO: Show Q3 (embassy local hire)
+      document.getElementById('questionQ2Container').style.display = 'none';
+      document.getElementById('questionQ3Container').style.display = 'block';
+    }
+  }
+
+  function handleQ3Answer(isYes) {
+    if (isYes) {
+      // Q3=YES: AFFILIATE MEMBERSHIP
+      assignMembershipCategory('Affiliate');
+    } else {
+      // Q3=NO: Show Q4 (diplomat)
+      document.getElementById('questionQ3Container').style.display = 'none';
+      document.getElementById('questionQ4Container').style.display = 'block';
+    }
+  }
+
+  function handleQ4Answer(isYes) {
+    if (isYes) {
+      // Q4=YES: DIPLOMATIC MEMBERSHIP
+      assignMembershipCategory('Diplomatic');
+    } else {
+      // Q4=NO: COMMUNITY MEMBERSHIP
+      assignMembershipCategory('Community');
+    }
+  }
+
+  function assignMembershipCategory(category) {
+    // Hide all questions
+    document.getElementById('questionQ1Container').style.display = 'none';
+    document.getElementById('questionQ1bContainer').style.display = 'none';
+    document.getElementById('questionQ2Container').style.display = 'none';
+    document.getElementById('questionQ3Container').style.display = 'none';
+    document.getElementById('questionQ4Container').style.display = 'none';
+
+    // Store the assigned category
+    document.getElementById('assignedMembershipCategory').value = category;
+    applicationFormData.membership_category = category;
+
+    // For Temporary membership, only individual is allowed
+    if (category === 'Temporary') {
+      applicationFormData.household_type = 'Individual';
+      nextApplicationStep();
+    } else {
+      // For other categories, show household type selection
+      document.getElementById('householdTypeContainer').style.display = 'block';
+      document.getElementById('appStep1NextBtn').style.display = 'block';
+    }
+  }
+
+  function selectHouseholdType(householdType) {
+    applicationFormData.household_type = householdType === 'family' ? 'Family' : 'Individual';
+    nextApplicationStep();
   }
 
   function nextApplicationStep() {
@@ -2279,8 +2427,9 @@ function submitLogin(event) {
 
     switch(step) {
       case 1:
-        if (!document.querySelector('input[name="membership_category"]:checked')) {
-          errorDiv.textContent = 'Please select a membership category.';
+        // Step 1 is questionnaire - validation happens during Q&A flow
+        if (!applicationFormData.membership_category || !applicationFormData.household_type) {
+          errorDiv.textContent = 'Please complete the eligibility questions.';
           errorDiv.style.display = 'block';
           return false;
         }
@@ -2323,7 +2472,7 @@ function submitLogin(event) {
   function saveApplicationStepData(step) {
     switch(step) {
       case 1:
-        applicationFormData.membership_category = document.querySelector('input[name="membership_category"]:checked').value;
+        // Category already assigned during questionnaire
         break;
       case 2:
         applicationFormData.first_name = document.getElementById('appFirstName').value;
@@ -2343,7 +2492,7 @@ function submitLogin(event) {
         applicationFormData.sponsor_email = document.getElementById('appSponsorEmail').value;
         break;
       case 4:
-        applicationFormData.household_type = document.getElementById('appIsFamilyHousehold').checked ? 'Family' : 'Individual';
+        // Household type already determined during eligibility questionnaire
         break;
       case 5:
         applicationFormData.has_staff = document.getElementById('appHasStaff').checked;

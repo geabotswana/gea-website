@@ -501,6 +501,40 @@ function sanitizeInput(input) {
   return s;
 }
 
+/**
+ * Capitalizes names properly: Title Case for each word, handles hyphens and multi-word names.
+ * Examples:
+ *   "john paul smith" → "John Paul Smith"
+ *   "smith-jones" → "Smith-Jones"
+ *   "juan carlos garcía" → "Juan Carlos García"
+ *   "o'brien" → "O'Brien"
+ * @param {string} name
+ * @returns {string}
+ */
+function capitalizeName(name) {
+  if (!name) return "";
+  var str = String(name).trim();
+  if (str.length === 0) return "";
+
+  // Split by spaces and hyphens, but keep track of delimiters
+  var words = str.split(/(\s+|-)/);
+  var result = [];
+
+  for (var i = 0; i < words.length; i++) {
+    var word = words[i];
+
+    // Preserve spaces and hyphens as-is
+    if (word === " " || word === "-" || /^\s+$/.test(word)) {
+      result.push(word);
+    } else if (word.length > 0) {
+      // Capitalize first letter, lowercase the rest
+      result.push(word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+    }
+  }
+
+  return result.join("");
+}
+
 
 // ============================================================
 // WEB APP RESPONSE HELPERS

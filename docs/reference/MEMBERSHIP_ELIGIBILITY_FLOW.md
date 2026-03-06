@@ -84,7 +84,7 @@ Examples:
 - USG Direct-Hire on permanent assignment → full_indiv or full_family
 - USG Direct-Hire on temporary duty → temporary
 - Embassy employee recruited from Nairobi → associate_indiv or associate_family
-- US citizen contractor for USAID → associate_indiv or associate_family
+- US citizen contractor for USG programs → associate_indiv or associate_family
 - Embassy employee hired locally in Botswana → affiliate_indiv or affiliate_family
 - Diplomat from French Embassy → diplomatic_indiv or diplomatic_family
 - Local Botswana national, no government affiliation → community_indiv or community_family
@@ -98,7 +98,7 @@ Examples:
 **Question:** Are you a U.S. Direct-Hire employee of the United States Government? This includes Department of State and other USG departments and agencies.
 
 **Clarification Notes:**
-- Includes direct federal employees of any USG agency (State Department, USAID, USIA, DOD, etc.)
+- Includes direct federal employees of any USG agency (State Department, Treasury, DOD, etc.)
 - Does NOT include contractors, implementers of USG programs, or locally hired embassy staff
 - Direct-hire means you are a permanent or long-term USG employee (not temporary or visiting)
 

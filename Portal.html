@@ -1170,8 +1170,8 @@
         </label>
       </div>
       <div class="form-group">
-        <label class="form-label">Date of Birth</label>
-        <input type="date" id="appDOB" class="form-input">
+        <label class="form-label">Employer/Organization</label>
+        <input type="text" id="appEmploymentOffice" class="form-input" placeholder="E.g. Embassy Gaborone, Ministry of Finance, etc.">
       </div>
       <div class="form-group">
         <label class="form-label">Job Title (if applicable)</label>
@@ -1180,6 +1180,10 @@
       <div class="form-group">
         <label class="form-label">Posting Date (if applicable)</label>
         <input type="date" id="appPostingDate" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Anticipated Departure Date (if applicable)</label>
+        <input type="date" id="appDepartureDate" class="form-input">
       </div>
       <div class="form-group">
         <label class="form-label">Country of Citizenship</label>
@@ -1446,55 +1450,10 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Omang Number</label>
-          <input type="text" id="appStaffOmang" class="form-input" placeholder="ID number">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Date of Birth</label>
-          <input type="date" id="appStaffDOB" class="form-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Employment Start Date</label>
-          <input type="date" id="appStaffStartDate" class="form-input">
-        </div>
-        <div style="border-top: 1px solid #ddd; padding-top: 16px; margin-top: 16px;">
-          <p style="font-weight: 600; margin-bottom: 12px;">Contact Numbers (optional)</p>
-          <label class="form-label" style="margin-top: 12px;">Primary Phone Number</label>
-          <div style="display: flex; gap: 8px; align-items: flex-end;">
-            <select id="appStaffCountryCode1" class="form-input" style="flex: 0 0 100px;">
-              <option value="">Country</option>
-              <option value="BW">Botswana (BW)</option>
-              <option value="US">United States (US)</option>
-              <option value="GB">United Kingdom (GB)</option>
-              <option value="ZA">South Africa (ZA)</option>
-              <option value="AU">Australia (AU)</option>
-              <option value="IE">Ireland (IE)</option>
-              <option value="TZ">Tanzania (TZ)</option>
-            </select>
-            <input type="tel" id="appStaffPhone1" class="form-input" placeholder="Phone number" style="flex: 1;">
-          </div>
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 8px; font-size: 13px;">
-            <input type="checkbox" id="appStaffPhone1WhatsApp">
-            Available on WhatsApp
-          </label>
-          <label class="form-label" style="margin-top: 12px;">Secondary Phone Number</label>
-          <div style="display: flex; gap: 8px; align-items: flex-end;">
-            <select id="appStaffCountryCode2" class="form-input" style="flex: 0 0 100px;">
-              <option value="">Country</option>
-              <option value="BW">Botswana (BW)</option>
-              <option value="US">United States (US)</option>
-              <option value="GB">United Kingdom (GB)</option>
-              <option value="ZA">South Africa (ZA)</option>
-              <option value="AU">Australia (AU)</option>
-              <option value="IE">Ireland (IE)</option>
-              <option value="TZ">Tanzania (TZ)</option>
-            </select>
-            <input type="tel" id="appStaffPhone2" class="form-input" placeholder="Phone number" style="flex: 1;">
-          </div>
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 8px; font-size: 13px;">
-            <input type="checkbox" id="appStaffPhone2WhatsApp">
-            Available on WhatsApp
-          </label>
+          <label class="form-label">Citizenship</label>
+          <select id="appStaffCitizenship" class="form-input">
+            <option value="">-- Select citizenship --</option>
+          </select>
         </div>
       </div>
       <div style="margin-top: 24px; display: flex; gap: 10px;">
@@ -2681,7 +2640,7 @@ function submitLogin(event) {
 
     // Determine which list to use
     var countryList;
-    if (dropdownId === 'appCitizenship') {
+    if (dropdownId === 'appCitizenship' || dropdownId === 'appStaffCitizenship') {
       countryList = getCitizenshipCountries();
     } else {
       countryList = getPhoneCountries();
@@ -2696,6 +2655,24 @@ function submitLogin(event) {
     });
   }
 
+  // Capitalize names properly: Title Case for each word, handles hyphens and multi-word names
+  function capitalizeName(name) {
+    if (!name) return "";
+    var str = String(name).trim();
+    if (str.length === 0) return "";
+    var words = str.split(/(\s+|-)/);
+    var result = [];
+    for (var i = 0; i < words.length; i++) {
+      var word = words[i];
+      if (word === " " || word === "-" || /^\s+$/.test(word)) {
+        result.push(word);
+      } else if (word.length > 0) {
+        result.push(word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+      }
+    }
+    return result.join("");
+  }
+
   var applicationFormData = {
     membership_category: '',
     first_name: '',
@@ -2704,19 +2681,19 @@ function submitLogin(event) {
     country_code_primary: 'US',
     phone_primary: '',
     phone_primary_whatsapp: false,
-    date_of_birth: '',
+    employment_office: '',
     employment_job_title: '',
     employment_posting_date: '',
+    employment_departure_date: '',
     citizenship_country: '',
     household_type: 'Individual',
     sponsor_name: '',
     sponsor_email: '',
     family_members: [],
     has_staff: false,
-    staff_name: '',
-    staff_omang: '',
-    staff_dob: '',
-    staff_start_date: ''
+    staff_first_name: '',
+    staff_last_name: '',
+    staff_citizenship: ''
   };
 
   var currentApplicationStep = 1;
@@ -2727,8 +2704,7 @@ function submitLogin(event) {
     // Populate country dropdowns
     populateCountryDropdown('appCountryCode');
     populateCountryDropdown('appCitizenship');
-    populateCountryDropdown('appStaffCountryCode1');
-    populateCountryDropdown('appStaffCountryCode2');
+    populateCountryDropdown('appStaffCitizenship');
     currentApplicationStep = 1;
     updateApplicationStep();
   }
@@ -2790,6 +2766,10 @@ function submitLogin(event) {
 
     if (currentApplicationStep === 5) {
       document.getElementById('staffContainer').style.display = document.getElementById('appHasStaff').checked ? 'block' : 'none';
+    }
+
+    if (currentApplicationStep === 6) {
+      prepareApplicationReview();
     }
   }
 
@@ -2961,40 +2941,47 @@ function submitLogin(event) {
         // Category already assigned during questionnaire
         break;
       case 2:
-        applicationFormData.first_name = document.getElementById('appFirstName').value;
-        applicationFormData.last_name = document.getElementById('appLastName').value;
+        applicationFormData.first_name = capitalizeName(document.getElementById('appFirstName').value);
+        applicationFormData.last_name = capitalizeName(document.getElementById('appLastName').value);
         applicationFormData.email = document.getElementById('appEmail').value;
         applicationFormData.country_code_primary = document.getElementById('appCountryCode').value || 'US';
         applicationFormData.phone_primary = document.getElementById('appPhone').value;
         applicationFormData.phone_primary_whatsapp = document.getElementById('appPhoneWhatsApp').checked;
-        applicationFormData.date_of_birth = document.getElementById('appDOB').value;
+        applicationFormData.employment_office = document.getElementById('appEmploymentOffice').value;
         applicationFormData.employment_job_title = document.getElementById('appJobTitle').value;
         applicationFormData.employment_posting_date = document.getElementById('appPostingDate').value;
+        applicationFormData.employment_departure_date = document.getElementById('appDepartureDate').value;
         applicationFormData.citizenship_country = document.getElementById('appCitizenship').value;
         break;
       case 3:
-        applicationFormData.sponsor_name = document.getElementById('appSponsorName').value;
+        applicationFormData.sponsor_name = capitalizeName(document.getElementById('appSponsorName').value);
         applicationFormData.sponsor_email = document.getElementById('appSponsorEmail').value;
         break;
       case 4:
-        // Household type already determined during eligibility questionnaire
+        // Collect family members
+        applicationFormData.family_members = [];
+        var familyElements = document.getElementById('familyMembersList').querySelectorAll('div[id^="fam_"]');
+        familyElements.forEach(function(el) {
+          var firstName = el.querySelector('.fam-first-name').value;
+          var lastName = el.querySelector('.fam-last-name').value;
+          var relationship = el.querySelector('input[type="radio"]:checked');
+          var citizenship = el.querySelector('.fam-citizenship').value;
+          if (firstName && lastName && relationship) {
+            applicationFormData.family_members.push({
+              first_name: capitalizeName(firstName),
+              last_name: capitalizeName(lastName),
+              relationship_to_primary: relationship.value,
+              citizenship_country: citizenship || ''
+            });
+          }
+        });
         break;
       case 5:
         applicationFormData.has_staff = document.getElementById('appHasStaff').checked;
         if (applicationFormData.has_staff) {
-          applicationFormData.staff_first_name = document.getElementById('appStaffFirstName').value;
-          applicationFormData.staff_last_name = document.getElementById('appStaffLastName').value;
-          applicationFormData.staff_omang = document.getElementById('appStaffOmang').value;
-          applicationFormData.staff_dob = document.getElementById('appStaffDOB').value;
-          applicationFormData.staff_start_date = document.getElementById('appStaffStartDate').value;
-          // Primary phone number
-          applicationFormData.staff_country_code_primary = document.getElementById('appStaffCountryCode1').value || '';
-          applicationFormData.staff_phone_primary = document.getElementById('appStaffPhone1').value || '';
-          applicationFormData.staff_phone_primary_whatsapp = document.getElementById('appStaffPhone1WhatsApp').checked;
-          // Secondary phone number
-          applicationFormData.staff_country_code_secondary = document.getElementById('appStaffCountryCode2').value || '';
-          applicationFormData.staff_phone_secondary = document.getElementById('appStaffPhone2').value || '';
-          applicationFormData.staff_phone_secondary_whatsapp = document.getElementById('appStaffPhone2WhatsApp').checked;
+          applicationFormData.staff_first_name = capitalizeName(document.getElementById('appStaffFirstName').value);
+          applicationFormData.staff_last_name = capitalizeName(document.getElementById('appStaffLastName').value);
+          applicationFormData.staff_citizenship = document.getElementById('appStaffCitizenship').value || '';
         }
         break;
     }
@@ -3002,18 +2989,83 @@ function submitLogin(event) {
 
   function prepareApplicationReview() {
     saveApplicationStepData(6);
-    var review = '<strong>Category:</strong> ' + applicationFormData.membership_category + '<br>';
+    var review = '';
+
+    // Primary Applicant Section
+    review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
+    review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Applicant Information</h4>';
+    review += '<strong>Membership Category:</strong> ' + applicationFormData.membership_category + '<br>';
     review += '<strong>Name:</strong> ' + applicationFormData.first_name + ' ' + applicationFormData.last_name + '<br>';
     review += '<strong>Email:</strong> ' + applicationFormData.email + '<br>';
-    review += '<strong>Phone:</strong> +' + (applicationFormData.country_code_primary || 'US') + ' ' + applicationFormData.phone_primary;
+    review += '<strong>Phone:</strong> ' + (applicationFormData.country_code_primary || '') + ' ' + applicationFormData.phone_primary;
     if (applicationFormData.phone_primary_whatsapp) {
-      review += ' (WhatsApp available)';
+      review += ' <em>(WhatsApp)</em>';
     }
     review += '<br>';
-    if (applicationFormData.household_type === 'Family') {
-      review += '<strong>Household:</strong> Family<br>';
+    review += '<strong>Citizenship:</strong> ' + applicationFormData.citizenship_country + '<br>';
+    review += '</div>';
+
+    // Employment Information Section
+    if (applicationFormData.employment_office || applicationFormData.employment_job_title || applicationFormData.employment_posting_date) {
+      review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
+      review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Employment Information</h4>';
+      if (applicationFormData.employment_office) {
+        review += '<strong>Employer/Organization:</strong> ' + applicationFormData.employment_office + '<br>';
+      }
+      if (applicationFormData.employment_job_title) {
+        review += '<strong>Job Title:</strong> ' + applicationFormData.employment_job_title + '<br>';
+      }
+      if (applicationFormData.employment_posting_date) {
+        review += '<strong>Posting Date:</strong> ' + applicationFormData.employment_posting_date + '<br>';
+      }
+      if (applicationFormData.employment_departure_date) {
+        review += '<strong>Anticipated Departure:</strong> ' + applicationFormData.employment_departure_date + '<br>';
+      }
+      review += '</div>';
     }
-    review += '<br>';
+
+    // Household Information Section
+    if (applicationFormData.household_type === 'Family' || applicationFormData.sponsor_name) {
+      review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
+      review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Household Information</h4>';
+      review += '<strong>Household Type:</strong> ' + (applicationFormData.household_type || 'Individual') + '<br>';
+
+      // Sponsor Information
+      if (applicationFormData.sponsor_name) {
+        review += '<strong>Sponsor:</strong> ' + applicationFormData.sponsor_name + '<br>';
+        if (applicationFormData.sponsor_email) {
+          review += '<strong>Sponsor Email:</strong> ' + applicationFormData.sponsor_email + '<br>';
+        }
+      }
+
+      // Family Members
+      if (applicationFormData.family_members && applicationFormData.family_members.length > 0) {
+        review += '<strong>Family Members:</strong><br>';
+        review += '<ul style="margin: 8px 0; padding-left: 20px;">';
+        applicationFormData.family_members.forEach(function(member) {
+          review += '<li>' + member.first_name + ' ' + member.last_name + ' (' + member.relationship_to_primary + ')';
+          if (member.citizenship_country) {
+            review += ' — Citizenship: ' + member.citizenship_country;
+          }
+          review += '</li>';
+        });
+        review += '</ul>';
+      }
+
+      review += '</div>';
+    }
+
+    // Household Staff Section
+    if (applicationFormData.has_staff && (applicationFormData.staff_first_name || applicationFormData.staff_last_name)) {
+      review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
+      review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Household Staff</h4>';
+      review += '<strong>Name:</strong> ' + applicationFormData.staff_first_name + ' ' + applicationFormData.staff_last_name + '<br>';
+      if (applicationFormData.staff_citizenship) {
+        review += '<strong>Citizenship:</strong> ' + applicationFormData.staff_citizenship + '<br>';
+      }
+      review += '</div>';
+    }
+
     document.getElementById('applicationReview').innerHTML = review;
   }
 
@@ -3023,6 +3075,9 @@ function submitLogin(event) {
       document.getElementById('applicationSubmitError').style.display = 'block';
       return;
     }
+
+    // Ensure all form data is collected before submission
+    saveApplicationStepData(5);
 
     // Call backend API
     apiCall('submit_application', applicationFormData)
@@ -3050,13 +3105,27 @@ function submitLogin(event) {
   function addFamilyMember() {
     var memberId = 'fam_' + Date.now();
     var html = '<div id="' + memberId + '" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ddd;">' +
-      '<input type="text" placeholder="First name" class="form-input" style="margin-bottom: 8px;" />' +
-      '<input type="text" placeholder="Last name" class="form-input" style="margin-bottom: 8px;" />' +
-      '<input type="text" placeholder="Relationship (e.g., Spouse, Child)" class="form-input" style="margin-bottom: 8px;" />' +
-      '<input type="date" class="form-input" style="margin-bottom: 8px;" />' +
+      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">' +
+        '<input type="text" placeholder="First name" class="form-input fam-first-name" />' +
+        '<input type="text" placeholder="Last name" class="form-input fam-last-name" />' +
+      '</div>' +
+      '<div style="margin-bottom: 8px;">' +
+        '<label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"><input type="radio" name="' + memberId + '_rel" value="Spouse" class="fam-relationship"> Spouse</label>' +
+        '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Child" class="fam-relationship"> Child</label>' +
+      '</div>' +
+      '<select class="form-input fam-citizenship" style="margin-bottom: 8px;"><option value="">-- Select citizenship --</option></select>' +
       '<button type="button" class="btn btn-danger" onclick="document.getElementById(\'' + memberId + '\').remove();" style="width: 100%; font-size: 12px;">Remove</button>' +
       '</div>';
     document.getElementById('familyMembersList').insertAdjacentHTML('beforeend', html);
+
+    // Populate citizenship dropdown with full country list
+    var citizenshipSelect = document.getElementById(memberId).querySelector('.fam-citizenship');
+    getCitizenshipCountries().forEach(function(country) {
+      var option = document.createElement('option');
+      option.value = country.code;
+      option.textContent = country.name;
+      citizenshipSelect.appendChild(option);
+    });
   }
 
   // Update dependent visibility when checkboxes change

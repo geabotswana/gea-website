@@ -70,11 +70,11 @@ function createApplicationRecord(formData, createdBy) {
     // Create Household record with three-part phone system
     var householdId = generateId("HSH");
     var householdType = formData.household_type || HOUSEHOLD_INDIVIDUAL;
-    var primaryApplicantName = formData.first_name + " " + formData.last_name;
+    var primaryApplicantName = capitalizeName(formData.first_name) + " " + capitalizeName(formData.last_name);
 
     var householdData = {
       household_id: householdId,
-      household_name: formData.last_name + " Household",
+      household_name: capitalizeName(formData.last_name) + " Household",
       primary_member_email: formData.email,
       active: false,
       membership_category: formData.membership_category,
@@ -102,18 +102,22 @@ function createApplicationRecord(formData, createdBy) {
     var individualData = {
       individual_id: individualId,
       household_id: householdId,
-      first_name: formData.first_name,
-      last_name: formData.last_name,
+      first_name: capitalizeName(formData.first_name),
+      last_name: capitalizeName(formData.last_name),
       email: formData.email,
       relationship_to_primary: RELATIONSHIP_PRIMARY,
       active: false,
-      date_of_birth: formData.date_of_birth || "",
+      date_of_birth: "",
       passport_number: "",
       omang_number: "",
       country_of_citizenship: formData.citizenship_country || "",
       country_code_primary: formData.country_code_primary || "BW",
       phone_primary: formData.phone_primary || "",
       phone_primary_whatsapp: formData.phone_primary_whatsapp || false,
+      employment_office: formData.employment_office || "",
+      employment_job_title: formData.employment_job_title || "",
+      arrival_date: formData.employment_posting_date || "",
+      departure_date: formData.employment_departure_date || "",
       password_hash: hashPassword(tempPassword),
       created_date: new Date(),
       created_by: createdBy
@@ -129,25 +133,19 @@ function createApplicationRecord(formData, createdBy) {
       var staffIndividualData = {
         individual_id: staffIndividualId,
         household_id: householdId,
-        first_name: formData.staff_first_name,
-        last_name: formData.staff_last_name,
+        first_name: capitalizeName(formData.staff_first_name),
+        last_name: capitalizeName(formData.staff_last_name),
         email: "", // Staff members don't have email
         relationship_to_primary: "Household Staff",
         active: false,
-        date_of_birth: formData.staff_dob || "",
+        date_of_birth: "",
         passport_number: "",
-        omang_number: formData.staff_omang || "",
-        country_of_citizenship: "",
-        country_code_primary: formData.staff_country_code_primary || "",
-        phone_primary: formData.staff_phone_primary || "",
-        phone_primary_whatsapp: formData.staff_phone_primary_whatsapp || false,
-        country_code_secondary: formData.staff_country_code_secondary || "",
-        phone_secondary: formData.staff_phone_secondary || "",
-        phone_secondary_whatsapp: formData.staff_phone_secondary_whatsapp || false,
+        omang_number: "",
+        country_of_citizenship: formData.staff_citizenship || "",
+        employment_start_date: new Date(), // Auto-populate with application submission date (membership effective date)
         password_hash: "", // Staff don't log in
         created_date: new Date(),
-        created_by: createdBy,
-        employment_start_date: formData.staff_start_date || ""
+        created_by: createdBy
       };
       individualSheet.appendRow(_objectToRow(staffIndividualData, TAB_INDIVIDUALS));
       logAuditEntry(createdBy, AUDIT_APPLICATION_CREATED, "Household Staff", staffIndividualId,
@@ -166,7 +164,7 @@ function createApplicationRecord(formData, createdBy) {
       phone_primary_whatsapp: formData.phone_primary_whatsapp || false,
       membership_category: formData.membership_category,
       household_type: householdType,
-      sponsor_name: formData.sponsor_name || "",
+      sponsor_name: capitalizeName(formData.sponsor_name) || "",
       sponsor_email: formData.sponsor_email || "",
       sponsor_verified: false,
       sponsor_verified_date: "",

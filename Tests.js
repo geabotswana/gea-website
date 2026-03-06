@@ -41,6 +41,8 @@ function runAllTests() {
   testReservationLimits();
   testGuestListDeadline();
   testAuditLog();
+  testMembershipApplicationsSheet();
+  testIndividualsSheet();
 
   Logger.log("========================================");
   Logger.log("TEST RUN COMPLETE — Check above for FAIL");
@@ -663,4 +665,100 @@ function testRsoEmailManual() {
   Logger.log("  INFO: Sending RSO summary for today to " + EMAIL_RSO);
   sendRsoDailySummary();
   Logger.log("  INFO: Done. Check " + EMAIL_RSO + " for the summary email.");
+}
+
+
+/**
+ * Verifies the Membership Applications sheet exists and has all required columns
+ * for the application workflow.
+ * Run this before testing the membership application workflow.
+ */
+function testMembershipApplicationsSheet() {
+  Logger.log("\n--- TEST: Membership Applications Sheet ---");
+
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    _assert("Membership Applications sheet exists", sheet !== null);
+
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    Logger.log("  INFO: Found " + headers.length + " columns");
+
+    // Expected columns based on ApplicationService.js
+    var expectedColumns = [
+      'application_id', 'household_id', 'primary_individual_id', 'primary_applicant_name', 'primary_applicant_email',
+      'country_code_primary', 'phone_primary', 'phone_primary_whatsapp', 'membership_category', 'household_type',
+      'sponsor_name', 'sponsor_email', 'sponsor_verified', 'sponsor_verified_date', 'sponsor_verified_by',
+      'submitted_date', 'status', 'documents_confirmed_date', 'board_initial_status', 'board_initial_reviewed_by',
+      'board_initial_review_date', 'board_initial_notes', 'board_initial_denial_reason', 'rso_status', 'rso_reviewed_by',
+      'rso_review_date', 'rso_private_notes', 'board_final_status', 'board_final_reviewed_by', 'board_final_review_date',
+      'board_final_denial_reason', 'payment_status', 'payment_id', 'employment_job_title', 'employment_posting_date',
+      'employment_departure_date', 'dues_amount', 'membership_start_date', 'membership_expiration_date', 'created_date',
+      'last_modified_date', 'notes'
+    ];
+
+    var missingColumns = [];
+    for (var i = 0; i < expectedColumns.length; i++) {
+      if (headers.indexOf(expectedColumns[i]) === -1) {
+        missingColumns.push(expectedColumns[i]);
+      }
+    }
+
+    if (missingColumns.length === 0) {
+      _assert("All required columns present", true);
+    } else {
+      Logger.log("  FAIL: Missing columns: " + missingColumns.join(", "));
+      Logger.log("  ACTION REQUIRED: Add these columns to Membership Applications sheet:");
+      Logger.log("  " + missingColumns.join(", "));
+    }
+
+    // List actual columns for reference
+    Logger.log("  INFO: Current columns: " + headers.join(", "));
+
+  } catch (e) {
+    Logger.log("  FAIL: Could not access Membership Applications sheet");
+    Logger.log("  ERROR: " + e.message);
+    Logger.log("  ACTION REQUIRED: Verify that 'Membership Applications' tab exists in GEA Member Directory");
+  }
+}
+
+
+/**
+ * Verifies the Individuals sheet has all required columns for application data.
+ */
+function testIndividualsSheet() {
+  Logger.log("\n--- TEST: Individuals Sheet Columns ---");
+
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_INDIVIDUALS);
+    _assert("Individuals sheet exists", sheet !== null);
+
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    Logger.log("  INFO: Found " + headers.length + " columns");
+
+    // Check for critical application-related columns
+    var requiredForApplication = [
+      'employment_job_title',
+      'arrival_date',
+      'departure_date'
+    ];
+
+    var missingColumns = [];
+    for (var i = 0; i < requiredForApplication.length; i++) {
+      if (headers.indexOf(requiredForApplication[i]) === -1) {
+        missingColumns.push(requiredForApplication[i]);
+      }
+    }
+
+    if (missingColumns.length === 0) {
+      _assert("All application-related columns present", true);
+    } else {
+      Logger.log("  FAIL: Missing columns: " + missingColumns.join(", "));
+      Logger.log("  ACTION REQUIRED: Add these columns to Individuals sheet:");
+      Logger.log("  " + missingColumns.join(", "));
+    }
+
+  } catch (e) {
+    Logger.log("  FAIL: Could not access Individuals sheet");
+    Logger.log("  ERROR: " + e.message);
+  }
 }

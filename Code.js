@@ -1551,7 +1551,7 @@ function _safePublicHousehold(hh) {
  */
 function _handleSubmitApplication(p) {
   try {
-    var result = ApplicationService.createApplicationRecord(p, "applicant");
+    var result = createApplicationRecord(p, "applicant");
     if (result.success) {
       return successResponse({
         application_id: result.application_id,
@@ -1561,11 +1561,14 @@ function _handleSubmitApplication(p) {
         message: result.message
       });
     } else {
+      Logger.log("Application submission validation error: " + result.message);
       return errorResponse(result.message, "VALIDATION_FAILED");
     }
   } catch (e) {
-    logAuditEntry("applicant", "APPLICATION_ERROR", "Application", "", "Error: " + e.toString());
-    return errorResponse("Error submitting application.", "SERVER_ERROR");
+    var errorMsg = "Error: " + e.toString() + " | Stack: " + e.stack;
+    Logger.log("Application submission error: " + errorMsg);
+    logAuditEntry("applicant", "APPLICATION_ERROR", "Application", "", errorMsg);
+    return errorResponse("Error submitting application: " + e.toString(), "SERVER_ERROR");
   }
 }
 
@@ -1580,7 +1583,7 @@ function _handleApplicationStatus(p) {
       return auth;
     }
 
-    var result = ApplicationService.getApplicationForApplicant(auth.session.email);
+    var result = getApplicationForApplicant(auth.session.email);
     if (result.success) {
       return successResponse(result);
     } else {
@@ -1602,7 +1605,7 @@ function _handleConfirmDocuments(p) {
       return auth;
     }
 
-    var result = ApplicationService.confirmDocumentsUploaded(p.application_id, auth.session.email);
+    var result = confirmDocumentsUploaded(p.application_id, auth.session.email);
     if (result.success) {
       return successResponse(result);
     } else {
@@ -1691,7 +1694,7 @@ function _handleSubmitPaymentProof(p) {
       return auth;
     }
 
-    var result = ApplicationService.submitPaymentProof(
+    var result = submitPaymentProof(
       p.application_id,
       auth.session.email,
       p.payment_method,
@@ -1720,7 +1723,7 @@ function _handleAdminApplications(p) {
       return auth;
     }
 
-    var applications = ApplicationService.listApplicationsForBoard(p.status_filter);
+    var applications = listApplicationsForBoard(p.status_filter);
     return successResponse({
       applications: applications,
       total: applications.length
@@ -1742,7 +1745,7 @@ function _handleAdminApplicationDetail(p) {
       return auth;
     }
 
-    var result = ApplicationService.getApplicationDetail(p.application_id);
+    var result = getApplicationDetail(p.application_id);
     if (result.success) {
       return successResponse(result);
     } else {
@@ -1767,7 +1770,7 @@ function _handleAdminApproveApplication(p) {
     var result;
 
     if (p.stage === "board_initial") {
-      result = ApplicationService.boardInitialDecision(
+      result = boardInitialDecision(
         p.application_id,
         "approved",
         auth.session.email,
@@ -1775,7 +1778,7 @@ function _handleAdminApproveApplication(p) {
         ""
       );
     } else if (p.stage === "board_final") {
-      result = ApplicationService.boardFinalDecision(
+      result = boardFinalDecision(
         p.application_id,
         "approved",
         auth.session.email,
@@ -1810,7 +1813,7 @@ function _handleAdminDenyApplication(p) {
     var result;
 
     if (p.stage === "board_initial") {
-      result = ApplicationService.boardInitialDecision(
+      result = boardInitialDecision(
         p.application_id,
         "denied",
         auth.session.email,
@@ -1818,7 +1821,7 @@ function _handleAdminDenyApplication(p) {
         p.reason
       );
     } else if (p.stage === "board_final") {
-      result = ApplicationService.boardFinalDecision(
+      result = boardFinalDecision(
         p.application_id,
         "denied",
         auth.session.email,
@@ -1826,7 +1829,7 @@ function _handleAdminDenyApplication(p) {
         p.reason
       );
     } else if (p.stage === "rso") {
-      result = ApplicationService.rsoDecision(
+      result = rsoDecision(
         p.application_id,
         "denied",
         auth.session.email,
@@ -1858,7 +1861,7 @@ function _handleAdminVerifyPayment(p) {
       return auth;
     }
 
-    var result = ApplicationService.verifyAndActivateMembership(p.application_id, auth.session.email);
+    var result = verifyAndActivateMembership(p.application_id, auth.session.email);
     if (result.success) {
       return successResponse(result);
     } else {

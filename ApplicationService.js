@@ -142,7 +142,13 @@ function createApplicationRecord(formData, createdBy) {
         passport_number: "",
         omang_number: "",
         country_of_citizenship: formData.staff_citizenship || "",
-        employment_start_date: new Date(), // Auto-populate with application submission date (membership effective date)
+        country_code_primary: "",
+        phone_primary: "",
+        phone_primary_whatsapp: false,
+        employment_office: "",
+        employment_job_title: "",
+        arrival_date: new Date(), // Auto-populate with application submission date (employment start date)
+        departure_date: "",
         password_hash: "", // Staff don't log in
         created_date: new Date(),
         created_by: createdBy

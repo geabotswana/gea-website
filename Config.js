@@ -167,6 +167,9 @@ var EMAIL_MEMBERS         = "members@geabotswana.org";
 var EMAIL_RSO             = "treasurer@geabotswana.org";
 var EMAIL_MGT             = "mgt-notify@geabotswana.org";
 
+// System no-reply address (for board notifications - replies redirect here, not to current user)
+var EMAIL_NOREPLY         = "noreply@geabotswana.org";
+
 // Legacy institutional email (recovery/backup only - do not use for operations)
 var EMAIL_LEGACY          = "geaboard@gmail.com";
 

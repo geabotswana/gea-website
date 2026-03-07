@@ -275,8 +275,8 @@ function createApplicationRecord(formData, createdBy) {
       "LOGIN_URL": "https://geabotswana.org/member.html"
     });
 
-    // Email to board
-    Logger.log("[DEBUG] Sending tpl_042 to " + boardEmail);
+    // Email to board (sent FROM board@, so it arrives as incoming mail, not sent folder)
+    Logger.log("[DEBUG] Sending tpl_042 FROM board to " + boardEmail);
     var boardEmailVars = {
       "APPLICANT_NAME": formData.first_name + " " + formData.last_name,
       "MEMBERSHIP_CATEGORY": formData.membership_category,
@@ -285,7 +285,7 @@ function createApplicationRecord(formData, createdBy) {
       "SUBMITTED_DATE": formatDate(new Date(), true)
     };
     Logger.log("[DEBUG] Board email variables:", JSON.stringify(boardEmailVars));
-    sendEmail("tpl_042", boardEmail, boardEmailVars);
+    sendEmailFromBoard("tpl_042", boardEmail, boardEmailVars);
 
     return {
       success: true,

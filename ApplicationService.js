@@ -272,7 +272,6 @@ function createApplicationRecord(formData, createdBy) {
       "FIRST_NAME": formData.first_name,
       "EMAIL": formData.email,
       "TEMP_PASSWORD": tempPassword,
-      "TEMP_PASSWORD_DISPLAY": "<strong style=\"font-family: monospace; background: #f0f0f0; padding: 4px 8px; border-radius: 3px;\">" + tempPassword + "</strong>",
       "LOGIN_URL": "https://geabotswana.org/member.html"
     });
 

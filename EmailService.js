@@ -89,16 +89,21 @@ function sendEmailFromBoard(templateId, recipient, variables) {
       return false;
     }
 
-    var subject   = replacePlaceholders(template.subject, variables);
+    var subject = replacePlaceholders(template.subject, variables);
     var plainBody = replacePlaceholders(template.body, variables);
-    var htmlBody  = buildHtmlEmail(subject, plainBody);
+    var htmlBody = buildHtmlEmail(subject, plainBody);
 
     var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
-    var fromAddress = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
 
-    // Use Gmail API to send from board address
-    // Build raw email with proper headers
-    var emailMessage = 'From: ' + fromAddress + '\r\n' +
+    // Get OAuth token from service account
+    var accessToken = _getServiceAccountAccessToken();
+    if (!accessToken) {
+      Logger.log("ERROR: Could not get service account access token");
+      return false;
+    }
+
+    // Build raw email message
+    var emailMessage = 'From: ' + BOARD_EMAIL_TO_SEND_FROM + '\r\n' +
                        'To: ' + to + '\r\n' +
                        'Subject: ' + subject + '\r\n' +
                        'Content-Type: text/html; charset=UTF-8\r\n' +
@@ -107,14 +112,34 @@ function sendEmailFromBoard(templateId, recipient, variables) {
                        htmlBody;
 
     var encodedMessage = Utilities.base64Encode(emailMessage);
-    var blob = Utilities.newBlob(encodedMessage);  // Wrap in Blob for Gmail API
-    var resource = {
-      raw: blob
+    var payload = {
+      raw: encodedMessage
     };
 
-    Gmail.Users.Messages.send({}, "me", resource);
-    Logger.log("Email sent FROM board: " + templateId + " → " + to);
-    return true;
+    // Call Gmail API with service account credentials
+    var options = {
+      method: 'post',
+      headers: {
+        Authorization: 'Bearer ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+      options
+    );
+
+    var result = JSON.parse(response.getContentText());
+    if (response.getResponseCode() === 200) {
+      Logger.log("Email sent FROM board: " + templateId + " → " + to);
+      return true;
+    } else {
+      Logger.log("ERROR: Gmail API error: " + response.getContentText());
+      return false;
+    }
 
   } catch (e) {
     Logger.log("ERROR sendEmailFromBoard(" + templateId + "): " + e);
@@ -388,4 +413,83 @@ function escapeHtml(text) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+
+// ============================================================
+// SERVICE ACCOUNT EMAIL SENDING (sendEmailFromBoard helpers)
+// ============================================================
+
+/**
+ * Gets an access token for the service account via OAuth2.
+ * Uses JWT grant flow to authenticate the service account.
+ * @returns {string|null} Access token or null if request failed
+ */
+function _getServiceAccountAccessToken() {
+  try {
+    var jwt = _createServiceAccountJwt();
+    var options = {
+      method: 'post',
+      payload: {
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt
+      },
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', options);
+    var result = JSON.parse(response.getContentText());
+
+    if (response.getResponseCode() === 200) {
+      return result.access_token;
+    } else {
+      Logger.log("ERROR getting access token: " + response.getContentText());
+      return null;
+    }
+  } catch (e) {
+    Logger.log("ERROR _getServiceAccountAccessToken: " + e);
+    return null;
+  }
+}
+
+/**
+ * Creates a signed JWT assertion for service account authentication.
+ * Uses RS256 signature with the service account's private key.
+ * @returns {string} Signed JWT token
+ */
+function _createServiceAccountJwt() {
+  var now = Math.floor(Date.now() / 1000);
+  var expiresAt = now + 3600;  // Token valid for 1 hour
+
+  var header = {
+    alg: 'RS256',
+    typ: 'JWT'
+  };
+
+  var claimsSet = {
+    iss: BOARD_SERVICE_ACCOUNT.client_email,
+    scope: 'https://www.googleapis.com/auth/gmail.send',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: expiresAt,
+    iat: now,
+    sub: BOARD_EMAIL_TO_SEND_FROM  // Domain-wide delegation
+  };
+
+  var encodedHeader = Utilities.base64Encode(JSON.stringify(header))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  var encodedClaims = Utilities.base64Encode(JSON.stringify(claimsSet))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+
+  var toSign = encodedHeader + '.' + encodedClaims;
+  var signature = Utilities.computeRsaSha256Signature(toSign, BOARD_SERVICE_ACCOUNT.private_key);
+  var encodedSignature = Utilities.base64Encode(signature)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+
+  return toSign + '.' + encodedSignature;
 }

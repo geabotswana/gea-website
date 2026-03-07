@@ -762,3 +762,61 @@ function testIndividualsSheet() {
     Logger.log("  ERROR: " + e.message);
   }
 }
+
+
+// ============================================================
+// GMAIL API TEST
+// ============================================================
+
+/**
+ * Test function to verify Gmail API is working for board emails.
+ * Sends a test email FROM board@geabotswana.org to test that the Gmail API
+ * is properly enabled and working.
+ *
+ * RUN THIS TEST:
+ *   1. Select testBoardEmailGmailAPI from the dropdown at top
+ *   2. Click Run (▶)
+ *   3. Check View → Logs for results
+ *   4. Check your inbox - email should arrive FROM board@geabotswana.org
+ */
+function testBoardEmailGmailAPI() {
+  Logger.log("\n========== TEST: Board Email via Gmail API ==========\n");
+
+  var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+  var subject = "TEST: Gmail API Board Email Test";
+  var body = "This is a test email from the Gmail API.\n\n" +
+             "If you received this email in your inbox (not in Sent folder),\n" +
+             "the Gmail API is working correctly for board notifications.\n\n" +
+             "Test sent at: " + new Date().toString();
+
+  try {
+    // Test sendEmailFromBoard function
+    var success = sendEmailFromBoard("tpl_042", boardEmail, {
+      "APPLICANT_NAME": "Test User",
+      "MEMBERSHIP_CATEGORY": "Full",
+      "HOUSEHOLD_TYPE": "Family",
+      "APPLICATION_ID": "TEST-2026-00001",
+      "SUBMITTED_DATE": new Date().toISOString().split('T')[0]
+    });
+
+    if (success) {
+      Logger.log("✓ PASS: Board email sent successfully via Gmail API");
+      Logger.log("  Recipient: " + boardEmail);
+      Logger.log("  Check your inbox - the email should arrive FROM board@geabotswana.org");
+      Logger.log("  (NOT in your Sent folder)");
+    } else {
+      Logger.log("✗ FAIL: sendEmailFromBoard returned false");
+      Logger.log("  Check the logs above for error details");
+    }
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception thrown during email send");
+    Logger.log("  ERROR: " + e.toString());
+    Logger.log("  MESSAGE: " + e.message);
+    Logger.log("\n  TROUBLESHOOTING:");
+    Logger.log("  1. Verify Gmail API is enabled in Google Cloud Console");
+    Logger.log("  2. Verify Gmail API is added as an Advanced Service in GAS");
+    Logger.log("  3. Check that your project is connected to the Cloud project");
+  }
+
+  Logger.log("\n======================================================\n");
+}

@@ -70,6 +70,56 @@ function sendEmail(templateId, recipient, variables, replyTo) {
 }
 
 
+/**
+ * Sends a styled GEA email FROM the board address (board@geabotswana.org).
+ * Uses Gmail API to override the sender, so email appears to come from the board group,
+ * not from the individual user. This ensures board notifications arrive as incoming mail,
+ * not in the sender's Sent folder.
+ *
+ * @param {string}       templateId  e.g. "tpl_042"
+ * @param {string|Array} recipient   Email address(es)
+ * @param {Object}       variables   Placeholder values
+ * @returns {boolean}    true if sent successfully
+ */
+function sendEmailFromBoard(templateId, recipient, variables) {
+  try {
+    var template = getEmailTemplate(templateId);
+    if (!template) {
+      Logger.log("ERROR sendEmailFromBoard: Template not found or inactive: " + templateId);
+      return false;
+    }
+
+    var subject   = replacePlaceholders(template.subject, variables);
+    var plainBody = replacePlaceholders(template.body, variables);
+    var htmlBody  = buildHtmlEmail(subject, plainBody);
+
+    var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
+    var fromAddress = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+
+    // Use Gmail API to send from board address
+    // Build raw email with proper headers
+    var emailMessage = 'From: ' + fromAddress + '\r\n' +
+                       'To: ' + to + '\r\n' +
+                       'Subject: ' + subject + '\r\n' +
+                       'Content-Type: text/html; charset=UTF-8\r\n' +
+                       'MIME-Version: 1.0\r\n' +
+                       '\r\n' +
+                       htmlBody;
+
+    var encodedMessage = Utilities.base64Encode(emailMessage);
+    var resource = {
+      raw: encodedMessage
+    };
+
+    Gmail.Users.Messages.send({}, "me", resource);
+    Logger.log("Email sent FROM board: " + templateId + " → " + to);
+    return true;
+
+  } catch (e) {
+    Logger.log("ERROR sendEmailFromBoard(" + templateId + "): " + e);
+    return false;
+  }
+}
 
 // ============================================================
 // TEMPLATE RETRIEVAL

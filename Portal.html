@@ -1135,13 +1135,15 @@
       </div>
     </div>
 
-    <!-- Step 2: Applicant Info -->
+    <!-- Step 2: Applicant Info (Category-Specific) -->
     <div id="appStep2" class="app-step" style="display: none;">
       <div style="background: #e3f2fd; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0A3161;">
         <p style="margin: 0; font-size: 12px; color: #666;">Your membership category:</p>
         <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 600; color: #0A3161;" id="appStep2CategoryDisplay">—</p>
       </div>
       <h3 style="margin-bottom: 20px;">Your Information</h3>
+
+      <!-- Always visible fields -->
       <div class="form-group">
         <label class="form-label">First Name *</label>
         <input type="text" id="appFirstName" class="form-input" placeholder="Jane" required>
@@ -1175,23 +1177,7 @@
         </label>
       </div>
       <div class="form-group">
-        <label class="form-label">Employer/Organization</label>
-        <input type="text" id="appEmploymentOffice" class="form-input" placeholder="E.g. Embassy Gaborone, Ministry of Finance, etc.">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Job Title (if applicable)</label>
-        <input type="text" id="appJobTitle" class="form-input" placeholder="E.g. Project Manager">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Posting Date (if applicable)</label>
-        <input type="date" id="appPostingDate" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Anticipated Departure Date (if applicable)</label>
-        <input type="date" id="appDepartureDate" class="form-input">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Country of Citizenship</label>
+        <label class="form-label">Country of Citizenship *</label>
         <select id="appCitizenship" class="form-input" required>
           <option value="">-- Select a country --</option>
           <option value="US">United States</option>
@@ -1391,6 +1377,59 @@
           <option value="Zimbabwe">Zimbabwe</option>
         </select>
       </div>
+
+      <!-- Category-Specific Fields Section -->
+      <hr style="margin: 24px 0; border: none; border-top: 1px solid #E0E0E0;">
+
+      <!-- For Full, Associate, Diplomatic (show employer field with label) -->
+      <div id="employerFieldContainer" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Employer/Organization *</label>
+          <input type="text" id="appEmploymentOffice" class="form-input" placeholder="E.g. Embassy Gaborone, Ministry of Finance, etc." required>
+        </div>
+      </div>
+
+      <!-- For Full, Temporary, Affiliate (auto-filled employer, not shown in form) -->
+      <input type="hidden" id="appEmploymentOfficeAuto" value="U.S. Embassy">
+
+      <!-- Job Title (shown for all categories except Community sponsor flow) -->
+      <div id="jobTitleContainer" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Job Title *</label>
+          <input type="text" id="appJobTitle" class="form-input" placeholder="E.g. Project Manager" required>
+        </div>
+      </div>
+
+      <!-- Posting Date (shown for Full, Associate, Diplomatic, Temporary) -->
+      <div id="postingDateContainer" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Posting Date *</label>
+          <input type="date" id="appPostingDate" class="form-input" required>
+        </div>
+      </div>
+
+      <!-- Departure Date (shown for Full, Associate, Diplomatic, Temporary - optional) -->
+      <div id="departureDateContainer" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">Anticipated Departure Date</label>
+          <input type="date" id="appDepartureDate" class="form-input">
+        </div>
+      </div>
+
+      <!-- Sponsor Information (Community only, in Step 2) -->
+      <div id="sponsorInStep2Container" style="display: none;">
+        <h4 style="margin-top: 24px; margin-bottom: 12px; color: #0A3161;">Sponsor Information</h4>
+        <p style="margin-bottom: 16px; color: #666; font-size: 13px;">Your sponsor must be a U.S. Embassy American employee and an active Full GEA member.</p>
+        <div class="form-group">
+          <label class="form-label">Sponsor Name *</label>
+          <input type="text" id="appCommunitySponsornName" class="form-input" placeholder="John Smith" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sponsor Email</label>
+          <input type="email" id="appCommunitySponsornEmail" class="form-input" placeholder="john@example.com">
+        </div>
+      </div>
+
       <div style="margin-top: 24px; display: flex; gap: 10px;">
         <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
         <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">Next</button>
@@ -2855,13 +2894,10 @@ function submitLogin(event) {
 
     // Handle conditional steps
     if (currentApplicationStep === 3) {
-      // Sponsor step: only show if category requires sponsor
-      var category = applicationFormData.membership_category;
-      var needsSponsor = category === 'Community';
-      if (!needsSponsor) {
-        currentApplicationStep++;
-        updateApplicationStep();
-      }
+      // Sponsor step: skipped for all categories now
+      // (Community collects sponsor in Step 2; others don't need sponsor)
+      currentApplicationStep++;
+      updateApplicationStep();
     }
 
     if (currentApplicationStep === 4) {
@@ -2961,6 +2997,9 @@ function submitLogin(event) {
     document.getElementById('assignedMembershipCategory').value = category;
     applicationFormData.membership_category = category;
 
+    // Update Step 2 field visibility based on category
+    updateStep2FieldsForCategory(category);
+
     // For Temporary membership, only individual is allowed
     if (category === 'Temporary') {
       applicationFormData.household_type = 'Individual';
@@ -2969,6 +3008,63 @@ function submitLogin(event) {
       // For other categories, show household type selection
       document.getElementById('householdTypeContainer').style.display = 'block';
       document.getElementById('appStep1NextBtn').style.display = 'block';
+    }
+  }
+
+  function updateStep2FieldsForCategory(category) {
+    // Hide all conditional containers first
+    document.getElementById('employerFieldContainer').style.display = 'none';
+    document.getElementById('jobTitleContainer').style.display = 'none';
+    document.getElementById('postingDateContainer').style.display = 'none';
+    document.getElementById('departureDateContainer').style.display = 'none';
+    document.getElementById('sponsorInStep2Container').style.display = 'none';
+
+    // Show fields based on category
+    switch(category) {
+      case 'Full':
+        // Full: Auto employer (U.S. Embassy), job title required, posting & departure dates
+        applicationFormData.employment_office = 'U.S. Embassy';
+        document.getElementById('jobTitleContainer').style.display = 'block';
+        document.getElementById('postingDateContainer').style.display = 'block';
+        document.getElementById('departureDateContainer').style.display = 'block';
+        break;
+
+      case 'Associate':
+        // Associate: Custom employer, job title required, posting & departure dates
+        document.getElementById('employerFieldContainer').style.display = 'block';
+        document.getElementById('jobTitleContainer').style.display = 'block';
+        document.getElementById('postingDateContainer').style.display = 'block';
+        document.getElementById('departureDateContainer').style.display = 'block';
+        break;
+
+      case 'Diplomatic':
+        // Diplomatic: Custom employer (other embassy), job title required, posting & departure dates
+        document.getElementById('employerFieldContainer').style.display = 'block';
+        document.getElementById('jobTitleContainer').style.display = 'block';
+        document.getElementById('postingDateContainer').style.display = 'block';
+        document.getElementById('departureDateContainer').style.display = 'block';
+        break;
+
+      case 'Temporary':
+        // Temporary: Auto employer (U.S. Embassy), job title required, posting & departure dates
+        applicationFormData.employment_office = 'U.S. Embassy';
+        document.getElementById('jobTitleContainer').style.display = 'block';
+        document.getElementById('postingDateContainer').style.display = 'block';
+        document.getElementById('departureDateContainer').style.display = 'block';
+        break;
+
+      case 'Affiliate':
+        // Affiliate: Auto employer (U.S. Embassy), job title only (no posting dates)
+        applicationFormData.employment_office = 'U.S. Embassy';
+        document.getElementById('jobTitleContainer').style.display = 'block';
+        break;
+
+      case 'Community':
+        // Community: Custom employer, job title, and sponsor info (in Step 2)
+        document.getElementById('employerFieldContainer').style.display = 'block';
+        document.getElementById('jobTitleContainer').style.display = 'block';
+        document.getElementById('sponsorInStep2Container').style.display = 'block';
+        break;
     }
   }
 
@@ -3019,12 +3115,15 @@ function submitLogin(event) {
         }
         break;
       case 2:
+        var category = applicationFormData.membership_category;
         var firstName = document.getElementById('appFirstName').value.trim();
         var lastName = document.getElementById('appLastName').value.trim();
         var email = document.getElementById('appEmail').value.trim();
         var phone = document.getElementById('appPhone').value.trim();
+        var citizenship = document.getElementById('appCitizenship').value.trim();
 
-        if (!firstName || !lastName || !email || !phone) {
+        // Base required fields for all categories
+        if (!firstName || !lastName || !email || !phone || !citizenship) {
           errorDiv.textContent = 'Please fill in all required fields.';
           errorDiv.style.display = 'block';
           return false;
@@ -3035,18 +3134,50 @@ function submitLogin(event) {
           errorDiv.style.display = 'block';
           return false;
         }
+
+        // Category-specific required fields
+        switch(category) {
+          case 'Full':
+          case 'Temporary':
+          case 'Affiliate':
+            // These have auto-filled employer (U.S. Embassy), need job title and posting date
+            var jobTitle = document.getElementById('appJobTitle').value.trim();
+            var postingDate = document.getElementById('appPostingDate').value.trim();
+            if (!jobTitle || !postingDate) {
+              errorDiv.textContent = 'Please fill in all required fields (Job Title and Posting Date are required).';
+              errorDiv.style.display = 'block';
+              return false;
+            }
+            break;
+
+          case 'Associate':
+          case 'Diplomatic':
+            // These need custom employer, job title, and posting date
+            var employer = document.getElementById('appEmploymentOffice').value.trim();
+            var jobTitle = document.getElementById('appJobTitle').value.trim();
+            var postingDate = document.getElementById('appPostingDate').value.trim();
+            if (!employer || !jobTitle || !postingDate) {
+              errorDiv.textContent = 'Please fill in all required fields (Employer, Job Title, and Posting Date are required).';
+              errorDiv.style.display = 'block';
+              return false;
+            }
+            break;
+
+          case 'Community':
+            // Community needs custom employer, job title, and sponsor name
+            var employer = document.getElementById('appEmploymentOffice').value.trim();
+            var jobTitle = document.getElementById('appJobTitle').value.trim();
+            var sponsorName = document.getElementById('appCommunitySponsornName').value.trim();
+            if (!employer || !jobTitle || !sponsorName) {
+              errorDiv.textContent = 'Please fill in all required fields (Employer, Job Title, and Sponsor Name are required).';
+              errorDiv.style.display = 'block';
+              return false;
+            }
+            break;
+        }
         break;
       case 3:
-        var needsSponsor = applicationFormData.membership_category === 'Community';
-        if (needsSponsor) {
-          var sponsorName = document.getElementById('appSponsorName').value.trim();
-          var sponsorEmail = document.getElementById('appSponsorEmail').value.trim();
-          if (!sponsorName || !sponsorEmail) {
-            errorDiv.textContent = 'Please provide sponsor information.';
-            errorDiv.style.display = 'block';
-            return false;
-          }
-        }
+        // Step 3 is always skipped now (no validation needed)
         break;
     }
 
@@ -3065,15 +3196,50 @@ function submitLogin(event) {
         applicationFormData.country_code_primary = document.getElementById('appCountryCode').value || 'US';
         applicationFormData.phone_primary = document.getElementById('appPhone').value;
         applicationFormData.phone_primary_whatsapp = document.getElementById('appPhoneWhatsApp').checked;
-        applicationFormData.employment_office = document.getElementById('appEmploymentOffice').value;
-        applicationFormData.employment_job_title = document.getElementById('appJobTitle').value;
-        applicationFormData.employment_posting_date = document.getElementById('appPostingDate').value;
-        applicationFormData.employment_departure_date = document.getElementById('appDepartureDate').value;
         applicationFormData.citizenship_country = document.getElementById('appCitizenship').value;
+
+        // Employment info (varies by category)
+        // Employer: Auto-filled for Full/Temporary/Affiliate, custom for Associate/Diplomatic, custom for Community
+        var employerField = document.getElementById('appEmploymentOffice');
+        if (employerField && employerField.style.display !== 'none') {
+          applicationFormData.employment_office = employerField.value;
+        } else {
+          // Use auto-filled value for Full/Temporary/Affiliate
+          applicationFormData.employment_office = applicationFormData.employment_office || '';
+        }
+
+        // Job title (shown for all except none)
+        var jobTitleField = document.getElementById('appJobTitle');
+        if (jobTitleField && jobTitleField.style.display !== 'none') {
+          applicationFormData.employment_job_title = jobTitleField.value;
+        }
+
+        // Posting date (optional, shown for Full/Associate/Diplomatic/Temporary)
+        var postingField = document.getElementById('appPostingDate');
+        if (postingField && postingField.style.display !== 'none') {
+          applicationFormData.employment_posting_date = postingField.value;
+        }
+
+        // Departure date (optional, shown for Full/Associate/Diplomatic/Temporary)
+        var departureField = document.getElementById('appDepartureDate');
+        if (departureField && departureField.style.display !== 'none') {
+          applicationFormData.employment_departure_date = departureField.value;
+        }
+
+        // Community sponsor info (in Step 2 for Community, Step 3 for others)
+        var sponsorNameField = document.getElementById('appCommunitySponsornName');
+        var sponsorEmailField = document.getElementById('appCommunitySponsornEmail');
+        if (sponsorNameField && sponsorNameField.style.display !== 'none') {
+          applicationFormData.sponsor_name = capitalizeName(sponsorNameField.value);
+          applicationFormData.sponsor_email = sponsorEmailField ? sponsorEmailField.value : '';
+        }
         break;
       case 3:
-        applicationFormData.sponsor_name = capitalizeName(document.getElementById('appSponsorName').value);
-        applicationFormData.sponsor_email = document.getElementById('appSponsorEmail').value;
+        // Only collect sponsor info here if not Community (Community collects in Step 2)
+        if (applicationFormData.membership_category !== 'Community') {
+          applicationFormData.sponsor_name = capitalizeName(document.getElementById('appSponsorName').value);
+          applicationFormData.sponsor_email = document.getElementById('appSponsorEmail').value;
+        }
         break;
       case 4:
         // Collect family members

@@ -428,9 +428,6 @@ function escapeHtml(text) {
 function _getServiceAccountAccessToken() {
   try {
     var jwt = _createServiceAccountJwt();
-    Logger.log("[DEBUG JWT] First 100 chars: " + jwt.substring(0, 100));
-    Logger.log("[DEBUG] Service account: " + BOARD_SERVICE_ACCOUNT.client_email);
-    Logger.log("[DEBUG] Sending as: " + BOARD_EMAIL_TO_SEND_FROM);
 
     var options = {
       method: 'post',
@@ -444,14 +441,10 @@ function _getServiceAccountAccessToken() {
     var response = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', options);
     var result = JSON.parse(response.getContentText());
 
-    Logger.log("[DEBUG] Token response code: " + response.getResponseCode());
-
     if (response.getResponseCode() === 200) {
-      Logger.log("[DEBUG] Token obtained successfully");
       return result.access_token;
     } else {
       Logger.log("ERROR getting access token: " + response.getContentText());
-      Logger.log("[DEBUG] Full response: " + JSON.stringify(result));
       return null;
     }
   } catch (e) {
@@ -482,10 +475,6 @@ function _createServiceAccountJwt() {
     iat: now,
     sub: BOARD_EMAIL_DELEGATED_USER  // Impersonate treasurer account (has Send As delegation)
   };
-
-  Logger.log("[DEBUG JWT Claims] iss: " + claimsSet.iss);
-  Logger.log("[DEBUG JWT Claims] scope: " + claimsSet.scope);
-  Logger.log("[DEBUG JWT Claims] sub: " + claimsSet.sub);
 
   var encodedHeader = Utilities.base64Encode(JSON.stringify(header))
     .replace(/\+/g, '-')

@@ -1429,9 +1429,10 @@
       </div>
     </div>
 
-    <!-- Step 5: Household Staff (conditional) -->
+    <!-- Step 5: Household Staff (conditional - Family only) -->
     <div id="appStep5" class="app-step" style="display: none;">
       <h3 style="margin-bottom: 20px;">Household Staff</h3>
+      <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Family memberships may designate one household staff member. The staff member may escort family members to and from the facilities but may not make reservations, access facilities independently, or escort children from other families.</p>
       <div class="form-group">
         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
           <input type="checkbox" id="appHasStaff">
@@ -2867,7 +2868,7 @@ function submitLogin(event) {
       // Family step: only show if household type is Family
       var isFamily = applicationFormData.household_type === 'Family';
       document.getElementById('familyMembersContainer').style.display = isFamily ? 'block' : 'none';
-      // If individual membership, skip to step 5
+      // If individual membership, skip to step 5 (and household staff) to step 6 (review)
       if (!isFamily) {
         currentApplicationStep++;
         updateApplicationStep();
@@ -2875,7 +2876,14 @@ function submitLogin(event) {
     }
 
     if (currentApplicationStep === 5) {
-      document.getElementById('staffContainer').style.display = document.getElementById('appHasStaff').checked ? 'block' : 'none';
+      // Household staff only available for Family memberships
+      var isFamily = applicationFormData.household_type === 'Family';
+      if (!isFamily) {
+        currentApplicationStep++;
+        updateApplicationStep();
+      } else {
+        document.getElementById('staffContainer').style.display = document.getElementById('appHasStaff').checked ? 'block' : 'none';
+      }
     }
 
     if (currentApplicationStep === 6) {

@@ -1418,12 +1418,7 @@
     <!-- Step 4: Family Members (conditional) -->
     <div id="appStep4" class="app-step" style="display: none;">
       <h3 style="margin-bottom: 20px;">Household Members</h3>
-      <div class="form-group">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-          <input type="checkbox" id="appIsFamilyHousehold">
-          This is a Family membership (add family members)
-        </label>
-      </div>
+      <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Add family members below if applicable. You can also add or update household members after your membership is activated.</p>
       <div id="familyMembersContainer" style="display: none; margin-top: 20px;">
         <div id="familyMembersList"></div>
         <button type="button" class="btn btn-secondary" onclick="addFamilyMember();" style="width: 100%; margin-top: 12px;">+ Add Family Member</button>
@@ -3247,13 +3242,8 @@ function submitLogin(event) {
     });
   }
 
-  // Update dependent visibility when checkboxes change
+  // Update dependent visibility when household staff checkbox changes
   document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('appIsFamilyHousehold')) {
-      document.getElementById('appIsFamilyHousehold').addEventListener('change', function() {
-        document.getElementById('familyMembersContainer').style.display = this.checked ? 'block' : 'none';
-      });
-    }
     if (document.getElementById('appHasStaff')) {
       document.getElementById('appHasStaff').addEventListener('change', function() {
         document.getElementById('staffContainer').style.display = this.checked ? 'block' : 'none';

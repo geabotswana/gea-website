@@ -28,6 +28,41 @@
     }
 
     /* ============================================================ */
+    /* ENVIRONMENT INDICATOR                                        */
+    /* ============================================================ */
+    #env-indicator {
+      position: fixed;
+      top: 0;
+      right: 0;
+      z-index: 10000;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      border-bottom-left-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.3s ease;
+    }
+
+    #env-indicator.dev {
+      background: #FFC107;
+      color: #333;
+      border: 1px solid #FFB300;
+    }
+
+    #env-indicator.prod {
+      background: #4CAF50;
+      color: white;
+      border: 1px solid #388E3C;
+    }
+
+    #env-indicator:hover {
+      padding: 8px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* ============================================================ */
     /* IFRAME CONTAINER (Full Page)                                 */
     /* ============================================================ */
     #iframe-container {
@@ -49,17 +84,89 @@
 <body>
 
 <!-- ================================================================ -->
+<!-- ENVIRONMENT INDICATOR & SWITCHER                                -->
+<!-- Click to toggle between Dev (@HEAD) and Prod (Versioned)        -->
+<!-- ================================================================ -->
+<div id="env-indicator" title="Click to switch environments">
+  <span id="env-label">PROD</span>
+</div>
+
+<!-- ================================================================ -->
 <!-- IFRAME CONTAINER (Full-Page Portal Embed)                       -->
 <!-- Full-height iframe that loads the GAS Member Portal             -->
 <!-- ================================================================ -->
 <div id="iframe-container">
   <iframe
     id="member-portal"
-    src="https://script.google.com/a/macros/geabotswana.org/s/AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg/exec"
     title="GEA Member Portal"
     allow="same-origin"
   ></iframe>
 </div>
+
+<script>
+  // ================================================================
+  // DEPLOYMENT IDs
+  // ================================================================
+  const DEPLOYMENTS = {
+    prod: 'AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ',  // Versioned (stable)
+    dev:  'AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg'                              // @HEAD (latest code)
+  };
+
+  // ================================================================
+  // ENVIRONMENT DETECTION & SETUP
+  // ================================================================
+  function initializeEnvironment() {
+    // Check URL parameter: ?env=dev or ?env=prod
+    const urlParams = new URLSearchParams(window.location.search);
+    const envParam = urlParams.get('env');
+
+    // Determine environment: default to prod
+    let environment = 'prod';
+    if (envParam === 'dev') {
+      environment = 'dev';
+    }
+
+    // Save to localStorage for persistence
+    localStorage.setItem('gea-env', environment);
+
+    // Load the correct deployment
+    loadDeployment(environment);
+  }
+
+  function loadDeployment(environment) {
+    const deploymentId = DEPLOYMENTS[environment];
+    const iframe = document.getElementById('member-portal');
+    const indicator = document.getElementById('env-indicator');
+    const label = document.getElementById('env-label');
+
+    // Set iframe src
+    iframe.src = `https://script.google.com/a/macros/geabotswana.org/s/${deploymentId}/exec`;
+
+    // Update indicator
+    indicator.className = `${environment}`;
+    label.textContent = environment === 'dev' ? 'DEV (@HEAD)' : 'PROD (Stable)';
+  }
+
+  // ================================================================
+  // ENVIRONMENT SWITCHER
+  // ================================================================
+  document.getElementById('env-indicator').addEventListener('click', function() {
+    const current = localStorage.getItem('gea-env') || 'prod';
+    const next = current === 'prod' ? 'dev' : 'prod';
+
+    // Update URL without reloading
+    const newUrl = next === 'dev'
+      ? window.location.pathname + '?env=dev'
+      : window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+
+    // Reload with new deployment
+    loadDeployment(next);
+  });
+
+  // Initialize on page load
+  window.addEventListener('DOMContentLoaded', initializeEnvironment);
+</script>
 
 </body>
 </html>

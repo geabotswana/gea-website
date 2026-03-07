@@ -569,6 +569,31 @@ Board reviews appeal request and can approve reapplication if conditions change
 
 ---
 
+## Future Features / Pending Implementation
+
+### Post-Membership Family & Staff Member Addition
+
+**Requirement:** Currently, family members and household staff may only be added during the initial membership application. Once membership is active, there is no approval process for adding additional family members or staff members.
+
+**TODO:** Create an approval workflow that allows:
+1. **Member Request:** Active member requests to add a family member or household staff
+2. **Board Approval:** Board reviews and approves/denies addition request
+3. **Document Submission:** If approved, member uploads required documents for new individual(s)
+4. **RSO Review:** Security review of new documents (if applicable)
+5. **Activation:** New individuals activated in member's household
+6. **Notification:** Member notified of approval/denial status
+
+**Scope:** This feature requires:
+- New database table: "Family Member/Staff Addition Requests" (in Member Directory)
+- New request form: In Portal.html member section
+- New approval workflow: In Admin.html with similar two-stage process (Board → RSO)
+- New email templates: Request confirmation, approval/denial notifications
+- Updates to existing document upload workflow to support post-membership submissions
+
+**Priority:** Phase 2 (after core membership activation is stable)
+
+---
+
 ## Related Documentation
 
 - **GEA Membership Policy** — Policy requirements and eligibility overview

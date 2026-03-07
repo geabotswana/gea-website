@@ -103,7 +103,8 @@ function sendEmailFromBoard(templateId, recipient, variables) {
     }
 
     // Build raw email message
-    var emailMessage = 'From: ' + BOARD_EMAIL_TO_SEND_FROM + '\r\n' +
+    var fromHeader = BOARD_EMAIL_DISPLAY_NAME + ' <' + BOARD_EMAIL_TO_SEND_FROM + '>';
+    var emailMessage = 'From: ' + fromHeader + '\r\n' +
                        'To: ' + to + '\r\n' +
                        'Subject: ' + subject + '\r\n' +
                        'Content-Type: text/html; charset=UTF-8\r\n' +

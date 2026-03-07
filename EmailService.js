@@ -107,8 +107,9 @@ function sendEmailFromBoard(templateId, recipient, variables) {
                        htmlBody;
 
     var encodedMessage = Utilities.base64Encode(emailMessage);
+    var blob = Utilities.newBlob(encodedMessage);  // Wrap in Blob for Gmail API
     var resource = {
-      raw: encodedMessage
+      raw: blob
     };
 
     Gmail.Users.Messages.send({}, "me", resource);

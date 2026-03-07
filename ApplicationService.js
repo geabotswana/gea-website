@@ -257,7 +257,7 @@ function createApplicationRecord(formData, createdBy) {
                   "New membership application submitted for " + householdType);
 
     // Send confirmation emails
-    var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
+    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
     Logger.log("[DEBUG] Sending emails - boardEmail: " + boardEmail);
 
     // Email to applicant with credentials
@@ -393,7 +393,7 @@ function confirmDocumentsUploaded(applicationId, email) {
                   "Documents confirmed for review");
 
     // Notify board
-    var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
+    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
     sendEmail("tpl_043", boardEmail, {
       "APPLICANT_NAME": application.first_name + " " + application.last_name,
       "APPLICATION_ID": applicationId,
@@ -596,7 +596,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
       logAuditEntry(rsoEmail, AUDIT_APPLICATION_RSO_REVIEWED, "Application", applicationId, "RSO approved documents");
 
       // Notify board
-      var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
+      var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
       sendEmail("tpl_047", boardEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId
@@ -614,7 +614,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
       logAuditEntry(rsoEmail, AUDIT_APPLICATION_RSO_REVIEWED, "Application", applicationId, "RSO rejected - returned for resubmission");
 
       // Notify board and applicant
-      var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
+      var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
       sendEmail("tpl_046", boardEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId,
@@ -874,7 +874,7 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
                   "Membership activated by Treasurer");
 
     // Send welcome emails
-    var boardEmail = getConfigValue("BOARD_EMAIL") || "board@geabotswana.org";
+    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
 
     sendEmail("tpl_051", application.email, {
       "APPLICANT_NAME": application.first_name,

@@ -22,3 +22,4 @@ var BOARD_SERVICE_ACCOUNT = {
 };
 
 var BOARD_EMAIL_TO_SEND_FROM = "board@geabotswana.org";
+var BOARD_EMAIL_DELEGATED_USER = "treasurer@geabotswana.org";  // User with Send Mail As delegation

@@ -480,7 +480,7 @@ function _createServiceAccountJwt() {
     aud: 'https://oauth2.googleapis.com/token',
     exp: expiresAt,
     iat: now,
-    sub: BOARD_EMAIL_TO_SEND_FROM  // Domain-wide delegation
+    sub: BOARD_EMAIL_DELEGATED_USER  // Impersonate treasurer account (has Send As delegation)
   };
 
   Logger.log("[DEBUG JWT Claims] iss: " + claimsSet.iss);

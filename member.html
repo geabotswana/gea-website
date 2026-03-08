@@ -32,14 +32,14 @@
     /* ============================================================ */
     #env-indicator {
       position: fixed;
-      top: 0;
-      right: 0;
+      bottom: 8px;
+      left: 8px;
       z-index: 10000;
       padding: 8px 16px;
       font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.5px;
-      border-bottom-left-radius: 4px;
+      border-radius: 4px;
       cursor: pointer;
       user-select: none;
       transition: all 0.3s ease;
@@ -120,10 +120,10 @@
     const urlParams = new URLSearchParams(window.location.search);
     const envParam = urlParams.get('env');
 
-    // Determine environment: default to prod
-    let environment = 'prod';
-    if (envParam === 'dev') {
-      environment = 'dev';
+    // Determine environment: default to dev
+    let environment = 'dev';
+    if (envParam === 'prod') {
+      environment = 'prod';
     }
 
     // Save to localStorage for persistence

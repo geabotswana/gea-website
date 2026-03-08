@@ -2939,22 +2939,94 @@ function submitLogin(event) {
       familyList.innerHTML = ''; // Clear existing
       applicationFormData.family_members.forEach(function(member) {
         var memberId = 'fam_' + Date.now() + '_' + Math.random();
-        var html = '<div id="' + memberId + '" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ddd;">' +
-          '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">' +
-          '<input type="text" value="' + member.first_name + '" class="form-input fam-first-name" placeholder="First name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
-          '<input type="text" value="' + member.last_name + '" class="form-input fam-last-name" placeholder="Last name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
-          '</div>' +
-          '<div style="display: flex; gap: 16px; margin-bottom: 8px;">' +
-          '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Spouse" class="fam-relationship"' + (member.relationship_to_primary === 'Spouse' ? ' checked' : '') + '> Spouse</label>' +
-          '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Child" class="fam-relationship"' + (member.relationship_to_primary === 'Child' ? ' checked' : '') + '> Child</label>' +
-          '</div>' +
-          '<select class="form-input fam-citizenship" style="margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"><option value="">-- Select citizenship --</option></select>' +
-          '<button type="button" class="btn btn-danger" onclick="document.getElementById(\'' + memberId + '\').remove();" style="width: 100%; font-size: 12px;">Remove</button>' +
-          '</div>';
-        familyList.insertAdjacentHTML('beforeend', html);
 
-        // Populate citizenship dropdown
-        var citizenshipSelect = document.getElementById(memberId).querySelector('.fam-citizenship');
+        // Build member section safely using DOM
+        var memberDiv = document.createElement('div');
+        memberDiv.id = memberId;
+        memberDiv.style.background = 'white';
+        memberDiv.style.padding = '12px';
+        memberDiv.style.borderRadius = '6px';
+        memberDiv.style.marginBottom = '12px';
+        memberDiv.style.border = '1px solid #ddd';
+
+        // Name inputs
+        var nameGrid = document.createElement('div');
+        nameGrid.style.display = 'grid';
+        nameGrid.style.gridTemplateColumns = '1fr 1fr';
+        nameGrid.style.gap = '8px';
+        nameGrid.style.marginBottom = '8px';
+
+        var firstNameInput = document.createElement('input');
+        firstNameInput.type = 'text';
+        firstNameInput.className = 'form-input fam-first-name';
+        firstNameInput.placeholder = 'First name';
+        firstNameInput.value = member.first_name || '';
+        firstNameInput.style.padding = '8px';
+        firstNameInput.style.border = '1px solid #ddd';
+        firstNameInput.style.borderRadius = '4px';
+        nameGrid.appendChild(firstNameInput);
+
+        var lastNameInput = document.createElement('input');
+        lastNameInput.type = 'text';
+        lastNameInput.className = 'form-input fam-last-name';
+        lastNameInput.placeholder = 'Last name';
+        lastNameInput.value = member.last_name || '';
+        lastNameInput.style.padding = '8px';
+        lastNameInput.style.border = '1px solid #ddd';
+        lastNameInput.style.borderRadius = '4px';
+        nameGrid.appendChild(lastNameInput);
+
+        memberDiv.appendChild(nameGrid);
+
+        // Relationship radios
+        var relationshipDiv = document.createElement('div');
+        relationshipDiv.style.display = 'flex';
+        relationshipDiv.style.gap = '16px';
+        relationshipDiv.style.marginBottom = '8px';
+
+        var spouseLabel = document.createElement('label');
+        spouseLabel.style.display = 'flex';
+        spouseLabel.style.alignItems = 'center';
+        spouseLabel.style.gap = '8px';
+        var spouseRadio = document.createElement('input');
+        spouseRadio.type = 'radio';
+        spouseRadio.name = memberId + '_rel';
+        spouseRadio.value = 'Spouse';
+        spouseRadio.className = 'fam-relationship';
+        spouseRadio.checked = (member.relationship_to_primary === 'Spouse');
+        spouseLabel.appendChild(spouseRadio);
+        spouseLabel.appendChild(document.createTextNode('Spouse'));
+        relationshipDiv.appendChild(spouseLabel);
+
+        var childLabel = document.createElement('label');
+        childLabel.style.display = 'flex';
+        childLabel.style.alignItems = 'center';
+        childLabel.style.gap = '8px';
+        var childRadio = document.createElement('input');
+        childRadio.type = 'radio';
+        childRadio.name = memberId + '_rel';
+        childRadio.value = 'Child';
+        childRadio.className = 'fam-relationship';
+        childRadio.checked = (member.relationship_to_primary === 'Child');
+        childLabel.appendChild(childRadio);
+        childLabel.appendChild(document.createTextNode('Child'));
+        relationshipDiv.appendChild(childLabel);
+
+        memberDiv.appendChild(relationshipDiv);
+
+        // Citizenship dropdown
+        var citizenshipSelect = document.createElement('select');
+        citizenshipSelect.className = 'form-input fam-citizenship';
+        citizenshipSelect.style.marginBottom = '8px';
+        citizenshipSelect.style.padding = '8px';
+        citizenshipSelect.style.border = '1px solid #ddd';
+        citizenshipSelect.style.borderRadius = '4px';
+
+        var defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '-- Select citizenship --';
+        citizenshipSelect.appendChild(defaultOption);
+
         getCitizenshipCountries().forEach(function(country) {
           var option = document.createElement('option');
           option.value = country.code;
@@ -2964,6 +3036,25 @@ function submitLogin(event) {
           }
           citizenshipSelect.appendChild(option);
         });
+
+        memberDiv.appendChild(citizenshipSelect);
+
+        // Remove button (safe event handler)
+        var removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-danger';
+        removeBtn.textContent = 'Remove';
+        removeBtn.style.width = '100%';
+        removeBtn.style.fontSize = '12px';
+        removeBtn.onclick = (function(divId) {
+          return function() {
+            var el = document.getElementById(divId);
+            if (el) el.remove();
+          };
+        })(memberId);
+        memberDiv.appendChild(removeBtn);
+
+        familyList.appendChild(memberDiv);
       });
 
       // Fill in Step 5: Household Staff
@@ -3592,28 +3683,105 @@ function submitLogin(event) {
 
   function addFamilyMember() {
     var memberId = 'fam_' + Date.now();
-    var html = '<div id="' + memberId + '" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ddd;">' +
-      '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">' +
-        '<input type="text" placeholder="First name" class="form-input fam-first-name" />' +
-        '<input type="text" placeholder="Last name" class="form-input fam-last-name" />' +
-      '</div>' +
-      '<div style="margin-bottom: 8px;">' +
-        '<label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;"><input type="radio" name="' + memberId + '_rel" value="Spouse" class="fam-relationship"> Spouse</label>' +
-        '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Child" class="fam-relationship"> Child</label>' +
-      '</div>' +
-      '<select class="form-input fam-citizenship" style="margin-bottom: 8px;"><option value="">-- Select citizenship --</option></select>' +
-      '<button type="button" class="btn btn-danger" onclick="document.getElementById(\'' + memberId + '\').remove();" style="width: 100%; font-size: 12px;">Remove</button>' +
-      '</div>';
-    document.getElementById('familyMembersList').insertAdjacentHTML('beforeend', html);
 
-    // Populate citizenship dropdown with full country list
-    var citizenshipSelect = document.getElementById(memberId).querySelector('.fam-citizenship');
+    // Build member section safely using DOM
+    var memberDiv = document.createElement('div');
+    memberDiv.id = memberId;
+    memberDiv.style.background = 'white';
+    memberDiv.style.padding = '12px';
+    memberDiv.style.borderRadius = '6px';
+    memberDiv.style.marginBottom = '12px';
+    memberDiv.style.border = '1px solid #ddd';
+
+    // Name inputs
+    var nameGrid = document.createElement('div');
+    nameGrid.style.display = 'grid';
+    nameGrid.style.gridTemplateColumns = '1fr 1fr';
+    nameGrid.style.gap = '8px';
+    nameGrid.style.marginBottom = '8px';
+
+    var firstNameInput = document.createElement('input');
+    firstNameInput.type = 'text';
+    firstNameInput.className = 'form-input fam-first-name';
+    firstNameInput.placeholder = 'First name';
+    nameGrid.appendChild(firstNameInput);
+
+    var lastNameInput = document.createElement('input');
+    lastNameInput.type = 'text';
+    lastNameInput.className = 'form-input fam-last-name';
+    lastNameInput.placeholder = 'Last name';
+    nameGrid.appendChild(lastNameInput);
+
+    memberDiv.appendChild(nameGrid);
+
+    // Relationship radios
+    var relationshipDiv = document.createElement('div');
+    relationshipDiv.style.marginBottom = '8px';
+
+    var spouseLabel = document.createElement('label');
+    spouseLabel.style.display = 'flex';
+    spouseLabel.style.alignItems = 'center';
+    spouseLabel.style.gap = '8px';
+    spouseLabel.style.marginBottom = '8px';
+    var spouseRadio = document.createElement('input');
+    spouseRadio.type = 'radio';
+    spouseRadio.name = memberId + '_rel';
+    spouseRadio.value = 'Spouse';
+    spouseRadio.className = 'fam-relationship';
+    spouseLabel.appendChild(spouseRadio);
+    spouseLabel.appendChild(document.createTextNode('Spouse'));
+    relationshipDiv.appendChild(spouseLabel);
+
+    var childLabel = document.createElement('label');
+    childLabel.style.display = 'flex';
+    childLabel.style.alignItems = 'center';
+    childLabel.style.gap = '8px';
+    var childRadio = document.createElement('input');
+    childRadio.type = 'radio';
+    childRadio.name = memberId + '_rel';
+    childRadio.value = 'Child';
+    childRadio.className = 'fam-relationship';
+    childLabel.appendChild(childRadio);
+    childLabel.appendChild(document.createTextNode('Child'));
+    relationshipDiv.appendChild(childLabel);
+
+    memberDiv.appendChild(relationshipDiv);
+
+    // Citizenship dropdown
+    var citizenshipSelect = document.createElement('select');
+    citizenshipSelect.className = 'form-input fam-citizenship';
+    citizenshipSelect.style.marginBottom = '8px';
+
+    var defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = '-- Select citizenship --';
+    citizenshipSelect.appendChild(defaultOption);
+
     getCitizenshipCountries().forEach(function(country) {
       var option = document.createElement('option');
       option.value = country.code;
       option.textContent = country.name;
       citizenshipSelect.appendChild(option);
     });
+
+    memberDiv.appendChild(citizenshipSelect);
+
+    // Remove button (safe event handler)
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-danger';
+    removeBtn.textContent = 'Remove';
+    removeBtn.style.width = '100%';
+    removeBtn.style.fontSize = '12px';
+    removeBtn.onclick = (function(divId) {
+      return function() {
+        var el = document.getElementById(divId);
+        if (el) el.remove();
+      };
+    })(memberId);
+    memberDiv.appendChild(removeBtn);
+
+    document.getElementById('familyMembersList').appendChild(memberDiv);
   }
 
   // Update dependent visibility when household staff checkbox changes

@@ -13,11 +13,11 @@ Start here for policies, decision documents, and board-facing information.
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
 | [**GEA Membership Policy**](policies/Membership_Policy.md) | Six membership categories, eligibility, sponsorship (Community/Guest only, Full member sponsor), dues, voting (Full 16+), board eligibility (Full 16+), facility access, guest hosting | Board, applicants | ✅ Complete (v1.1 Revised) |
-| **reference/MEMBERSHIP_CATEGORIES_MATRIX.md** | Detailed reference: all six categories, eligibility, sponsor requirements, dues, voting/board rights, facility access, guest hosting, regulatory basis, implementation notes | Board, members, applicants | ✅ Complete (v1.1 Revised) |
-| **GEA Membership Eligibility Flowchart** | Sequential decision tree for determining membership category (6 questions) | Board, applicants, staff | ✅ Exists (reference/MEMBERSHIP_ELIGIBILITY_FLOW.md) |
+| [**MEMBERSHIP_CATEGORIES_MATRIX**](reference/MEMBERSHIP_CATEGORIES_MATRIX.md) | Detailed reference: all six categories, eligibility, sponsor requirements, dues, voting/board rights, facility access, guest hosting, regulatory basis, implementation notes | Board, members, applicants | ✅ Complete (v1.1 Revised) |
+| [**GEA Membership Eligibility Flowchart**](reference/MEMBERSHIP_ELIGIBILITY_FLOW.md) | Sequential decision tree for determining membership category (6 questions) | Board, applicants, staff | ✅ Exists |
 | [**GEA Payment Policy**](policies/Payment_Policy.md) | Payment methods (EFT, PayPal, Federal Credit Union, cash), verification procedures, exchange rate determination, treasurer responsibilities | Board, treasurer, applicants | ✅ Complete |
 | [**GEA Reservation Policy**](policies/Reservation_Policy.md) | Facility booking rules, approval process, limits, bumping, guest list workflow | Board, members | ✅ Complete |
-| **GEA Reservation Process Specification** | Technical implementation details, complete 10-step workflow | Developers | ✅ Exists (GEA_Reservations_Process_Spec.md) |
+| [**GEA Reservation Process Specification**](reference/GEA_Reservations_Process_Spec.md) | Technical implementation details, complete 10-step workflow | Developers | ✅ Exists |
 | [**GEA Guest List Policy**](policies/Guest_List_Policy.md) | Guest requirements, full name & ID standards, RSO coordination, deadlines, submission workflow | Board, members | ✅ Complete |
 | [**GEA Document Submission Policy**](policies/Document_Submission_Policy.md) | Required documents by category, 2-tier verification (RSO → Treasurer), retention schedule, privacy protections | Board, applicants, RSO, treasurer | ✅ Complete |
 | [**GEA Data Management Policy**](policies/Data_Management_Policy.md) | What GEA collects, how data is organized (Google Workspace), access controls, retention, privacy & minimization | Board, treasurer | ✅ Complete |
@@ -29,22 +29,22 @@ Start here for policies, decision documents, and board-facing information.
 | **GEA Security & Privacy Implementation Plan** | Step-by-step setup for Google Workspace security, access controls, training | Board, treasurer, non-technical successors | 📋 Planned |
 | [**GEA Audit & Compliance Policy**](policies/Audit_Compliance_Policy.md) | Audit logging, compliance with 6 FAM 500-546, quarterly reviews, violation procedures | Board, treasurer | ✅ Complete |
 | [**GEA Development Standards**](development/DEVELOPMENT_STANDARDS.md) | Code quality, documentation, testing expectations, file organization, naming conventions, logging standards, code review checklist | Board (informational), developers | ✅ Complete (v1.0) |
-| **Regulatory Status & Federal Compliance** | 6 FAM 500-546 analysis, pending State Dept clarifications, gaps between By-Laws and federal requirements | Board, treasurer | ✅ Exists (GEA_MEMBERSHIP_ACCESS_REGULATORY_ANALYSIS.md) |
+| **Regulatory Status & Federal Compliance** | 6 FAM 500-546 analysis, pending State Dept clarifications, gaps between By-Laws and federal requirements | Board, treasurer | 📋 Planned |
 
 ### For Developers & Claude Code
 Implementation guides, workflows, and technical references.
 
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
-| **CLAUDE_Membership_Implementation.md** | Coding guide for membership app & approval workflow | Developers | ✅ Complete (Phase 1) |
-| **CLAUDE_Reservations_Implementation.md** | Coding guide for booking system, limits, waitlisting | Developers | ✅ Complete (Phase 1) |
-| **CLAUDE_Payments_Implementation.md** | Coding guide for payment tracking & verification | Developers | 📋 60% Ready (Phase 3) |
-| **CLAUDE_Authentication_RBAC.md** | Session management, role-based access control | Developers | ✅ Complete (Phase 1) |
-| **CLAUDE_Google_APIs_Integration.md** | Sheets, Drive, Calendar, Storage APIs in Apps Script | Developers | 📋 60% Ready (Phase 3) |
-| **CLAUDE_Deployment.md** | clasp workflow, GitHub sync, testing, rollback | Developers | ✅ Complete (Phase 2) |
-| **CLAUDE_Security.md** | Secure coding, auth, encryption, data protection | Developers | ✅ Complete (Phase 2) |
-| **CLAUDE_DisasterRecovery.md** | Backup procedures, recovery testing, restoration | Developers | 📋 50% Ready (Phase 3) |
-| **GEA_System_Architecture.md** | Design patterns, request/response flow, modules | Developers | ✅ Complete (Phase 2) |
+| [**CLAUDE_Membership_Implementation.md**](implementation/CLAUDE_Membership_Implementation.md) | Coding guide for membership app & approval workflow | Developers | ✅ Complete (Phase 1) |
+| [**CLAUDE_Reservations_Implementation.md**](implementation/CLAUDE_Reservations_Implementation.md) | Coding guide for booking system, limits, waitlisting | Developers | ✅ Complete (Phase 1) |
+| [**CLAUDE_Payments_Implementation.md**](implementation/CLAUDE_Payments_Implementation.md) | Coding guide for payment tracking & verification | Developers | 📋 60% Ready (Phase 3) |
+| [**CLAUDE_Authentication_RBAC.md**](implementation/CLAUDE_Authentication_RBAC.md) | Session management, role-based access control | Developers | ✅ Complete (Phase 1) |
+| [**CLAUDE_Google_APIs_Integration.md**](implementation/CLAUDE_Google_APIs_Integration.md) | Sheets, Drive, Calendar, Storage APIs in Apps Script | Developers | 📋 60% Ready (Phase 3) |
+| [**CLAUDE_Deployment.md**](implementation/CLAUDE_Deployment.md) | clasp workflow, GitHub sync, testing, rollback | Developers | ✅ Complete (Phase 2) |
+| [**CLAUDE_Security.md**](implementation/CLAUDE_Security.md) | Secure coding, auth, encryption, data protection | Developers | ✅ Complete (Phase 2) |
+| [**CLAUDE_DisasterRecovery.md**](implementation/CLAUDE_DisasterRecovery.md) | Backup procedures, recovery testing, restoration | Developers | 📋 50% Ready (Phase 3) |
+| [**GEA_System_Architecture.md**](implementation/GEA_System_Architecture.md) | Design patterns, request/response flow, modules | Developers | ✅ Complete (Phase 2) |
 
 ### For New Members & Applicants
 Public-facing information about joining, reserving facilities, and using the portal.
@@ -69,12 +69,12 @@ These technical references support multiple audiences and are referenced through
 | **reference/MEMBERSHIP_ELIGIBILITY_FLOW.md** | Sequential 4-question decision tree; every applicant gets exactly ONE category | Markdown | ✅ Exists |
 | **reference/MEMBERSHIP_CATEGORIES_MATRIX.md** | Configuration table: six categories, regulatory basis, voting rights, guest invitation authority, facility access, active status | Markdown | ✅ Exists |
 | **reference/GEA_Reservations_Process_Spec.md** | Complete 10-step reservation lifecycle, approval routing, bumping logic, guest list workflow | Markdown | ✅ Exists |
-| **reference/EMAIL_TEMPLATES.md** | All 30+ templates with triggers, placeholders, and purposes | Markdown | ✅ Exists |
-| **reference/FACILITY_RULES_QUICK_CARD.md** | Hours, capacities, reservation limits, guest policies, usage tracking, closure info by facility (Tennis/Basketball, Leobo, Gym, Playground) | Board, members | ✅ Complete |
-| **reference/ROLES_PERMISSIONS_MATRIX.md** | Who can do what (Member, Treasurer, Board, RSO, Applicant); approval authority; communication requirements | Board, developers | ✅ Complete |
-| **REGULATORY_STATUS.md** | Federal regulations (6 FAM 500-546) analysis, gaps, pending State Dept clarifications | Markdown | ✅ Exists (GEA_MEMBERSHIP_ACCESS_REGULATORY_ANALYSIS.md) |
-| **implementation/HOUSEHOLDS_COLUMNS_ANALYSIS.md** | Data structure analysis for households table, column definitions, relationships | Markdown | ✅ Exists |
-| **implementation/MEMBERSHIP_APPLICATIONS_SCHEMA_REDESIGN.md** | Application workflow schema redesign, field definitions, status progression | Markdown | ✅ Exists |
+| [**reference/EMAIL_TEMPLATES.md**](reference/EMAIL_TEMPLATES.md) | All templates with triggers, placeholders, and purposes | Markdown | ✅ Exists |
+| [**reference/EMAIL_TEMPLATES_COMPLETE.md**](reference/EMAIL_TEMPLATES_COMPLETE.md) | Complete email template reference (full HTML bodies) | Markdown | ✅ Exists |
+| [**reference/FACILITY_RULES_QUICK_CARD.md**](reference/FACILITY_RULES_QUICK_CARD.md) | Hours, capacities, reservation limits, guest policies, usage tracking, closure info by facility (Tennis/Basketball, Leobo, Gym, Playground) | Markdown | ✅ Complete |
+| [**reference/ROLES_PERMISSIONS_MATRIX.md**](reference/ROLES_PERMISSIONS_MATRIX.md) | Who can do what (Member, Treasurer, Board, RSO, Applicant); approval authority; communication requirements | Markdown | ✅ Complete |
+| [**implementation/HOUSEHOLDS_COLUMNS_ANALYSIS.md**](implementation/HOUSEHOLDS_COLUMNS_ANALYSIS.md) | Data structure analysis for households table, column definitions, relationships | Markdown | ✅ Exists |
+| [**implementation/MEMBERSHIP_APPLICATIONS_SCHEMA_REDESIGN.md**](implementation/MEMBERSHIP_APPLICATIONS_SCHEMA_REDESIGN.md) | Application workflow schema redesign, field definitions, status progression | Markdown | ✅ Exists |
 | **ARCHITECTURE_DIAGRAMS.md** | System flows, module responsibilities, data flows, request/response patterns | Markdown | 📋 Planned |
 | **TOOLS_COMMANDS_REFERENCE.md** | clasp, git, Apps Script editor, testing, debugging commands | Markdown | 📋 Planned |
 | **VERSION_HISTORY.md** | Release notes, deployment dates, changes by version | Markdown | 📋 Planned |

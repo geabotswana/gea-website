@@ -1767,33 +1767,45 @@
    */
   function openReservationDetail(resId) {
     selectedReservationId = resId;
-    
-    // In production, fetch full details from backend
-    // For now, show a placeholder detail view
-    var detailHtml = '\
-      <div class="detail-row">\
-        <div class="detail-label">Reservation ID:</div>\
-        <div class="detail-value">' + resId + '</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Member:</div>\
-        <div class="detail-value">John Smith</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Facility:</div>\
-        <div class="detail-value">Tennis Courts</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Date & Time:</div>\
-        <div class="detail-value">Friday, Feb 14 from 2:00 PM - 4:00 PM</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Guests:</div>\
-        <div class="detail-value">2 guests</div>\
-      </div>\
-    ';
-    
-    document.getElementById('resDetailContent').innerHTML = detailHtml;
+
+    var container = document.getElementById('resDetailContent');
+    container.innerHTML = '';
+
+    // Reservation ID row
+    var idRow = document.createElement('div');
+    idRow.className = 'detail-row';
+    var idLabel = document.createElement('div');
+    idLabel.className = 'detail-label';
+    idLabel.textContent = 'Reservation ID:';
+    idRow.appendChild(idLabel);
+    var idValue = document.createElement('div');
+    idValue.className = 'detail-value';
+    idValue.textContent = resId;
+    idRow.appendChild(idValue);
+    container.appendChild(idRow);
+
+    // Static detail rows (placeholder data)
+    var details = [
+      { label: 'Member:', value: 'John Smith' },
+      { label: 'Facility:', value: 'Tennis Courts' },
+      { label: 'Date & Time:', value: 'Friday, Feb 14 from 2:00 PM - 4:00 PM' },
+      { label: 'Guests:', value: '2 guests' }
+    ];
+
+    details.forEach(function(detail) {
+      var row = document.createElement('div');
+      row.className = 'detail-row';
+      var label = document.createElement('div');
+      label.className = 'detail-label';
+      label.textContent = detail.label;
+      row.appendChild(label);
+      var value = document.createElement('div');
+      value.className = 'detail-value';
+      value.textContent = detail.value;
+      row.appendChild(value);
+      container.appendChild(row);
+    });
+
     document.getElementById('resActionNotes').value = '';
     document.getElementById('resDetailModal').classList.add('show');
   }
@@ -1949,61 +1961,126 @@
    * Displays household information, individual members, and payment history.
    */
   function openMemberDetail(householdId) {
-    var detailHtml = '\
-      <h3 class="section-header" style="margin-top: 0;">Household Information</h3>\
-      <div class="detail-row">\
-        <div class="detail-label">Household ID:</div>\
-        <div class="detail-value">' + householdId + '</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Name:</div>\
-        <div class="detail-value">Smith Household</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Email:</div>\
-        <div class="detail-value">john.smith@state.gov</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Status:</div>\
-        <div class="detail-value"><span class="badge badge-approved">Active</span></div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Membership Type:</div>\
-        <div class="detail-value">ACTIVE</div>\
-      </div>\
-      <div class="detail-row">\
-        <div class="detail-label">Joined:</div>\
-        <div class="detail-value">Jan 1, 2024</div>\
-      </div>\
-      \
-      <h3 class="section-header">Individual Members</h3>\
-      <table style="width: 100%; margin-bottom: 20px;">\
-        <thead style="background: #F5F5F5;">\
-          <tr>\
-            <th style="padding: 8px; border-bottom: 1px solid #DDD;">Name</th>\
-            <th style="padding: 8px; border-bottom: 1px solid #DDD;">Relationship</th>\
-            <th style="padding: 8px; border-bottom: 1px solid #DDD;">Photo</th>\
-          </tr>\
-        </thead>\
-        <tbody>\
-          <tr>\
-            <td style="padding: 8px; border-bottom: 1px solid #EEE;">John Smith</td>\
-            <td style="padding: 8px; border-bottom: 1px solid #EEE;">Primary</td>\
-            <td style="padding: 8px; border-bottom: 1px solid #EEE;"><span class="badge badge-approved">Approved</span></td>\
-          </tr>\
-          <tr>\
-            <td style="padding: 8px; border-bottom: 1px solid #EEE;">Jane Smith</td>\
-            <td style="padding: 8px; border-bottom: 1px solid #EEE;">Spouse</td>\
-            <td style="padding: 8px; border-bottom: 1px solid #EEE;"><span class="badge badge-pending">Pending</span></td>\
-          </tr>\
-        </tbody>\
-      </table>\
-      \
-      <h3 class="section-header">Recent Reservations</h3>\
-      <div style="text-align: center; color: #999; padding: 20px;"><small>No recent reservations</small></div>\
-    ';
-    
-    document.getElementById('memDetailContent').innerHTML = detailHtml;
+    var container = document.getElementById('memDetailContent');
+    container.innerHTML = '';
+
+    // Household Information section
+    var householdHeader = document.createElement('h3');
+    householdHeader.className = 'section-header';
+    householdHeader.style.marginTop = '0';
+    householdHeader.textContent = 'Household Information';
+    container.appendChild(householdHeader);
+
+    // Household details
+    var householdDetails = [
+      { label: 'Household ID:', value: householdId },
+      { label: 'Name:', value: 'Smith Household' },
+      { label: 'Email:', value: 'john.smith@state.gov' },
+      { label: 'Status:', isBadge: true, badgeClass: 'badge-approved', value: 'Active' },
+      { label: 'Membership Type:', value: 'ACTIVE' },
+      { label: 'Joined:', value: 'Jan 1, 2024' }
+    ];
+
+    householdDetails.forEach(function(detail) {
+      var row = document.createElement('div');
+      row.className = 'detail-row';
+
+      var label = document.createElement('div');
+      label.className = 'detail-label';
+      label.textContent = detail.label;
+      row.appendChild(label);
+
+      var valueDiv = document.createElement('div');
+      valueDiv.className = 'detail-value';
+
+      if (detail.isBadge) {
+        var badge = document.createElement('span');
+        badge.className = 'badge ' + detail.badgeClass;
+        badge.textContent = detail.value;
+        valueDiv.appendChild(badge);
+      } else {
+        valueDiv.textContent = detail.value;
+      }
+
+      row.appendChild(valueDiv);
+      container.appendChild(row);
+    });
+
+    // Individual Members section
+    var membersHeader = document.createElement('h3');
+    membersHeader.className = 'section-header';
+    membersHeader.textContent = 'Individual Members';
+    container.appendChild(membersHeader);
+
+    var table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.marginBottom = '20px';
+
+    var thead = document.createElement('thead');
+    thead.style.background = '#F5F5F5';
+    var headerRow = document.createElement('tr');
+    var headers = ['Name', 'Relationship', 'Photo'];
+    headers.forEach(function(headerText) {
+      var th = document.createElement('th');
+      th.style.padding = '8px';
+      th.style.borderBottom = '1px solid #DDD';
+      th.textContent = headerText;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    var members = [
+      { name: 'John Smith', relationship: 'Primary', photo: 'Approved', photoClass: 'badge-approved' },
+      { name: 'Jane Smith', relationship: 'Spouse', photo: 'Pending', photoClass: 'badge-pending' }
+    ];
+
+    members.forEach(function(member) {
+      var row = document.createElement('tr');
+
+      var nameTd = document.createElement('td');
+      nameTd.style.padding = '8px';
+      nameTd.style.borderBottom = '1px solid #EEE';
+      nameTd.textContent = member.name;
+      row.appendChild(nameTd);
+
+      var relTd = document.createElement('td');
+      relTd.style.padding = '8px';
+      relTd.style.borderBottom = '1px solid #EEE';
+      relTd.textContent = member.relationship;
+      row.appendChild(relTd);
+
+      var photoTd = document.createElement('td');
+      photoTd.style.padding = '8px';
+      photoTd.style.borderBottom = '1px solid #EEE';
+      var badge = document.createElement('span');
+      badge.className = 'badge ' + member.photoClass;
+      badge.textContent = member.photo;
+      photoTd.appendChild(badge);
+      row.appendChild(photoTd);
+
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+
+    container.appendChild(table);
+
+    // Recent Reservations section
+    var reservationsHeader = document.createElement('h3');
+    reservationsHeader.className = 'section-header';
+    reservationsHeader.textContent = 'Recent Reservations';
+    container.appendChild(reservationsHeader);
+
+    var emptyDiv = document.createElement('div');
+    emptyDiv.style.textAlign = 'center';
+    emptyDiv.style.color = '#999';
+    emptyDiv.style.padding = '20px';
+    var small = document.createElement('small');
+    small.textContent = 'No recent reservations';
+    emptyDiv.appendChild(small);
+    container.appendChild(emptyDiv);
+
     document.getElementById('memDetailModal').classList.add('show');
   }
   

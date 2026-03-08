@@ -426,15 +426,33 @@ function escapeHtml(text) {
  * Uses JWT grant flow to authenticate the service account.
  * @returns {string|null} Access token or null if request failed
  */
+/**
+ * Gets an OAuth access token using Domain-Wide Delegation.
+ * Service account key is stored in BoardEmailConfig.gs.
+ *
+ * Steps:
+ * 1. Create a JWT with the delegated user in the 'sub' claim
+ * 2. Sign the JWT with the service account's private key
+ * 3. Exchange the signed JWT for an OAuth access token
+ * 4. Return the access token for Gmail API calls
+ *
+ * @returns {string|null} OAuth access token, or null if error
+ */
 function _getServiceAccountAccessToken() {
   try {
-    var jwt = _createServiceAccountJwt();
+    // Step 1: Create and sign JWT with service account's private key
+    var signedJwt = _createSignedDomainDelegationJwt();
+    if (!signedJwt) {
+      Logger.log("ERROR: Could not create signed JWT");
+      return null;
+    }
 
+    // Step 2: Exchange signed JWT for OAuth access token
     var options = {
       method: 'post',
       payload: {
         grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt
+        assertion: signedJwt
       },
       muteHttpExceptions: true
     };
@@ -443,9 +461,10 @@ function _getServiceAccountAccessToken() {
     var result = JSON.parse(response.getContentText());
 
     if (response.getResponseCode() === 200) {
+      Logger.log("Successfully obtained access token via JWT bearer grant");
       return result.access_token;
     } else {
-      Logger.log("ERROR getting access token: " + response.getContentText());
+      Logger.log("ERROR exchanging JWT for access token: " + response.getContentText());
       return null;
     }
   } catch (e) {
@@ -455,43 +474,55 @@ function _getServiceAccountAccessToken() {
 }
 
 /**
- * Creates a signed JWT assertion for service account authentication.
- * Uses RS256 signature with the service account's private key.
- * @returns {string} Signed JWT token
+ * Creates and signs a JWT for domain-wide delegation.
+ * The private key is stored in BOARD_SERVICE_ACCOUNT (from BoardEmailConfig.gs).
+ *
+ * @returns {string|null} Signed JWT (header.payload.signature), or null if error
  */
-function _createServiceAccountJwt() {
-  var now = Math.floor(Date.now() / 1000);
-  var expiresAt = now + 3600;  // Token valid for 1 hour
+function _createSignedDomainDelegationJwt() {
+  try {
+    var now = Math.floor(Date.now() / 1000);
+    var expiresAt = now + 3600;  // Token valid for 1 hour
 
-  var header = {
-    alg: 'RS256',
-    typ: 'JWT'
-  };
+    var header = {
+      alg: 'RS256',
+      typ: 'JWT'
+    };
 
-  var claimsSet = {
-    iss: BOARD_SERVICE_ACCOUNT.client_email,
-    scope: 'https://www.googleapis.com/auth/gmail.send',
-    aud: 'https://oauth2.googleapis.com/token',
-    exp: expiresAt,
-    iat: now,
-    sub: BOARD_EMAIL_DELEGATED_USER  // Impersonate treasurer account (has Send As delegation)
-  };
+    var payload = {
+      iss: BOARD_SERVICE_ACCOUNT.client_email || BOARD_SERVICE_ACCOUNT_EMAIL,
+      sub: BOARD_EMAIL_DELEGATED_USER,  // Impersonate this user (has Send As delegation for board@)
+      scope: 'https://www.googleapis.com/auth/gmail.send',
+      aud: 'https://oauth2.googleapis.com/token',
+      iat: now,
+      exp: expiresAt
+    };
 
-  var encodedHeader = Utilities.base64Encode(JSON.stringify(header))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-  var encodedClaims = Utilities.base64Encode(JSON.stringify(claimsSet))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
+    var encodedHeader = Utilities.base64Encode(JSON.stringify(header))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
 
-  var toSign = encodedHeader + '.' + encodedClaims;
-  var signature = Utilities.computeRsaSha256Signature(toSign, BOARD_SERVICE_ACCOUNT.private_key);
-  var encodedSignature = Utilities.base64Encode(signature)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
+    var encodedPayload = Utilities.base64Encode(JSON.stringify(payload))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
 
-  return toSign + '.' + encodedSignature;
+    var toSign = encodedHeader + '.' + encodedPayload;
+
+    // Sign with service account's private key using RS256
+    var signature = Utilities.computeRsaSha256Signature(toSign, BOARD_SERVICE_ACCOUNT.private_key);
+    var encodedSignature = Utilities.base64Encode(signature)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+
+    var signedJwt = toSign + '.' + encodedSignature;
+    Logger.log("Successfully created and signed JWT for domain-wide delegation");
+    return signedJwt;
+
+  } catch (e) {
+    Logger.log("ERROR _createSignedDomainDelegationJwt: " + e);
+    return null;
+  }
 }

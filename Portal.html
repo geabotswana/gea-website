@@ -1504,8 +1504,9 @@
 
     <!-- Step 6: Review & Submit -->
     <div id="appStep6" class="app-step" style="display: none;">
-      <h3 style="margin-bottom: 20px;">Review & Submit</h3>
-      <div id="applicationReview" style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; max-height: 300px; overflow-y: auto; font-size: 13px;"></div>
+      <h3 style="margin-bottom: 8px;">Review & Submit</h3>
+      <p style="color: #666; margin-bottom: 20px; font-size: 13px;">Please review your information below. Click <strong>Back</strong> if you need to make changes.</p>
+      <div id="applicationReview" style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; min-height: 200px; max-height: 400px; overflow-y: auto; font-size: 13px; border: 1px solid #e0e0e0;"></div>
       <div class="form-group">
         <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
           <input type="checkbox" id="appCertify" required>
@@ -1514,8 +1515,8 @@
       </div>
       <div id="applicationSubmitError" style="color: #C62828; font-size: 13px; margin-bottom: 16px; display: none;"></div>
       <div style="margin-top: 24px; display: flex; gap: 10px;">
-        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
-        <button type="button" class="btn btn-primary" onclick="submitApplication();" style="flex: 1; background: #2E7D32;">Submit Application</button>
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep(); return false;" style="flex: 1; padding: 12px;">← Back (Edit Information)</button>
+        <button type="button" class="btn btn-primary" onclick="submitApplication();" style="flex: 1; padding: 12px; background: #2E7D32;">Submit Application</button>
       </div>
     </div>
 
@@ -2739,45 +2740,152 @@ function submitLogin(event) {
   var currentApplicationStep = 1;
 
   /**
-   * Load test data into the application form for development/testing
+   * Show dialog to select membership category and household type for test data
    */
-  function loadTestData() {
-    // Set form data with comprehensive test data
+  function showTestDataSelector() {
+    var html = '<div style="background: white; padding: 24px; border-radius: 8px; max-width: 400px;">' +
+      '<h2 style="margin-top: 0; color: #333;">Load Test Data</h2>' +
+      '<p style="color: #666; margin-bottom: 16px;">Select membership category and household type:</p>' +
+
+      '<label style="display: block; margin-bottom: 16px;">' +
+      '<strong>Membership Category:</strong>' +
+      '<select id="testCategorySelect" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px;">' +
+      '<option value="">-- Select Category --</option>' +
+      '<option value="Full">Full Member (U.S. Citizen Embassy Employee)</option>' +
+      '<option value="Associate">Associate Member (Botswana Citizen)</option>' +
+      '<option value="Diplomatic">Diplomatic (Non-U.S. Embassy Employee)</option>' +
+      '<option value="Temporary">Temporary (Short-term Stay)</option>' +
+      '<option value="Affiliate">Affiliate (Non-Resident)</option>' +
+      '<option value="Community">Community Member (Local Resident)</option>' +
+      '</select>' +
+      '</label>' +
+
+      '<label style="display: block; margin-bottom: 16px;">' +
+      '<strong>Household Type:</strong>' +
+      '<select id="testHouseholdSelect" style="width: 100%; padding: 8px; margin-top: 6px; border: 1px solid #ddd; border-radius: 4px;">' +
+      '<option value="">-- Select Household Type --</option>' +
+      '<option value="Individual">Individual</option>' +
+      '<option value="Family">Family</option>' +
+      '</select>' +
+      '</label>' +
+
+      '<div style="display: flex; gap: 8px; justify-content: flex-end;">' +
+      '<button type="button" class="btn btn-secondary" onclick="closeTestDataSelector()" style="padding: 8px 16px;">Cancel</button>' +
+      '<button type="button" class="btn btn-primary" onclick="applyTestDataSelection()" style="padding: 8px 16px;">Load Test Data</button>' +
+      '</div>' +
+      '</div>';
+
+    // Show modal overlay
+    var overlay = document.createElement('div');
+    overlay.id = 'testDataSelectorOverlay';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+  }
+
+  function closeTestDataSelector() {
+    var overlay = document.getElementById('testDataSelectorOverlay');
+    if (overlay) overlay.remove();
+  }
+
+  function applyTestDataSelection() {
+    var category = document.getElementById('testCategorySelect').value;
+    var householdType = document.getElementById('testHouseholdSelect').value;
+
+    if (!category || !householdType) {
+      alert('Please select both category and household type');
+      return;
+    }
+
+    closeTestDataSelector();
+    loadTestDataWithSelection(category, householdType);
+  }
+
+  /**
+   * Load test data based on selected category and household type
+   */
+  function loadTestDataWithSelection(category, householdType) {
+    // Base test data (common to all categories)
     applicationFormData = {
-      membership_category: 'Full',
-      household_type: 'Family',
+      membership_category: category,
+      household_type: householdType,
       first_name: 'Test',
       last_name: 'User',
       email: 'michael+test' + Math.floor(Math.random() * 10000) + '@raneyworld.com',
       country_code_primary: 'BW',
       phone_primary: '71234567',
       phone_primary_whatsapp: true,
-      employment_office: 'U.S. Embassy Gaborone',
-      employment_job_title: 'Project Manager',
-      employment_posting_date: '2024-01-15',
-      employment_departure_date: '2026-12-31',
       citizenship_country: 'US',
       sponsor_name: '',
       sponsor_email: '',
-      family_members: [
+      family_members: [],
+      has_staff: false,
+      staff_first_name: '',
+      staff_last_name: '',
+      staff_citizenship: 'BW'
+    };
+
+    // Category-specific test data
+    switch(category) {
+      case 'Full':
+        applicationFormData.employment_office = 'U.S. Embassy Gaborone';
+        applicationFormData.employment_job_title = 'Project Manager';
+        applicationFormData.employment_posting_date = '2024-01-15';
+        applicationFormData.employment_departure_date = ''; // Optional for Full
+        break;
+      case 'Associate':
+        applicationFormData.employment_office = 'ABC Company';
+        applicationFormData.employment_job_title = 'Software Engineer';
+        applicationFormData.employment_posting_date = '2023-06-01';
+        applicationFormData.employment_departure_date = '';
+        applicationFormData.citizenship_country = 'BW';
+        break;
+      case 'Diplomatic':
+        applicationFormData.employment_office = 'Ministry of Foreign Affairs';
+        applicationFormData.employment_job_title = 'Diplomat';
+        applicationFormData.employment_posting_date = '2023-01-01';
+        applicationFormData.employment_departure_date = '2027-12-31';
+        applicationFormData.citizenship_country = 'ZA'; // Different country
+        break;
+      case 'Temporary':
+        applicationFormData.employment_office = 'Consulting Group';
+        applicationFormData.employment_job_title = 'Consultant';
+        applicationFormData.employment_posting_date = '2025-11-01';
+        applicationFormData.employment_departure_date = '2026-05-31';
+        break;
+      case 'Affiliate':
+        applicationFormData.employment_job_title = 'Retired Executive';
+        break;
+      case 'Community':
+        applicationFormData.employment_office = 'Local Business';
+        applicationFormData.employment_job_title = 'Business Owner';
+        applicationFormData.sponsor_name = 'John Sponsor';
+        applicationFormData.sponsor_email = 'sponsor@example.com';
+        applicationFormData.citizenship_country = 'BW';
+        break;
+    }
+
+    // Household type specific data
+    if (householdType === 'Family') {
+      applicationFormData.family_members = [
         {
           first_name: 'Spouse',
-          last_name: 'Test',
+          last_name: 'User',
           relationship_to_primary: 'Spouse',
           citizenship_country: 'US'
         },
         {
           first_name: 'Child',
-          last_name: 'Test',
+          last_name: 'User',
           relationship_to_primary: 'Child',
           citizenship_country: 'US'
         }
-      ],
-      has_staff: true,
-      staff_first_name: 'Maria',
-      staff_last_name: 'Helper',
-      staff_citizenship: 'BW'
-    };
+      ];
+      applicationFormData.has_staff = true;
+      applicationFormData.staff_first_name = 'Maria';
+      applicationFormData.staff_last_name = 'Helper';
+      applicationFormData.staff_citizenship = 'BW';
+    }
 
     // Go to step 1 and show form
     currentApplicationStep = 1;
@@ -2789,6 +2897,9 @@ function submitLogin(event) {
     populateCountryDropdown('appCitizenship');
     populateCountryDropdown('appStaffCitizenship');
 
+    // Assign category and update conditional fields
+    assignMembershipCategory(category);
+
     // Fill in Step 2: Applicant Info
     document.getElementById('appFirstName').value = applicationFormData.first_name;
     document.getElementById('appLastName').value = applicationFormData.last_name;
@@ -2796,56 +2907,86 @@ function submitLogin(event) {
     document.getElementById('appCountryCode').value = applicationFormData.country_code_primary;
     document.getElementById('appPhone').value = applicationFormData.phone_primary;
     document.getElementById('appPhoneWhatsApp').checked = applicationFormData.phone_primary_whatsapp;
-    document.getElementById('appEmploymentOffice').value = applicationFormData.employment_office;
-    document.getElementById('appJobTitle').value = applicationFormData.employment_job_title;
-    document.getElementById('appPostingDate').value = applicationFormData.employment_posting_date;
-    document.getElementById('appDepartureDate').value = applicationFormData.employment_departure_date;
+
+    // Conditional fields
+    if (document.getElementById('appEmploymentOffice')) {
+      document.getElementById('appEmploymentOffice').value = applicationFormData.employment_office || '';
+    }
+    if (document.getElementById('appJobTitle')) {
+      document.getElementById('appJobTitle').value = applicationFormData.employment_job_title || '';
+    }
+    if (document.getElementById('appPostingDate')) {
+      document.getElementById('appPostingDate').value = applicationFormData.employment_posting_date || '';
+    }
+    if (document.getElementById('appDepartureDate')) {
+      document.getElementById('appDepartureDate').value = applicationFormData.employment_departure_date || '';
+    }
     document.getElementById('appCitizenship').value = applicationFormData.citizenship_country;
 
-    // Fill in Step 4: Family Members
-    var familyList = document.getElementById('familyMembersList');
-    familyList.innerHTML = ''; // Clear existing
-    applicationFormData.family_members.forEach(function(member) {
-      var memberId = 'fam_' + Date.now() + '_' + Math.random();
-      var html = '<div id="' + memberId + '" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ddd;">' +
-        '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">' +
-        '<input type="text" value="' + member.first_name + '" class="form-input fam-first-name" placeholder="First name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
-        '<input type="text" value="' + member.last_name + '" class="form-input fam-last-name" placeholder="Last name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
-        '</div>' +
-        '<div style="display: flex; gap: 16px; margin-bottom: 8px;">' +
-        '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Spouse" class="fam-relationship"' + (member.relationship_to_primary === 'Spouse' ? ' checked' : '') + '> Spouse</label>' +
-        '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Child" class="fam-relationship"' + (member.relationship_to_primary === 'Child' ? ' checked' : '') + '> Child</label>' +
-        '</div>' +
-        '<select class="form-input fam-citizenship" style="margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"><option value="">-- Select citizenship --</option></select>' +
-        '<button type="button" class="btn btn-danger" onclick="document.getElementById(\'' + memberId + '\').remove();" style="width: 100%; font-size: 12px;">Remove</button>' +
-        '</div>';
-      familyList.insertAdjacentHTML('beforeend', html);
+    // Community sponsor info in Step 2
+    if (category === 'Community') {
+      if (document.getElementById('appSponsorName')) {
+        document.getElementById('appSponsorName').value = applicationFormData.sponsor_name;
+      }
+      if (document.getElementById('appSponsorEmail')) {
+        document.getElementById('appSponsorEmail').value = applicationFormData.sponsor_email;
+      }
+    }
 
-      // Populate citizenship dropdown
-      var citizenshipSelect = document.getElementById(memberId).querySelector('.fam-citizenship');
-      getCitizenshipCountries().forEach(function(country) {
-        var option = document.createElement('option');
-        option.value = country.code;
-        option.textContent = country.name + ' (' + country.code + ')';
-        if (country.code === member.citizenship_country) {
-          option.selected = true;
-        }
-        citizenshipSelect.appendChild(option);
+    // Fill in Step 4: Family Members (if applicable)
+    if (householdType === 'Family') {
+      var familyList = document.getElementById('familyMembersList');
+      familyList.innerHTML = ''; // Clear existing
+      applicationFormData.family_members.forEach(function(member) {
+        var memberId = 'fam_' + Date.now() + '_' + Math.random();
+        var html = '<div id="' + memberId + '" style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid #ddd;">' +
+          '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">' +
+          '<input type="text" value="' + member.first_name + '" class="form-input fam-first-name" placeholder="First name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
+          '<input type="text" value="' + member.last_name + '" class="form-input fam-last-name" placeholder="Last name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">' +
+          '</div>' +
+          '<div style="display: flex; gap: 16px; margin-bottom: 8px;">' +
+          '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Spouse" class="fam-relationship"' + (member.relationship_to_primary === 'Spouse' ? ' checked' : '') + '> Spouse</label>' +
+          '<label style="display: flex; align-items: center; gap: 8px;"><input type="radio" name="' + memberId + '_rel" value="Child" class="fam-relationship"' + (member.relationship_to_primary === 'Child' ? ' checked' : '') + '> Child</label>' +
+          '</div>' +
+          '<select class="form-input fam-citizenship" style="margin-bottom: 8px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"><option value="">-- Select citizenship --</option></select>' +
+          '<button type="button" class="btn btn-danger" onclick="document.getElementById(\'' + memberId + '\').remove();" style="width: 100%; font-size: 12px;">Remove</button>' +
+          '</div>';
+        familyList.insertAdjacentHTML('beforeend', html);
+
+        // Populate citizenship dropdown
+        var citizenshipSelect = document.getElementById(memberId).querySelector('.fam-citizenship');
+        getCitizenshipCountries().forEach(function(country) {
+          var option = document.createElement('option');
+          option.value = country.code;
+          option.textContent = country.name + ' (' + country.code + ')';
+          if (country.code === member.citizenship_country) {
+            option.selected = true;
+          }
+          citizenshipSelect.appendChild(option);
+        });
       });
-    });
 
-    // Fill in Step 5: Household Staff
-    document.getElementById('appHasStaff').checked = applicationFormData.has_staff;
-    if (applicationFormData.has_staff) {
-      document.getElementById('appStaffFirstName').value = applicationFormData.staff_first_name;
-      document.getElementById('appStaffLastName').value = applicationFormData.staff_last_name;
-      document.getElementById('appStaffCitizenship').value = applicationFormData.staff_citizenship;
+      // Fill in Step 5: Household Staff
+      document.getElementById('appHasStaff').checked = applicationFormData.has_staff;
+      if (applicationFormData.has_staff) {
+        document.getElementById('appStaffFirstName').value = applicationFormData.staff_first_name;
+        document.getElementById('appStaffLastName').value = applicationFormData.staff_last_name;
+        document.getElementById('appStaffCitizenship').value = applicationFormData.staff_citizenship;
+      }
     }
 
     // Show the form and go to step 1
     currentApplicationStep = 1;
     updateApplicationStep();
-    console.log('[DEBUG] Test data loaded and form fields populated:', applicationFormData);
+    console.log('[DEBUG] Test data loaded with category=' + category + ', householdType=' + householdType, applicationFormData);
+  }
+
+  /**
+   * Load test data into the application form for development/testing
+   * Now shows category/household selector first
+   */
+  function loadTestData() {
+    showTestDataSelector();
   }
 
   function showApplicationForm() {
@@ -3226,9 +3367,9 @@ function submitLogin(event) {
           applicationFormData.employment_departure_date = departureField.value;
         }
 
-        // Community sponsor info (in Step 2 for Community, Step 3 for others)
-        var sponsorNameField = document.getElementById('appCommunitySponsornName');
-        var sponsorEmailField = document.getElementById('appCommunitySponsornEmail');
+        // Community sponsor info (in Step 2 for Community)
+        var sponsorNameField = document.getElementById('appSponsorName');
+        var sponsorEmailField = document.getElementById('appSponsorEmail');
         if (sponsorNameField && sponsorNameField.style.display !== 'none') {
           applicationFormData.sponsor_name = capitalizeName(sponsorNameField.value);
           applicationFormData.sponsor_email = sponsorEmailField ? sponsorEmailField.value : '';
@@ -3272,21 +3413,27 @@ function submitLogin(event) {
   }
 
   function prepareApplicationReview() {
-    saveApplicationStepData(6);
+    // Make sure all previous step data is saved
+    saveApplicationStepData(1);
+    saveApplicationStepData(2);
+    saveApplicationStepData(3);
+    saveApplicationStepData(4);
+    saveApplicationStepData(5);
+
     var review = '';
 
-    // Primary Applicant Section
+    // Primary Applicant Section - Always show
     review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
-    review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Applicant Information</h4>';
-    review += '<strong>Membership Category:</strong> ' + applicationFormData.membership_category + '<br>';
-    review += '<strong>Name:</strong> ' + applicationFormData.first_name + ' ' + applicationFormData.last_name + '<br>';
-    review += '<strong>Email:</strong> ' + applicationFormData.email + '<br>';
-    review += '<strong>Phone:</strong> ' + (applicationFormData.country_code_primary || '') + ' ' + applicationFormData.phone_primary;
+    review += '<h4 style="margin-bottom: 8px; color: #0A3161; margin-top: 0;">Applicant Information</h4>';
+    review += '<strong>Membership Category:</strong> ' + (applicationFormData.membership_category || '—') + '<br>';
+    review += '<strong>Name:</strong> ' + (applicationFormData.first_name || '') + ' ' + (applicationFormData.last_name || '') + '<br>';
+    review += '<strong>Email:</strong> ' + (applicationFormData.email || '—') + '<br>';
+    review += '<strong>Phone:</strong> ' + (applicationFormData.country_code_primary || 'US') + ' ' + (applicationFormData.phone_primary || '—');
     if (applicationFormData.phone_primary_whatsapp) {
-      review += ' <em>(WhatsApp)</em>';
+      review += ' <em>(WhatsApp available)</em>';
     }
     review += '<br>';
-    review += '<strong>Citizenship:</strong> ' + applicationFormData.citizenship_country + '<br>';
+    review += '<strong>Citizenship:</strong> ' + (applicationFormData.citizenship_country || '—') + '<br>';
     review += '</div>';
 
     // Employment Information Section

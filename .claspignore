@@ -6,6 +6,8 @@
 !appsscript.json
 0*.html
 index.html
+docs/**
+BoardEmailConfig.gs
 .git
 .claude
 node_modules

@@ -3420,84 +3420,137 @@ function submitLogin(event) {
     saveApplicationStepData(4);
     saveApplicationStepData(5);
 
-    var review = '';
+    var reviewContainer = document.getElementById('applicationReview');
+    reviewContainer.innerHTML = ''; // Clear existing content
+
+    // Helper function to add a label + value row safely
+    function addField(parent, label, value) {
+      if (!value) return;
+      var strong = document.createElement('strong');
+      strong.textContent = label + ':';
+      parent.appendChild(strong);
+      parent.appendChild(document.createTextNode(' ' + value));
+      parent.appendChild(document.createElement('br'));
+    }
 
     // Primary Applicant Section - Always show
-    review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
-    review += '<h4 style="margin-bottom: 8px; color: #0A3161; margin-top: 0;">Applicant Information</h4>';
-    review += '<strong>Membership Category:</strong> ' + (applicationFormData.membership_category || '—') + '<br>';
-    review += '<strong>Name:</strong> ' + (applicationFormData.first_name || '') + ' ' + (applicationFormData.last_name || '') + '<br>';
-    review += '<strong>Email:</strong> ' + (applicationFormData.email || '—') + '<br>';
-    review += '<strong>Phone:</strong> ' + (applicationFormData.country_code_primary || 'US') + ' ' + (applicationFormData.phone_primary || '—');
+    var applicantDiv = document.createElement('div');
+    applicantDiv.style.marginBottom = '16px';
+    applicantDiv.style.paddingBottom = '16px';
+    applicantDiv.style.borderBottom = '1px solid #ddd';
+
+    var applicantTitle = document.createElement('h4');
+    applicantTitle.style.marginBottom = '8px';
+    applicantTitle.style.color = '#0A3161';
+    applicantTitle.style.marginTop = '0';
+    applicantTitle.textContent = 'Applicant Information';
+    applicantDiv.appendChild(applicantTitle);
+
+    addField(applicantDiv, 'Membership Category', applicationFormData.membership_category || '—');
+    addField(applicantDiv, 'Name', (applicationFormData.first_name || '') + ' ' + (applicationFormData.last_name || ''));
+    addField(applicantDiv, 'Email', applicationFormData.email || '—');
+
+    var phoneLabel = document.createElement('strong');
+    phoneLabel.textContent = 'Phone:';
+    applicantDiv.appendChild(phoneLabel);
+    applicantDiv.appendChild(document.createTextNode(' ' + (applicationFormData.country_code_primary || 'US') + ' ' + (applicationFormData.phone_primary || '—')));
     if (applicationFormData.phone_primary_whatsapp) {
-      review += ' <em>(WhatsApp available)</em>';
+      var whatsappNote = document.createElement('em');
+      whatsappNote.textContent = ' (WhatsApp available)';
+      applicantDiv.appendChild(whatsappNote);
     }
-    review += '<br>';
-    review += '<strong>Citizenship:</strong> ' + (applicationFormData.citizenship_country || '—') + '<br>';
-    review += '</div>';
+    applicantDiv.appendChild(document.createElement('br'));
+
+    addField(applicantDiv, 'Citizenship', applicationFormData.citizenship_country || '—');
+    reviewContainer.appendChild(applicantDiv);
 
     // Employment Information Section
     if (applicationFormData.employment_office || applicationFormData.employment_job_title || applicationFormData.employment_posting_date) {
-      review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
-      review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Employment Information</h4>';
-      if (applicationFormData.employment_office) {
-        review += '<strong>Employer/Organization:</strong> ' + applicationFormData.employment_office + '<br>';
-      }
-      if (applicationFormData.employment_job_title) {
-        review += '<strong>Job Title:</strong> ' + applicationFormData.employment_job_title + '<br>';
-      }
-      if (applicationFormData.employment_posting_date) {
-        review += '<strong>Posting Date:</strong> ' + applicationFormData.employment_posting_date + '<br>';
-      }
-      if (applicationFormData.employment_departure_date) {
-        review += '<strong>Anticipated Departure:</strong> ' + applicationFormData.employment_departure_date + '<br>';
-      }
-      review += '</div>';
+      var employmentDiv = document.createElement('div');
+      employmentDiv.style.marginBottom = '16px';
+      employmentDiv.style.paddingBottom = '16px';
+      employmentDiv.style.borderBottom = '1px solid #ddd';
+
+      var employmentTitle = document.createElement('h4');
+      employmentTitle.style.marginBottom = '8px';
+      employmentTitle.style.color = '#0A3161';
+      employmentTitle.textContent = 'Employment Information';
+      employmentDiv.appendChild(employmentTitle);
+
+      addField(employmentDiv, 'Employer/Organization', applicationFormData.employment_office);
+      addField(employmentDiv, 'Job Title', applicationFormData.employment_job_title);
+      addField(employmentDiv, 'Posting Date', applicationFormData.employment_posting_date);
+      addField(employmentDiv, 'Anticipated Departure', applicationFormData.employment_departure_date);
+
+      reviewContainer.appendChild(employmentDiv);
     }
 
     // Household Information Section
     if (applicationFormData.household_type === 'Family' || applicationFormData.sponsor_name) {
-      review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
-      review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Household Information</h4>';
-      review += '<strong>Household Type:</strong> ' + (applicationFormData.household_type || 'Individual') + '<br>';
+      var householdDiv = document.createElement('div');
+      householdDiv.style.marginBottom = '16px';
+      householdDiv.style.paddingBottom = '16px';
+      householdDiv.style.borderBottom = '1px solid #ddd';
+
+      var householdTitle = document.createElement('h4');
+      householdTitle.style.marginBottom = '8px';
+      householdTitle.style.color = '#0A3161';
+      householdTitle.textContent = 'Household Information';
+      householdDiv.appendChild(householdTitle);
+
+      addField(householdDiv, 'Household Type', applicationFormData.household_type || 'Individual');
 
       // Sponsor Information
       if (applicationFormData.sponsor_name) {
-        review += '<strong>Sponsor:</strong> ' + applicationFormData.sponsor_name + '<br>';
-        if (applicationFormData.sponsor_email) {
-          review += '<strong>Sponsor Email:</strong> ' + applicationFormData.sponsor_email + '<br>';
-        }
+        addField(householdDiv, 'Sponsor', applicationFormData.sponsor_name);
+        addField(householdDiv, 'Sponsor Email', applicationFormData.sponsor_email);
       }
 
       // Family Members
       if (applicationFormData.family_members && applicationFormData.family_members.length > 0) {
-        review += '<strong>Family Members:</strong><br>';
-        review += '<ul style="margin: 8px 0; padding-left: 20px;">';
+        var familyLabel = document.createElement('strong');
+        familyLabel.textContent = 'Family Members:';
+        householdDiv.appendChild(familyLabel);
+        householdDiv.appendChild(document.createElement('br'));
+
+        var familyUl = document.createElement('ul');
+        familyUl.style.margin = '8px 0';
+        familyUl.style.paddingLeft = '20px';
+
         applicationFormData.family_members.forEach(function(member) {
-          review += '<li>' + member.first_name + ' ' + member.last_name + ' (' + member.relationship_to_primary + ')';
+          var li = document.createElement('li');
+          var nameText = (member.first_name || '') + ' ' + (member.last_name || '') + ' (' + (member.relationship_to_primary || '') + ')';
+          li.textContent = nameText;
           if (member.citizenship_country) {
-            review += ' — Citizenship: ' + member.citizenship_country;
+            li.appendChild(document.createTextNode(' — Citizenship: ' + member.citizenship_country));
           }
-          review += '</li>';
+          familyUl.appendChild(li);
         });
-        review += '</ul>';
+
+        householdDiv.appendChild(familyUl);
       }
 
-      review += '</div>';
+      reviewContainer.appendChild(householdDiv);
     }
 
     // Household Staff Section
     if (applicationFormData.has_staff && (applicationFormData.staff_first_name || applicationFormData.staff_last_name)) {
-      review += '<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #ddd;">';
-      review += '<h4 style="margin-bottom: 8px; color: #0A3161;">Household Staff</h4>';
-      review += '<strong>Name:</strong> ' + applicationFormData.staff_first_name + ' ' + applicationFormData.staff_last_name + '<br>';
-      if (applicationFormData.staff_citizenship) {
-        review += '<strong>Citizenship:</strong> ' + applicationFormData.staff_citizenship + '<br>';
-      }
-      review += '</div>';
-    }
+      var staffDiv = document.createElement('div');
+      staffDiv.style.marginBottom = '16px';
+      staffDiv.style.paddingBottom = '16px';
+      staffDiv.style.borderBottom = '1px solid #ddd';
 
-    document.getElementById('applicationReview').innerHTML = review;
+      var staffTitle = document.createElement('h4');
+      staffTitle.style.marginBottom = '8px';
+      staffTitle.style.color = '#0A3161';
+      staffTitle.textContent = 'Household Staff';
+      staffDiv.appendChild(staffTitle);
+
+      addField(staffDiv, 'Name', (applicationFormData.staff_first_name || '') + ' ' + (applicationFormData.staff_last_name || ''));
+      addField(staffDiv, 'Citizenship', applicationFormData.staff_citizenship);
+
+      reviewContainer.appendChild(staffDiv);
+    }
   }
 
   function submitApplication() {
@@ -3720,16 +3773,64 @@ function submitLogin(event) {
       }
     });
 
-    // Render alerts
-    var alertsHtml = '';
-    alerts.forEach(function(alert) {
-      alertsHtml += '<div class="alert-banner alert-banner-' + alert.type + '">' +
-        '<div class="alert-banner-text">' + alert.message + '</div>' +
-        '<button class="alert-banner-close" onclick="this.parentElement.style.display=\'none\';">✕</button>' +
-        '</div>';
-    });
+    // Render alerts safely using DOM construction
+    var alertsContainer = document.getElementById('alertBanners');
+    alertsContainer.innerHTML = '';
 
-    document.getElementById('alertBanners').innerHTML = alertsHtml;
+    alerts.forEach(function(alert) {
+      var banner = document.createElement('div');
+      banner.className = 'alert-banner alert-banner-' + alert.type;
+
+      var text = document.createElement('div');
+      text.className = 'alert-banner-text';
+
+      // Handle alerts that may contain HTML (with anchor tags)
+      // For now, use textContent to prevent XSS, and we'll need to update
+      // the message building logic to not include inline HTML
+      text.textContent = alert.message.replace(/<[^>]*>/g, ''); // Strip HTML tags for safety
+
+      // If message contained an action link, add it back properly
+      if (alert.message.indexOf('<a') !== -1) {
+        text.innerHTML = ''; // Clear previous content
+        // Parse out the action link manually and rebuild safely
+        var messageText = alert.message;
+        var actionMatch = messageText.match(/^(.+?)\s*<a[^>]*onclick="([^"]*)"[^>]*>([^<]+)<\/a>(.*)$/);
+        if (actionMatch) {
+          text.appendChild(document.createTextNode(actionMatch[1]));
+          text.appendChild(document.createTextNode(' '));
+
+          var link = document.createElement('a');
+          link.textContent = actionMatch[3];
+          link.href = '#';
+          link.style.color = 'inherit';
+          link.style.textDecoration = 'underline';
+
+          // Parse the onclick handler
+          if (actionMatch[2].includes('showPage(\'payment\')')) {
+            link.onclick = function() { showPage('payment'); return false; };
+          } else if (actionMatch[2].includes('showPage(\'profile\')')) {
+            link.onclick = function() { showPage('profile'); return false; };
+          }
+
+          text.appendChild(link);
+          if (actionMatch[4]) {
+            text.appendChild(document.createTextNode(actionMatch[4]));
+          }
+        } else {
+          // Fallback: just show the text without tags
+          text.textContent = alert.message.replace(/<[^>]*>/g, '');
+        }
+      }
+
+      var closeBtn = document.createElement('button');
+      closeBtn.className = 'alert-banner-close';
+      closeBtn.textContent = '✕';
+      closeBtn.onclick = function() { this.parentElement.style.display = 'none'; };
+
+      banner.appendChild(text);
+      banner.appendChild(closeBtn);
+      alertsContainer.appendChild(banner);
+    });
   }
 
   function renderMembershipCard(hh, level, exchangeRate) {

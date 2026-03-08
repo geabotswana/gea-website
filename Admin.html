@@ -2058,16 +2058,44 @@
       photos.forEach(function(photo) {
         var card = document.createElement('div');
         card.className = 'photo-card';
-        card.innerHTML = '\
-          <div class="photo-image">📸</div>\
-          <div class="photo-footer">\
-            <div class="photo-name">' + (photo.member_name || 'Unknown') + '</div>\
-            <div class="photo-actions">\
-              <button class="btn btn-primary btn-small" onclick="approvePhoto(\'' + photo.individual_id + '\');">Approve</button>\
-              <button class="btn btn-danger btn-small" onclick="openPhotoRejectModal(\'' + photo.individual_id + '\');">Reject</button>\
-            </div>\
-          </div>\
-        ';
+
+        // Build photo card safely using DOM methods to prevent XSS
+        var imageDiv = document.createElement('div');
+        imageDiv.className = 'photo-image';
+        imageDiv.textContent = '📸';
+        card.appendChild(imageDiv);
+
+        var footerDiv = document.createElement('div');
+        footerDiv.className = 'photo-footer';
+
+        // Name (safe: textContent for user data)
+        var nameDiv = document.createElement('div');
+        nameDiv.className = 'photo-name';
+        nameDiv.textContent = photo.member_name || 'Unknown';
+        footerDiv.appendChild(nameDiv);
+
+        // Action buttons (safe: event handlers instead of onclick strings)
+        var actionsDiv = document.createElement('div');
+        actionsDiv.className = 'photo-actions';
+
+        var approveBtn = document.createElement('button');
+        approveBtn.className = 'btn btn-primary btn-small';
+        approveBtn.textContent = 'Approve';
+        approveBtn.onclick = (function(individualId) {
+          return function() { approvePhoto(individualId); };
+        })(photo.individual_id);
+        actionsDiv.appendChild(approveBtn);
+
+        var rejectBtn = document.createElement('button');
+        rejectBtn.className = 'btn btn-danger btn-small';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.onclick = (function(individualId) {
+          return function() { openPhotoRejectModal(individualId); };
+        })(photo.individual_id);
+        actionsDiv.appendChild(rejectBtn);
+
+        footerDiv.appendChild(actionsDiv);
+        card.appendChild(footerDiv);
         photoGrid.appendChild(card);
       });
     });

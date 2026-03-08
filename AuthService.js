@@ -78,8 +78,9 @@ function login(email, password) {
   // Hash the plaintext password provided by the user
   var providedPasswordHash = hashPassword(password);
 
-  // Compare the provided password hash to the stored hash
-  if (providedPasswordHash !== member.password_hash) {
+  // Compare the provided password hash to the stored hash using constant-time comparison
+  // This prevents timing attacks from revealing password patterns
+  if (!constantTimeCompare(providedPasswordHash, member.password_hash)) {
     logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
                   "Failed login attempt: incorrect password");
     return { success: false, message: "Invalid email or password." };
@@ -305,8 +306,8 @@ function validateSession(token) {
     if (!presentedHash) return { valid: false, message: "Invalid session. Please log in again." };
 
     for (var i = 1; i < data.length; i++) {
-      // SECURITY: Compare hashes, not plain tokens. Token never stored in plaintext.
-      if (data[i][tokCol] !== presentedHash) continue;
+      // SECURITY: Compare hashes with constant-time function to resist timing attacks
+      if (!constantTimeCompare(data[i][tokCol], presentedHash)) continue;
       if (!data[i][actCol]) return { valid: false, message: "Session has been invalidated." };
 
       var expires = new Date(data[i][expCol]);
@@ -348,8 +349,8 @@ function logout(token) {
     if (!tokenHash) return false;
 
     for (var i = 1; i < data.length; i++) {
-      // SECURITY: Compare hashes, not plain tokens
-      if (data[i][tokCol] === tokenHash) {
+      // SECURITY: Compare hashes with constant-time function
+      if (constantTimeCompare(data[i][tokCol], tokenHash)) {
         sheet.getRange(i + 1, actCol + 1).setValue(false);
         logAuditEntry(data[i][emlCol], AUDIT_LOGOUT, "Session", "[hash]", "User logged out");
         return true;
@@ -516,6 +517,29 @@ function _generateToken() {
  */
 function _sessionExpiry() {
   return new Date(new Date().getTime() + SESSION_TIMEOUT_HOURS * 60 * 60 * 1000);
+}
+
+/**
+ * Constant-time string comparison (resists timing attacks).
+ * Compares two strings in constant time by always checking all characters,
+ * never short-circuiting on first difference.
+ *
+ * @param {string} str1  First string (e.g., provided hash)
+ * @param {string} str2  Second string (e.g., stored hash)
+ * @returns {boolean}    True if strings are equal
+ */
+function constantTimeCompare(str1, str2) {
+  // Length check first (timing safe: always executed regardless of match)
+  if (str1.length !== str2.length) return false;
+
+  // Accumulate differences using XOR + bitwise OR (no short-circuit)
+  // This takes O(n) time regardless of where differences occur
+  var diff = 0;
+  for (var i = 0; i < str1.length; i++) {
+    diff |= str1.charCodeAt(i) ^ str2.charCodeAt(i);
+  }
+
+  return diff === 0;
 }
 
 /**

@@ -3326,8 +3326,31 @@ function submitLogin(event) {
 
   function prevApplicationStep() {
     saveApplicationStepData(currentApplicationStep);
+
     if (currentApplicationStep > 1) {
       currentApplicationStep--;
+
+      // Skip steps based on conditions (same as forward navigation)
+      // Step 3 is always skipped (sponsor)
+      if (currentApplicationStep === 3) {
+        currentApplicationStep--;
+      }
+
+      // Step 4 (Family) is skipped for Individual households
+      if (currentApplicationStep === 4 && applicationFormData.household_type !== 'Family') {
+        currentApplicationStep--;
+      }
+
+      // Step 5 (Household staff) is skipped for Individual households
+      if (currentApplicationStep === 5 && applicationFormData.household_type !== 'Family') {
+        currentApplicationStep--;
+      }
+
+      // Don't go below step 1
+      if (currentApplicationStep < 1) {
+        currentApplicationStep = 1;
+      }
+
       updateApplicationStep();
     }
   }

@@ -29,6 +29,15 @@ clasp push                    # Push all code changes to @HEAD
 
 **Important:** HTML files (Portal.html, Admin.html) deploy as @HEAD and take effect immediately. JavaScript changes require `clasp push`.
 
+### Initial Setup: Install Regression Prevention Hooks
+After cloning this repository, install the git hooks for XSS regression prevention:
+
+```bash
+node scripts/install-hooks.js
+```
+
+This sets up the pre-commit hook that runs `scripts/check-xss-patterns.js` before each commit. The hook prevents commits containing XSS-prone patterns (innerHTML/insertAdjacentHTML with string concatenation). See **XSS Prevention** section below for details.
+
 ### Run Tests & Diagnostics
 ```
 # In Google Apps Script editor:
@@ -135,11 +144,13 @@ container.appendChild(div);
    // Right: btn.onclick = (function(itemId) { return function() { deleteItem(itemId); }; })(id);
    ```
 3. **innerHTML** → only for static, non-user-controlled markup
-4. **Pre-commit check** → `bash scripts/check-xss-patterns.sh` blocks regression
+4. **Pre-commit check** → Git hook runs `scripts/check-xss-patterns.js` before commits
 
-**Regression Prevention:**
-- Git pre-commit hook automatically runs XSS pattern check
-- Blocks commits that reintroduce innerHTML/insertAdjacentHTML with string interpolation
+**Regression Prevention (Heuristic-Based):**
+- Git pre-commit hook automatically runs conservative XSS pattern check
+- **Detects:** Same-line innerHTML/insertAdjacentHTML with + operator concatenation
+- **Does NOT detect:** Template literals `${}`, multi-line patterns, two-step assignments (`var html = ...; el.innerHTML = html;`)
+- Not a comprehensive blocker; still requires code review for template literals and complex flows
 - Override with `git commit --no-verify` (not recommended; indicates security review needed)
 
 ---

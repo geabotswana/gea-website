@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+/**
+ * Pre-commit hook: XSS pattern check (cross-platform)
+ *
+ * Runs before commit to prevent regression of XSS vulnerabilities.
+ * Works on Windows, macOS, Linux (no WSL required).
+ *
+ * Installed by: scripts/install-hooks.js
+ * To bypass: git commit --no-verify (not recommended)
+ */
+
+const { spawnSync } = require('child_process');
+const path = require('path');
+
+console.log('🔒 Running XSS pattern check...\n');
+
+// process.cwd() is the repo root when git runs this hook
+const checkerScript = path.join(process.cwd(), 'scripts', 'check-xss-patterns.js');
+
+const result = spawnSync('node', [checkerScript], {
+  cwd: process.cwd(),
+  stdio: 'inherit'
+});
+
+if (result.status !== 0) {
+  console.log('');
+  console.log('❌ Commit blocked: XSS-prone patterns detected');
+  console.log('');
+  console.log('To fix: Replace innerHTML/insertAdjacentHTML with safe DOM construction');
+  console.log('  Example: el.textContent = data;  // Instead of el.innerHTML = data;');
+  console.log('');
+  console.log('To bypass (not recommended):');
+  console.log('  git commit --no-verify');
+  console.log('');
+  process.exit(1);
+}
+
+process.exit(0);

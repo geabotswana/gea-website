@@ -1,19 +1,21 @@
 #!/usr/bin/env node
 /**
- * XSS Pattern Lint - Conservative Heuristic Check
+ * XSS Pattern Lint - Conservative Same-Line Heuristic Check
  *
- * WARNING: This is a LINT TOOL, not a comprehensive security blocker.
- * It catches obvious patterns but can have false negatives and false positives.
+ * ⚠️  LIMITATIONS (intentional, to reduce false positives):
+ * - Only detects same-line patterns (requires AST for multi-line flows)
+ * - Does NOT catch template literals with ${} (requires parser)
+ * - Does NOT catch two-step var html = ...; el.innerHTML = html;
+ * - May have false negatives from obfuscated concatenation
  *
- * Detects ONLY obvious same-line patterns:
- * - .innerHTML = '...' + variable + '...'
- * - insertAdjacentHTML('beforeend', '...' + variable)
+ * DETECTS:
+ * - .innerHTML = '...' + variable
+ * - .innerHTML = variable + '...'
+ * - insertAdjacentHTML(..., '...' + variable)
+ * - insertAdjacentHTML(..., variable + '...')
  *
- * Does NOT catch:
- * - Template literals with ${} (requires AST parser)
- * - Multi-line patterns (requires statement-level analysis)
- * - Two-step var html = ...; el.innerHTML = html; (requires cross-statement analysis)
- * - Safe concatenation into textContent (false positive)
+ * NOT a comprehensive security blocker. Use for regression prevention only.
+ * Full security review requires AST analysis and code review.
  *
  * Usage: node scripts/check-xss-patterns.js
  */
@@ -36,32 +38,37 @@ function checkFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split('\n');
 
-  // ONLY match: .innerHTML = 'string' + var + 'string'
-  // This is intentionally narrow to avoid false positives
-  const innerHTMLPattern = /\.(innerHTML|insertAdjacentHTML)\s*=\s*['"`]([^'"`]*)['"`]\s*\+\s*(?!['\s])/;
+  // Pattern 1: .innerHTML = 'string' + var (assignment)
+  const assignmentPattern = /\.(innerHTML)\s*=\s*['"`]([^'"`]*)['"`]\s*\+\s*(?!['\s])/;
+
+  // Pattern 2: insertAdjacentHTML(...'string' + var) (method call)
+  // Matches: insertAdjacentHTML(anything, 'string' + var or " + var)
+  const methodCallPattern = /insertAdjacentHTML\s*\([^)]*['"`][^'"`]*['"`]\s*\+\s*(?!['\s])/;
 
   lines.forEach((line, idx) => {
     const lineNum = idx + 1;
     const fileName = path.basename(filePath);
 
-    // Skip safe/static comments
-    if (line.includes('// Safe:') || line.includes('// Static:')) {
+    // Skip safe/static comments and non-security uses
+    if (line.includes('// Safe:') || line.includes('// Static:') ||
+        line.includes('googleapis.com') || line.includes('stylesheet')) {
       return;
     }
 
-    // Skip Google Fonts URLs and other non-security uses
-    if (line.includes('googleapis.com') || line.includes('stylesheet')) {
+    // Check Pattern 1: innerHTML = 'string' + variable
+    if (assignmentPattern.test(line) && /\+\s*[a-zA-Z_$]/.test(line)) {
+      console.log(`${RED}✗${NC} ${fileName}:${lineNum}`);
+      console.log(`  ${line.trim()}`);
+      violations++;
       return;
     }
 
-    // Only flag actual innerHTML/insertAdjacentHTML assignments with + on same line
-    if (innerHTMLPattern.test(line) && (line.includes('.innerHTML =') || line.includes('insertAdjacentHTML'))) {
-      // Additional filter: must actually have a variable, not just string literals
-      if (/\+\s*[a-zA-Z_$]/.test(line)) {
-        console.log(`${RED}✗${NC} ${fileName}:${lineNum}`);
-        console.log(`  ${line.trim()}`);
-        violations++;
-      }
+    // Check Pattern 2: insertAdjacentHTML(..., 'string' + variable)
+    if (methodCallPattern.test(line) && /\+\s*[a-zA-Z_$]/.test(line)) {
+      console.log(`${RED}✗${NC} ${fileName}:${lineNum}`);
+      console.log(`  ${line.trim()}`);
+      violations++;
+      return;
     }
   });
 }

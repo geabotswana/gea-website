@@ -51,8 +51,15 @@ function doGet(e) {
   var action = params.action || "serve";
 
   // Serve the HTML portal shell (no auth needed)
+  // Uses template evaluation to inject deployment metadata
   if (action === "serve") {
-    return HtmlService.createHtmlOutputFromFile("Portal")
+    var t = HtmlService.createTemplateFromFile("Portal");
+    t.GEA_DEPLOYMENT_TIMESTAMP = DEPLOYMENT_TIMESTAMP;
+    t.GEA_SYSTEM_VERSION = SYSTEM_VERSION;
+    t.GEA_BUILD_ID = BUILD_ID;
+    t.GEA_DEPLOYMENT_ID = _getDeploymentIdFromUrl_();
+
+    return t.evaluate()
       .setTitle("GEA Member Portal")
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
@@ -2035,4 +2042,20 @@ function testSendAllEmailTemplates() {
   }
 
   return results;
+}
+
+/**
+ * Extract deployment ID from the current GAS script URL
+ * Used by Portal.html to determine which deployment it's running in
+ * @returns {string} The deployment ID or "unknown"
+ */
+function _getDeploymentIdFromUrl_() {
+  try {
+    var url = ScriptApp.getService().getUrl();
+    var match = String(url).match(/\/s\/([^/]+)\/exec/);
+    return match ? match[1] : "unknown";
+  } catch (e) {
+    Logger.log("Warning: Could not extract deployment ID from URL: " + e.toString());
+    return "unknown";
+  }
 }

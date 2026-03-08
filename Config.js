@@ -728,7 +728,8 @@ var SYSTEM_BUILD_DATE       = "2026-02-22";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "Sequential membership eligibility flow with sponsor requirements and monthly exchange rate mechanism";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-08 19:15:03";  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var DEPLOYMENT_TIMESTAMP    = "2026-03-08 19:39:35";  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // TEST MODE: Set to TRUE to prefix all generated IDs with "TEST-" for easy cleanup before production
 // When TEST_MODE is enabled, all IDs look like: TEST-APP-2026-00001, TEST-HSH-2026-00001, etc.

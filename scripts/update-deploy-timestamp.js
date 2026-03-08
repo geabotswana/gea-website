@@ -22,16 +22,25 @@ const timestamp = now.toISOString().replace('T', ' ').substring(0, 19); // YYYY-
 // Update the DEPLOYMENT_TIMESTAMP constant
 // Look for: var DEPLOYMENT_TIMESTAMP = "..."; (with any amount of whitespace)
 const timestampPattern = /var DEPLOYMENT_TIMESTAMP\s*=\s*"[^"]*";/;
-const replacement = `var DEPLOYMENT_TIMESTAMP    = "${timestamp}";  // Updated by scripts/update-deploy-timestamp.js before clasp push`;
+const timestampReplacement = `var DEPLOYMENT_TIMESTAMP    = "${timestamp}";  // Updated by scripts/update-deploy-timestamp.js before clasp push`;
 
 if (content.match(timestampPattern)) {
-  content = content.replace(timestampPattern, replacement);
+  content = content.replace(timestampPattern, timestampReplacement);
   console.log(`✓ Updated Config.js DEPLOYMENT_TIMESTAMP to: ${timestamp}`);
 } else {
   console.error('✗ DEPLOYMENT_TIMESTAMP constant not found in Config.js');
   console.error('Add this line to Config.js after SYSTEM_LAST_FEATURE:');
   console.error(`var DEPLOYMENT_TIMESTAMP = '${timestamp}';  // Updated by scripts/update-deploy-timestamp.js`);
   process.exit(1);
+}
+
+// Update the BUILD_ID constant (should equal DEPLOYMENT_TIMESTAMP)
+const buildIdPattern = /var BUILD_ID\s*=\s*DEPLOYMENT_TIMESTAMP;/;
+if (content.match(buildIdPattern)) {
+  // BUILD_ID just references DEPLOYMENT_TIMESTAMP, so it auto-updates
+  console.log(`✓ BUILD_ID will use updated DEPLOYMENT_TIMESTAMP`);
+} else {
+  console.error('⚠ BUILD_ID constant not found in Config.js (it should reference DEPLOYMENT_TIMESTAMP)');
 }
 
 // Write back

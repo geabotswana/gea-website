@@ -28,49 +28,130 @@
     }
 
     /* ============================================================ */
-    /* ENVIRONMENT INDICATOR                                        */
+    /* ENVIRONMENT CONTROL PANEL & DEPLOYMENT STATUS                */
     /* ============================================================ */
-    #env-indicator {
+    #envControlPanel {
       position: fixed;
-      bottom: 8px;
+      bottom: 16px;
       left: 8px;
-      z-index: 10000;
-      padding: 8px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      border-radius: 4px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 360px;
+      font-family: 'Source Sans 3', Arial, sans-serif;
+    }
+
+    .env-toggle {
+      display: inline-flex;
+      background: rgba(12, 24, 36, 0.92);
+      border-radius: 999px;
+      padding: 4px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+      backdrop-filter: blur(10px);
+      gap: 0;
+    }
+
+    .env-toggle button {
+      border: 0;
+      background: transparent;
+      color: #d7e3ec;
+      font: 700 12px/1.1 Arial, sans-serif;
       cursor: pointer;
-      user-select: none;
-      transition: all 0.3s ease;
+      padding: 6px 12px;
+      border-radius: 999px;
+      transition: all 0.2s ease;
     }
 
-    #env-indicator.dev {
-      background: #FFC107;
-      color: #333;
-      border: 1px solid #FFB300;
+    .env-toggle button:hover {
+      color: #fff;
     }
 
-    #env-indicator.prod {
-      background: #4CAF50;
-      color: white;
-      border: 1px solid #388E3C;
+    .env-toggle button.active {
+      background: #ffffff;
+      color: #0a3161;
     }
 
-    #env-indicator:hover {
-      padding: 8px 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    .deployment-status {
+      background: rgba(12, 24, 36, 0.94);
+      color: #eef4f8;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(10px);
+      font: 12px/1.4 Arial, sans-serif;
+      padding: 8px 12px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
     }
 
-    #deploy-timestamp {
-      position: fixed;
-      bottom: 8px;
-      left: 8px;
-      margin-top: 32px;
+    .deployment-status.status-loading {
+      border-color: rgba(194, 139, 0, 0.5);
+    }
+
+    .deployment-status.status-ready-dev {
+      border-color: rgba(21, 101, 192, 0.5);
+    }
+
+    .deployment-status.status-ready-prod {
+      border-color: rgba(46, 125, 50, 0.5);
+    }
+
+    .deployment-status.status-mismatch {
+      border-color: rgba(198, 40, 40, 0.8);
+      background: rgba(58, 16, 16, 0.95);
+    }
+
+    .deployment-status.status-timeout {
+      border-color: rgba(230, 81, 0, 0.5);
+    }
+
+    .status-line {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .status-line:last-child {
+      margin-bottom: 0;
+    }
+
+    .status-label {
+      color: #9fb2c1;
+      text-transform: uppercase;
       font-size: 10px;
-      color: #999;
-      user-select: none;
-      pointer-events: none;
+      letter-spacing: 0.05em;
+    }
+
+    .env-pill,
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .status-badge {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .status-row {
+      margin-top: 6px;
+      color: #ffd7d7;
+      font-size: 11px;
+    }
+
+    @media (max-width: 640px) {
+      #envControlPanel {
+        left: 10px;
+        bottom: 10px;
+        max-width: none;
+      }
     }
 
     /* ============================================================ */
@@ -95,12 +176,29 @@
 <body>
 
 <!-- ================================================================ -->
-<!-- ENVIRONMENT INDICATOR & SWITCHER                                -->
-<!-- Click to toggle between Dev (@HEAD) and Prod (Versioned)        -->
+<!-- ENVIRONMENT CONTROL PANEL & DEPLOYMENT STATUS                   -->
+<!-- Shows selected vs loaded environment, deployment timestamp       -->
 <!-- ================================================================ -->
-<div id="env-indicator" title="Click to switch environments">
-  <span id="env-label">PROD</span>
-  <div id="deploy-timestamp"></div>
+<div id="envControlPanel">
+  <div id="envToggle" class="env-toggle">
+    <button id="envBtnDev" type="button">DEV</button>
+    <button id="envBtnProd" type="button">PROD</button>
+  </div>
+  <div id="deploymentStatus" class="deployment-status status-loading">
+    <div class="status-line">
+      <span class="status-label">Selected</span>
+      <span id="selectedEnvPill" class="env-pill env-pill-selected">DEV</span>
+      <span class="status-label">Loaded</span>
+      <span id="reportedEnvPill" class="env-pill env-pill-reported">UNKNOWN</span>
+      <span id="statusBadge" class="status-badge">Loading</span>
+    </div>
+    <div class="status-line">
+      <span id="statusTimestamp">Build: —</span>
+      <span id="statusVersion">Version: —</span>
+      <span id="statusAuth">Not signed in</span>
+    </div>
+    <div class="status-row" id="statusWarning" hidden></div>
+  </div>
 </div>
 
 <!-- ================================================================ -->
@@ -109,77 +207,181 @@
 <!-- ================================================================ -->
 <div id="iframe-container">
   <iframe
-    id="member-portal"
+    id="portalFrame"
     title="GEA Member Portal"
   ></iframe>
 </div>
 
 <script>
   // ================================================================
-  // DEPLOYMENT IDs
+  // DEPLOYMENT CONFIGURATION
   // ================================================================
-  const DEPLOYMENTS = {
-    prod: 'AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ',  // Versioned (stable)
-    dev:  'AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg'                              // @HEAD (latest code)
+  var DEPLOYMENTS = {
+    dev: {
+      deploymentId: 'AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg',
+      execUrl: 'https://script.google.com/macros/s/AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg/exec'
+    },
+    prod: {
+      deploymentId: 'AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ',
+      execUrl: 'https://script.google.com/macros/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec'
+    }
   };
 
-  // ================================================================
-  // ENVIRONMENT DETECTION & SETUP
-  // ================================================================
-  function initializeEnvironment() {
-    // Check URL parameter: ?env=dev or ?env=prod
-    const urlParams = new URLSearchParams(window.location.search);
-    const envParam = urlParams.get('env');
+  var ALLOWED_IFRAME_ORIGINS = {
+    'https://script.google.com': true,
+    'https://script.googleusercontent.com': true
+  };
 
-    // Determine environment: default to dev
-    let environment = 'dev';
-    if (envParam === 'prod') {
-      environment = 'prod';
+  var STATUS_TIMEOUT_MS = 5000;
+
+  var selectedEnv = localStorage.getItem('gea_env') || 'dev';
+  var statusTimeout = null;
+
+  // ================================================================
+  // HELPER FUNCTIONS
+  // ================================================================
+
+  function loadSelectedEnv() {
+    return localStorage.getItem('gea_env') || 'dev';
+  }
+
+  function saveSelectedEnv(env) {
+    localStorage.setItem('gea_env', env);
+  }
+
+  function buildIframeUrl(env) {
+    var base = DEPLOYMENTS[env].execUrl;
+    var url = new URL(base);
+    url.searchParams.set('action', 'serve');
+    url.searchParams.set('wrapper_env', env);
+    url.searchParams.set('parent_origin', window.location.origin);
+    return url.toString();
+  }
+
+  function setActiveEnvButton(env) {
+    document.getElementById('envBtnDev').classList.toggle('active', env === 'dev');
+    document.getElementById('envBtnProd').classList.toggle('active', env === 'prod');
+  }
+
+  // ================================================================
+  // STATUS RENDERING
+  // ================================================================
+
+  function renderStatus(state) {
+    var root = document.getElementById('deploymentStatus');
+    var selectedPill = document.getElementById('selectedEnvPill');
+    var reportedPill = document.getElementById('reportedEnvPill');
+    var badge = document.getElementById('statusBadge');
+    var timestamp = document.getElementById('statusTimestamp');
+    var version = document.getElementById('statusVersion');
+    var auth = document.getElementById('statusAuth');
+    var warning = document.getElementById('statusWarning');
+
+    root.className = 'deployment-status ' + state.statusClass;
+    selectedPill.textContent = (state.selectedEnv || 'unknown').toUpperCase();
+    reportedPill.textContent = (state.reportedEnv || 'unknown').toUpperCase();
+    badge.textContent = state.badgeText;
+    timestamp.textContent = 'Build: ' + (state.timestamp || '—');
+    version.textContent = 'Version: ' + (state.version || '—') + ' | ID: ' + (state.buildId || '—');
+    auth.textContent = state.authenticated ? 'Signed in' : 'Not signed in';
+
+    if (state.warning) {
+      warning.hidden = false;
+      warning.textContent = state.warning;
+    } else {
+      warning.hidden = true;
+      warning.textContent = '';
     }
-
-    // Save to localStorage for persistence
-    localStorage.setItem('gea-env', environment);
-
-    // Load the correct deployment
-    loadDeployment(environment);
   }
 
-  function loadDeployment(environment) {
-    const deploymentId = DEPLOYMENTS[environment];
-    const iframe = document.getElementById('member-portal');
-    const indicator = document.getElementById('env-indicator');
-    const label = document.getElementById('env-label');
-    const timestamp = document.getElementById('deploy-timestamp');
+  function showLoadingStatus() {
+    renderStatus({
+      statusClass: 'status-loading',
+      badgeText: 'Loading',
+      selectedEnv: selectedEnv,
+      reportedEnv: 'unknown',
+      timestamp: '—',
+      version: '—',
+      buildId: '—',
+      authenticated: false,
+      warning: ''
+    });
+  }
 
-    // Set iframe src
-    iframe.src = `https://script.google.com/a/macros/geabotswana.org/s/${deploymentId}/exec`;
-
-    // Update indicator
-    indicator.className = `${environment}`;
-    label.textContent = environment === 'dev' ? 'DEV (@HEAD)' : 'PROD (Stable)';
-
-    // Timestamp will be fetched and displayed inside Portal.html
+  function showTimeoutStatus() {
+    renderStatus({
+      statusClass: 'status-timeout',
+      badgeText: 'No Metadata',
+      selectedEnv: selectedEnv,
+      reportedEnv: 'unknown',
+      timestamp: '—',
+      version: '—',
+      buildId: '—',
+      authenticated: false,
+      warning: 'No deployment metadata received from portal.'
+    });
   }
 
   // ================================================================
-  // ENVIRONMENT SWITCHER
+  // LOAD PORTAL
   // ================================================================
-  document.getElementById('env-indicator').addEventListener('click', function() {
-    const current = localStorage.getItem('gea-env') || 'prod';
-    const next = current === 'prod' ? 'dev' : 'prod';
 
-    // Update URL without reloading
-    const newUrl = next === 'dev'
-      ? window.location.pathname + '?env=dev'
-      : window.location.pathname;
-    window.history.replaceState({}, document.title, newUrl);
+  function loadPortal(env) {
+    selectedEnv = env;
+    saveSelectedEnv(env);
+    setActiveEnvButton(env);
 
-    // Reload with new deployment
-    loadDeployment(next);
+    clearTimeout(statusTimeout);
+    showLoadingStatus();
+
+    statusTimeout = setTimeout(showTimeoutStatus, STATUS_TIMEOUT_MS);
+
+    document.getElementById('portalFrame').src = buildIframeUrl(env);
+  }
+
+  // ================================================================
+  // POSTMESSAGE LISTENER
+  // ================================================================
+
+  window.addEventListener('message', function(event) {
+    if (!ALLOWED_IFRAME_ORIGINS[event.origin]) return;
+
+    var data = event.data;
+    if (!data || data.type !== 'gea.deploymentInfo' || data.source !== 'portal') return;
+
+    clearTimeout(statusTimeout);
+
+    var mismatch = data.selectedEnv !== data.reportedEnv;
+    var readyClass = data.reportedEnv === 'prod' ? 'status-ready-prod' : 'status-ready-dev';
+
+    renderStatus({
+      statusClass: mismatch ? 'status-mismatch' : readyClass,
+      badgeText: mismatch ? 'Mismatch' : 'Loaded',
+      selectedEnv: data.selectedEnv || selectedEnv,
+      reportedEnv: data.reportedEnv || 'unknown',
+      timestamp: data.timestamp || '—',
+      version: data.version || '—',
+      buildId: data.buildId || data.deploymentId || '—',
+      authenticated: !!data.authenticated,
+      warning: mismatch ? 'Loaded deployment does not match selected environment.' : ''
+    });
   });
 
-  // Initialize on page load
-  window.addEventListener('DOMContentLoaded', initializeEnvironment);
+  // ================================================================
+  // EVENT LISTENERS
+  // ================================================================
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('envBtnDev').addEventListener('click', function() {
+      if (selectedEnv !== 'dev') loadPortal('dev');
+    });
+
+    document.getElementById('envBtnProd').addEventListener('click', function() {
+      if (selectedEnv !== 'prod') loadPortal('prod');
+    });
+
+    loadPortal(selectedEnv);
+  });
 </script>
 
 </body>

@@ -260,7 +260,11 @@
     url.searchParams.set('action', 'serve');
     url.searchParams.set('wrapper_env', env);
     url.searchParams.set('parent_origin', window.location.origin);
-    return url.toString();
+    var finalUrl = url.toString();
+    console.log('buildIframeUrl for env=' + env + ':');
+    console.log('  window.location.origin =', window.location.origin);
+    console.log('  final URL =', finalUrl);
+    return finalUrl;
   }
 
   function setActiveEnvButton(env) {

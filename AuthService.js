@@ -714,6 +714,7 @@ function _sendFirstLoginWelcome(member) {
  * - No active sessions using old plain-text token column
  *
  * @returns {Object} Status report with:
+ *   - migrationStatus: {string} "COMPLETE" or "INCOMPLETE"
  *   - tokenHashExists: {boolean}
  *   - tokenColumnExists: {boolean}
  *   - activeSessionCount: {number}
@@ -727,6 +728,7 @@ function _sendFirstLoginWelcome(member) {
  */
 function validateTokenHashMigration() {
   var report = {
+    migrationStatus: "INCOMPLETE",
     tokenHashExists: false,
     tokenColumnExists: false,
     activeSessionCount: 0,
@@ -793,8 +795,11 @@ function validateTokenHashMigration() {
                        report.invalidHashCount === 0 &&
                        (report.activeSessionCount === 0 || report.newSessionCount > 0);
 
+    report.migrationStatus = report.isComplete ? "COMPLETE" : "INCOMPLETE";
+
   } catch (e) {
     report.errors.push("Failed to read Sessions sheet: " + e.toString());
+    report.migrationStatus = "ERROR";
   }
 
   return report;

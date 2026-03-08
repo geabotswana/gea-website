@@ -117,10 +117,8 @@
 
 <script>
   // ================================================================
-  // DEPLOYMENT TIMESTAMP & IDs
+  // DEPLOYMENT IDs
   // ================================================================
-  const DEPLOYMENT_TIMESTAMP = '2026-03-08 20:46:00';  // Updated by scripts/update-deploy-timestamp.js
-
   const DEPLOYMENTS = {
     prod: 'AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ',  // Versioned (stable)
     dev:  'AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg'                              // @HEAD (latest code)
@@ -161,8 +159,19 @@
     indicator.className = `${environment}`;
     label.textContent = environment === 'dev' ? 'DEV (@HEAD)' : 'PROD (Stable)';
 
-    // Update timestamp - show when code was last deployed
-    timestamp.textContent = `Code pushed: ${DEPLOYMENT_TIMESTAMP}`;
+    // Fetch deployment timestamp from server
+    const deploymentUrl = `https://script.google.com/a/macros/geabotswana.org/s/${deploymentId}/exec?action=deployment_info`;
+    fetch(deploymentUrl)
+      .then(response => response.json())
+      .then(data => {
+        if (data.result && data.result.timestamp) {
+          timestamp.textContent = `Code pushed: ${data.result.timestamp} CAT`;
+        }
+      })
+      .catch(err => {
+        // If fetch fails, show a default message
+        timestamp.textContent = 'Code pushed: (checking...)';
+      });
   }
 
   // ================================================================

@@ -137,6 +137,7 @@ function _routeAction(action, params) {
     // ── PUBLIC ──────────────────────────────────────────────
     case "login":  return _handleLogin(params);
     case "logout": return _handleLogout(params);
+    case "deployment_info": return _handleDeploymentInfo();
     case "submit_application": return _handleSubmitApplication(params);
 
 
@@ -345,6 +346,18 @@ function _handleLogin(p) {
 function _handleLogout(p) {
   logout(p.token || "");
   return successResponse({}, "Logged out successfully.");
+}
+
+/**
+ * Returns deployment information (timestamp, version)
+ * Public endpoint - no authentication required
+ */
+function _handleDeploymentInfo() {
+  return successResponse({
+    timestamp: DEPLOYMENT_TIMESTAMP,
+    version: SYSTEM_VERSION,
+    name: SYSTEM_NAME
+  });
 }
 
 

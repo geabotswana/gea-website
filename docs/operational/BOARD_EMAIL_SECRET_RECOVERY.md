@@ -109,21 +109,30 @@ If missing:
 
 ### Step 5: Test Email Delivery
 
-1. In Google Apps Script editor, open **Code.js** or **EmailService.js**
+1. In Google Apps Script editor, open **Tests.js** or create a new test function
 2. Create a test function:
 ```javascript
 function testBoardEmailRecovery() {
+  // sendEmailFromBoard(templateId, recipient, variables)
   var result = sendEmailFromBoard(
+    "tpl_001",  // Template ID (or any valid template)
     "treasurer@geabotswana.org",
-    "Test: Board Email Recovery",
-    "<p>If you receive this, board email is working.</p>"
+    {
+      FIRST_NAME: "Test User",
+      MEMBER_NAME: "Test"
+    }
   );
-  Logger.log("Result: " + JSON.stringify(result));
+  Logger.log("Email sent: " + result);
+  if (!result) {
+    Logger.log("ERROR: Email failed. Check BoardEmailConfig.gs exists.");
+  }
 }
 ```
 3. Run the function (Apps Script editor: Run button)
-4. Check Logs tab for success message
+4. Check Logs tab for success message: `Email sent: true`
 5. Verify email arrives in treasurer's inbox as **incoming mail** (not sent folder)
+
+**Note:** Use an actual template ID (e.g., `tpl_001` for "New Reservation") or check `getEmailTemplate()` for available IDs. The variables must match the template's placeholders.
 
 ---
 

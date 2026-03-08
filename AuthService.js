@@ -708,13 +708,20 @@ function _sendFirstLoginWelcome(member) {
  * Validates that token hash migration is complete.
  * Returns status report for deployment verification.
  *
+ * Checks:
+ * - token_hash column exists
+ * - Active sessions contain valid 64-char SHA256 hashes (not just non-empty)
+ * - No active sessions using old plain-text token column
+ *
  * @returns {Object} Status report with:
  *   - tokenHashExists: {boolean}
  *   - tokenColumnExists: {boolean}
  *   - activeSessionCount: {number}
- *   - newSessionCount: {number} (sessions with token_hash)
+ *   - newSessionCount: {number} (sessions with valid token_hash)
+ *   - invalidHashCount: {number} (token_hash exists but wrong length)
  *   - oldSessionCount: {number} (sessions with plain-text token)
  *   - isComplete: {boolean} (true if migration successful)
+ *   - errors: {Array} (any issues found)
  *
  * USAGE: var status = validateTokenHashMigration(); Logger.log(JSON.stringify(status));
  */
@@ -724,6 +731,7 @@ function validateTokenHashMigration() {
     tokenColumnExists: false,
     activeSessionCount: 0,
     newSessionCount: 0,
+    invalidHashCount: 0,
     oldSessionCount: 0,
     totalRows: 0,
     isComplete: false,
@@ -744,28 +752,46 @@ function validateTokenHashMigration() {
     report.tokenColumnExists = tokenCol !== -1;
     report.totalRows = data.length - 1;
 
-    // Count sessions by type
+    if (!report.tokenHashExists) {
+      report.errors.push("token_hash column not found in Sessions sheet");
+      return report;
+    }
+
+    // Count sessions by type and validate hash format
     for (var i = 1; i < data.length; i++) {
       var isActive = data[i][activeCol] === true;
       if (isActive) report.activeSessionCount++;
 
-      if (report.tokenHashExists && report.tokenColumnExists) {
-        var hasTokenHash = data[i][tokenHashCol] && data[i][tokenHashCol] !== "";
-        var hasOldToken = data[i][tokenCol] && data[i][tokenCol] !== "";
+      var tokenHashValue = data[i][tokenHashCol];
+      var oldTokenValue = data[i][tokenCol];
 
-        if (isActive && hasTokenHash && !hasOldToken) {
+      // Check for valid SHA256 hash (64 hex characters)
+      var isValidHash = tokenHashValue &&
+                        tokenHashValue.toString().length === 64 &&
+                        /^[a-f0-9]{64}$/i.test(tokenHashValue.toString());
+
+      if (isActive) {
+        if (isValidHash && !oldTokenValue) {
           report.newSessionCount++;
-        }
-        if (isActive && hasOldToken && !hasTokenHash) {
+        } else if (tokenHashValue && !isValidHash) {
+          report.invalidHashCount++;
+          report.errors.push("Row " + (i+1) + ": token_hash has invalid format (expected 64-char hex)");
+        } else if (oldTokenValue && !tokenHashValue) {
           report.oldSessionCount++;
+          report.errors.push("Row " + (i+1) + ": still using old token column");
         }
       }
     }
 
-    // Determine if complete
+    // Migration is complete only if:
+    // - token_hash column exists
+    // - All active sessions have valid 64-char hashes
+    // - No active sessions with old token column
+    // - No invalid hashes
     report.isComplete = report.tokenHashExists &&
                        report.oldSessionCount === 0 &&
-                       report.activeSessionCount >= 0;
+                       report.invalidHashCount === 0 &&
+                       (report.activeSessionCount === 0 || report.newSessionCount > 0);
 
   } catch (e) {
     report.errors.push("Failed to read Sessions sheet: " + e.toString());

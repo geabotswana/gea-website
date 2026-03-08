@@ -28,7 +28,21 @@
 - ✅ `_hashToken()` function created
 - ✅ `validateSession()` updated to use token_hash
 - ✅ `invalidateAllSessionsForTokenHashMigration()` function available
-- ✅ All code is backward-compatible until schema changes
+- ⚠️ **Code is NOT backward-compatible.** Must deploy in correct order (see Deployment Order below)
+
+### ⚠️ CRITICAL: Deployment Order
+
+**Code must be deployed AFTER schema changes, not before.**
+
+- ❌ If you `clasp push` before adding token_hash column:
+  - `validateSession()` will look for non-existent token_hash column
+  - Session validation will fail for all users
+  - Login will break
+
+- ✅ Correct order:
+  1. Add token_hash column to Sessions sheet
+  2. THEN run `clasp push` to deploy code
+  3. THEN run `invalidateAllSessionsForTokenHashMigration()`
 
 ---
 
@@ -115,7 +129,9 @@ Expected columns:
 
 ## Deployment Steps
 
-### Step 1: Rename Sessions Column (Schema Change)
+**CRITICAL ORDER:** Schema → Code → Migration
+
+### Step 1: Rename Sessions Column (Schema Change) ← DO THIS FIRST
 
 1. Open GEA System Backend spreadsheet
 2. Go to Sessions tab
@@ -131,7 +147,23 @@ Expected columns:
 - [ ] `token` column still exists with all plain-text values
 - [ ] No data loss
 
-### Step 2: Run Migration Function in Apps Script
+### Step 2: Deploy Updated Code ← DO THIS SECOND
+
+1. In terminal, from repository root:
+   ```bash
+   clasp push
+   ```
+2. Confirm the push completes successfully
+3. Code is now live and can find `token_hash` column
+
+**Expected Result:** AuthService.js changes deployed
+
+**Verification:**
+- [ ] Push succeeds with no errors
+- [ ] Open Apps Script editor, verify `_hashToken()` function exists
+- [ ] Check Logs tab (Ctrl+Enter) for any errors from push
+
+### Step 3: Run Migration Function in Apps Script ← DO THIS THIRD
 
 1. Open Google Apps Script editor (GEA project)
 2. In the **Functions** dropdown (top), select: `invalidateAllSessionsForTokenHashMigration`
@@ -154,17 +186,6 @@ Expected columns:
 - [ ] Logs show success message
 - [ ] No errors in Logs tab
 - [ ] In Sheets, Sessions tab shows `active = FALSE` for all rows
-
-### Step 3: Deploy Updated Code
-
-1. In terminal, from repository root:
-   ```bash
-   clasp push
-   ```
-2. Confirm the push completes successfully
-3. Code is now live and expecting `token_hash` column
-
-**Expected Result:** AuthService.js changes deployed
 
 ### Step 4: Verify Deployment (Functional Test)
 

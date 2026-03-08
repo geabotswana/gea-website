@@ -1419,11 +1419,27 @@
 
 <script>
   // ============================================================ //
+  // SECTION: SECURITY UTILITIES                                  //
+  // ============================================================ //
+  /**
+   * Escapes HTML special characters to prevent XSS attacks.
+   * Used whenever rendering user-controlled data to the DOM.
+   * @param {string} text - The text to escape
+   * @returns {string} HTML-escaped text safe for innerHTML
+   */
+  function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ============================================================ //
   // SECTION: INITIALIZATION AND STATE                            //
   // ============================================================ //
   // Global variables, API configuration, and page load handlers   //
   // ============================================================ //
-  
+
   // The backend API URL is injected when this file is served via Apps Script doGet()
   // This allows the frontend to call the same deployed web app without hardcoding URLs
   var PORTAL_API_URL = '<?= ScriptApp.getService().getUrl() ?>';
@@ -1717,15 +1733,26 @@
         });
         
         var row = document.createElement('tr');
-        row.innerHTML = '\
-          <td>' + date + '</td>\
-          <td>' + (res.facility || 'Unknown') + '</td>\
-          <td>' + (res.member_name || 'Unknown') + '</td>\
-          <td>' + (res.email || '') + '</td>\
-          <td>' + (res.guest_count || 0) + '</td>\
-          <td><span class="badge badge-pending">Pending</span></td>\
-          <td><button class="btn btn-primary btn-small" onclick="openReservationDetail(\'' + res.reservation_id + '\');">Review</button></td>\
-        ';
+
+        // Build row safely using DOM methods to prevent XSS
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = date; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.facility || 'Unknown'; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.member_name || 'Unknown'; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.email || ''; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.guest_count || 0; return td; })());
+
+        var statusTd = document.createElement('td');
+        statusTd.innerHTML = '<span class="badge badge-pending">Pending</span>';
+        row.appendChild(statusTd);
+
+        var actionTd = document.createElement('td');
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-small';
+        btn.textContent = 'Review';
+        btn.onclick = function() { openReservationDetail(res.reservation_id); };
+        actionTd.appendChild(btn);
+        row.appendChild(actionTd);
+
         tbody.appendChild(row);
       });
       
@@ -1881,18 +1908,35 @@
       
       members.forEach(function(household) {
         var row = document.createElement('tr');
-        
+
         // Determine membership type badge
         var typeClass = household.membership_type === 'ACTIVE' ? 'badge-approved' : 'badge-cancelled';
-        
-        row.innerHTML = '\
-          <td>' + (household.household_name || 'Unknown') + '</td>\
-          <td>' + (household.membership_type || 'Unknown') + '</td>\
-          <td><span class="badge ' + typeClass + '">' + (household.status || 'Active') + '</span></td>\
-          <td>' + (household.expiration_date ? new Date(household.expiration_date).toLocaleDateString() : 'N/A') + '</td>\
-          <td>' + (household.email || '') + '</td>\
-          <td><button class="btn btn-primary btn-small" onclick="openMemberDetail(\'' + household.household_id + '\');">View</button></td>\
-        ';
+
+        // Build row safely using DOM methods to prevent XSS
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.household_name || 'Unknown'; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.membership_type || 'Unknown'; return td; })());
+
+        var badgeTd = document.createElement('td');
+        var badgeSpan = document.createElement('span');
+        badgeSpan.className = 'badge ' + typeClass;
+        badgeSpan.textContent = household.status || 'Active';
+        badgeTd.appendChild(badgeSpan);
+        row.appendChild(badgeTd);
+
+        var dateTd = document.createElement('td');
+        dateTd.textContent = household.expiration_date ? new Date(household.expiration_date).toLocaleDateString() : 'N/A';
+        row.appendChild(dateTd);
+
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.email || ''; return td; })());
+
+        var actionTd = document.createElement('td');
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-small';
+        btn.textContent = 'View';
+        btn.onclick = function() { openMemberDetail(household.household_id); };
+        actionTd.appendChild(btn);
+        row.appendChild(actionTd);
+
         tbody.appendChild(row);
       });
       
@@ -2133,17 +2177,44 @@
         });
         
         var row = document.createElement('tr');
-        row.innerHTML = '\
-          <td>' + (payment.member_name || 'Unknown') + '</td>\
-          <td>' + (payment.email || '') + '</td>\
-          <td>$' + (payment.amount || '0.00') + '</td>\
-          <td>' + submitted + '</td>\
-          <td><code style="font-family: Roboto Mono; font-size: 11px; background: #F5F5F5; padding: 2px 4px; border-radius: 2px;">' + (payment.reference || '') + '</code></td>\
-          <td>\
-            <button class="btn btn-primary btn-small" style="margin-right: 4px;" onclick="confirmPayment(\'' + payment.payment_id + '\');">Confirm</button>\
-            <button class="btn btn-secondary btn-small" onclick="markPaymentNotFound(\'' + payment.payment_id + '\');">Not Found</button>\
-          </td>\
-        ';
+
+        // Build row safely using DOM methods to prevent XSS
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.member_name || 'Unknown'; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.email || ''; return td; })());
+
+        var amountTd = document.createElement('td');
+        amountTd.textContent = '$' + (payment.amount || '0.00');
+        row.appendChild(amountTd);
+
+        var submittedTd = document.createElement('td');
+        submittedTd.textContent = submitted;
+        row.appendChild(submittedTd);
+
+        var refTd = document.createElement('td');
+        var refCode = document.createElement('code');
+        refCode.style.fontFamily = 'Roboto Mono';
+        refCode.style.fontSize = '11px';
+        refCode.style.background = '#F5F5F5';
+        refCode.style.padding = '2px 4px';
+        refCode.style.borderRadius = '2px';
+        refCode.textContent = payment.reference || '';
+        refTd.appendChild(refCode);
+        row.appendChild(refTd);
+
+        var actionTd = document.createElement('td');
+        var confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-primary btn-small';
+        confirmBtn.style.marginRight = '4px';
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.onclick = function() { confirmPayment(payment.payment_id); };
+        var notFoundBtn = document.createElement('button');
+        notFoundBtn.className = 'btn btn-secondary btn-small';
+        notFoundBtn.textContent = 'Not Found';
+        notFoundBtn.onclick = function() { markPaymentNotFound(payment.payment_id); };
+        actionTd.appendChild(confirmBtn);
+        actionTd.appendChild(notFoundBtn);
+        row.appendChild(actionTd);
+
         tbody.appendChild(row);
       });
       
@@ -2248,7 +2319,8 @@
     apiCall('admin_applications', { status_filter: statusFilter }).then(function(res) {
       if (res.success && res.data && res.data.applications) {
         var apps = res.data.applications;
-        var html = '';
+        var tbody = document.getElementById('applicationsTableBody');
+        tbody.innerHTML = ''; // Clear existing rows
 
         if (apps.length === 0) {
           document.getElementById('appEmpty').style.display = 'block';
@@ -2259,18 +2331,61 @@
 
           apps.forEach(function(app) {
             var submittedDate = new Date(app.submitted_date).toLocaleDateString();
-            html += '<tr onclick="openApplicationDetail(\'' + app.application_id + '\');" style="cursor: pointer;">' +
-              '<td>' + app.applicant_name + '</td>' +
-              '<td>' + app.membership_category + '</td>' +
-              '<td>' + app.household_type + '</td>' +
-              '<td>' + submittedDate + '</td>' +
-              '<td><span class="status-badge" style="background: ' + _getStatusColor(app.status) + '; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">' + _formatStatus(app.status) + '</span></td>' +
-              '<td style="white-space: nowrap;"><button class="btn btn-small btn-primary" onclick="event.stopPropagation(); openApplicationDetail(\'' + app.application_id + '\');">Review</button></td>' +
-              '</tr>';
+            var applicationId = app.application_id;
+
+            var row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.onclick = function() { openApplicationDetail(applicationId); };
+
+            // Name
+            var nameTd = document.createElement('td');
+            nameTd.textContent = app.applicant_name;
+            row.appendChild(nameTd);
+
+            // Category
+            var categoryTd = document.createElement('td');
+            categoryTd.textContent = app.membership_category;
+            row.appendChild(categoryTd);
+
+            // Household Type
+            var typeTd = document.createElement('td');
+            typeTd.textContent = app.household_type;
+            row.appendChild(typeTd);
+
+            // Submitted Date
+            var dateTd = document.createElement('td');
+            dateTd.textContent = submittedDate;
+            row.appendChild(dateTd);
+
+            // Status Badge
+            var statusTd = document.createElement('td');
+            var statusSpan = document.createElement('span');
+            statusSpan.className = 'status-badge';
+            statusSpan.style.background = _getStatusColor(app.status);
+            statusSpan.style.color = 'white';
+            statusSpan.style.padding = '4px 8px';
+            statusSpan.style.borderRadius = '4px';
+            statusSpan.style.fontSize = '11px';
+            statusSpan.textContent = _formatStatus(app.status);
+            statusTd.appendChild(statusSpan);
+            row.appendChild(statusTd);
+
+            // Review Button
+            var actionTd = document.createElement('td');
+            actionTd.style.whiteSpace = 'nowrap';
+            var btn = document.createElement('button');
+            btn.className = 'btn btn-small btn-primary';
+            btn.textContent = 'Review';
+            btn.onclick = function(e) {
+              e.stopPropagation();
+              openApplicationDetail(applicationId);
+            };
+            actionTd.appendChild(btn);
+            row.appendChild(actionTd);
+
+            tbody.appendChild(row);
           });
         }
-
-        document.getElementById('applicationsTableBody').innerHTML = html;
 
         // Update badge count
         document.getElementById('applications-badge').textContent = res.data.total || apps.length;
@@ -2284,44 +2399,148 @@
     apiCall('admin_application_detail', { application_id: applicationId }).then(function(res) {
       if (res.success && res.data) {
         var app = res.data.application;
-        var html = '<div class="modal-header">' +
-          '<h2>' + app.first_name + ' ' + app.last_name + '</h2>' +
-          '<button class="modal-close" onclick="closeModal();">✕</button>' +
-          '</div>';
+        var container = document.getElementById('appDetailContent');
+        container.innerHTML = ''; // Clear existing content
 
-        html += '<div style="padding: 20px; max-height: 600px; overflow-y: auto;">';
+        // Modal Header
+        var header = document.createElement('div');
+        header.className = 'modal-header';
+
+        var title = document.createElement('h2');
+        title.textContent = (app.first_name || '') + ' ' + (app.last_name || '');
+        header.appendChild(title);
+
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'modal-close';
+        closeBtn.textContent = '✕';
+        closeBtn.onclick = closeModal;
+        header.appendChild(closeBtn);
+
+        container.appendChild(header);
+
+        // Content wrapper
+        var content = document.createElement('div');
+        content.style.padding = '20px';
+        content.style.maxHeight = '600px';
+        content.style.overflowY = 'auto';
 
         // Application Info
-        html += '<div style="margin-bottom: 20px;"><strong>Category:</strong> ' + app.membership_category + ' | ' +
-          '<strong>Type:</strong> ' + app.household_type + '</div>';
+        var infoDiv = document.createElement('div');
+        infoDiv.style.marginBottom = '20px';
+        infoDiv.innerHTML = '<strong>Category:</strong> '; // Safe: no user data
+        infoDiv.appendChild((() => {
+          var span = document.createElement('span');
+          span.textContent = app.membership_category || '';
+          return span;
+        })());
+        infoDiv.appendChild(document.createTextNode(' | '));
+        infoDiv.appendChild((() => {
+          var strong = document.createElement('strong');
+          strong.textContent = 'Type:';
+          return strong;
+        })());
+        infoDiv.appendChild(document.createTextNode(' '));
+        infoDiv.appendChild((() => {
+          var span = document.createElement('span');
+          span.textContent = app.household_type || '';
+          return span;
+        })());
+        content.appendChild(infoDiv);
 
         // Contact Info
-        html += '<div style="margin-bottom: 20px;"><strong>Email:</strong> ' + app.email + '<br>' +
-          '<strong>Phone:</strong> ' + app.phone_number + '</div>';
+        var contactDiv = document.createElement('div');
+        contactDiv.style.marginBottom = '20px';
 
-        // Status
-        html += '<div style="margin-bottom: 20px; padding: 12px; background: #f0f4ff; border-radius: 6px;">' +
-          '<strong>Status:</strong> ' + _formatStatus(app.status) + '<br>' +
-          '<strong>Submitted:</strong> ' + new Date(app.submitted_date).toLocaleDateString() + '</div>';
+        var emailLabel = document.createElement('strong');
+        emailLabel.textContent = 'Email:';
+        contactDiv.appendChild(emailLabel);
+        contactDiv.appendChild(document.createTextNode(' '));
+        var emailSpan = document.createElement('span');
+        emailSpan.textContent = app.email || '';
+        contactDiv.appendChild(emailSpan);
+
+        var br = document.createElement('br');
+        contactDiv.appendChild(br);
+
+        var phoneLabel = document.createElement('strong');
+        phoneLabel.textContent = 'Phone:';
+        contactDiv.appendChild(phoneLabel);
+        contactDiv.appendChild(document.createTextNode(' '));
+        var phoneSpan = document.createElement('span');
+        phoneSpan.textContent = app.phone_number || '';
+        contactDiv.appendChild(phoneSpan);
+
+        content.appendChild(contactDiv);
+
+        // Status Section
+        var statusDiv = document.createElement('div');
+        statusDiv.style.marginBottom = '20px';
+        statusDiv.style.padding = '12px';
+        statusDiv.style.background = '#f0f4ff';
+        statusDiv.style.borderRadius = '6px';
+
+        var statusLabel = document.createElement('strong');
+        statusLabel.textContent = 'Status:';
+        statusDiv.appendChild(statusLabel);
+        statusDiv.appendChild(document.createTextNode(' ' + _formatStatus(app.status) + ' '));
+
+        var statusBr = document.createElement('br');
+        statusDiv.appendChild(statusBr);
+
+        var submittedLabel = document.createElement('strong');
+        submittedLabel.textContent = 'Submitted:';
+        statusDiv.appendChild(submittedLabel);
+        statusDiv.appendChild(document.createTextNode(' ' + new Date(app.submitted_date).toLocaleDateString()));
+
+        content.appendChild(statusDiv);
 
         // Review Actions
-        html += '<div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">';
+        var actionsDiv = document.createElement('div');
+        actionsDiv.style.marginTop = '20px';
+        actionsDiv.style.display = 'flex';
+        actionsDiv.style.gap = '10px';
+        actionsDiv.style.flexWrap = 'wrap';
 
         if (app.status === 'docs_confirmed') {
-          html += '<button class="btn btn-primary" onclick="approveApplicationStage(\'' + applicationId + '\', \'board_initial\');">Approve for RSO Review</button>' +
-            '<button class="btn btn-danger" onclick="denyApplicationStage(\'' + applicationId + '\', \'board_initial\');">Deny Application</button>';
+          var approveBtn = document.createElement('button');
+          approveBtn.className = 'btn btn-primary';
+          approveBtn.textContent = 'Approve for RSO Review';
+          approveBtn.onclick = function() { approveApplicationStage(applicationId, 'board_initial'); };
+          actionsDiv.appendChild(approveBtn);
+
+          var denyBtn = document.createElement('button');
+          denyBtn.className = 'btn btn-danger';
+          denyBtn.textContent = 'Deny Application';
+          denyBtn.onclick = function() { denyApplicationStage(applicationId, 'board_initial'); };
+          actionsDiv.appendChild(denyBtn);
         } else if (app.status === 'rso_review') {
-          html += '<p style="color: #666; font-size: 13px;">Documents sent to RSO for review. Awaiting RSO decision.</p>';
+          var p = document.createElement('p');
+          p.style.color = '#666';
+          p.style.fontSize = '13px';
+          p.textContent = 'Documents sent to RSO for review. Awaiting RSO decision.';
+          actionsDiv.appendChild(p);
         } else if (app.status === 'board_final_review') {
-          html += '<button class="btn btn-primary" onclick="approveApplicationStage(\'' + applicationId + '\', \'board_final\');">Final Approve & Request Payment</button>' +
-            '<button class="btn btn-danger" onclick="denyApplicationStage(\'' + applicationId + '\', \'board_final\');">Final Deny</button>';
+          var finalApproveBtn = document.createElement('button');
+          finalApproveBtn.className = 'btn btn-primary';
+          finalApproveBtn.textContent = 'Final Approve & Request Payment';
+          finalApproveBtn.onclick = function() { approveApplicationStage(applicationId, 'board_final'); };
+          actionsDiv.appendChild(finalApproveBtn);
+
+          var finalDenyBtn = document.createElement('button');
+          finalDenyBtn.className = 'btn btn-danger';
+          finalDenyBtn.textContent = 'Final Deny';
+          finalDenyBtn.onclick = function() { denyApplicationStage(applicationId, 'board_final'); };
+          actionsDiv.appendChild(finalDenyBtn);
         } else if (app.status === 'payment_submitted') {
-          html += '<button class="btn btn-primary" onclick="verifyPayment(\'' + applicationId + '\');">Verify Payment & Activate</button>';
+          var verifyBtn = document.createElement('button');
+          verifyBtn.className = 'btn btn-primary';
+          verifyBtn.textContent = 'Verify Payment & Activate';
+          verifyBtn.onclick = function() { verifyPayment(applicationId); };
+          actionsDiv.appendChild(verifyBtn);
         }
 
-        html += '</div></div>';
-
-        document.getElementById('appDetailContent').innerHTML = html;
+        content.appendChild(actionsDiv);
+        container.appendChild(content);
         document.getElementById('appDetailModal').style.display = 'block';
       }
     }).catch(function(err) {

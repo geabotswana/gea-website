@@ -106,6 +106,40 @@ var auth = requireAuth(p.token, "board");  // Validates token & role
 - Format: timestamp, user_email, action_type, target_id, details, ip_address
 - Critical for compliance and debugging
 
+**XSS Prevention (Critical Security Pattern):**
+
+All user-controlled data rendering in Portal.html and Admin.html uses safe DOM construction:
+
+❌ **NEVER DO THIS:**
+```javascript
+// Vulnerable: User data interpolated into HTML string
+var html = '<div>' + member.first_name + '</div>';
+container.innerHTML = html;
+```
+
+✅ **DO THIS INSTEAD:**
+```javascript
+// Safe: Use textContent for user data
+var div = document.createElement('div');
+div.textContent = member.first_name;  // Safe: text only, no HTML parsing
+container.appendChild(div);
+```
+
+**Key Rules:**
+1. **All user-controlled data** → via `textContent` or form element properties (`.value`, `.checked`)
+2. **Event handlers** → use closures instead of onclick string interpolation
+   ```javascript
+   // Wrong: btn.onclick = "deleteItem('" + id + "')";
+   // Right: btn.onclick = (function(itemId) { return function() { deleteItem(itemId); }; })(id);
+   ```
+3. **innerHTML** → only for static, non-user-controlled markup
+4. **Pre-commit check** → `bash scripts/check-xss-patterns.sh` blocks regression
+
+**Regression Prevention:**
+- Git pre-commit hook automatically runs XSS pattern check
+- Blocks commits that reintroduce innerHTML/insertAdjacentHTML with string interpolation
+- Override with `git commit --no-verify` (not recommended; indicates security review needed)
+
 ---
 
 ## Sheet Organization

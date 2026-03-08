@@ -213,6 +213,9 @@
 </div>
 
 <script>
+  alert('TEST: member.html script block loaded');
+  console.log('TEST: member.html script block executing');
+
   // ================================================================
   // DEPLOYMENT CONFIGURATION
   // ================================================================
@@ -236,6 +239,8 @@
 
   var selectedEnv = localStorage.getItem('gea_env') || 'dev';
   var statusTimeout = null;
+
+  console.log('TEST: member.html initialized. selectedEnv:', selectedEnv);
 
   // ================================================================
   // HELPER FUNCTIONS
@@ -371,15 +376,42 @@
   // EVENT LISTENERS
   // ================================================================
 
+  console.log('About to attach DOMContentLoaded listener');
+
   document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('envBtnDev').addEventListener('click', function() {
-      if (selectedEnv !== 'dev') loadPortal('dev');
+    console.log('DOMContentLoaded fired');
+    var devBtn = document.getElementById('envBtnDev');
+    var prodBtn = document.getElementById('envBtnProd');
+    console.log('Button refs:', { devBtn: !!devBtn, prodBtn: !!prodBtn });
+
+    if (!devBtn || !prodBtn) {
+      console.error('ERROR: Environment buttons not found. Check HTML for id="envBtnDev" and id="envBtnProd"');
+      return;
+    }
+
+    devBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('DEV button clicked. Current env:', selectedEnv);
+      if (selectedEnv !== 'dev') {
+        console.log('Switching to DEV...');
+        loadPortal('dev');
+      } else {
+        console.log('Already in DEV, no action needed');
+      }
     });
 
-    document.getElementById('envBtnProd').addEventListener('click', function() {
-      if (selectedEnv !== 'prod') loadPortal('prod');
+    prodBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('PROD button clicked. Current env:', selectedEnv);
+      if (selectedEnv !== 'prod') {
+        console.log('Switching to PROD...');
+        loadPortal('prod');
+      } else {
+        console.log('Already in PROD, no action needed');
+      }
     });
 
+    console.log('Environment buttons wired. Starting with:', selectedEnv);
     loadPortal(selectedEnv);
   });
 </script>

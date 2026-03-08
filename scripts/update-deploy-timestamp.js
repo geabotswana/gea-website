@@ -15,9 +15,11 @@ const configJsPath = path.join(__dirname, '..', 'Config.js');
 // Read the file
 let content = fs.readFileSync(configJsPath, 'utf8');
 
-// Get current timestamp
+// Get current timestamp in Central Africa Time (UTC+2)
 const now = new Date();
-const timestamp = now.toISOString().replace('T', ' ').substring(0, 19); // YYYY-MM-DD HH:MM:SS
+const utcTime = new Date(now.getTime() + now.getTimezoneOffset() * 60000); // Convert to UTC
+const catTime = new Date(utcTime.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours for CAT (UTC+2)
+const timestamp = catTime.toISOString().replace('T', ' ').substring(0, 19); // YYYY-MM-DD HH:MM:SS CAT
 
 // Update the DEPLOYMENT_TIMESTAMP constant
 // Look for: var DEPLOYMENT_TIMESTAMP = "..."; (with any amount of whitespace)

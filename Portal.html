@@ -3394,12 +3394,21 @@ function submitLogin(event) {
         switch(category) {
           case 'Full':
           case 'Temporary':
-          case 'Affiliate':
-            // These have auto-filled employer (U.S. Embassy), need job title and posting date
+            // Embassy employees need job title and posting date
             var jobTitle = document.getElementById('appJobTitle').value.trim();
             var postingDate = document.getElementById('appPostingDate').value.trim();
             if (!jobTitle || !postingDate) {
               errorDiv.textContent = 'Please fill in all required fields (Job Title and Posting Date are required).';
+              errorDiv.style.display = 'block';
+              return false;
+            }
+            break;
+
+          case 'Affiliate':
+            // Local hire: job title only (no posting date)
+            var jobTitle = document.getElementById('appJobTitle').value.trim();
+            if (!jobTitle) {
+              errorDiv.textContent = 'Please fill in Job Title.';
               errorDiv.style.display = 'block';
               return false;
             }

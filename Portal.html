@@ -3909,71 +3909,171 @@ function submitLogin(event) {
   }
 
   function renderHouseholdMembers(members) {
+    var container = document.getElementById('householdMembers');
+
     if (!members || members.length === 0) {
-      document.getElementById('householdMembers').innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No household members listed.</p>';
+      container.innerHTML = '';
+      var p = document.createElement('p');
+      p.style.textAlign = 'center';
+      p.style.color = '#999';
+      p.style.padding = '20px';
+      p.textContent = 'No household members listed.';
+      container.appendChild(p);
       return;
     }
 
-    var html = '<table class="household-table"><thead><tr>' +
-      '<th>Name</th>' +
-      '<th>Role</th>' +
-      '<th>Photo</th>' +
-      '<th>Passport</th>' +
-      '<th>ID</th>' +
-      '</tr></thead><tbody>';
+    container.innerHTML = '';
 
-    members.forEach(function(m) {
-      html += '<tr>' +
-        '<td>' + m.first_name + ' ' + m.last_name + '</td>' +
-        '<td>' + (m.relationship_to_primary || 'N/A') + '</td>' +
-        '<td class="doc-status">' + docStatusIcon(m.photo_status) + '</td>' +
-        '<td class="doc-status">' + docStatusIcon(m.passport_status) + '</td>' +
-        '<td class="doc-status">' + docStatusIcon(m.omang_status) + '</td>' +
-        '</tr>';
+    var table = document.createElement('table');
+    table.className = 'household-table';
+
+    // Table header
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    var headers = ['Name', 'Role', 'Photo', 'Passport', 'ID'];
+    headers.forEach(function(headerText) {
+      var th = document.createElement('th');
+      th.textContent = headerText;
+      headerRow.appendChild(th);
     });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
 
-    html += '</tbody></table>';
-    document.getElementById('householdMembers').innerHTML = html;
+    // Table body
+    var tbody = document.createElement('tbody');
+    members.forEach(function(m) {
+      var row = document.createElement('tr');
+
+      // Name column
+      var nameTd = document.createElement('td');
+      nameTd.textContent = (m.first_name || '') + ' ' + (m.last_name || '');
+      row.appendChild(nameTd);
+
+      // Role column
+      var roleTd = document.createElement('td');
+      roleTd.textContent = m.relationship_to_primary || 'N/A';
+      row.appendChild(roleTd);
+
+      // Photo status column
+      var photoTd = document.createElement('td');
+      photoTd.className = 'doc-status';
+      photoTd.innerHTML = docStatusIcon(m.photo_status); // docStatusIcon returns HTML (just icons)
+      row.appendChild(photoTd);
+
+      // Passport status column
+      var passportTd = document.createElement('td');
+      passportTd.className = 'doc-status';
+      passportTd.innerHTML = docStatusIcon(m.passport_status); // docStatusIcon returns HTML (just icons)
+      row.appendChild(passportTd);
+
+      // ID status column
+      var idTd = document.createElement('td');
+      idTd.className = 'doc-status';
+      idTd.innerHTML = docStatusIcon(m.omang_status); // docStatusIcon returns HTML (just icons)
+      row.appendChild(idTd);
+
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+
+    container.appendChild(table);
   }
 
   function renderReservations(reservations) {
+    var container = document.getElementById('upcomingReservations');
+
     if (!reservations || reservations.length === 0) {
-      document.getElementById('upcomingReservations').innerHTML = '<div class="empty-state">' +
-        '<div class="empty-state-icon">📅</div>' +
-        '<div class="empty-state-text">No upcoming reservations</div>' +
-        '</div>';
+      container.innerHTML = '';
+      var emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty-state';
+
+      var icon = document.createElement('div');
+      icon.className = 'empty-state-icon';
+      icon.textContent = '📅';
+      emptyDiv.appendChild(icon);
+
+      var text = document.createElement('div');
+      text.className = 'empty-state-text';
+      text.textContent = 'No upcoming reservations';
+      emptyDiv.appendChild(text);
+
+      container.appendChild(emptyDiv);
       return;
     }
 
-    var html = '<table class="reservations-table"><thead><tr>' +
-      '<th>Date</th>' +
-      '<th>Facility</th>' +
-      '<th>Time</th>' +
-      '<th>Status</th>' +
-      '<th></th>' +
-      '</tr></thead><tbody>';
+    container.innerHTML = '';
 
+    var table = document.createElement('table');
+    table.className = 'reservations-table';
+
+    // Table header
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    var headers = ['Date', 'Facility', 'Time', 'Status', ''];
+    headers.forEach(function(headerText) {
+      var th = document.createElement('th');
+      th.textContent = headerText;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Table body
+    var tbody = document.createElement('tbody');
     var today = new Date();
     today.setHours(0, 0, 0, 0);
 
     reservations.forEach(function(res) {
       var resDate = new Date(res.event_date);
       var isFuture = resDate >= today;
-      var cancelBtn = (isFuture && res.status !== 'Cancelled') ?
-        '<button class="cancel-btn-small" onclick="if(confirm(\'Cancel this reservation?\')) cancelReservation(\'' + res.reservation_id + '\');">Cancel</button>' :
-        '';
 
-      html += '<tr>' +
-        '<td>' + res.event_date + '</td>' +
-        '<td>' + res.facility + '</td>' +
-        '<td>' + (res.start_time || '—') + '–' + (res.end_time || '—') + '</td>' +
-        '<td><span class="badge badge-' + (res.status === 'Confirmed' ? 'confirmed' : 'pending') + '">' + res.status + '</span></td>' +
-        '<td>' + cancelBtn + '</td>' +
-        '</tr>';
+      var row = document.createElement('tr');
+
+      // Date column
+      var dateTd = document.createElement('td');
+      dateTd.textContent = res.event_date || '—';
+      row.appendChild(dateTd);
+
+      // Facility column
+      var facilityTd = document.createElement('td');
+      facilityTd.textContent = res.facility || '—';
+      row.appendChild(facilityTd);
+
+      // Time column
+      var timeTd = document.createElement('td');
+      timeTd.textContent = (res.start_time || '—') + '–' + (res.end_time || '—');
+      row.appendChild(timeTd);
+
+      // Status column
+      var statusTd = document.createElement('td');
+      var statusSpan = document.createElement('span');
+      statusSpan.className = 'badge badge-' + (res.status === 'Confirmed' ? 'confirmed' : 'pending');
+      statusSpan.textContent = res.status || 'Pending';
+      statusTd.appendChild(statusSpan);
+      row.appendChild(statusTd);
+
+      // Cancel button column
+      var actionTd = document.createElement('td');
+      if (isFuture && res.status !== 'Cancelled') {
+        var cancelBtn = document.createElement('button');
+        cancelBtn.className = 'cancel-btn-small';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.onclick = (function(reservationId) {
+          return function() {
+            if (confirm('Cancel this reservation?')) {
+              cancelReservation(reservationId);
+            }
+          };
+        })(res.reservation_id);
+        actionTd.appendChild(cancelBtn);
+      }
+      row.appendChild(actionTd);
+
+      tbody.appendChild(row);
     });
+    table.appendChild(tbody);
 
-    html += '</tbody></table>';
-    document.getElementById('upcomingReservations').innerHTML = html;
+    container.appendChild(table);
   }
 
   function renderQuotas(quotas) {
@@ -4229,26 +4329,40 @@ function submitLogin(event) {
       renderReservations(data.reservations);
       renderQuotas(data.quotas);
 
-      // Render quick action buttons
-      var quickActionsHtml = '<div class="quick-actions-grid">' +
-        '<button class="quick-action-btn" onclick="showPage(\'reservations\');">' +
-        '<div class="quick-action-icon">📅</div>' +
-        '<div>Book Facility</div>' +
-        '</button>' +
-        '<button class="quick-action-btn" onclick="showPage(\'payment\');">' +
-        '<div class="quick-action-icon">💰</div>' +
-        '<div>Submit Payment</div>' +
-        '</button>' +
-        '<button class="quick-action-btn" onclick="showPage(\'card\');">' +
-        '<div class="quick-action-icon">🎫</div>' +
-        '<div>Digital Card</div>' +
-        '</button>' +
-        '<button class="quick-action-btn" onclick="showPage(\'profile\');">' +
-        '<div class="quick-action-icon">👤</div>' +
-        '<div>Edit Profile</div>' +
-        '</button>' +
-        '</div>';
-      document.getElementById('quickActionsContainer').innerHTML = quickActionsHtml;
+      // Render quick action buttons safely using DOM
+      var quickActionsContainer = document.getElementById('quickActionsContainer');
+      quickActionsContainer.innerHTML = '';
+
+      var gridDiv = document.createElement('div');
+      gridDiv.className = 'quick-actions-grid';
+
+      var actions = [
+        { icon: '📅', label: 'Book Facility', page: 'reservations' },
+        { icon: '💰', label: 'Submit Payment', page: 'payment' },
+        { icon: '🎫', label: 'Digital Card', page: 'card' },
+        { icon: '👤', label: 'Edit Profile', page: 'profile' }
+      ];
+
+      actions.forEach(function(action) {
+        var btn = document.createElement('button');
+        btn.className = 'quick-action-btn';
+        btn.onclick = (function(pageName) {
+          return function() { showPage(pageName); };
+        })(action.page);
+
+        var iconDiv = document.createElement('div');
+        iconDiv.className = 'quick-action-icon';
+        iconDiv.textContent = action.icon;
+        btn.appendChild(iconDiv);
+
+        var labelDiv = document.createElement('div');
+        labelDiv.textContent = action.label;
+        btn.appendChild(labelDiv);
+
+        gridDiv.appendChild(btn);
+      });
+
+      quickActionsContainer.appendChild(gridDiv);
     });
   }
   
@@ -4268,28 +4382,85 @@ function submitLogin(event) {
       }
       
       var reservations = res.data.reservations || [];
-      var html = '';
-      
+      var container = document.getElementById('reservationsList');
+      container.innerHTML = '';
+
       if (reservations.length === 0) {
-        html = '<div class="empty-state">' +
-          '<div class="empty-state-icon">📋</div>' +
-          '<div class="empty-state-text">No reservations yet</div>' +
-          '</div>';
+        var emptyDiv = document.createElement('div');
+        emptyDiv.className = 'empty-state';
+
+        var icon = document.createElement('div');
+        icon.className = 'empty-state-icon';
+        icon.textContent = '📋';
+        emptyDiv.appendChild(icon);
+
+        var text = document.createElement('div');
+        text.className = 'empty-state-text';
+        text.textContent = 'No reservations yet';
+        emptyDiv.appendChild(text);
+
+        container.appendChild(emptyDiv);
       } else {
-        html = '<table><thead><tr><th>Date</th><th>Facility</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+        var table = document.createElement('table');
+
+        // Header
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        var headers = ['Date', 'Facility', 'Status', 'Action'];
+        headers.forEach(function(headerText) {
+          var th = document.createElement('th');
+          th.textContent = headerText;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Body
+        var tbody = document.createElement('tbody');
         reservations.forEach(function(res) {
           var canCancel = res.status === 'STATUS_PENDING' || res.status === 'STATUS_CONFIRMED';
-          html += '<tr>' +
-            '<td>' + res.event_date + '</td>' +
-            '<td>' + res.facility + '</td>' +
-            '<td><span class="badge badge-' + (res.status === 'STATUS_CONFIRMED' ? 'confirmed' : (res.status === 'STATUS_PENDING' ? 'pending' : 'cancelled')) + '">' + res.status + '</span></td>' +
-            '<td>' + (canCancel ? '<button class="btn btn-danger btn-small" onclick="cancelReservation(\'' + res.reservation_id + '\');">Cancel</button>' : '—') + '</td>' +
-            '</tr>';
+
+          var row = document.createElement('tr');
+
+          // Date
+          var dateTd = document.createElement('td');
+          dateTd.textContent = res.event_date || '—';
+          row.appendChild(dateTd);
+
+          // Facility
+          var facilityTd = document.createElement('td');
+          facilityTd.textContent = res.facility || '—';
+          row.appendChild(facilityTd);
+
+          // Status
+          var statusTd = document.createElement('td');
+          var statusSpan = document.createElement('span');
+          statusSpan.className = 'badge badge-' + (res.status === 'STATUS_CONFIRMED' ? 'confirmed' : (res.status === 'STATUS_PENDING' ? 'pending' : 'cancelled'));
+          statusSpan.textContent = res.status || 'Pending';
+          statusTd.appendChild(statusSpan);
+          row.appendChild(statusTd);
+
+          // Action
+          var actionTd = document.createElement('td');
+          if (canCancel) {
+            var cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-danger btn-small';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = (function(resId) {
+              return function() { cancelReservation(resId); };
+            })(res.reservation_id);
+            actionTd.appendChild(cancelBtn);
+          } else {
+            actionTd.textContent = '—';
+          }
+          row.appendChild(actionTd);
+
+          tbody.appendChild(row);
         });
-        html += '</tbody></table>';
+        table.appendChild(tbody);
+
+        container.appendChild(table);
       }
-      
-      document.getElementById('reservationsList').innerHTML = html;
     });
   }
   
@@ -4434,36 +4605,39 @@ function submitLogin(event) {
         }
       }
 
-      var html = '<div class="detail-row">' +
-        '<div class="detail-label">Name</div>' +
-        '<div class="detail-value">' + member.first_name + ' ' + member.last_name + '</div>' +
-        '</div>' +
-        '<div class="detail-row">' +
-        '<div class="detail-label">Email</div>' +
-        '<div class="detail-value">' + member.email + '</div>' +
-        '</div>' +
-        '<div class="detail-row">' +
-        '<div class="detail-label">Primary Phone</div>' +
-        '<div class="detail-value">' + primaryPhone + '</div>' +
-        '</div>' +
-        '<div class="detail-row">' +
-        '<div class="detail-label">Secondary Phone</div>' +
-        '<div class="detail-value">' + secondaryPhone + '</div>' +
-        '</div>' +
-        '<div class="detail-row">' +
-        '<div class="detail-label">Emergency Contact Name</div>' +
-        '<div class="detail-value">' + (member.emergency_contact_name || 'Not provided') + '</div>' +
-        '</div>' +
-        '<div class="detail-row">' +
-        '<div class="detail-label">Emergency Contact Relationship</div>' +
-        '<div class="detail-value">' + (member.emergency_contact_relationship || 'Not provided') + '</div>' +
-        '</div>' +
-        '<div class="detail-row">' +
-        '<div class="detail-label">Emergency Contact Phone</div>' +
-        '<div class="detail-value">' + emergencyPhone + '</div>' +
-        '</div>';
+      var profileContainer = document.getElementById('profileContent');
+      profileContainer.innerHTML = '';
 
-      document.getElementById('profileContent').innerHTML = html;
+      // Helper to add a detail row safely
+      function addDetailRow(label, value, isHtml) {
+        var rowDiv = document.createElement('div');
+        rowDiv.className = 'detail-row';
+
+        var labelDiv = document.createElement('div');
+        labelDiv.className = 'detail-label';
+        labelDiv.textContent = label;
+        rowDiv.appendChild(labelDiv);
+
+        var valueDiv = document.createElement('div');
+        valueDiv.className = 'detail-value';
+        if (isHtml) {
+          // Only for WhatsApp icon (safe hardcoded HTML)
+          valueDiv.innerHTML = value;
+        } else {
+          // For all user data, use textContent
+          valueDiv.textContent = value;
+        }
+        rowDiv.appendChild(valueDiv);
+        profileContainer.appendChild(rowDiv);
+      }
+
+      addDetailRow('Name', (member.first_name || '') + ' ' + (member.last_name || ''));
+      addDetailRow('Email', member.email || 'Not provided');
+      addDetailRow('Primary Phone', primaryPhone, true); // primaryPhone contains WhatsApp icon HTML
+      addDetailRow('Secondary Phone', secondaryPhone, true); // secondaryPhone contains WhatsApp icon HTML
+      addDetailRow('Emergency Contact Name', member.emergency_contact_name || 'Not provided');
+      addDetailRow('Emergency Contact Relationship', member.emergency_contact_relationship || 'Not provided');
+      addDetailRow('Emergency Contact Phone', emergencyPhone);
 
       // Initialize phone form and pre-populate with current data
       setTimeout(function() {
@@ -4509,36 +4683,73 @@ function submitLogin(event) {
       }
       
       var cards = res.data.cards || [];
-      var html = '';
-      
+      var container = document.getElementById('cardContent');
+      container.innerHTML = '';
+
       cards.forEach(function(card) {
-        html += '<div class="card">' +
-          '<div style="background: var(--color-primary); color: white; padding: 16px; border-radius: 6px 6px 0 0; text-align: center;">' +
-          '<div style="font-size: 18px; font-weight: 700; margin-bottom: 8px;">GEA</div>' +
-          '<div style="font-size: 14px; font-weight: 600;">' + card.name + '</div>' +
-          '</div>' +
-          '<div style="padding: 16px;">' +
-          '<div class="detail-row">' +
-          '<div class="detail-label">Status:</div>' +
-          '<div class="detail-value"><span class="badge badge-' + (card.status === 'ACTIVE' ? 'approved' : 'cancelled') + '">' + card.status + '</span></div>' +
-          '</div>' +
-          '<div class="detail-row">' +
-          '<div class="detail-label">Type:</div>' +
-          '<div class="detail-value">' + card.membership_type + '</div>' +
-          '</div>' +
-          '<div class="detail-row">' +
-          '<div class="detail-label">Expires:</div>' +
-          '<div class="detail-value">' + card.expiration_date + '</div>' +
-          '</div>' +
-          '<div class="detail-row">' +
-          '<div class="detail-label">Relationship:</div>' +
-          '<div class="detail-value">' + card.relationship + '</div>' +
-          '</div>' +
-          '</div>' +
-          '</div>';
+        var cardDiv = document.createElement('div');
+        cardDiv.className = 'card';
+
+        // Card header
+        var headerDiv = document.createElement('div');
+        headerDiv.style.background = 'var(--color-primary)';
+        headerDiv.style.color = 'white';
+        headerDiv.style.padding = '16px';
+        headerDiv.style.borderRadius = '6px 6px 0 0';
+        headerDiv.style.textAlign = 'center';
+
+        var titleDiv = document.createElement('div');
+        titleDiv.style.fontSize = '18px';
+        titleDiv.style.fontWeight = '700';
+        titleDiv.style.marginBottom = '8px';
+        titleDiv.textContent = 'GEA';
+        headerDiv.appendChild(titleDiv);
+
+        var nameDiv = document.createElement('div');
+        nameDiv.style.fontSize = '14px';
+        nameDiv.style.fontWeight = '600';
+        nameDiv.textContent = card.name || '—';
+        headerDiv.appendChild(nameDiv);
+        cardDiv.appendChild(headerDiv);
+
+        // Card body
+        var bodyDiv = document.createElement('div');
+        bodyDiv.style.padding = '16px';
+
+        // Helper to add detail row
+        function addCardDetailRow(label, value, isBadge) {
+          var rowDiv = document.createElement('div');
+          rowDiv.className = 'detail-row';
+
+          var labelDiv = document.createElement('div');
+          labelDiv.className = 'detail-label';
+          labelDiv.textContent = label;
+          rowDiv.appendChild(labelDiv);
+
+          var valueDiv = document.createElement('div');
+          valueDiv.className = 'detail-value';
+
+          if (isBadge) {
+            var badge = document.createElement('span');
+            badge.className = 'badge badge-' + (value === 'ACTIVE' ? 'approved' : 'cancelled');
+            badge.textContent = value || 'Unknown';
+            valueDiv.appendChild(badge);
+          } else {
+            valueDiv.textContent = value || '—';
+          }
+
+          rowDiv.appendChild(valueDiv);
+          bodyDiv.appendChild(rowDiv);
+        }
+
+        addCardDetailRow('Status:', card.status, true);
+        addCardDetailRow('Type:', card.membership_type);
+        addCardDetailRow('Expires:', card.expiration_date);
+        addCardDetailRow('Relationship:', card.relationship);
+
+        cardDiv.appendChild(bodyDiv);
+        container.appendChild(cardDiv);
       });
-      
-      document.getElementById('cardContent').innerHTML = html;
     });
   }
   

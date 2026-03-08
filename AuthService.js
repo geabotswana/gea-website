@@ -41,7 +41,7 @@
  * SECURITY NOTES:
  * - Passwords are never stored in plaintext, only as SHA256 hashes
  * - On login, the plaintext password is hashed and compared to the stored hash
- * - Comparison is simple equality (===); timing-attack resistance pending implementation
+ * - Comparison uses constantTimeCompare() to resist timing attacks
  * - Failed logins are logged but do not specify which part failed (email/password/status)
  *
  * CALLED BY: Code.gs _handleLogin()
@@ -527,7 +527,16 @@ function _generateToken() {
 
     // Hash the combined entropy to normalize to 64-char hex string
     var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, combined);
-    return Utilities.bytesToHex(digest);
+
+    // Convert byte array to hex string (same pattern as hashPassword)
+    var hashHex = '';
+    for (var i = 0; i < digest.length; i++) {
+      var byte = digest[i];
+      if (byte < 0) byte = 256 + byte;  // Convert to unsigned
+      var hex = byte.toString(16);
+      hashHex += hex.length === 1 ? '0' + hex : hex;
+    }
+    return hashHex;
   } catch (e) {
     Logger.log("ERROR _generateToken: " + e);
     // Fallback to simpler generation if hashing fails
@@ -593,7 +602,16 @@ function _hashToken(token) {
   if (!token) return "";
   try {
     var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token);
-    return Utilities.bytesToHex(digest);
+
+    // Convert byte array to hex string (same pattern as hashPassword)
+    var hashHex = '';
+    for (var i = 0; i < digest.length; i++) {
+      var byte = digest[i];
+      if (byte < 0) byte = 256 + byte;  // Convert to unsigned
+      var hex = byte.toString(16);
+      hashHex += hex.length === 1 ? '0' + hex : hex;
+    }
+    return hashHex;
   } catch (e) {
     Logger.log("ERROR _hashToken: " + e);
     return "";

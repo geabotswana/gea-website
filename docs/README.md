@@ -23,13 +23,11 @@ Start here for policies, decision documents, and board-facing information.
 | [**GEA Data Management Policy**](policies/Data_Management_Policy.md) | What GEA collects, how data is organized (Google Workspace), access controls, retention, privacy & minimization | Board, treasurer | ✅ Complete |
 | [**GEA Security & Privacy Policy**](policies/Security_Privacy_Policy.md) | Data protection (encryption, backups), access control, incident response, member privacy rights | Board, treasurer | ✅ Complete |
 | [**GEA Communications Policy**](policies/Communications_Policy.md) | Email tone, contact methods, notification preferences, frequency limits, template consistency, response time standards | Board, treasurer | ✅ Complete (v1.0) |
-| [**GEA Development Standards**](development/DEVELOPMENT_STANDARDS.md) | Code quality, documentation, testing expectations | Board (informational) | 📋 Planned |
 | **GEA Disaster Recovery Plan** | RTO/RPO targets, backup schedule, communication | Board, treasurer | 📋 Planned |
 | **GEA Release & Deployment Policy** | Versioning, board communication, maintenance windows | Board, treasurer | 📋 Planned |
 | **GEA Security & Privacy Implementation Plan** | Step-by-step setup for Google Workspace security, access controls, training | Board, treasurer, non-technical successors | 📋 Planned |
 | [**GEA Audit & Compliance Policy**](policies/Audit_Compliance_Policy.md) | Audit logging, compliance with 6 FAM 500-546, quarterly reviews, violation procedures | Board, treasurer | ✅ Complete |
 | [**GEA Development Standards**](development/DEVELOPMENT_STANDARDS.md) | Code quality, documentation, testing expectations, file organization, naming conventions, logging standards, code review checklist | Board (informational), developers | ✅ Complete (v1.0) |
-| **Regulatory Status & Federal Compliance** | 6 FAM 500-546 analysis, pending State Dept clarifications, gaps between By-Laws and federal requirements | Board, treasurer | 📋 Planned |
 
 ### For Developers & Claude Code
 Implementation guides, workflows, and technical references.
@@ -91,12 +89,11 @@ GEA Membership Policy (BOARD)
   ├── Pro-rating: By quarter
   ├── References: MEMBERSHIP_ELIGIBILITY_FLOW
   ├── References: MEMBERSHIP_CATEGORIES_MATRIX
-  ├── References: REGULATORY_STATUS (federal definition gaps)
   │
   └── Informs: CLAUDE_Membership_Implementation
         ├── References: GEA_System_Schema
         ├── References: ROLES_PERMISSIONS_MATRIX
-        └── References: EMAIL_TEMPLATES_INVENTORY
+        └── References: EMAIL_TEMPLATES.md
 ```
 
 ### Reservation System (Tier 1 Core Feature)
@@ -113,7 +110,7 @@ GEA Reservation Policy (BOARD) ✅ COMPLETE (v1.1)
   └── Informs: CLAUDE_Reservations_Implementation
         ├── References: GEA_System_Schema
         ├── References: ROLES_PERMISSIONS_MATRIX
-        └── References: EMAIL_TEMPLATES_INVENTORY
+        └── References: EMAIL_TEMPLATES.md
 ```
 
 ### Payment System (Tier 1 Core Feature)
@@ -150,8 +147,8 @@ GEA Release & Deployment Policy (BOARD)
   └── Informs: CLAUDE_Deployment
 
 GEA Audit & Compliance Policy (BOARD)
-  ├── References: REGULATORY_STATUS
-  └── References: GEA_System_Schema (audit fields)
+  ├── References: GEA_System_Schema (audit fields)
+  └── References: Email Templates (for audit notification templates)
 ```
 
 ---
@@ -161,7 +158,7 @@ GEA Audit & Compliance Policy (BOARD)
 ### If you're a Board Member:
 1. Read the relevant **GEA Policy** document for your area (Membership, Reservations, etc.)
 2. Reference the related quick-card or matrix documents as needed
-3. See **REGULATORY_STATUS** if you need federal compliance context
+3. Consult **GEA Audit & Compliance Policy** and **GEA Data Management Policy** for federal compliance and data governance context
 4. Contact the GEA Treasurer or Development Lead for implementation details
 
 ### If you're a Developer:

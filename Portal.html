@@ -1563,6 +1563,7 @@
         <div class="header-user-role" id="headerHouseholdName">—</div>
       </div>
       <button class="btn-logout" onclick="logout();">Logout</button>
+      <div id="deploymentInfo" style="font-size: 11px; color: #999; margin-top: 12px; text-align: center; white-space: nowrap;"></div>
     </div>
   </header>
   
@@ -2388,6 +2389,20 @@ function submitLogin(event) {
       var householdName = memberData.household_name || 'Household';
       document.getElementById('headerHouseholdName').textContent = householdName;
     }
+
+    // Fetch and display deployment timestamp
+    google.script.run.handlePortalApi('deployment_info', {})
+      .then(function(response) {
+        if (response && response.result && response.result.timestamp) {
+          var deploymentDiv = document.getElementById('deploymentInfo');
+          if (deploymentDiv) {
+            deploymentDiv.textContent = 'Code: ' + response.result.timestamp + ' CAT';
+          }
+        }
+      })
+      .catch(function(err) {
+        // Silently fail if deployment info unavailable
+      });
   }
   
   /**

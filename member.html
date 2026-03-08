@@ -62,6 +62,17 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
+    #deploy-timestamp {
+      position: fixed;
+      bottom: 8px;
+      left: 8px;
+      margin-top: 32px;
+      font-size: 10px;
+      color: #999;
+      user-select: none;
+      pointer-events: none;
+    }
+
     /* ============================================================ */
     /* IFRAME CONTAINER (Full Page)                                 */
     /* ============================================================ */
@@ -89,6 +100,7 @@
 <!-- ================================================================ -->
 <div id="env-indicator" title="Click to switch environments">
   <span id="env-label">PROD</span>
+  <div id="deploy-timestamp"></div>
 </div>
 
 <!-- ================================================================ -->
@@ -105,8 +117,10 @@
 
 <script>
   // ================================================================
-  // DEPLOYMENT IDs
+  // DEPLOYMENT TIMESTAMP & IDs
   // ================================================================
+  const DEPLOYMENT_TIMESTAMP = '2026-03-08 20:46:00';  // Updated by scripts/update-deploy-timestamp.js
+
   const DEPLOYMENTS = {
     prod: 'AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ',  // Versioned (stable)
     dev:  'AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg'                              // @HEAD (latest code)
@@ -138,6 +152,7 @@
     const iframe = document.getElementById('member-portal');
     const indicator = document.getElementById('env-indicator');
     const label = document.getElementById('env-label');
+    const timestamp = document.getElementById('deploy-timestamp');
 
     // Set iframe src
     iframe.src = `https://script.google.com/a/macros/geabotswana.org/s/${deploymentId}/exec`;
@@ -145,6 +160,9 @@
     // Update indicator
     indicator.className = `${environment}`;
     label.textContent = environment === 'dev' ? 'DEV (@HEAD)' : 'PROD (Stable)';
+
+    // Update timestamp - show when code was last deployed
+    timestamp.textContent = `Code pushed: ${DEPLOYMENT_TIMESTAMP}`;
   }
 
   // ================================================================

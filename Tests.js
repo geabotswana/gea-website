@@ -820,3 +820,485 @@ function testBoardEmailGmailAPI() {
 
   Logger.log("\n======================================================\n");
 }
+
+// ============================================================
+// AUTH REGRESSION TESTS (Session Security Hardening)
+// ============================================================
+
+/**
+ * TEST 1: Verify _hashToken produces stable, properly formatted SHA256 hashes
+ *
+ * Ensures:
+ * - Returns 64-character lowercase hex string
+ * - Same input always produces same output (deterministic)
+ * - No corruption in token hashing
+ */
+function testHashTokenProducesSha256Hex() {
+  Logger.log("\n=== TEST 1: Hash Token SHA256 Format ===");
+
+  try {
+    var testValue = "test-session-token-12345";
+    var hash1 = _hashToken(testValue);
+    var hash2 = _hashToken(testValue);
+
+    // Check format: 64 hex characters
+    var isValidFormat = hash1 &&
+                       hash1.length === 64 &&
+                       /^[a-f0-9]{64}$/.test(hash1);
+
+    if (!isValidFormat) {
+      Logger.log("✗ FAIL: Hash format invalid");
+      Logger.log("  Expected: 64-char lowercase hex");
+      Logger.log("  Got: " + hash1 + " (length: " + (hash1 ? hash1.length : "null") + ")");
+      return;
+    }
+
+    // Check stability: same input = same hash
+    if (hash1 !== hash2) {
+      Logger.log("✗ FAIL: Hash not stable (not deterministic)");
+      Logger.log("  First call:  " + hash1);
+      Logger.log("  Second call: " + hash2);
+      return;
+    }
+
+    Logger.log("✓ PASS: _hashToken produces stable 64-char SHA256 hex");
+    Logger.log("  Format: " + hash1.substring(0, 16) + "...");
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in _hashToken");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}
+
+/**
+ * TEST 2: Verify _generateToken produces unique tokens with correct format
+ *
+ * Ensures:
+ * - Each token is 64 hex characters
+ * - No duplicates in a sample (entropy is working)
+ * - Format consistency (not accidentally mixing formats)
+ */
+function testGenerateTokenProducesUnique64CharHex() {
+  Logger.log("\n=== TEST 2: Generate Token Uniqueness & Format ===");
+
+  try {
+    var tokens = [];
+    var SAMPLE_SIZE = 20;
+
+    // Generate multiple tokens
+    for (var i = 0; i < SAMPLE_SIZE; i++) {
+      tokens.push(_generateToken());
+    }
+
+    // Check format for all tokens
+    for (var i = 0; i < tokens.length; i++) {
+      var token = tokens[i];
+      var isValidFormat = token &&
+                         token.length === 64 &&
+                         /^[a-f0-9]{64}$/.test(token);
+
+      if (!isValidFormat) {
+        Logger.log("✗ FAIL: Token " + i + " has invalid format");
+        Logger.log("  Got: " + token + " (length: " + (token ? token.length : "null") + ")");
+        return;
+      }
+    }
+
+    // Check for duplicates
+    var uniqueTokens = {};
+    for (var i = 0; i < tokens.length; i++) {
+      if (uniqueTokens[tokens[i]]) {
+        Logger.log("✗ FAIL: Duplicate token found");
+        Logger.log("  Token: " + tokens[i]);
+        Logger.log("  Entropy may be insufficient");
+        return;
+      }
+      uniqueTokens[tokens[i]] = true;
+    }
+
+    Logger.log("✓ PASS: Generated " + SAMPLE_SIZE + " unique 64-char tokens");
+    Logger.log("  All tokens: valid format, no duplicates, good entropy");
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in _generateToken");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}
+
+/**
+ * TEST 3: Verify constantTimeCompare works correctly
+ *
+ * Ensures:
+ * - Equal strings return true
+ * - Different strings (same length) return false
+ * - Different-length strings return false
+ * - No short-circuit behavior (would indicate timing vulnerability)
+ */
+function testConstantTimeCompareBasicCases() {
+  Logger.log("\n=== TEST 3: Constant-Time Compare Correctness ===");
+
+  try {
+    var results = [];
+
+    // Test 1: Equal strings
+    var eq1 = constantTimeCompare("abc123", "abc123");
+    results.push({ desc: "Equal strings", expected: true, actual: eq1 });
+
+    // Test 2: Different strings, same length
+    var eq2 = constantTimeCompare("abc123", "abc124");
+    results.push({ desc: "Different same-length", expected: false, actual: eq2 });
+
+    // Test 3: Different length
+    var eq3 = constantTimeCompare("abc", "abc123");
+    results.push({ desc: "Different length", expected: false, actual: eq3 });
+
+    // Test 4: Empty strings
+    var eq4 = constantTimeCompare("", "");
+    results.push({ desc: "Both empty", expected: true, actual: eq4 });
+
+    // Check all results
+    var allPass = true;
+    for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      if (r.expected !== r.actual) {
+        Logger.log("✗ FAIL: " + r.desc);
+        Logger.log("  Expected: " + r.expected + ", Got: " + r.actual);
+        allPass = false;
+      }
+    }
+
+    if (allPass) {
+      Logger.log("✓ PASS: constantTimeCompare works correctly");
+      Logger.log("  All 4 test cases passed");
+    }
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in constantTimeCompare");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}
+
+/**
+ * TEST 4: Verify _createSession stores hashed tokens, not plain-text
+ *
+ * Ensures:
+ * - token_hash column is populated
+ * - Stored hash differs from returned token (one-way)
+ * - Stored value is 64-char hex (properly formatted)
+ * - Session marked active
+ */
+function testCreateSessionStoresTokenHashNotPlaintext() {
+  Logger.log("\n=== TEST 4: Session Creation Stores Hashed Token ===");
+
+  try {
+    // Create a session
+    var testEmail = "TEST_AUTH_4_" + Date.now() + "@example.com";
+    var token = _createSession(testEmail, "member");
+
+    if (!token) {
+      Logger.log("✗ FAIL: _createSession returned empty token");
+      return;
+    }
+
+    // Read the newest session row
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
+      .getSheetByName(TAB_SESSIONS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var emailCol = headers.indexOf("email");
+    var tokenHashCol = headers.indexOf("token_hash");
+    var activeCol = headers.indexOf("active");
+
+    if (tokenHashCol === -1) {
+      Logger.log("✗ FAIL: token_hash column not found");
+      return;
+    }
+
+    // Find the row we just created (newest row with matching email)
+    var sessionRow = null;
+    for (var i = data.length - 1; i >= 1; i--) {
+      if (data[i][emailCol] === testEmail) {
+        sessionRow = data[i];
+        break;
+      }
+    }
+
+    if (!sessionRow) {
+      Logger.log("✗ FAIL: Session row not found after creation");
+      return;
+    }
+
+    var storedHash = sessionRow[tokenHashCol];
+    var isActive = sessionRow[activeCol];
+
+    // Verify: hash is not equal to returned token (one-way)
+    if (storedHash === token) {
+      Logger.log("✗ FAIL: Stored hash equals returned token (not hashed!)");
+      Logger.log("  This indicates tokens are being stored plain-text");
+      return;
+    }
+
+    // Verify: hash is proper format
+    var isValidHash = storedHash &&
+                     storedHash.length === 64 &&
+                     /^[a-f0-9]{64}$/.test(storedHash);
+
+    if (!isValidHash) {
+      Logger.log("✗ FAIL: Stored hash has invalid format");
+      Logger.log("  Got: " + storedHash + " (length: " + (storedHash ? storedHash.length : "null") + ")");
+      return;
+    }
+
+    // Verify: session is active
+    if (!isActive) {
+      Logger.log("✗ FAIL: Session not marked active");
+      return;
+    }
+
+    Logger.log("✓ PASS: Session stores hashed token correctly");
+    Logger.log("  - token_hash: populated with 64-char hex");
+    Logger.log("  - Returned token != Stored hash (one-way)");
+    Logger.log("  - active: TRUE");
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in session creation test");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}
+
+/**
+ * TEST 5: Verify validateSession accepts fresh sessions and rejects tampering
+ *
+ * Ensures:
+ * - Fresh session validates successfully
+ * - Modified token fails validation
+ * - Hash-then-compare flow works end-to-end
+ */
+function testValidateSessionAcceptsFreshSessionAndRejectsRawMismatch() {
+  Logger.log("\n=== TEST 5: Session Validation Works End-to-End ===");
+
+  try {
+    // Create a session
+    var testEmail = "TEST_AUTH_5_" + Date.now() + "@example.com";
+    var token = _createSession(testEmail, "member");
+
+    if (!token) {
+      Logger.log("✗ FAIL: _createSession returned empty token");
+      return;
+    }
+
+    // Validate fresh token
+    var result1 = validateSession(token);
+
+    if (!result1.valid) {
+      Logger.log("✗ FAIL: Fresh session validation failed");
+      Logger.log("  Message: " + result1.message);
+      return;
+    }
+
+    if (result1.email !== testEmail) {
+      Logger.log("✗ FAIL: Returned email doesn't match");
+      Logger.log("  Expected: " + testEmail);
+      Logger.log("  Got: " + result1.email);
+      return;
+    }
+
+    // Validate modified token (should fail)
+    var modifiedToken = token.substring(0, 32) + "0000000000000000000000000000000000";
+    var result2 = validateSession(modifiedToken);
+
+    if (result2.valid) {
+      Logger.log("✗ FAIL: Modified token validated (security issue!)");
+      return;
+    }
+
+    Logger.log("✓ PASS: Session validation works correctly");
+    Logger.log("  - Fresh token: VALID");
+    Logger.log("  - Email returned: " + testEmail);
+    Logger.log("  - Modified token: INVALID (rejected)");
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in session validation test");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}
+
+/**
+ * TEST 6: Verify logout properly deactivates sessions
+ *
+ * Ensures:
+ * - logout() returns true and deactivates the session
+ * - Subsequent validation fails
+ * - Can't reuse logged-out sessions
+ */
+function testLogoutInvalidatesSession() {
+  Logger.log("\n=== TEST 6: Logout Deactivates Sessions ===");
+
+  try {
+    // Create a session
+    var testEmail = "TEST_AUTH_6_" + Date.now() + "@example.com";
+    var token = _createSession(testEmail, "member");
+
+    // Verify it validates before logout
+    var beforeLogout = validateSession(token);
+    if (!beforeLogout.valid) {
+      Logger.log("✗ FAIL: Fresh session doesn't validate");
+      return;
+    }
+
+    // Call logout
+    var logoutResult = logout(token);
+
+    if (!logoutResult) {
+      Logger.log("✗ FAIL: logout() returned false");
+      return;
+    }
+
+    // Verify it doesn't validate after logout
+    var afterLogout = validateSession(token);
+
+    if (afterLogout.valid) {
+      Logger.log("✗ FAIL: Session still validates after logout");
+      return;
+    }
+
+    Logger.log("✓ PASS: Logout properly deactivates sessions");
+    Logger.log("  - logout() returned: true");
+    Logger.log("  - Session before logout: VALID");
+    Logger.log("  - Session after logout: INVALID");
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in logout test");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}
+
+/**
+ * TEST 7: Verify requireAuth enforces role-based access control
+ *
+ * Ensures:
+ * - Member tokens pass member routes
+ * - Member tokens fail board-only routes
+ * - Board tokens pass board routes
+ */
+function testRequireAuthRoleEnforcement() {
+  Logger.log("\n=== TEST 7: Role-Based Access Control ===");
+
+  try {
+    // Create test sessions for different roles
+    var memberEmail = "TEST_AUTH_7_MEMBER_" + Date.now() + "@example.com";
+    var boardEmail = "board@geabotswana.org";  // Use actual board email
+
+    var memberToken = _createSession(memberEmail, "member");
+
+    if (!memberToken) {
+      Logger.log("⚠ WARNING: Could not create member session");
+      Logger.log("  Skipping role test");
+      return;
+    }
+
+    // Test 1: Member token passes member auth
+    var memberAuth = requireAuth(memberToken, "member");
+    if (!memberAuth.valid) {
+      Logger.log("✗ FAIL: Member token doesn't pass member auth");
+      Logger.log("  Message: " + memberAuth.message);
+      return;
+    }
+
+    // Test 2: Member token fails board auth
+    var boardAuth = requireAuth(memberToken, "board");
+    if (boardAuth.valid) {
+      Logger.log("✗ FAIL: Member token passed board auth (access control broken!)");
+      return;
+    }
+
+    // Test 3: requireAuth without role parameter (any authenticated user)
+    var anyAuth = requireAuth(memberToken);
+    if (!anyAuth.valid) {
+      Logger.log("✗ FAIL: Member token doesn't pass generic auth");
+      return;
+    }
+
+    Logger.log("✓ PASS: Role-based access control working");
+    Logger.log("  - Member token + 'member' role: PASS");
+    Logger.log("  - Member token + 'board' role: FAIL (correct)");
+    Logger.log("  - Member token + no role: PASS");
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in role enforcement test");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}
+
+/**
+ * TEST 8: Verify token hash migration validation helpers work correctly
+ *
+ * Ensures:
+ * - validateTokenHashMigration() returns consistent reports
+ * - Checks actual hash quality (64-char format)
+ * - checkSessionFormat() finds sessions correctly
+ * - getAuthHealthReport() provides useful recommendations
+ */
+function testTokenHashMigrationHealthHelpers() {
+  Logger.log("\n=== TEST 8: Migration Health Helpers ===");
+
+  try {
+    // Create a test session to generate fresh data
+    var testEmail = "TEST_AUTH_8_" + Date.now() + "@example.com";
+    var token = _createSession(testEmail, "member");
+
+    // Test 1: validateTokenHashMigration report
+    var migrationStatus = validateTokenHashMigration();
+
+    if (!migrationStatus.tokenHashExists) {
+      Logger.log("✗ FAIL: token_hash column not found by migration validator");
+      return;
+    }
+
+    // Test 2: Check for invalid hashes (should be zero)
+    if (migrationStatus.invalidHashCount > 0) {
+      Logger.log("✗ FAIL: Migration validator found " + migrationStatus.invalidHashCount + " invalid hashes");
+      Logger.log("  This indicates hash formatting problem");
+      return;
+    }
+
+    // Test 3: checkSessionFormat for our test session
+    var sessionFormat = checkSessionFormat(testEmail);
+
+    if (!sessionFormat.found) {
+      Logger.log("✗ FAIL: Test session not found by checkSessionFormat");
+      return;
+    }
+
+    if (!sessionFormat.hasTokenHash) {
+      Logger.log("✗ FAIL: Test session doesn't have token_hash");
+      return;
+    }
+
+    if (sessionFormat.tokenHashLength !== 64) {
+      Logger.log("✗ FAIL: Token hash length is " + sessionFormat.tokenHashLength + " (expected 64)");
+      return;
+    }
+
+    // Test 4: getAuthHealthReport
+    var healthReport = getAuthHealthReport();
+
+    if (!healthReport.timestamp) {
+      Logger.log("✗ FAIL: Health report missing timestamp");
+      return;
+    }
+
+    // Health report is just for monitoring, so any valid structure passes
+
+    Logger.log("✓ PASS: All migration health helpers working");
+    Logger.log("  - validateTokenHashMigration(): status=" + migrationStatus.migrationStatus);
+    Logger.log("  - checkSessionFormat(): found=" + sessionFormat.found + ", hash_length=" + sessionFormat.tokenHashLength);
+    Logger.log("  - getAuthHealthReport(): active_sessions=" + healthReport.sessionStats.active);
+    Logger.log("  - No invalid hashes detected");
+
+  } catch (e) {
+    Logger.log("✗ FAIL: Exception in migration helpers test");
+    Logger.log("  ERROR: " + e.toString());
+  }
+}

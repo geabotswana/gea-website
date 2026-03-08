@@ -499,12 +499,51 @@ function _createSession(email, role) {
 }
 
 /**
- * Generates a cryptographically random session token.
- * @returns {string}  64-character hex string
+ * Generates a session token with better entropy than Math.random().
+ *
+ * Combines:
+ * - Utilities.getUuid() — platform-provided entropy
+ * - Timestamp — session uniqueness
+ * - Math.random() — additional entropy mixing
+ *
+ * Result is hashed to produce a normalized 64-character hex token.
+ *
+ * NOTE: Not true CSPRNG (Google Apps Script doesn't expose hardware randomness).
+ * But significantly better than raw Math.random() with much higher entropy.
+ *
+ * @returns {string}  64-character hex string (SHA256 hash of mixed entropy)
  */
 function _generateToken() {
-  var chars  = "0123456789abcdef";
-  var token  = "";
+  try {
+    // Mix multiple entropy sources
+    var sources = [
+      Utilities.getUuid(),                    // Platform entropy
+      new Date().getTime().toString(),        // Timestamp
+      Math.random().toString(36).substring(2), // Extra entropy
+      Utilities.getUuid().substring(0, 8)     // More platform entropy
+    ];
+
+    var combined = sources.join("|");
+
+    // Hash the combined entropy to normalize to 64-char hex string
+    var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, combined);
+    return Utilities.bytesToHex(digest);
+  } catch (e) {
+    Logger.log("ERROR _generateToken: " + e);
+    // Fallback to simpler generation if hashing fails
+    return _generateTokenFallback();
+  }
+}
+
+/**
+ * Fallback token generation (if Utilities functions fail).
+ * Less robust but ensures service availability.
+ * @returns {string}
+ * @private
+ */
+function _generateTokenFallback() {
+  var chars = "0123456789abcdef";
+  var token = "";
   for (var i = 0; i < 64; i++) {
     token += chars[Math.floor(Math.random() * 16)];
   }

@@ -85,14 +85,16 @@ Response JSON → Browser → Update UI
 **Session Management:**
 - One session per user (new login invalidates previous)
 - 24-hour timeout (sliding window)
+- Session tokens generated using `Utilities.getUuid()` + timestamp + entropy (then hashed to 64-char hex)
 - Session tokens stored as SHA256 hashes in Sessions tab (plain-text never persisted)
 - Token and password comparisons use constant-time comparison to resist timing attacks
 - Nightly purge of expired sessions via `purgeExpiredSessions()`
 - ⚠️ **Security Notes:**
+  - Token generation combines multiple entropy sources for better randomness than Math.random()
   - Session tokens are hashed, removing immediate replay risk from spreadsheet reads
   - Constant-time comparison used for all credential checks (passwords, token hashes)
   - Sheet access control still required (fundamental architectural boundary)
-  - JavaScript implementation of constant-time compare (not hardware-accelerated)
+  - JavaScript implementation (not hardware-accelerated crypto)
 
 **Role-Based Access Control (RBAC):**
 ```javascript

@@ -41,7 +41,7 @@
  * SECURITY NOTES:
  * - Passwords are never stored in plaintext, only as SHA256 hashes
  * - On login, the plaintext password is hashed and compared to the stored hash
- * - The comparison is done with constant-time logic to prevent timing attacks
+ * - Comparison is simple equality (===); timing-attack resistance pending implementation
  * - Failed logins are logged but do not specify which part failed (email/password/status)
  *
  * CALLED BY: Code.gs _handleLogin()
@@ -77,9 +77,8 @@ function login(email, password) {
 
   // Hash the plaintext password provided by the user
   var providedPasswordHash = hashPassword(password);
-  
+
   // Compare the provided password hash to the stored hash
-  // Use a constant-time comparison to prevent timing attacks
   if (providedPasswordHash !== member.password_hash) {
     logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
                   "Failed login attempt: incorrect password");
@@ -295,14 +294,19 @@ function validateSession(token) {
     var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
-    var tokCol  = headers.indexOf("token");
+    var tokCol  = headers.indexOf("token_hash");  // Changed from "token"
     var expCol  = headers.indexOf("expires_at");
     var emlCol  = headers.indexOf("email");
     var rolCol  = headers.indexOf("role");
     var actCol  = headers.indexOf("active");
 
+    // Hash the presented token before comparison
+    var presentedHash = _hashToken(token);
+    if (!presentedHash) return { valid: false, message: "Invalid session. Please log in again." };
+
     for (var i = 1; i < data.length; i++) {
-      if (data[i][tokCol] !== token) continue;
+      // SECURITY: Compare hashes, not plain tokens. Token never stored in plaintext.
+      if (data[i][tokCol] !== presentedHash) continue;
       if (!data[i][actCol]) return { valid: false, message: "Session has been invalidated." };
 
       var expires = new Date(data[i][expCol]);
@@ -336,14 +340,18 @@ function logout(token) {
     var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
-    var tokCol  = headers.indexOf("token");
+    var tokCol  = headers.indexOf("token_hash");
     var actCol  = headers.indexOf("active");
     var emlCol  = headers.indexOf("email");
 
+    var tokenHash = _hashToken(token);
+    if (!tokenHash) return false;
+
     for (var i = 1; i < data.length; i++) {
-      if (data[i][tokCol] === token) {
+      // SECURITY: Compare hashes, not plain tokens
+      if (data[i][tokCol] === tokenHash) {
         sheet.getRange(i + 1, actCol + 1).setValue(false);
-        logAuditEntry(data[i][emlCol], AUDIT_LOGOUT, "Session", token, "User logged out");
+        logAuditEntry(data[i][emlCol], AUDIT_LOGOUT, "Session", "[hash]", "User logged out");
         return true;
       }
     }
@@ -448,9 +456,10 @@ function requireAuth(token, requiredRole) {
  * @returns {string} token
  */
 function _createSession(email, role) {
-  var token   = _generateToken();
-  var now     = new Date();
-  var expires = _sessionExpiry();
+  var token     = _generateToken();
+  var tokenHash = _hashToken(token);  // Store hash, not plain-text
+  var now       = new Date();
+  var expires   = _sessionExpiry();
 
   try {
     var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
@@ -467,9 +476,10 @@ function _createSession(email, role) {
     }
 
     // Create new session with properly formatted timestamps
+    // SECURITY: Store token_hash, not plain token. This prevents immediate replay from sheet access.
     var row     = {
       session_id:   generateId("SES"),
-      token:        token,
+      token_hash:   tokenHash,
       email:        email,
       role:         role,
       created_at:   Utilities.formatDate(now, "Africa/Johannesburg", "yyyy-MM-dd HH:mm:ss"),
@@ -483,6 +493,7 @@ function _createSession(email, role) {
     Logger.log("ERROR _createSession: " + e);
   }
 
+  // Return plain-text token to client (token is used only once on client-side for immediate validation)
   return token;
 }
 
@@ -505,6 +516,59 @@ function _generateToken() {
  */
 function _sessionExpiry() {
   return new Date(new Date().getTime() + SESSION_TIMEOUT_HOURS * 60 * 60 * 1000);
+}
+
+/**
+ * Hashes a session token for secure storage.
+ * Tokens are stored as SHA256 hashes in the Sessions sheet; the plain-text
+ * token is never persisted. This prevents immediate session replay from sheet access.
+ *
+ * @param {string} token  The plain-text session token
+ * @returns {string}      SHA256 hash as hex string
+ */
+function _hashToken(token) {
+  if (!token) return "";
+  try {
+    var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token);
+    return Utilities.bytesToHex(digest);
+  } catch (e) {
+    Logger.log("ERROR _hashToken: " + e);
+    return "";
+  }
+}
+
+/**
+ * Invalidates all existing sessions.
+ * Called during deployment when moving from plain-text to hashed token storage.
+ * This forces all users to re-authenticate with the new session format.
+ *
+ * DEPLOYMENT STEPS:
+ * 1. In GEA System Backend spreadsheet, Sessions tab: Rename column "token" → "token_hash"
+ * 2. Run this function once in Google Apps Script editor:
+ *    invalidateAllSessionsForTokenHashMigration();
+ * 3. clasp push to deploy AuthService.js changes
+ * 4. All users must log in again (old plain-text sessions invalidated)
+ * 5. Delete this function after successful migration (not needed for ongoing use)
+ *
+ * This migration ensures tokens are never stored as plain-text, preventing immediate
+ * session replay from spreadsheet access.
+ */
+function invalidateAllSessionsForTokenHashMigration() {
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var actCol = headers.indexOf("active");
+
+    // Deactivate all sessions
+    for (var i = 1; i < data.length; i++) {
+      sheet.getRange(i + 1, actCol + 1).setValue(false);
+    }
+
+    Logger.log("SUCCESS: Invalidated " + (data.length - 1) + " sessions for token hash migration");
+  } catch (e) {
+    Logger.log("ERROR invalidateAllSessionsForTokenHashMigration: " + e);
+  }
 }
 
 /**

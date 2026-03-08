@@ -85,10 +85,13 @@ Response JSON → Browser → Update UI
 **Session Management:**
 - One session per user (new login invalidates previous)
 - 24-hour timeout (sliding window)
-- Stored in Sessions tab with plain-text token (not hashed)
-- Direct string comparison for token validation
+- Session tokens stored as SHA256 hashes in Sessions tab (plain-text never persisted)
+- Token comparison uses hash equality (prevents immediate replay from sheet access)
 - Nightly purge of expired sessions via `purgeExpiredSessions()`
-- ⚠️ **Security Note:** Session tokens and passwords use simple equality checks (not constant-time). For production use, consider implementing cryptographic comparisons.
+- ⚠️ **Security Notes:**
+  - Password comparison uses simple equality (not constant-time); timing-attack resistance pending
+  - Session tokens are hashed, removing immediate replay risk from spreadsheet reads
+  - Sheet access control still required (fundamental architectural boundary)
 
 **Role-Based Access Control (RBAC):**
 ```javascript

@@ -50,6 +50,45 @@ function runAllTests() {
 }
 
 
+/**
+ * Runs all authentication & session security regression tests.
+ *
+ * This is a separate test suite (not part of runAllTests) to focus on
+ * security-critical functionality: token hashing, constant-time comparison,
+ * session validation, and role-based access control.
+ *
+ * Run this after deploying session security changes:
+ *   1. Select runAuthRegressionTests from the dropdown at top
+ *   2. Click Run (▶)
+ *   3. Check View → Logs for PASS/FAIL results
+ *
+ * All 8 tests must pass before deploying auth changes to production.
+ */
+function runAuthRegressionTests() {
+  Logger.log("========================================");
+  Logger.log("AUTH REGRESSION TEST RUN — " + new Date().toString());
+  Logger.log("========================================");
+  Logger.log("\nRunning 8 security tests...\n");
+
+  testHashTokenProducesSha256Hex();
+  testGenerateTokenProducesUnique64CharHex();
+  testConstantTimeCompareBasicCases();
+  testCreateSessionStoresTokenHashNotPlaintext();
+  testValidateSessionAcceptsFreshSessionAndRejectsRawMismatch();
+  testLogoutInvalidatesSession();
+  testRequireAuthRoleEnforcement();
+  testTokenHashMigrationHealthHelpers();
+
+  Logger.log("========================================");
+  Logger.log("AUTH TESTS COMPLETE — Check above for FAIL");
+  Logger.log("========================================");
+  Logger.log("\nSummary:");
+  Logger.log("  - All tests must PASS before production deployment");
+  Logger.log("  - See docs/operational/TOKEN_HASH_MIGRATION_RUNBOOK.md");
+  Logger.log("========================================");
+}
+
+
 // ============================================================
 // HELPER
 // ============================================================
@@ -1180,7 +1219,9 @@ function testLogoutInvalidatesSession() {
  * Ensures:
  * - Member tokens pass member routes
  * - Member tokens fail board-only routes
- * - Board tokens pass board routes
+ * - Any auth passes authenticated users
+ *
+ * Return shape: { ok: true, session: {...} } or { ok: false, response: string }
  */
 function testRequireAuthRoleEnforcement() {
   Logger.log("\n=== TEST 7: Role-Based Access Control ===");
@@ -1188,7 +1229,6 @@ function testRequireAuthRoleEnforcement() {
   try {
     // Create test sessions for different roles
     var memberEmail = "TEST_AUTH_7_MEMBER_" + Date.now() + "@example.com";
-    var boardEmail = "board@geabotswana.org";  // Use actual board email
 
     var memberToken = _createSession(memberEmail, "member");
 
@@ -1199,31 +1239,43 @@ function testRequireAuthRoleEnforcement() {
     }
 
     // Test 1: Member token passes member auth
+    // Return shape: { ok: true, session: {...} } on success
     var memberAuth = requireAuth(memberToken, "member");
-    if (!memberAuth.valid) {
+    if (!memberAuth.ok) {
       Logger.log("✗ FAIL: Member token doesn't pass member auth");
-      Logger.log("  Message: " + memberAuth.message);
+      Logger.log("  Response: " + memberAuth.response);
+      return;
+    }
+
+    if (!memberAuth.session || memberAuth.session.email !== memberEmail) {
+      Logger.log("✗ FAIL: Session data missing or mismatched");
       return;
     }
 
     // Test 2: Member token fails board auth
+    // Return shape: { ok: false, response: string } on failure
     var boardAuth = requireAuth(memberToken, "board");
-    if (boardAuth.valid) {
+    if (boardAuth.ok) {
       Logger.log("✗ FAIL: Member token passed board auth (access control broken!)");
       return;
     }
 
+    if (!boardAuth.response) {
+      Logger.log("⚠ WARNING: Board auth rejected but no error response");
+    }
+
     // Test 3: requireAuth without role parameter (any authenticated user)
     var anyAuth = requireAuth(memberToken);
-    if (!anyAuth.valid) {
+    if (!anyAuth.ok) {
       Logger.log("✗ FAIL: Member token doesn't pass generic auth");
+      Logger.log("  Response: " + anyAuth.response);
       return;
     }
 
     Logger.log("✓ PASS: Role-based access control working");
-    Logger.log("  - Member token + 'member' role: PASS");
-    Logger.log("  - Member token + 'board' role: FAIL (correct)");
-    Logger.log("  - Member token + no role: PASS");
+    Logger.log("  - Member token + 'member' role: ok=true");
+    Logger.log("  - Member token + 'board' role: ok=false (correct)");
+    Logger.log("  - Member token + no role: ok=true");
 
   } catch (e) {
     Logger.log("✗ FAIL: Exception in role enforcement test");
@@ -1293,8 +1345,8 @@ function testTokenHashMigrationHealthHelpers() {
 
     Logger.log("✓ PASS: All migration health helpers working");
     Logger.log("  - validateTokenHashMigration(): status=" + migrationStatus.migrationStatus);
-    Logger.log("  - checkSessionFormat(): found=" + sessionFormat.found + ", hash_length=" + sessionFormat.tokenHashLength);
-    Logger.log("  - getAuthHealthReport(): active_sessions=" + healthReport.sessionStats.active);
+    Logger.log("  - checkSessionFormat(): found=" + sessionFormat.found + ", hashLength=" + sessionFormat.tokenHashLength);
+    Logger.log("  - getAuthHealthReport(): activeSessions=" + healthReport.sessionStats.active);
     Logger.log("  - No invalid hashes detected");
 
   } catch (e) {

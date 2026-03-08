@@ -3346,19 +3346,30 @@ function submitLogin(event) {
       currentApplicationStep--;
 
       // Skip steps based on conditions (same as forward navigation)
-      // Step 3 is always skipped (sponsor)
-      if (currentApplicationStep === 3) {
-        currentApplicationStep--;
-      }
+      // Keep skipping until we land on a valid step
+      var validStep = false;
+      var attempts = 0;
+      while (!validStep && attempts < 10) {
+        attempts++;
+        validStep = true;  // Assume valid unless we skip it
 
-      // Step 4 (Family) is skipped for Individual households
-      if (currentApplicationStep === 4 && applicationFormData.household_type !== 'Family') {
-        currentApplicationStep--;
-      }
+        // Step 3 is always skipped (sponsor)
+        if (currentApplicationStep === 3) {
+          currentApplicationStep--;
+          validStep = false;
+        }
 
-      // Step 5 (Household staff) is skipped for Individual households
-      if (currentApplicationStep === 5 && applicationFormData.household_type !== 'Family') {
-        currentApplicationStep--;
+        // Step 4 (Family) is skipped for Individual households
+        if (currentApplicationStep === 4 && applicationFormData.household_type !== 'Family') {
+          currentApplicationStep--;
+          validStep = false;
+        }
+
+        // Step 5 (Household staff) is skipped for Individual households
+        if (currentApplicationStep === 5 && applicationFormData.household_type !== 'Family') {
+          currentApplicationStep--;
+          validStep = false;
+        }
       }
 
       // Don't go below step 1

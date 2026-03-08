@@ -213,9 +213,6 @@
 </div>
 
 <script>
-  alert('TEST: member.html script block loaded');
-  console.log('TEST: member.html script block executing');
-
   // ================================================================
   // DEPLOYMENT CONFIGURATION
   // ================================================================
@@ -258,13 +255,7 @@
     var base = DEPLOYMENTS[env].execUrl;
     var url = new URL(base);
     url.searchParams.set('action', 'serve');
-    url.searchParams.set('wrapper_env', env);
-    url.searchParams.set('parent_origin', window.location.origin);
-    var finalUrl = url.toString();
-    console.log('buildIframeUrl for env=' + env + ':');
-    console.log('  window.location.origin =', window.location.origin);
-    console.log('  final URL =', finalUrl);
-    return finalUrl;
+    return url.toString();
   }
 
   function setActiveEnvButton(env) {
@@ -340,41 +331,72 @@
     saveSelectedEnv(env);
     setActiveEnvButton(env);
 
-    clearTimeout(statusTimeout);
-    showLoadingStatus();
-
-    statusTimeout = setTimeout(showTimeoutStatus, STATUS_TIMEOUT_MS);
-
+    // Load iframe
     document.getElementById('portalFrame').src = buildIframeUrl(env);
+
+    // Query deployment metadata separately
+    requestDeploymentInfo(env);
   }
 
   // ================================================================
-  // POSTMESSAGE LISTENER
+  // DEPLOYMENT METADATA QUERY (JSONP)
   // ================================================================
+  // Query selected deployment for metadata without relying on postMessage
+  // (GAS sandbox blocks postMessage from iframe to external parent)
 
-  window.addEventListener('message', function(event) {
-    if (!ALLOWED_IFRAME_ORIGINS[event.origin]) return;
-
-    var data = event.data;
-    if (!data || data.type !== 'gea.deploymentInfo' || data.source !== 'portal') return;
-
+  function requestDeploymentInfo(env) {
     clearTimeout(statusTimeout);
+    showLoadingStatus();
 
-    var mismatch = data.selectedEnv !== data.reportedEnv;
-    var readyClass = data.reportedEnv === 'prod' ? 'status-ready-prod' : 'status-ready-dev';
+    var callbackName = 'geaDeploymentInfoCallback_' + Date.now();
+    var script = document.createElement('script');
 
-    renderStatus({
-      statusClass: mismatch ? 'status-mismatch' : readyClass,
-      badgeText: mismatch ? 'Mismatch' : 'Loaded',
-      selectedEnv: data.selectedEnv || selectedEnv,
-      reportedEnv: data.reportedEnv || 'unknown',
-      timestamp: data.timestamp || '—',
-      version: data.version || '—',
-      buildId: data.buildId || data.deploymentId || '—',
-      authenticated: !!data.authenticated,
-      warning: mismatch ? 'Loaded deployment does not match selected environment.' : ''
-    });
-  });
+    window[callbackName] = function(data) {
+      delete window[callbackName];
+      script.remove();
+      clearTimeout(statusTimeout);
+
+      var reportedEnv = data.deploymentId === DEPLOYMENTS.prod.deploymentId ? 'prod' :
+                        data.deploymentId === DEPLOYMENTS.dev.deploymentId ? 'dev' : 'unknown';
+      var mismatch = env !== reportedEnv;
+      var readyClass = reportedEnv === 'prod' ? 'status-ready-prod' : 'status-ready-dev';
+
+      renderStatus({
+        statusClass: mismatch ? 'status-mismatch' : readyClass,
+        badgeText: mismatch ? 'Mismatch' : 'Loaded',
+        selectedEnv: env,
+        reportedEnv: reportedEnv,
+        timestamp: data.timestamp || '—',
+        version: data.version || '—',
+        buildId: data.buildId || '—',
+        authenticated: false,
+        warning: mismatch ? 'Loaded deployment does not match selected environment.' : ''
+      });
+    };
+
+    script.onerror = function() {
+      delete window[callbackName];
+      script.remove();
+      clearTimeout(statusTimeout);
+      showTimeoutStatus();
+    };
+
+    var url = new URL(DEPLOYMENTS[env].execUrl);
+    url.searchParams.set('action', 'deployment_info_jsonp');
+    url.searchParams.set('callback', callbackName);
+    script.src = url.toString();
+    script.async = true;
+
+    statusTimeout = setTimeout(function() {
+      if (window[callbackName]) {
+        delete window[callbackName];
+        script.remove();
+        showTimeoutStatus();
+      }
+    }, STATUS_TIMEOUT_MS);
+
+    document.head.appendChild(script);
+  }
 
   // ================================================================
   // EVENT LISTENERS

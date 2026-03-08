@@ -1924,9 +1924,6 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
-    // Send initial deployment info (unauthenticated)
-    postDeploymentInfo(false);
-
     if (currentToken) {
       showAuthenticatedUI();
       loadDashboard();
@@ -1935,82 +1932,8 @@
     }
   });
 
-// ============================================================
-// SECTION: DEPLOYMENT INFO POSTMESSAGE
-// ============================================================
-// Sends deployment metadata to parent (member.html wrapper) via postMessage
-// Allows the wrapper to display which deployment is actually loaded
-
-var DEPLOYMENT_MESSAGE_TYPE = 'gea.deploymentInfo';
-var ALLOWED_PARENT_ORIGINS = {
-  'https://geabotswana.org': true,
-  'http://127.0.0.1:3000': true,
-  'http://localhost:3000': true
-};
-
-function getWrapperParams() {
-  var params = new URLSearchParams(window.location.search);
-  return {
-    selectedEnv: params.get('wrapper_env') || 'unknown',
-    parentOrigin: params.get('parent_origin') || ''
-  };
-}
-
-function getTrustedParentOrigin() {
-  var wrapper = getWrapperParams();
-
-  if (wrapper.parentOrigin && ALLOWED_PARENT_ORIGINS[wrapper.parentOrigin]) {
-    return wrapper.parentOrigin;
-  }
-
-  try {
-    if (document.referrer) {
-      var refOrigin = new URL(document.referrer).origin;
-      if (ALLOWED_PARENT_ORIGINS[refOrigin]) {
-        return refOrigin;
-      }
-    }
-  } catch (e) {}
-
-  return null;
-}
-
-function getReportedEnv() {
-  var deploymentId = window.GEA_DEPLOYMENT_ID || 'unknown';
-
-  if (deploymentId === 'AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ') {
-    return 'prod';
-  }
-  if (deploymentId === 'AKfycbzIS2NMUsEsp6drBGmWf8YDH44BXNa9g6nbvVOu-fg') {
-    return 'dev';
-  }
-
-  // If deployment ID could not be identified, report unknown (do NOT fall back to selectedEnv)
-  // Falling back would mask mismatches and defeat the safety signal
-  return 'unknown';
-}
-
-function postDeploymentInfo(authenticated) {
-  var parentOrigin = getTrustedParentOrigin();
-
-  if (!parentOrigin || !window.parent || window.parent === window) return;
-
-  window.parent.postMessage({
-    type: DEPLOYMENT_MESSAGE_TYPE,
-    source: 'portal',
-    selectedEnv: getWrapperParams().selectedEnv,
-    reportedEnv: getReportedEnv(),
-    deploymentId: window.GEA_DEPLOYMENT_ID || 'unknown',
-    version: window.GEA_SYSTEM_VERSION || 'unknown',
-    buildId: window.GEA_BUILD_ID || 'unknown',
-    timestamp: window.GEA_DEPLOYMENT_TIMESTAMP || 'unknown',
-    authenticated: !!authenticated
-  }, parentOrigin);
-}
-
-function notifyDeploymentInfoAuthenticated() {
-  postDeploymentInfo(true);
-}
+// NOTE: postMessage from GAS iframe to external parent is blocked by GAS sandbox.
+// Deployment metadata is now queried via JSONP endpoint from member.html instead.
 
 // ============================================================
 // SECTION: PHONE NUMBER INPUT WITH intl-tel-input
@@ -2438,13 +2361,11 @@ function submitLogin(event) {
       // Hide login and show applicant view
       document.getElementById('loginScreen').classList.remove('show');
       showAuthenticatedUI();
-      notifyDeploymentInfoAuthenticated();
       loadApplicantPortal();
     } else {
       // Regular member - show full portal
       document.getElementById('loginScreen').classList.remove('show');
       showAuthenticatedUI();
-      notifyDeploymentInfoAuthenticated();
       loadDashboard();
     }
   }).catch(function(err) {
@@ -4989,9 +4910,6 @@ function submitLogin(event) {
         showError('Failed to load dashboard: ' + res.message);
         return;
       }
-
-      // Notify wrapper that session is authenticated
-      notifyDeploymentInfoAuthenticated();
 
       var data = res.data;
 

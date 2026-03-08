@@ -50,6 +50,11 @@ function doGet(e) {
   var params = e.parameter || {};
   var action = params.action || "serve";
 
+  // Public deployment metadata endpoint (JSONP for cross-origin)
+  if (action === "deployment_info_jsonp") {
+    return _handleDeploymentInfoJsonp(params);
+  }
+
   // Serve the HTML portal shell (no auth needed)
   // Uses template evaluation to inject deployment metadata
   if (action === "serve") {
@@ -2058,4 +2063,32 @@ function _getDeploymentIdFromUrl_() {
     Logger.log("Warning: Could not extract deployment ID from URL: " + e.toString());
     return "unknown";
   }
+}
+
+/**
+ * Public JSONP endpoint for deployment metadata
+ * Called by member.html wrapper to query deployment info without relying on postMessage
+ * @param {Object} params - Query parameters including callback name
+ * @returns {ContentService.TextOutput} JSONP response
+ */
+function _handleDeploymentInfoJsonp(params) {
+  var callback = params.callback || "callback";
+
+  // Validate callback name (prevent injection)
+  if (!/^[A-Za-z0-9_.]+$/.test(callback)) {
+    return ContentService
+      .createTextOutput("Invalid callback name")
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+
+  var payload = {
+    deploymentId: _getDeploymentIdFromUrl_(),
+    version: SYSTEM_VERSION,
+    buildId: BUILD_ID,
+    timestamp: DEPLOYMENT_TIMESTAMP
+  };
+
+  return ContentService
+    .createTextOutput(callback + "(" + JSON.stringify(payload) + ");")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }

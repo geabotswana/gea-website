@@ -4347,28 +4347,70 @@ function submitLogin(event) {
       }
 
       var app = res.data;
-      var html = '<h1 style="margin-bottom: 30px;">Your Membership Application</h1>';
+      var container = document.getElementById('applicantContent');
+      container.innerHTML = '';
+
+      // Main heading
+      var heading = document.createElement('h1');
+      heading.style.marginBottom = '30px';
+      heading.textContent = 'Your Membership Application';
+      container.appendChild(heading);
 
       // Status Timeline
       var statuses = ['awaiting_docs', 'docs_confirmed', 'board_initial_review', 'rso_review', 'board_final_review', 'approved_pending_payment', 'payment_submitted', 'activated'];
       var statusLabels = ['Submitted', 'Docs Uploaded', 'Board Review', 'RSO Review', 'Final Approval', 'Payment', 'Processing', 'Active'];
       var currentStatusIndex = statuses.indexOf(app.status);
 
-      html += '<div style="margin-bottom: 30px;">' +
-        '<div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12px;">';
+      var timelineDiv = document.createElement('div');
+      timelineDiv.style.marginBottom = '30px';
+
+      var flexRow = document.createElement('div');
+      flexRow.style.display = 'flex';
+      flexRow.style.justifyContent = 'space-between';
+      flexRow.style.marginBottom = '10px';
+      flexRow.style.fontSize = '12px';
 
       for (var i = 0; i < statuses.length; i++) {
         var isCompleted = i < currentStatusIndex;
         var isCurrent = i === currentStatusIndex;
         var statusClass = isCompleted ? 'status-completed' : isCurrent ? 'status-current' : 'status-pending';
-        html += '<div class="' + statusClass + '" style="text-align: center; flex: 1;">' +
-          '<div style="width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 4px; line-height: 24px; ' +
-          (isCompleted ? 'background: #2E7D32; color: white;' : isCurrent ? 'background: #0A3161; color: white;' : 'background: #ddd; color: #999;') + '">' +
-          (isCompleted ? '✓' : i + 1) + '</div>' +
-          '<div style="font-size: 11px;">' + statusLabels[i] + '</div></div>';
+
+        var statusStep = document.createElement('div');
+        statusStep.className = statusClass;
+        statusStep.style.textAlign = 'center';
+        statusStep.style.flex = '1';
+
+        var circle = document.createElement('div');
+        circle.style.width = '24px';
+        circle.style.height = '24px';
+        circle.style.borderRadius = '50%';
+        circle.style.margin = '0 auto 4px';
+        circle.style.lineHeight = '24px';
+        if (isCompleted) {
+          circle.style.background = '#2E7D32';
+          circle.style.color = 'white';
+          circle.textContent = '✓';
+        } else if (isCurrent) {
+          circle.style.background = '#0A3161';
+          circle.style.color = 'white';
+          circle.textContent = (i + 1).toString();
+        } else {
+          circle.style.background = '#ddd';
+          circle.style.color = '#999';
+          circle.textContent = (i + 1).toString();
+        }
+        statusStep.appendChild(circle);
+
+        var label = document.createElement('div');
+        label.style.fontSize = '11px';
+        label.textContent = statusLabels[i];
+        statusStep.appendChild(label);
+
+        flexRow.appendChild(statusStep);
       }
 
-      html += '</div></div>';
+      timelineDiv.appendChild(flexRow);
+      container.appendChild(timelineDiv);
 
       // Current Status Message
       var statusMsg = {
@@ -4382,59 +4424,159 @@ function submitLogin(event) {
         'activated': 'Your membership is active! Welcome to GEA.'
       };
 
-      html += '<div class="card" style="background: #f0f4ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">' +
-        '<p style="color: #0A3161; font-weight: 500;">' + (statusMsg[app.status] || 'Membership application in progress.') + '</p>' +
-        '</div>';
+      var statusCard = document.createElement('div');
+      statusCard.className = 'card';
+      statusCard.style.background = '#f0f4ff';
+      statusCard.style.padding = '20px';
+      statusCard.style.borderRadius = '8px';
+      statusCard.style.marginBottom = '20px';
+
+      var statusMsg_p = document.createElement('p');
+      statusMsg_p.style.color = '#0A3161';
+      statusMsg_p.style.fontWeight = '500';
+      statusMsg_p.textContent = statusMsg[app.status] || 'Membership application in progress.';
+      statusCard.appendChild(statusMsg_p);
+      container.appendChild(statusCard);
 
       // Document Checklist
-      html += '<div class="card" style="margin-bottom: 20px;"><div class="card-header"><h3 class="card-title">Document Checklist</h3></div>';
-      html += '<div style="padding: 16px;">';
+      var docCard = document.createElement('div');
+      docCard.className = 'card';
+      docCard.style.marginBottom = '20px';
+
+      var docHeader = document.createElement('div');
+      docHeader.className = 'card-header';
+      var docTitle = document.createElement('h3');
+      docTitle.className = 'card-title';
+      docTitle.textContent = 'Document Checklist';
+      docHeader.appendChild(docTitle);
+      docCard.appendChild(docHeader);
+
+      var docContent = document.createElement('div');
+      docContent.style.padding = '16px';
 
       if (app.individuals && app.individuals.length > 0) {
         app.individuals.forEach(function(ind) {
-          html += '<div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;"><strong>' + ind.first_name + ' ' + ind.last_name + '</strong><div style="margin-top: 8px;">';
+          var memberSection = document.createElement('div');
+          memberSection.style.marginBottom = '20px';
+          memberSection.style.paddingBottom = '16px';
+          memberSection.style.borderBottom = '1px solid #eee';
+
+          var memberName = document.createElement('strong');
+          memberName.textContent = (ind.first_name || '') + ' ' + (ind.last_name || '');
+          memberSection.appendChild(memberName);
+
+          var docsList = document.createElement('div');
+          docsList.style.marginTop = '8px';
 
           var requiredDocs = ['passport', 'omang', 'photo'];
           requiredDocs.forEach(function(docType) {
-            var submissions = (app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+            var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
             var approved = submissions.find(function(s) { return s.status === 'verified' || s.is_current; });
             var submitted = submissions.length > 0;
 
             var statusIcon = approved ? '✅ Approved' : submitted ? '📤 Submitted' : '⏳ Pending';
-            html += '<div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">' +
-              '<span>' + docType.charAt(0).toUpperCase() + docType.slice(1) + ': ' + statusIcon + '</span>';
+
+            var docRow = document.createElement('div');
+            docRow.style.marginBottom = '8px';
+            docRow.style.display = 'flex';
+            docRow.style.justifyContent = 'space-between';
+            docRow.style.alignItems = 'center';
+
+            var docLabel = document.createElement('span');
+            docLabel.textContent = docType.charAt(0).toUpperCase() + docType.slice(1) + ': ' + statusIcon;
+            docRow.appendChild(docLabel);
 
             if (!approved) {
-              html += '<button class="btn btn-small" onclick="triggerDocumentUpload(\'' + ind.individual_id + '\', \'' + docType + '\');" style="font-size: 11px; padding: 4px 8px;">Upload</button>';
+              var uploadBtn = document.createElement('button');
+              uploadBtn.className = 'btn btn-small';
+              uploadBtn.style.fontSize = '11px';
+              uploadBtn.style.padding = '4px 8px';
+              uploadBtn.textContent = 'Upload';
+              uploadBtn.onclick = (function(indId, dType) {
+                return function() { triggerDocumentUpload(indId, dType); };
+              })(ind.individual_id, docType);
+              docRow.appendChild(uploadBtn);
             }
-            html += '</div>';
+
+            docsList.appendChild(docRow);
           });
 
-          html += '</div></div>';
+          memberSection.appendChild(docsList);
+          docContent.appendChild(memberSection);
         });
       }
 
-      html += '</div></div>';
+      docCard.appendChild(docContent);
+      container.appendChild(docCard);
 
       // Confirm Documents Button
       if (app.status === 'awaiting_docs') {
-        html += '<button class="btn btn-primary" onclick="confirmDocuments(\'' + app.application_id + '\');" style="width: 100%; margin-bottom: 20px;">All Documents Uploaded</button>';
+        var confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-primary';
+        confirmBtn.style.width = '100%';
+        confirmBtn.style.marginBottom = '20px';
+        confirmBtn.textContent = 'All Documents Uploaded';
+        confirmBtn.onclick = (function(appId) {
+          return function() { confirmDocuments(appId); };
+        })(app.application_id);
+        container.appendChild(confirmBtn);
       }
 
       // Payment Section (if approved pending payment)
       if (app.status === 'approved_pending_payment') {
-        html += '<div class="card" style="margin-bottom: 20px;"><div class="card-header"><h3 class="card-title">Payment Instructions</h3></div>' +
-          '<div style="padding: 16px;">' +
-          '<p style="margin-bottom: 12px;"><strong>Membership Dues:</strong> Varies by category</p>' +
-          '<p style="margin-bottom: 12px;"><strong>Payment Methods:</strong></p>' +
-          '<ul style="margin-left: 20px; margin-bottom: 12px;">' +
-          '<li>Bank Transfer</li><li>PayPal</li><li>SDFCU</li><li>Zelle</li><li>Cash</li>' +
-          '</ul>' +
-          '<button class="btn btn-primary" onclick="submitPaymentProof(\'' + app.application_id + '\');" style="width: 100%;">Submit Payment Proof</button>' +
-          '</div></div>';
-      }
+        var paymentCard = document.createElement('div');
+        paymentCard.className = 'card';
+        paymentCard.style.marginBottom = '20px';
 
-      document.getElementById('applicantContent').innerHTML = html;
+        var paymentHeader = document.createElement('div');
+        paymentHeader.className = 'card-header';
+        var paymentTitle = document.createElement('h3');
+        paymentTitle.className = 'card-title';
+        paymentTitle.textContent = 'Payment Instructions';
+        paymentHeader.appendChild(paymentTitle);
+        paymentCard.appendChild(paymentHeader);
+
+        var paymentContent = document.createElement('div');
+        paymentContent.style.padding = '16px';
+
+        var duesP = document.createElement('p');
+        duesP.style.marginBottom = '12px';
+        var duesStrong = document.createElement('strong');
+        duesStrong.textContent = 'Membership Dues:';
+        duesP.appendChild(duesStrong);
+        duesP.appendChild(document.createTextNode(' Varies by category'));
+        paymentContent.appendChild(duesP);
+
+        var methodsP = document.createElement('p');
+        methodsP.style.marginBottom = '12px';
+        var methodsStrong = document.createElement('strong');
+        methodsStrong.textContent = 'Payment Methods:';
+        methodsP.appendChild(methodsStrong);
+        paymentContent.appendChild(methodsP);
+
+        var methodsList = document.createElement('ul');
+        methodsList.style.marginLeft = '20px';
+        methodsList.style.marginBottom = '12px';
+        var methods = ['Bank Transfer', 'PayPal', 'SDFCU', 'Zelle', 'Cash'];
+        methods.forEach(function(method) {
+          var li = document.createElement('li');
+          li.textContent = method;
+          methodsList.appendChild(li);
+        });
+        paymentContent.appendChild(methodsList);
+
+        var paymentBtn = document.createElement('button');
+        paymentBtn.className = 'btn btn-primary';
+        paymentBtn.style.width = '100%';
+        paymentBtn.textContent = 'Submit Payment Proof';
+        paymentBtn.onclick = (function(appId) {
+          return function() { submitPaymentProof(appId); };
+        })(app.application_id);
+        paymentContent.appendChild(paymentBtn);
+
+        paymentCard.appendChild(paymentContent);
+        container.appendChild(paymentCard);
+      }
 
     }).catch(function(err) {
       showError('Error loading application: ' + err.message);

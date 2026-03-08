@@ -698,6 +698,184 @@ function _sendFirstLoginWelcome(member) {
 }
 
 /**
+ * VALIDATION HELPERS (Read-Only, for Operational Verification)
+ *
+ * These helpers check the state of auth/session infrastructure without modifying data.
+ * Use these during deployment verification and troubleshooting.
+ */
+
+/**
+ * Validates that token hash migration is complete.
+ * Returns status report for deployment verification.
+ *
+ * @returns {Object} Status report with:
+ *   - tokenHashExists: {boolean}
+ *   - tokenColumnExists: {boolean}
+ *   - activeSessionCount: {number}
+ *   - newSessionCount: {number} (sessions with token_hash)
+ *   - oldSessionCount: {number} (sessions with plain-text token)
+ *   - isComplete: {boolean} (true if migration successful)
+ *
+ * USAGE: var status = validateTokenHashMigration(); Logger.log(JSON.stringify(status));
+ */
+function validateTokenHashMigration() {
+  var report = {
+    tokenHashExists: false,
+    tokenColumnExists: false,
+    activeSessionCount: 0,
+    newSessionCount: 0,
+    oldSessionCount: 0,
+    totalRows: 0,
+    isComplete: false,
+    errors: []
+  };
+
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
+      .getSheetByName(TAB_SESSIONS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var tokenHashCol = headers.indexOf("token_hash");
+    var tokenCol = headers.indexOf("token");
+    var activeCol = headers.indexOf("active");
+
+    report.tokenHashExists = tokenHashCol !== -1;
+    report.tokenColumnExists = tokenCol !== -1;
+    report.totalRows = data.length - 1;
+
+    // Count sessions by type
+    for (var i = 1; i < data.length; i++) {
+      var isActive = data[i][activeCol] === true;
+      if (isActive) report.activeSessionCount++;
+
+      if (report.tokenHashExists && report.tokenColumnExists) {
+        var hasTokenHash = data[i][tokenHashCol] && data[i][tokenHashCol] !== "";
+        var hasOldToken = data[i][tokenCol] && data[i][tokenCol] !== "";
+
+        if (isActive && hasTokenHash && !hasOldToken) {
+          report.newSessionCount++;
+        }
+        if (isActive && hasOldToken && !hasTokenHash) {
+          report.oldSessionCount++;
+        }
+      }
+    }
+
+    // Determine if complete
+    report.isComplete = report.tokenHashExists &&
+                       report.oldSessionCount === 0 &&
+                       report.activeSessionCount >= 0;
+
+  } catch (e) {
+    report.errors.push("Failed to read Sessions sheet: " + e.toString());
+  }
+
+  return report;
+}
+
+/**
+ * Checks if a new session was created with the hashed token format.
+ * Useful for quick post-login verification during testing.
+ *
+ * @param {string} email  Email to search for in Sessions
+ * @returns {Object} Session info with:
+ *   - found: {boolean}
+ *   - email: {string}
+ *   - hasTokenHash: {boolean}
+ *   - isActive: {boolean}
+ *   - createdAt: {string}
+ *   - tokenHashLength: {number} (should be 64 for SHA256 hex)
+ *
+ * USAGE: var session = checkSessionFormat("test@example.com"); Logger.log(JSON.stringify(session));
+ */
+function checkSessionFormat(email) {
+  var report = {
+    found: false,
+    email: email,
+    hasTokenHash: false,
+    isActive: false,
+    createdAt: null,
+    tokenHashLength: 0,
+    error: null
+  };
+
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
+      .getSheetByName(TAB_SESSIONS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var emailCol = headers.indexOf("email");
+    var tokenHashCol = headers.indexOf("token_hash");
+    var activeCol = headers.indexOf("active");
+    var createdCol = headers.indexOf("created_at");
+
+    // Find most recent session for this email
+    for (var i = data.length - 1; i >= 1; i--) {
+      if (data[i][emailCol] === email) {
+        report.found = true;
+        report.isActive = data[i][activeCol] === true;
+        report.createdAt = data[i][createdCol];
+
+        if (tokenHashCol !== -1 && data[i][tokenHashCol]) {
+          report.hasTokenHash = true;
+          report.tokenHashLength = data[i][tokenHashCol].toString().length;
+        }
+
+        break;
+      }
+    }
+
+  } catch (e) {
+    report.error = "Failed to check session: " + e.toString();
+  }
+
+  return report;
+}
+
+/**
+ * Summary report of auth system health.
+ * Use for monitoring and troubleshooting.
+ *
+ * @returns {Object} Health report with migration status, session counts, and recommendations
+ *
+ * USAGE: var health = getAuthHealthReport(); Logger.log(JSON.stringify(health, null, 2));
+ */
+function getAuthHealthReport() {
+  var migration = validateTokenHashMigration();
+
+  var report = {
+    timestamp: new Date().toISOString(),
+    migrationStatus: migration.isComplete ? "COMPLETE" : "INCOMPLETE",
+    sessionStats: {
+      total: migration.totalRows,
+      active: migration.activeSessionCount,
+      newFormat: migration.newSessionCount,
+      oldFormat: migration.oldSessionCount
+    },
+    schemaStatus: {
+      tokenHashColumnExists: migration.tokenHashExists,
+      tokenColumnExists: migration.tokenColumnExists
+    },
+    recommendations: []
+  };
+
+  // Generate recommendations
+  if (!migration.tokenHashExists) {
+    report.recommendations.push("❌ token_hash column missing. Run Step 1 of TOKEN_HASH_MIGRATION_RUNBOOK.");
+  }
+  if (migration.oldSessionCount > 0) {
+    report.recommendations.push("⚠️ " + migration.oldSessionCount + " active sessions with old token format. Run invalidateAllSessionsForTokenHashMigration().");
+  }
+  if (migration.isComplete) {
+    report.recommendations.push("✅ Migration complete. New logins using hashed tokens.");
+  }
+
+  return report;
+}
+
+/**
  * Returns a subset of member fields safe to send to the browser.
  * Strips sensitive fields (document numbers, payment info, etc.)
  * @param {Object} member

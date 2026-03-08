@@ -176,6 +176,22 @@ GEA Audit & Compliance Policy (BOARD)
 
 ---
 
+## Operational Runbooks
+
+**For system administrators and developers responsible for deployments:**
+
+| Document | Purpose | Audience | Status |
+|----------|---------|----------|--------|
+| [**BOARD_EMAIL_SECRET_RECOVERY.md**](operational/BOARD_EMAIL_SECRET_RECOVERY.md) | Restore board email signing capability after disaster, rebuild, or handoff. Includes prerequisites, exact steps, verification checklist, and troubleshooting. | System admin, treasurer, devops | ✅ Current |
+| [**TOKEN_HASH_MIGRATION_RUNBOOK.md**](operational/TOKEN_HASH_MIGRATION_RUNBOOK.md) | Safe deployment of session token hashing (plain-text → SHA256 hashes). Includes preflight checklist, step-by-step deployment, validation helpers, and rollback procedures. | Developers, devops | ✅ Current |
+
+**Key Points:**
+- Board email secret is **intentionally out-of-band** (not in Git/clasp) — see secret recovery guide
+- Token hash migration is **one-time deployment** — see migration runbook
+- Both runbooks include exact operator-facing steps, verification checklists, and rollback procedures
+
+---
+
 ## Status Legend
 
 | Symbol | Meaning |

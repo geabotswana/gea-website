@@ -3834,78 +3834,219 @@ function submitLogin(event) {
   }
 
   function renderMembershipCard(hh, level, exchangeRate) {
+    var container = document.getElementById('membershipCard');
+
     if (!hh) {
-      document.getElementById('membershipCard').innerHTML = '<p style="text-align: center; color: #999;">Unable to load membership data.</p>';
+      container.innerHTML = '';
+      var p = document.createElement('p');
+      p.style.textAlign = 'center';
+      p.style.color = '#999';
+      p.textContent = 'Unable to load membership data.';
+      container.appendChild(p);
       return;
     }
+
+    container.innerHTML = '';
 
     var expiryDate = hh.membership_expiration_date ? new Date(hh.membership_expiration_date) : null;
     var today = new Date();
     var daysUntilExpiry = expiryDate ? Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24)) : null;
     var expiryStatus = daysUntilExpiry === null ? '' : (daysUntilExpiry <= 0 ? ' (Expired)' : ' (' + daysUntilExpiry + ' days remaining)');
-    var expiryColor = daysUntilExpiry !== null && daysUntilExpiry < 30 ? 'color: var(--color-danger);' : 'color: var(--color-success);';
-
+    var expiryColor = daysUntilExpiry !== null && daysUntilExpiry < 30 ? 'var(--color-danger)' : 'var(--color-success)';
     var balanceClass = hh.balance_due_usd > 0 ? 'negative' : 'positive';
 
-    var html = '<div>' +
-      '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
-      '<h3 style="margin: 0; color: #333;">' + hh.household_name + '</h3>' +
-      '<div><span class="badge badge-' + (hh.active ? 'approved' : 'cancelled') + '">' + (hh.active ? 'ACTIVE' : 'INACTIVE') + '</span></div>' +
-      '</div>' +
-      (level ? '<div style="font-size: 13px; color: #666; margin-bottom: 16px;">' + level.level_name + '</div>' : '') +
-      '<div style="margin-bottom: 16px;">' +
-      '<div style="' + expiryColor + 'font-size: 14px; font-weight: 600;">' + hh.membership_expiration_date + expiryStatus + '</div>' +
-      '<div style="font-size: 12px; color: #999; margin-top: 4px;">Member since ' + hh.membership_start_date + '</div>' +
-      '</div>' +
-      '<div class="dues-grid">' +
-      '<div class="dues-row"><div class="dues-label">Annual Dues</div><div class="dues-value">$' + hh.dues_amount_usd.toFixed(2) + '</div></div>' +
-      '<div class="dues-row"><div class="dues-label">Amount Paid</div><div class="dues-value">$' + hh.dues_paid_amount_usd.toFixed(2) + '</div></div>' +
-      '<div class="dues-row"><div class="dues-label">Balance Due</div><div class="dues-value ' + balanceClass + '">$' + hh.balance_due_usd.toFixed(2) + '</div></div>' +
-      '</div>';
+    var mainDiv = document.createElement('div');
 
+    // Header with name and status
+    var headerDiv = document.createElement('div');
+    headerDiv.style.display = 'flex';
+    headerDiv.style.justifyContent = 'space-between';
+    headerDiv.style.alignItems = 'center';
+    headerDiv.style.marginBottom = '8px';
+
+    var nameHeading = document.createElement('h3');
+    nameHeading.style.margin = '0';
+    nameHeading.style.color = '#333';
+    nameHeading.textContent = hh.household_name || 'Household';
+    headerDiv.appendChild(nameHeading);
+
+    var statusDiv = document.createElement('div');
+    var statusBadge = document.createElement('span');
+    statusBadge.className = 'badge badge-' + (hh.active ? 'approved' : 'cancelled');
+    statusBadge.textContent = hh.active ? 'ACTIVE' : 'INACTIVE';
+    statusDiv.appendChild(statusBadge);
+    headerDiv.appendChild(statusDiv);
+
+    mainDiv.appendChild(headerDiv);
+
+    // Membership level
+    if (level) {
+      var levelDiv = document.createElement('div');
+      levelDiv.style.fontSize = '13px';
+      levelDiv.style.color = '#666';
+      levelDiv.style.marginBottom = '16px';
+      levelDiv.textContent = level.level_name || '';
+      mainDiv.appendChild(levelDiv);
+    }
+
+    // Expiration info
+    var expiryDiv = document.createElement('div');
+    expiryDiv.style.marginBottom = '16px';
+
+    var expiryText = document.createElement('div');
+    expiryText.style.color = 'var(' + expiryColor + ')';
+    expiryText.style.fontSize = '14px';
+    expiryText.style.fontWeight = '600';
+    expiryText.textContent = (hh.membership_expiration_date || '—') + expiryStatus;
+    expiryDiv.appendChild(expiryText);
+
+    var sinceText = document.createElement('div');
+    sinceText.style.fontSize = '12px';
+    sinceText.style.color = '#999';
+    sinceText.style.marginTop = '4px';
+    sinceText.textContent = 'Member since ' + (hh.membership_start_date || '—');
+    expiryDiv.appendChild(sinceText);
+
+    mainDiv.appendChild(expiryDiv);
+
+    // Dues grid
+    var duesGrid = document.createElement('div');
+    duesGrid.className = 'dues-grid';
+
+    var duesData = [
+      { label: 'Annual Dues', value: '$' + (hh.dues_amount_usd || 0).toFixed(2) },
+      { label: 'Amount Paid', value: '$' + (hh.dues_paid_amount_usd || 0).toFixed(2) },
+      { label: 'Balance Due', value: '$' + (hh.balance_due_usd || 0).toFixed(2), class: balanceClass }
+    ];
+
+    duesData.forEach(function(dues) {
+      var row = document.createElement('div');
+      row.className = 'dues-row';
+
+      var label = document.createElement('div');
+      label.className = 'dues-label';
+      label.textContent = dues.label;
+      row.appendChild(label);
+
+      var value = document.createElement('div');
+      value.className = 'dues-value' + (dues.class ? ' ' + dues.class : '');
+      value.textContent = dues.value;
+      row.appendChild(value);
+
+      duesGrid.appendChild(row);
+    });
+
+    mainDiv.appendChild(duesGrid);
+
+    // Sponsor information
     if (hh.sponsor_name) {
-      html += '<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0;">' +
-        '<div style="font-size: 12px; color: #999; text-transform: uppercase; font-weight: 600;">Sponsor</div>' +
-        '<div style="font-size: 14px; margin-top: 4px;">' + hh.sponsor_name +
-        (hh.sponsor_verified ? ' <span class="privilege-badge privilege-yes">✓ Verified</span>' : '') +
-        '</div></div>';
+      var sponsorDiv = document.createElement('div');
+      sponsorDiv.style.marginTop = '16px';
+      sponsorDiv.style.paddingTop = '16px';
+      sponsorDiv.style.borderTop = '1px solid #e0e0e0';
+
+      var sponsorLabel = document.createElement('div');
+      sponsorLabel.style.fontSize = '12px';
+      sponsorLabel.style.color = '#999';
+      sponsorLabel.style.textTransform = 'uppercase';
+      sponsorLabel.style.fontWeight = '600';
+      sponsorLabel.textContent = 'Sponsor';
+      sponsorDiv.appendChild(sponsorLabel);
+
+      var sponsorInfo = document.createElement('div');
+      sponsorInfo.style.fontSize = '14px';
+      sponsorInfo.style.marginTop = '4px';
+      sponsorInfo.textContent = hh.sponsor_name;
+      if (hh.sponsor_verified) {
+        var verifiedBadge = document.createElement('span');
+        verifiedBadge.className = 'privilege-badge privilege-yes';
+        verifiedBadge.textContent = ' ✓ Verified';
+        sponsorInfo.appendChild(verifiedBadge);
+      }
+      sponsorDiv.appendChild(sponsorInfo);
+
+      mainDiv.appendChild(sponsorDiv);
     }
 
     // Contact Information
     if (hh.address_street || hh.phone_primary) {
-      html += '<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0;">' +
-        '<div style="font-size: 12px; color: #999; text-transform: uppercase; font-weight: 600;">Contact Information</div>';
+      var contactDiv = document.createElement('div');
+      contactDiv.style.marginTop = '16px';
+      contactDiv.style.paddingTop = '16px';
+      contactDiv.style.borderTop = '1px solid #e0e0e0';
 
+      var contactLabel = document.createElement('div');
+      contactLabel.style.fontSize = '12px';
+      contactLabel.style.color = '#999';
+      contactLabel.style.textTransform = 'uppercase';
+      contactLabel.style.fontWeight = '600';
+      contactLabel.textContent = 'Contact Information';
+      contactDiv.appendChild(contactLabel);
+
+      // Address
       if (hh.address_street || hh.address_city || hh.address_country) {
-        html += '<div style="font-size: 13px; margin-top: 8px; line-height: 1.5;">' +
-          (hh.address_street ? hh.address_street + '<br/>' : '') +
-          (hh.address_city ? hh.address_city + ', ' : '') +
-          (hh.address_country ? hh.address_country : '') +
-          '</div>';
+        var addressDiv = document.createElement('div');
+        addressDiv.style.fontSize = '13px';
+        addressDiv.style.marginTop = '8px';
+        addressDiv.style.lineHeight = '1.5';
+        var addressText = (hh.address_street ? hh.address_street + ', ' : '') +
+                         (hh.address_city ? hh.address_city + ', ' : '') +
+                         (hh.address_country ? hh.address_country : '');
+        addressDiv.textContent = addressText || '—';
+        contactDiv.appendChild(addressDiv);
       }
 
+      // Phone
       if (hh.phone_primary) {
+        var phoneDiv = document.createElement('div');
+        phoneDiv.style.fontSize = '13px';
+        phoneDiv.style.marginTop = '8px';
         var phoneDisplay = (hh.country_code_primary ? hh.country_code_primary + ' ' : '') + hh.phone_primary;
-        html += '<div style="font-size: 13px; margin-top: 8px;">' + phoneDisplay +
-          (hh.phone_primary_whatsapp ? ' <span style="font-size: 11px; color: #25D366; font-weight: 600;">WhatsApp</span>' : '') +
-          '</div>';
+        phoneDiv.textContent = phoneDisplay;
+        if (hh.phone_primary_whatsapp) {
+          var waSpan = document.createElement('span');
+          waSpan.style.fontSize = '11px';
+          waSpan.style.color = '#25D366';
+          waSpan.style.fontWeight = '600';
+          waSpan.textContent = ' WhatsApp';
+          phoneDiv.appendChild(waSpan);
+        }
+        contactDiv.appendChild(phoneDiv);
       } else {
-        html += '<div style="font-size: 13px; margin-top: 8px; color: #999; font-style: italic;">no phone provided</div>';
+        var noPhoneDiv = document.createElement('div');
+        noPhoneDiv.style.fontSize = '13px';
+        noPhoneDiv.style.marginTop = '8px';
+        noPhoneDiv.style.color = '#999';
+        noPhoneDiv.style.fontStyle = 'italic';
+        noPhoneDiv.textContent = 'no phone provided';
+        contactDiv.appendChild(noPhoneDiv);
       }
 
-      html += '</div>';
+      mainDiv.appendChild(contactDiv);
     }
 
-    html += '<div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">';
+    // Privileges
+    var privilegesDiv = document.createElement('div');
+    privilegesDiv.style.marginTop = '16px';
+    privilegesDiv.style.display = 'flex';
+    privilegesDiv.style.gap = '8px';
+    privilegesDiv.style.flexWrap = 'wrap';
+
     if (level) {
-      html += '<span class="privilege-badge ' + (level.voting_rights ? 'privilege-yes' : 'privilege-no') + '">' +
-        (level.voting_rights ? '✓' : '✗') + ' Voting Rights</span>';
-      html += '<span class="privilege-badge ' + (level.office_eligible ? 'privilege-yes' : 'privilege-no') + '">' +
-        (level.office_eligible ? '✓' : '✗') + ' Office Eligible</span>';
-    }
-    html += '</div></div>';
+      var votingBadge = document.createElement('span');
+      votingBadge.className = 'privilege-badge ' + (level.voting_rights ? 'privilege-yes' : 'privilege-no');
+      votingBadge.textContent = (level.voting_rights ? '✓' : '✗') + ' Voting Rights';
+      privilegesDiv.appendChild(votingBadge);
 
-    document.getElementById('membershipCard').innerHTML = html;
+      var officeBadge = document.createElement('span');
+      officeBadge.className = 'privilege-badge ' + (level.office_eligible ? 'privilege-yes' : 'privilege-no');
+      officeBadge.textContent = (level.office_eligible ? '✓' : '✗') + ' Office Eligible';
+      privilegesDiv.appendChild(officeBadge);
+    }
+
+    mainDiv.appendChild(privilegesDiv);
+
+    container.appendChild(mainDiv);
   }
 
   function renderHouseholdMembers(members) {
@@ -4077,38 +4218,118 @@ function submitLogin(event) {
   }
 
   function renderQuotas(quotas) {
-    var html = '<div>' +
-      '<div style="margin-bottom: 24px;">' +
-      '<h4 style="margin: 0 0 8px 0; color: #333;">Tennis Court — This Week</h4>' +
-      '<div style="display: flex; align-items: center; gap: 12px;">' +
-      '<div style="flex: 1;">';
+    var container = document.getElementById('facilityQuotas');
+    container.innerHTML = '';
+
+    var mainDiv = document.createElement('div');
+
+    // Tennis section
+    var tennisDiv = document.createElement('div');
+    tennisDiv.style.marginBottom = '24px';
+
+    var tennisHeading = document.createElement('h4');
+    tennisHeading.style.margin = '0 0 8px 0';
+    tennisHeading.style.color = '#333';
+    tennisHeading.textContent = 'Tennis Court — This Week';
+    tennisDiv.appendChild(tennisHeading);
 
     var tennisPct = (quotas.tennis.hours_used / quotas.tennis.hours_limit) * 100;
     var tennisClass = tennisPct >= 80 ? 'warning' : '';
-    html += '<div class="quota-bar-container"><div class="quota-bar-fill ' + tennisClass + '" style="width: ' + Math.min(100, tennisPct) + '%;"></div></div>' +
-      '<div class="quota-info">' + quotas.tennis.hours_used.toFixed(1) + ' of ' + quotas.tennis.hours_limit + ' hours used</div>' +
-      '</div></div></div>';
 
-    html += '<div style="margin-bottom: 24px;">' +
-      '<h4 style="margin: 0 0 8px 0; color: #333;">Leobo Lodge — This Month</h4>' +
-      '<div style="margin-bottom: 12px;">' +
-      '<div style="font-size: 12px; color: #666; margin-bottom: 4px;">Bookings</div>';
+    var tennisFlexDiv = document.createElement('div');
+    tennisFlexDiv.style.display = 'flex';
+    tennisFlexDiv.style.alignItems = 'center';
+    tennisFlexDiv.style.gap = '12px';
+
+    var tennisBarWrapper = document.createElement('div');
+    tennisBarWrapper.style.flex = '1';
+
+    var tennisBar = document.createElement('div');
+    tennisBar.className = 'quota-bar-container';
+    var tennisFill = document.createElement('div');
+    tennisFill.className = 'quota-bar-fill ' + tennisClass;
+    tennisFill.style.width = Math.min(100, tennisPct) + '%';
+    tennisBar.appendChild(tennisFill);
+    tennisBarWrapper.appendChild(tennisBar);
+
+    var tennisInfo = document.createElement('div');
+    tennisInfo.className = 'quota-info';
+    tennisInfo.textContent = quotas.tennis.hours_used.toFixed(1) + ' of ' + quotas.tennis.hours_limit + ' hours used';
+    tennisBarWrapper.appendChild(tennisInfo);
+
+    tennisFlexDiv.appendChild(tennisBarWrapper);
+    tennisDiv.appendChild(tennisFlexDiv);
+    mainDiv.appendChild(tennisDiv);
+
+    // Leobo section
+    var leoboDiv = document.createElement('div');
+    leoboDiv.style.marginBottom = '24px';
+
+    var leoboHeading = document.createElement('h4');
+    leoboHeading.style.margin = '0 0 8px 0';
+    leoboHeading.style.color = '#333';
+    leoboHeading.textContent = 'Leobo Lodge — This Month';
+    leoboDiv.appendChild(leoboHeading);
+
+    // Bookings
+    var bookingsDiv = document.createElement('div');
+    bookingsDiv.style.marginBottom = '12px';
+
+    var bookingsLabel = document.createElement('div');
+    bookingsLabel.style.fontSize = '12px';
+    bookingsLabel.style.color = '#666';
+    bookingsLabel.style.marginBottom = '4px';
+    bookingsLabel.textContent = 'Bookings';
+    bookingsDiv.appendChild(bookingsLabel);
 
     var leoboPct = (quotas.leobo.count_used / quotas.leobo.count_limit) * 100;
     var leoboClass = leoboPct >= 80 ? 'warning' : '';
-    html += '<div class="quota-bar-container"><div class="quota-bar-fill ' + leoboClass + '" style="width: ' + Math.min(100, leoboPct) + '%;"></div></div>' +
-      '<div class="quota-info">' + quotas.leobo.count_used + ' of ' + quotas.leobo.count_limit + ' booking(s) used</div>' +
-      '</div>' +
-      '<div>' +
-      '<div style="font-size: 12px; color: #666; margin-bottom: 4px;">Hours</div>';
+
+    var leoboBar = document.createElement('div');
+    leoboBar.className = 'quota-bar-container';
+    var leoboFill = document.createElement('div');
+    leoboFill.className = 'quota-bar-fill ' + leoboClass;
+    leoboFill.style.width = Math.min(100, leoboPct) + '%';
+    leoboBar.appendChild(leoboFill);
+    bookingsDiv.appendChild(leoboBar);
+
+    var leoboInfo = document.createElement('div');
+    leoboInfo.className = 'quota-info';
+    leoboInfo.textContent = quotas.leobo.count_used + ' of ' + quotas.leobo.count_limit + ' booking(s) used';
+    bookingsDiv.appendChild(leoboInfo);
+
+    leoboDiv.appendChild(bookingsDiv);
+
+    // Hours
+    var hoursDiv = document.createElement('div');
+
+    var hoursLabel = document.createElement('div');
+    hoursLabel.style.fontSize = '12px';
+    hoursLabel.style.color = '#666';
+    hoursLabel.style.marginBottom = '4px';
+    hoursLabel.textContent = 'Hours';
+    hoursDiv.appendChild(hoursLabel);
 
     var leoboHoursPct = (quotas.leobo.hours_used / quotas.leobo.hours_limit) * 100;
     var leoboHoursClass = leoboHoursPct >= 80 ? 'warning' : '';
-    html += '<div class="quota-bar-container"><div class="quota-bar-fill ' + leoboHoursClass + '" style="width: ' + Math.min(100, leoboHoursPct) + '%;"></div></div>' +
-      '<div class="quota-info">' + quotas.leobo.hours_used.toFixed(1) + ' of ' + quotas.leobo.hours_limit + ' hours used</div>' +
-      '</div></div></div>';
 
-    document.getElementById('facilityQuotas').innerHTML = html;
+    var leoboHoursBar = document.createElement('div');
+    leoboHoursBar.className = 'quota-bar-container';
+    var leoboHoursFill = document.createElement('div');
+    leoboHoursFill.className = 'quota-bar-fill ' + leoboHoursClass;
+    leoboHoursFill.style.width = Math.min(100, leoboHoursPct) + '%';
+    leoboHoursBar.appendChild(leoboHoursFill);
+    hoursDiv.appendChild(leoboHoursBar);
+
+    var leoboHoursInfo = document.createElement('div');
+    leoboHoursInfo.className = 'quota-info';
+    leoboHoursInfo.textContent = quotas.leobo.hours_used.toFixed(1) + ' of ' + quotas.leobo.hours_limit + ' hours used';
+    hoursDiv.appendChild(leoboHoursInfo);
+
+    leoboDiv.appendChild(hoursDiv);
+    mainDiv.appendChild(leoboDiv);
+
+    container.appendChild(mainDiv);
   }
 
   /**

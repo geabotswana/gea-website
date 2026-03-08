@@ -76,8 +76,10 @@ Response JSON → Browser → Update UI
 **Session Management:**
 - One session per user (new login invalidates previous)
 - 24-hour timeout (sliding window)
-- Stored in Sessions tab with SHA256 hashed token
+- Stored in Sessions tab with plain-text token (not hashed)
+- Direct string comparison for token validation
 - Nightly purge of expired sessions via `purgeExpiredSessions()`
+- ⚠️ **Security Note:** Session tokens and passwords use simple equality checks (not constant-time). For production use, consider implementing cryptographic comparisons.
 
 **Role-Based Access Control (RBAC):**
 ```javascript
@@ -189,7 +191,7 @@ container.appendChild(div);
 - logout(token) → session termination
 - requireAuth(token, role?) → permission check (used by all protected routes)
 - validateSession(token) → lookup & verify token still valid
-- Password hashing: SHA256 with constant-time comparison
+- Password validation: SHA256 hash comparison (simple equality, see security notes below)
 
 **MemberService.js** (622 lines)
 - Member CRUD: getMemberByEmail(), getMemberById(), updateMember(), createMember()

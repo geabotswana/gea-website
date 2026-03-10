@@ -53,10 +53,12 @@ function testFullLogin() {
  * This is the primary lookup used by the login/auth flow.
  *
  * @param {string} email
+ * @param {boolean=} includeInactive If true, includes inactive records (used for applicant login/application flow)
  * @returns {Object|null}  All individual fields as named object, or null
  */
-function getMemberByEmail(email) {
+function getMemberByEmail(email, includeInactive) {
   if (!email) return null;
+  includeInactive = includeInactive === true;
   try {
     var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
                   .getSheetByName(TAB_INDIVIDUALS);
@@ -77,7 +79,7 @@ function getMemberByEmail(email) {
         Logger.log("DEBUG: Row " + i + " - email: '" + rowEmail + "', active: " + rowActive);
       }
       
-      if (rowEmail === target && rowActive === true) {
+      if (rowEmail === target && (includeInactive || rowActive === true)) {
         Logger.log("DEBUG: Found matching member at row " + i);
         return rowToObject(headers, data[i]);
       }

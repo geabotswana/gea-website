@@ -72,12 +72,14 @@ function getMemberByEmail(email) {
     for (var i = 1; i < data.length; i++) {
       var rowEmail = String(data[i][emailCol] || "").toLowerCase().trim();
       var rowActive = data[i][activeCol];
-      
+
       if (i <= 5) {  // Log first few rows for debugging
         Logger.log("DEBUG: Row " + i + " - email: '" + rowEmail + "', active: " + rowActive);
       }
-      
-      if (rowEmail === target && rowActive === true) {
+
+      // Return member if email matches (regardless of active status)
+      // AuthService.login() handles applicants (active=false) separately
+      if (rowEmail === target) {
         Logger.log("DEBUG: Found matching member at row " + i);
         return rowToObject(headers, data[i]);
       }

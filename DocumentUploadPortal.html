@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GEA Documents & Photos</title>
+    <style>
+      :root {
+        --blue: #0A3161;
+        --red: #B31942;
+        --bg: #f7f8fb;
+        --ok: #2E7D32;
+        --warn: #E65100;
+      }
+      body { margin:0; font-family: Arial, sans-serif; background: var(--bg); color:#1d2730; }
+      .top { background: var(--blue); color:#fff; padding: 14px 18px; display:flex; justify-content:space-between; align-items:center; }
+      .wrap { max-width: 980px; margin: 18px auto; padding: 0 14px 40px; }
+      .card { background:#fff; border:1px solid #e2e6ef; border-radius:10px; padding:14px; margin-bottom:12px; }
+      .row { display:flex; gap:10px; flex-wrap:wrap; }
+      select, input, button, textarea { font:inherit; padding:10px; border:1px solid #cfd6e1; border-radius:8px; }
+      button { background:var(--blue); color:#fff; cursor:pointer; }
+      button.secondary { background:#fff; color:var(--blue); border-color:var(--blue); }
+      .tabs { display:flex; gap:8px; flex-wrap:wrap; }
+      .tab { background:#fff; color:var(--blue); border:1px solid var(--blue); }
+      .tab.active { background:var(--blue); color:#fff; }
+      .status-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:8px; }
+      .pill { display:inline-block; padding:2px 8px; border-radius:99px; font-size:12px; background:#eef2f9; }
+      .ok { color:var(--ok); }
+      .warn { color:var(--warn); }
+      #dropZone { border:2px dashed #b9c5d7; border-radius:8px; padding:18px; text-align:center; }
+      #message { min-height:20px; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid #edf1f7; padding:8px; text-align:left; font-size:14px; }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <strong>GEA Documents & Photos</strong>
+      <button class="secondary" id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="wrap">
+      <div class="card row">
+        <input id="token" placeholder="Session token" style="flex:1; min-width:220px;" />
+        <input id="individualId" placeholder="Individual ID (IND-...)" style="flex:1; min-width:220px;" />
+        <button id="loadStatusBtn">Load Status</button>
+      </div>
+
+      <div class="card">
+        <div class="tabs" id="docTabs"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Status Dashboard</h3>
+        <div class="status-grid" id="statusGrid"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Upload File</h3>
+        <div id="dropZone">Drop file here or use picker below.</div>
+        <div class="row" style="margin-top:10px">
+          <input type="file" id="fileInput" accept="image/*,.pdf" capture="environment" />
+          <input id="fileName" placeholder="Custom file name (optional)" style="flex:1" />
+          <button id="uploadBtn">Upload</button>
+        </div>
+        <div id="preview" class="row" style="margin-top:10px"></div>
+        <div id="message"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Submission History</h3>
+        <table>
+          <thead>
+            <tr><th>Submission ID</th><th>Type</th><th>Status</th><th>Date</th><th>Reason</th></tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      var activeDocType = 'photo';
+      var pendingFile = null;
+      var docTypes = ['photo', 'passport', 'omang', 'employment'];
+
+      function setMessage(text, isError) {
+        var el = document.getElementById('message');
+        el.textContent = text || '';
+        el.className = isError ? 'warn' : 'ok';
+      }
+
+      function renderTabs() {
+        var tabs = document.getElementById('docTabs');
+        tabs.textContent = '';
+        docTypes.forEach(function(type) {
+          var btn = document.createElement('button');
+          btn.className = 'tab' + (type === activeDocType ? ' active' : '');
+          btn.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+          btn.onclick = function() { activeDocType = type; renderTabs(); };
+          tabs.appendChild(btn);
+        });
+      }
+
+      function api(action, params, onSuccess, onError) {
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(function(err) { onError(err && err.message ? err.message : 'Unknown error'); })
+          .handlePortalApi(action, params);
+      }
+
+      function loadStatus() {
+        var token = document.getElementById('token').value.trim();
+        var individualId = document.getElementById('individualId').value.trim();
+        if (!token || !individualId) return setMessage('Token and Individual ID are required.', true);
+
+        api('get_file_status', { token: token, individual_id: individualId }, function(res) {
+          if (!res.success) return setMessage(res.message, true);
+          var d = res.data || {};
+          renderStatus(d);
+          loadHistory(token, individualId);
+          setMessage('Status loaded.', false);
+        }, function(err) { setMessage(err, true); });
+      }
+
+      function renderStatus(data) {
+        var grid = document.getElementById('statusGrid');
+        grid.textContent = '';
+        docTypes.forEach(function(type) {
+          var card = document.createElement('div');
+          card.className = 'card';
+          var info = data[type] || { status: 'none' };
+          var title = document.createElement('div');
+          title.textContent = type.toUpperCase();
+          var status = document.createElement('div');
+          status.innerHTML = '<span class="pill">' + String(info.status || 'none') + '</span>';
+          var meta = document.createElement('div');
+          meta.textContent = info.submission_id || 'No submission';
+          card.appendChild(title); card.appendChild(status); card.appendChild(meta);
+          grid.appendChild(card);
+        });
+      }
+
+      function loadHistory(token, individualId) {
+        api('get_submission_history', { token: token, individual_id: individualId }, function(res) {
+          if (!res.success) return;
+          var tbody = document.getElementById('historyBody');
+          tbody.textContent = '';
+          var list = (res.data && res.data.history) || [];
+          list.forEach(function(item) {
+            var tr = document.createElement('tr');
+            ['submission_id', 'document_type', 'status', 'submitted_date', 'member_facing_rejection_reason'].forEach(function(k) {
+              var td = document.createElement('td');
+              td.textContent = item[k] || '';
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+        }, function() {});
+      }
+
+      function upload() {
+        var token = document.getElementById('token').value.trim();
+        var individualId = document.getElementById('individualId').value.trim();
+        if (!token || !individualId) return setMessage('Token and Individual ID are required.', true);
+        if (!pendingFile) return setMessage('Please choose a file.', true);
+
+        var sizeMb = pendingFile.size / (1024 * 1024);
+        if (activeDocType === 'photo' && sizeMb > 5) return setMessage('Photo must be 5 MB or less.', true);
+        if (activeDocType !== 'photo' && sizeMb > 10) return setMessage('Document must be 10 MB or less.', true);
+
+        var reader = new FileReader();
+        reader.onload = function() {
+          var base64 = String(reader.result).split(',')[1] || '';
+          api('upload_file', {
+            token: token,
+            individual_id: individualId,
+            document_type: activeDocType,
+            file_data_base64: base64,
+            file_name: document.getElementById('fileName').value.trim() || pendingFile.name,
+            file_size_bytes: pendingFile.size,
+            file_content_type: pendingFile.type,
+            upload_device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+          }, function(res) {
+            if (!res.success) return setMessage(res.message, true);
+            setMessage('Upload complete: ' + ((res.data && res.data.submission_id) || ''), false);
+            loadStatus();
+          }, function(err) { setMessage(err, true); });
+        };
+        reader.readAsDataURL(pendingFile);
+      }
+
+      function showPreview(file) {
+        var preview = document.getElementById('preview');
+        preview.textContent = '';
+        var info = document.createElement('div');
+        info.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+        preview.appendChild(info);
+
+        if (file.type.indexOf('image/') === 0) {
+          var img = document.createElement('img');
+          img.style.maxWidth = '220px';
+          img.style.maxHeight = '220px';
+          img.onload = function() { URL.revokeObjectURL(img.src); };
+          img.src = URL.createObjectURL(file);
+          preview.appendChild(img);
+        }
+      }
+
+      document.getElementById('fileInput').addEventListener('change', function(ev) {
+        pendingFile = ev.target.files && ev.target.files[0] ? ev.target.files[0] : null;
+        if (pendingFile) showPreview(pendingFile);
+      });
+      document.getElementById('uploadBtn').addEventListener('click', upload);
+      document.getElementById('loadStatusBtn').addEventListener('click', loadStatus);
+      document.getElementById('logoutBtn').addEventListener('click', function() {
+        var token = document.getElementById('token').value.trim();
+        if (!token) return;
+        api('logout', { token: token }, function() { setMessage('Logged out.', false); }, function(err) { setMessage(err, true); });
+      });
+
+      (function initDnD() {
+        var zone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(function(evtName) {
+          zone.addEventListener(evtName, function(e) { e.preventDefault(); zone.style.borderColor = '#0A3161'; });
+        });
+        ['dragleave', 'drop'].forEach(function(evtName) {
+          zone.addEventListener(evtName, function(e) { e.preventDefault(); zone.style.borderColor = '#b9c5d7'; });
+        });
+        zone.addEventListener('drop', function(e) {
+          var file = e.dataTransfer.files && e.dataTransfer.files[0];
+          if (!file) return;
+          pendingFile = file;
+          showPreview(file);
+        });
+      })();
+
+      renderTabs();
+    </script>
+  </body>
+</html>

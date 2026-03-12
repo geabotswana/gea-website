@@ -86,6 +86,38 @@ function sendHolidayCalReminder() {
   });
 }
 
+/**
+ * FUNCTION: nightly_checkDocumentExpirations
+ * PURPOSE: Send warnings for documents expiring within 6 months.
+ * SCHEDULED: 3:00 AM GMT+2 daily.
+ */
+function nightly_checkDocumentExpirations() {
+  try {
+    var result = checkDocumentExpirationWarnings();
+    Logger.log("Document expiration warnings sent: " + result.warnings_sent);
+  } catch (e) {
+    Logger.log("ERROR nightly_checkDocumentExpirations: " + e);
+    logAuditEntry("system", "SYSTEM_ERROR", "nightly_task", "document_expirations",
+                  "Document expiration check failed: " + e);
+  }
+}
+
+/**
+ * FUNCTION: nightly_cleanupExpiredRsoLinks
+ * PURPOSE: Mark expired RSO approval links as unusable.
+ * SCHEDULED: 3:15 AM GMT+2 daily.
+ */
+function nightly_cleanupExpiredRsoLinks() {
+  try {
+    var result = deleteExpiredRsoLinks();
+    Logger.log("Expired RSO links cleaned up: " + result.expired_count);
+  } catch (e) {
+    Logger.log("ERROR nightly_cleanupExpiredRsoLinks: " + e);
+    logAuditEntry("system", "SYSTEM_ERROR", "nightly_task", "rso_link_cleanup",
+                  "RSO link cleanup failed: " + e);
+  }
+}
+
 
 // ============================================================
 // HOUSEHOLD PHONE SYNC

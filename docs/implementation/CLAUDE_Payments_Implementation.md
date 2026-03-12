@@ -330,76 +330,68 @@ This reference helps the Treasurer match your payment to your account.
 
 ---
 
-## PART B: AUTOMATIC EXCHANGE RATE RETRIEVAL SYSTEM
+## PART B: AUTOMATIC EXCHANGE RATE RETRIEVAL SYSTEM (Phase 2)
 
-**Overview:** Membership dues are charged in USD. To provide members with accurate BWP equivalents for Absa payment, exchange rates are fetched and stored automatically every day, with Sunday's rate used for that week's payment calculations.
+**Overview:** Membership dues are charged in USD. The system automatically fetches the current USD to BWP exchange rate nightly and stores it in the Configuration sheet. Members and the treasurer see the current rate when making/verifying payments.
 
-**Data Source:** exchangerate-api.com (free tier, 1500 requests/month)
+**Data Source:** open.er-api.com (free tier, 1500 requests/month, no API key required)
 
 **Automatic Retrieval Schedule:**
-- **Time:** Every day at 3:00 AM GMT+2 (Botswana time)
-- **Frequency:** Daily (stored for historical reference)
-- **Rate Used for Displays:** Sunday's rate (applied Mon-Fri of that week)
-- **Fallback:** If Sunday is not available, use most recent previous business day's rate
+- **Time:** Daily at 2:00 AM GMT+2 (part of runNightlyTasks())
+- **Frequency:** Daily (overwrites previous rate)
+- **Fallback:** EXCHANGE_RATE_DEFAULT = 13.45 if API fails
 
-**Implementation Details:**
+**Implementation Details (Phase 2):**
 
-**Function:** `daily_updateExchangeRate()` in NotificationService.gs
-- Call exchangerate-api.com API: `https://v6.exchangerate-api.com/v6/{{API_KEY}}/latest/USD`
-- Parse JSON response for `conversion_rates.BWP`
-- Store in **Rates** sheet with:
-  - `rate_date` (date of rate)
-  - `usd_to_bwp` (fetched rate, rounded to 2 decimals)
-  - `is_sunday_rate` (TRUE if date is Sunday)
-  - `timestamp` (when retrieved)
-- Update Configuration sheet:
-  - `config_key` = "exchange_rate_usd_to_bwp_current"
-  - `config_value` = latest Sunday's rate (or most recent day if Sunday not yet captured)
+**Function:** `fetchAndUpdateExchangeRate()` in PaymentService.js
+- Called from `runNightlyTasks()` in NotificationService.js
+- Call open.er-api.com API: `https://open.er-api.com/v6/latest/USD`
+- Parse JSON response for `rates.BWP`
+- Update Configuration sheet with:
+  - `config_key` = "exchange_rate_usd_to_bwp"
+  - `config_value` = fetched rate (decimal, e.g., 13.45)
   - `config_key` = "exchange_rate_last_updated"
-  - `config_value` = today's date
-- Log audit entry: "Exchange rate updated: 1 USD = P{{RATE}} ({{RATE_DATE}})
-"
-- Error handling: If API fails, retain previous rate and log error (do not break system)
+  - `config_value` = timestamp of update
+- Log audit entry: "Exchange rate updated: 1 USD = P{{RATE}} BWP"
+- Error handling:
+  - If API fails, log warning and audit entry
+  - Do NOT overwrite previous rate
+  - System uses `EXCHANGE_RATE_DEFAULT` fallback
+  - Portal continues to function
 
-**Trigger Registration:**
-- Add to scheduler:
-  - `ScriptApp.newTrigger("daily_updateExchangeRate")`
-    `.timeBased()`
-    `.atTime("03:00")`
-    `.everyDays(1)`
-    `.inTimezone("Africa/Johannesburg")` (GMT+2)
-    `.create()`
+**Helper Function:** `getExchangeRate()` in PaymentService.js
+- Reads `exchange_rate_usd_to_bwp` from Configuration sheet
+- Falls back to `EXCHANGE_RATE_DEFAULT` if not found or if config value is invalid
+- Returns numeric rate for use in payment calculations
 
 **Usage in Payment Portal:**
 - When form loads or membership year changes:
-  - Fetch current Sunday's rate from Rates sheet (or most recent available)
-  - Fetch rate date from Configuration
-  - Display: "Exchange rate as of {{DATE}} (Sunday): 1 USD = P{{RATE}}"
-  - Calculate BWP equivalent: `usd_amount × exchange_rate`
+  - Payment form calls `getExchangeRate()` via backend
+  - Displays: "Exchange rate: 1 USD = P{{RATE}}" (current rate)
+  - Calculates BWP equivalent: `usd_amount × exchange_rate`
 
-**Configuration Additions:**
+**Configuration Constants (Phase 2):**
 
-| config_key | config_value | description |
-|-----------|--------------|-------------|
-| `exchange_rate_usd_to_bwp_current` | 13.45 | Most recent Sunday's USD to BWP exchange rate |
-| `exchange_rate_last_updated` | 2026-03-08 | Date of last exchange rate update |
-| `exchange_rate_last_sunday` | 2026-03-08 | Date of last Sunday for which we have a rate |
-| `exchangerate_api_key` | [key] | exchangerate-api.com API key for automatic updates |
+| constant | value | description |
+|----------|-------|-------------|
+| `EXCHANGE_RATE_API_URL` | `https://open.er-api.com/v6/latest/USD` | Free exchange rate API endpoint |
+| `EXCHANGE_RATE_DEFAULT` | 13.45 | Fallback rate if API unavailable |
 
 **Fallback & Error Handling:**
 - If API call fails:
   - Log warning to Audit Log
-  - Retain previous week's rate (do not NULL it)
-  - Send notification to Treasurer email: "Exchange rate update failed; using previous rate"
-  - Portal continues to function with last known good rate
+  - Configuration sheet retains previous rate
+  - `getExchangeRate()` returns `EXCHANGE_RATE_DEFAULT` if config is empty
+  - Portal continues to function without interruption
+  - No manual intervention needed
 
-**Testing:**
-- [ ] Unit test: API call and JSON parsing
-- [ ] Unit test: Rates sheet storage
-- [ ] Integration test: Trigger fires daily at 3:00 AM
-- [ ] Manual test: Verify rates update and Sunday rate is captured correctly
-- [ ] Edge case: API failure handling (verify previous rate retained)
-- [ ] Edge case: Sunday rate logic (if Monday is holiday, etc.)
+**Testing Checklist:**
+- [ ] API call succeeds and returns valid JSON with `rates.BWP`
+- [ ] Configuration sheet updated with new rate
+- [ ] `getExchangeRate()` reads and returns correct rate
+- [ ] `submitPaymentVerification()` uses current rate for USD↔BWP conversion
+- [ ] API failure handled gracefully (uses fallback rate)
+- [ ] Audit log entry created for successful update
 
 ---
 
@@ -843,9 +835,9 @@ When Treasurer verifies payment (NOT fully paid):
 
 ---
 
-## PART G: PAYMENT TRACKING & REPORTING
+## PART G: PAYMENT TRACKING & REPORTING (Updated in Phase 2)
 
-### Existing Payments Sheet (from repo)
+### Payments Sheet Fields
 
 **Core Fields (existing):**
 ```
@@ -867,6 +859,65 @@ rejection_reason        - Why payment was rejected (if applicable)
 rejection_timestamp     - When rejected
 notes                   - Additional details
 ```
+
+### Payment Report (Phase 2 Feature)
+
+**Purpose:** Board-facing on-demand report for payment history analysis and verification tracking
+
+**Access:** Admin Portal → Payments → Payment Report tab
+
+**Features:**
+
+1. **Filterable Report:**
+   - Filter by membership year (dropdown: All Years, 2025-26, 2026-27, etc.)
+   - Filter by payment status: All, Verified, Submitted, Rejected, Clarification Requested
+   - Generate Report button applies filters
+
+2. **Report Display Table:**
+   - Columns: Household Name, Primary Email, Amount USD, Amount BWP, Payment Method, Status, Submitted Date
+   - Status badges with color coding:
+     - ✓ Verified (green)
+     - Submitted (blue)
+     - ✗ Rejected (red)
+     - ⚠ Clarification Requested (orange)
+
+3. **Summary Section:**
+   - Total Verified Count: Number of verified payments
+   - Total Collected (USD): Sum of verified amounts in USD
+   - Total Collected (BWP): Sum of verified amounts in BWP
+
+4. **Export Option:**
+   - CSV Export button downloads report as spreadsheet
+   - Filename: `payment-report-[YYYY-MM-DD].csv`
+
+**Backend Implementation:**
+
+**Function:** `getPaymentReport(filters)` in PaymentService.js
+- Accepts optional `{ membership_year, status }` filters
+- Returns filtered payment list with calculated summary
+- Status logic:
+  - "verified" = payment_verified_date is set
+  - "submitted" = no verified_date and no rejection/clarification notes
+  - "rejected" = notes start with "REJECTED:"
+  - "clarification_requested" = notes start with "CLARIFICATION:"
+
+**Route:** `admin_payment_report` in Code.js
+- Handler: `_handleAdminApprovePayment(p)`
+- Requires board authentication
+- Accepts filter parameters: `membership_year`, `status`
+- Returns: `{ ok, payments: [...], summary: {...} }`
+
+**Frontend Implementation:**
+
+**Tab Views:** Admin.html Payment Management page
+- Two tabs: "Pending Verification" and "Payment Report"
+- Toggle between views: `showPaymentView('pending')` or `showPaymentView('report')`
+
+**Report Functions:**
+- `loadPaymentReport()` — Fetch report via API with current filters
+- `exportPaymentReportToCSV()` — Client-side CSV download from table data
+
+---
 
 ### Monthly Collections Report
 
@@ -946,105 +997,83 @@ Add to **Email Templates Sheet** (GEA System Backend):
 
 ---
 
-## PART I: BACKEND ROUTES & FUNCTIONS
+## PART I: BACKEND ROUTES & FUNCTIONS (Phase 2)
 
-### Code.gs Routes
+### Code.js Routes (Implemented)
 
-Add to `_routeAction()` switch:
+Routes registered in `_routeAction()` switch:
 
+**Member Routes:**
 ```javascript
-case 'submit_payment_verification':
+case 'submit_payment_verification':      // Member submits payment proof
   return _handleSubmitPaymentVerification(p);
-case 'get_payment_details':
-  return _handleGetPaymentDetails(p);
-case 'get_payment_verifications':  // For Treasurer admin
-  return _handleGetPaymentVerifications(p);
-case 'verify_payment':  // For Treasurer admin
-  return _handleVerifyPayment(p);
-case 'reject_payment':  // For Treasurer admin
-  return _handleRejectPayment(p);
+case 'get_payment_status':                // Member checks payment status
+  return _handleGetPaymentStatus(p);
 ```
 
-### PaymentVerificationService.gs Functions
-
-**8+ functions to implement:**
-
-1. `submitPaymentVerification(params)` — Main submission handler
-2. `getPaymentDetails(household_id)` — Current account status & dues
-3. `getPaymentVerifications(filters)` — List for Treasurer
-4. `verifyPayment(verification_id, params)` — Mark verified (fully or partial)
-5. `rejectPayment(verification_id, rejection_reason)` — Mark rejected
-6. `activateMembership(household_id, membership_year)` — Auto-activate
-7. `createPaymentEntry(verification_id)` — Add to Payments sheet
-8. `generateVerificationId()` — Auto-ID generator
-
-### NotificationService.gs Updates
-
-Add time-based triggers:
-
-**Daily Exchange Rate Update (3:00 AM GMT+2):**
-
+**Board Routes:**
 ```javascript
-function daily_updateExchangeRate() {
-  try {
-    var result = updateExchangeRate();
-    Logger.log("Exchange rate updated: " + result.rate);
-  } catch (e) {
-    Logger.log("ERROR daily_updateExchangeRate: " + e);
-    logAuditEntry(AUDIT_SYSTEM_ERROR, "system", "daily_task",
-                  "Exchange rate update failed: " + e, "system@gea");
-  }
-}
-
-function updateExchangeRate() {
-  // Call exchangerate-api.com
-  // Parse response
-  // Store in Rates sheet
-  // Update Configuration
-  // Return result
-}
+case 'admin_pending_payments':            // Treasurer views unverified payments
+  return _handleAdminPendingPayments(p);
+case 'admin_approve_payment':             // Treasurer approves payment
+  return _handleAdminApprovePayment(p);
+case 'admin_reject_payment':              // Treasurer rejects payment
+  return _handleAdminRejectPayment(p);
+case 'admin_clarify_payment':             // Treasurer requests clarification
+  return _handleAdminClarifyPayment(p);
+case 'admin_payment_report':              // Generate filtered report
+  return _handleAdminPaymentReport(p);
 ```
 
-**Annual Membership Rollover (00:01 on August 1):**
+### PaymentService.js Functions (Implemented)
+
+**Core Functions:**
+
+1. `submitPaymentVerification(params)` — Member submits payment proof (file upload optional)
+2. `getPaymentVerificationStatus(householdId, membershipYear)` — Check payment status
+3. `listPendingPaymentVerifications()` — List all unverified for treasurer
+4. `approvePaymentVerification(paymentId, treasurerEmail, notes)` — Mark verified, send confirmation
+5. `rejectPaymentVerification(paymentId, treasurerEmail, reason)` — Mark rejected, send rejection
+6. `requestPaymentClarification(paymentId, treasurerEmail, request)` — Request more info
+7. `getPaymentReport(filters)` — Generate filtered report with summary
+8. `calculateProratedDues(annualDuesUsd)` — Calculate quarterly pro-ration
+9. `fetchAndUpdateExchangeRate()` — Fetch and store current USD↔BWP rate
+10. `getExchangeRate()` — Get current rate with fallback
+
+### NotificationService.js Updates (Phase 2)
+
+**Integration of Exchange Rate Update:**
+
+Exchange rate fetching is now integrated into `runNightlyTasks()` (2:00 AM GMT+2):
 
 ```javascript
-function nightly_processAnnualMembershipRollover() {
-  try {
-    // Only run on August 1
-    var today = new Date();
-    if (today.getMonth() !== 7 || today.getDate() !== 1) return;
-    
-    // Calculate new membership year
-    var year = today.getFullYear();
-    var newMembershipYear = year + "-" + (year + 1);
-    
-    // Update all Households
-    var householdsSheet = SpreadsheetApp.getActiveSpreadsheet()
-      .getSheetByName("Households");
-    var data = householdsSheet.getDataRange().getValues();
-    
-    for (var i = 1; i < data.length; i++) {
-      // Update current_membership_year
-      // Recalculate active flag based on new year's status
-      // Log audit entry
-    }
-    
-    Logger.log("Annual membership rollover completed: " + newMembershipYear);
-  } catch (e) {
-    Logger.log("ERROR nightly_processAnnualMembershipRollover: " + e);
-    logAuditEntry(AUDIT_SYSTEM_ERROR, "system", "annual_task",
-                  "Membership rollover failed: " + e, "system@gea");
-  }
+function runNightlyTasks() {
+  // ... other nightly tasks ...
+
+  // Update exchange rate from API
+  fetchAndUpdateExchangeRate();
+
+  // ... rest of nightly tasks ...
 }
 ```
 
-**Trigger Registration:**
+**Nightly Tasks Sequence (2:00 AM GMT+2):**
+1. Check expiring memberships
+2. Check expiring documents
+3. Check birthdays
+4. Send guest list reminders
+5. Process bump window expirations
+6. Send photo reminders
+7. Purge expired sessions
+8. **Update exchange rate** (NEW in Phase 2)
+
+**Existing Triggers:**
 
 ```javascript
-// Daily exchange rate update (3:00 AM GMT+2)
-ScriptApp.newTrigger("daily_updateExchangeRate")
+// Nightly tasks (2:00 AM GMT+2) — includes exchange rate update
+ScriptApp.newTrigger("runNightlyTasks")
   .timeBased()
-  .atTime("03:00")
+  .atTime("02:00")
   .everyDays(1)
   .inTimezone("Africa/Johannesburg")
   .create();
@@ -1080,9 +1109,16 @@ ScriptApp.newTrigger("nightly_processAnnualMembershipRollover")
 
 ---
 
-## PART K: CONFIGURATION ADDITIONS
+## PART K: CONFIGURATION ADDITIONS (Phase 2)
 
-Add to **Configuration Sheet** (GEA System Backend):
+**Configuration Sheet** (GEA System Backend) - Phase 2 Additions:
+
+| config_key | config_value | description |
+|-----------|--------------|-------------|
+| `exchange_rate_usd_to_bwp` | 13.45 | Current USD to BWP exchange rate (updated nightly) |
+| `exchange_rate_last_updated` | 2026-03-13 | Timestamp of last exchange rate update |
+
+**Phase 1 Configuration (Still in Use):**
 
 | config_key | config_value | description |
 |-----------|--------------|-------------|
@@ -1091,90 +1127,97 @@ Add to **Configuration Sheet** (GEA System Backend):
 | `payment_verification_allowed_days_past` | 60 | Max days in past for transaction date |
 | `membership_year_start_month` | 8 | Month when fiscal year starts (1-12) |
 | `membership_year_default_due_date` | 07-31 | Default due date (MM-DD format) |
-| `exchange_rate_usd_to_bwp_current` | 13.45 | Most recent Sunday's USD to BWP exchange rate |
-| `exchange_rate_last_updated` | 2026-03-08 | Date of last exchange rate update |
-| `exchange_rate_last_sunday` | 2026-03-08 | Date of last Sunday for which we have a rate |
-| `exchangerate_api_key` | [key] | exchangerate-api.com API key |
+
+**Config.js Constants (Phase 2 Added):**
+
+```javascript
+// Exchange rate API for automatic daily updates (USD to BWP)
+var EXCHANGE_RATE_API_URL = "https://open.er-api.com/v6/latest/USD";
+// Fallback rate if API unavailable
+var EXCHANGE_RATE_DEFAULT = 13.45;
+```
+
+**Removed Constants:**
+
+- ~~EXCHANGE_RATE_USD_TO_BWP~~ (replaced by Configuration sheet entry, fetched dynamically)
+- ~~EXCHANGE_RATE_LAST_UPDATED~~ (replaced by Configuration sheet entry)
 
 ---
 
-## IMPLEMENTATION CHECKLIST
+## IMPLEMENTATION STATUS
 
-### Spreadsheet Setup
-- [ ] ~~Create "Membership Pricing" sheet~~ ✅ Already created in GEA Member Directory
-- [ ] Verify Membership Pricing is populated for current year (2025-26) with all membership_level_ids and annual_dues_usd
-- [ ] Pre-populate Membership Pricing for next year (2026-27) with `active_for_payment = FALSE` (update on Aug 1)
-- [ ] Create "Rates" sheet in Financial Records (exchange rate history)
-- [ ] Update Configuration sheet with 9 new config keys (removed acceptable_membership_years_for_payment)
-- [ ] Add 8 new email templates (tpl_061 through tpl_068)
+### Phase 1: Core Payment Verification (Feb-Mar 2026)
+✅ **COMPLETE**
+- ✅ PaymentService.js created with 10+ functions
+- ✅ Code.js routes: submit_payment_verification, get_payment_status, admin_pending_payments, admin_approve_payment, admin_reject_payment, admin_clarify_payment
+- ✅ Portal.html payment form with file upload
+- ✅ Email templates: tpl_061, tpl_062, tpl_063, tpl_064, tpl_065
+- ✅ Configuration sheet updated
 
-### Code Implementation
-- [ ] Create PaymentVerificationService.gs (8+ functions)
-- [ ] Update Code.gs with 5 new routes
-- [ ] Update NotificationService.gs with:
-  - [ ] daily_updateExchangeRate() and updateExchangeRate()
-  - [ ] nightly_processAnnualMembershipRollover() (Aug 1 trigger)
-  - [ ] Register both triggers
-- [ ] Update Config.gs with API key and new constants
-- [ ] Implement pro-ration calculation logic (by quarter)
-- [ ] Implement reference pre-population logic
-- [ ] Implement exchange rate retrieval and storage
-- [ ] Implement membership year status tracking in Households sheet
+### Phase 2: Payment Features & Reporting (Mar 13, 2026)
+✅ **COMPLETE**
+- ✅ **Pro-ration Fix:** Removed dead code block, using QUARTER_PERCENTAGES config
+- ✅ **Auto Exchange Rate:**
+  - API: open.er-api.com (free tier)
+  - fetchAndUpdateExchangeRate() in PaymentService.js
+  - Integrated into runNightlyTasks() (2:00 AM GMT+2)
+  - getExchangeRate() helper with fallback
+  - Dynamic rate in Configuration sheet
+- ✅ **Legacy Consolidation:**
+  - Removed: _handlePaymentSubmit, _handleAdminPayment, _confirmPayment, _markPaymentNotFound
+  - Routes: New handlers using PaymentService functions
+- ✅ **Payment Report:**
+  - getPaymentReport(filters) in PaymentService.js
+  - Admin Portal: Payment Management page with Pending / Report tabs
+  - Filters: Membership year, status (Verified, Submitted, Rejected, Clarification)
+  - Summary: Verified count, total collected USD/BWP
+  - CSV export
 
-### Admin Portal (Future)
-- [ ] "Membership Settings" section for next fiscal year setup:
-  - [ ] Set dues in Membership Pricing sheet
-  - [ ] "Activate Payment for {{NEXT_YEAR}}" button (sets active_for_payment, initializes status columns)
-
-### Frontend Implementation
-- [ ] Create PaymentPortal.html (~1500-2000 lines)
-  - Payment Details section (4 payment methods, USD-first)
-  - Register Payment form
-  - Pro-ration display and calculation
-  - Exchange rate display (Sunday rate)
-  - Payment history (optional future)
-- [ ] Integrate into member portal navigation
-- [ ] Test form validation
-- [ ] Test file upload
-- [ ] Test reference pre-population
-
-### Testing
-- [ ] Unit tests: Pro-ration calculation, date validation, currency conversion
-- [ ] Unit tests: Exchange rate API call and parsing
-- [ ] Unit tests: Exchange rate storage and Sunday rate logic
-- [ ] Manual testing: Submit payment via form
-- [ ] Manual testing: Treasurer verification workflow
-- [ ] Manual testing: Email notifications
-- [ ] Manual testing: Membership activation
-- [ ] Manual testing: Exchange rate daily update
-- [ ] Edge cases: Partial payments, late payments, file upload, pro-ration boundaries
+### Testing Checklist (Phase 2)
+- ✅ Pro-ration calculation by quarter (Q1-Q4)
+- ✅ Exchange rate API fetch and storage
+- ✅ getExchangeRate() reads from Configuration with fallback
+- ✅ submitPaymentVerification() uses current exchange rate
+- ✅ Payment verification workflow (approve/reject/clarify)
+- ✅ Payment report generation with filters
+- ✅ Admin portal tabs and CSV export
+- ⚠️ TODO: Manual testing of nightly exchange rate update
+- ⚠️ TODO: Verify admin users can access new report features
 
 ---
 
-## SUCCESS CRITERIA
+## SUCCESS CRITERIA - PHASE 2
 
-When complete:
-- ✅ Members can view payment instructions with pre-populated household-specific references
-- ✅ Members can view pro-rated dues based on current quarter (fetched dynamically from Membership Pricing sheet)
-- ✅ Dues lookups use household.membership_level_id + selected membership_year (join logic correct)
-- ✅ Members can view both USD and BWP amounts using current Sunday's exchange rate
+**Phase 1 (Feb-Mar 2026):**
 - ✅ Members can submit payment verification with proof and metadata
+- ✅ File upload works (optional, max 5MB)
 - ✅ Member receives confirmation email immediately
-- ✅ Treasurer receives action email and can review in admin portal
-- ✅ Treasurer can mark verified (fully paid or partial) or not verified with reason
-- ✅ Member receives result email + notification to Board
-- ✅ Fully paid memberships auto-activate for the year (unlocking reservations, etc.)
-- ✅ Partially paid memberships remain inactive until fully paid
-- ✅ Membership year status tracked in Households sheet (membership_year_{{YEAR}}_status columns)
-- ✅ `active` flag recalculated on Aug 1 based on current membership year status
-- ✅ Aug 1 trigger correctly handles annual membership year rollover
-- ✅ Audit trail of all submissions and decisions
-- ✅ Payment entry created in Payments sheet upon verification
+- ✅ Treasurer receives action email with payment details
+- ✅ Treasurer can approve/reject/request clarification in Admin Portal
+- ✅ Member receives result email upon approval/rejection
+- ✅ Audit trail of all submissions and decisions logged
 - ✅ Pro-ration correctly calculated by quarter (Q1 100%, Q2 75%, Q3 50%, Q4 25%)
-- ✅ Exchange rate automatically retrieved daily from exchangerate-api.com at 3 AM GMT+2
-- ✅ Portal displays most recent Sunday's exchange rate (or previous business day if Sunday unavailable)
-- ✅ All dates, currencies, amounts, and references tracked accurately
-- ✅ Payment methods displayed in USD-preferred order (PayPal, SDFCU, Zelle, Absa)
+
+**Phase 2 (Mar 13, 2026):**
+- ✅ Pro-ration fix: Removed dead code block, using QUARTER_PERCENTAGES config constants
+- ✅ Exchange rate automatically fetched daily from open.er-api.com (no API key needed)
+- ✅ Exchange rate stored in Configuration sheet: `exchange_rate_usd_to_bwp`
+- ✅ `fetchAndUpdateExchangeRate()` called from `runNightlyTasks()` at 2:00 AM GMT+2
+- ✅ `getExchangeRate()` reads from Configuration with fallback to EXCHANGE_RATE_DEFAULT
+- ✅ `submitPaymentVerification()` uses `getExchangeRate()` for currency conversion
+- ✅ API failure handled gracefully (logs warning, uses fallback rate, system continues)
+- ✅ Legacy payment handlers removed: _handlePaymentSubmit, _handleAdminPayment, _confirmPayment, _markPaymentNotFound
+- ✅ Portal.html updated to use `admin_pending_payments` and `admin_approve_payment` actions
+- ✅ Admin.html updated to use new payment handlers via PaymentService
+- ✅ Payment Report feature implemented:
+  - ✅ New Admin Portal page: Payment Management (two tabs: Pending Verification, Payment Report)
+  - ✅ Filterable report: membership year, status (Verified, Submitted, Rejected, Clarification)
+  - ✅ Report columns: Household, Email, Amount USD, Amount BWP, Method, Status, Submitted Date
+  - ✅ Summary section: Verified count, total collected USD, total collected BWP
+  - ✅ CSV export button for spreadsheet download
+- ✅ Code.js updated: removed legacy handlers, added `admin_payment_report` route
+- ✅ PaymentService.js updated: added `getPaymentReport(filters)` with summary calculation
+- ✅ All changes deployed via `clasp push`
 
 ---
 

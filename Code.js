@@ -166,7 +166,6 @@ function _routeAction(action, params) {
     case "book":         return _handleBook(params);
     case "cancel":       return _handleCancel(params);
     case "card":         return _handleCard(params);
-    case "payment":      return _handlePaymentSubmit(params);
     case "submit_payment_verification": return _handleSubmitPaymentVerification(params);
     case "get_payment_status": return _handleGetPaymentStatus(params);
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
@@ -190,7 +189,6 @@ function _routeAction(action, params) {
     case "admin_deny":    return _handleAdminDeny(params);
     case "admin_members": return _handleAdminMembers(params);
     case "admin_photo":   return _handleAdminPhoto(params);
-    case "admin_payment": return _handleAdminPayment(params);
     case "admin_applications":       return _handleAdminApplications(params);
     case "admin_application_detail": return _handleAdminApplicationDetail(params);
     case "admin_approve_application": return _handleAdminApproveApplication(params);
@@ -200,6 +198,7 @@ function _routeAction(action, params) {
     case "admin_approve_payment": return _handleAdminApprovePayment(params);
     case "admin_reject_payment": return _handleAdminRejectPayment(params);
     case "admin_clarify_payment": return _handleAdminClarifyPayment(params);
+    case "admin_payment_report": return _handleAdminPaymentReport(params);
 
     // ── DIAGNOSTICS ──────────────────────────────────────────
     case "image_diagnostic":  return _handleImageDiagnostic(params);
@@ -663,73 +662,6 @@ function _handleCard(p) {
   return successResponse({ cards: cards });
 }
 
-function _handlePaymentSubmit(p) {
-  var auth = requireAuth(p.token);
-  if (!auth.ok) return auth.response;
-
-  var required = ["payment_method", "payment_reference", "payment_date", "amount_usd"];
-  for (var i = 0; i < required.length; i++) {
-    if (!p[required[i]]) return errorResponse("Missing: " + required[i], "MISSING_PARAM");
-  }
-
-  var member = getMemberByEmail(auth.session.email);
-  var hh     = getHouseholdById(member.household_id);
-  if (!member || !hh) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
-
-  var paymentId = generateId("PAY");
-  var now       = new Date();
-
-  try {
-    var sheet   = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
-    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    var row     = {
-      payment_id:                paymentId,
-      household_id:              member.household_id,
-      household_name:            hh.household_name,
-      primary_email:             auth.session.email,
-      payment_method:            sanitizeInput(p.payment_method),
-      payment_reference:         sanitizeInput(p.payment_reference),
-      payment_date:              new Date(p.payment_date),
-      amount_usd:                parseFloat(p.amount_usd),
-      amount_bwp:                parseFloat(p.amount_bwp) || 0,
-      currency:                  p.currency || "USD",
-      status:                    "Pending Verification",
-      payment_submitted_date:    now,
-      notes:                     sanitizeInput(p.notes || "")
-    };
-    sheet.appendRow(headers.map(function(col) {
-      return row[col] !== undefined ? row[col] : "";
-    }));
-  } catch (err) {
-    Logger.log("ERROR _handlePaymentSubmit (write): " + err);
-    return errorResponse("Failed to save payment. Please try again.", "SAVE_FAILED");
-  }
-
-  // Notify the board
-  var level = getMembershipLevel(hh.membership_level_id);
-  sendEmailFromBoard("tpl_025", EMAIL_BOARD, {
-    MEMBER_NAME:      hh.household_name,
-    MEMBER_EMAIL:     auth.session.email,
-    MEMBERSHIP_LEVEL: hh.membership_type,
-    DUES_USD:         level ? level.annual_dues_usd : p.amount_usd,
-    DUES_BWP:         level ? level.annual_dues_bwp : p.amount_bwp || "",
-    PAYMENT_METHOD:   p.payment_method,
-    PAYMENT_REFERENCE: p.payment_reference,
-    PAYMENT_DATE:     formatDate(new Date(p.payment_date)),
-    IF_NOTES:         p.notes ? "true" : "",
-    PAYMENT_NOTES:    p.notes || "",
-    CONFIRM_LINK:     URL_ADMIN_PORTAL + "?action=admin_payment&method=confirm&id=" + paymentId,
-    NOT_FOUND_LINK:   URL_ADMIN_PORTAL + "?action=admin_payment&method=notfound&id=" + paymentId
-  });
-
-  logAuditEntry(auth.session.email, AUDIT_PAYMENT_SUBMITTED, "Payment", paymentId,
-                p.payment_method + " " + p.payment_reference);
-
-  return successResponse({ paymentId: paymentId },
-                         "Payment confirmation submitted. The board will verify and activate your membership.");
-}
-
-
 // ============================================================
 // BOARD / ADMIN HANDLERS
 // ============================================================
@@ -1001,143 +933,6 @@ function _handleAdminPhoto(p) {
   }
 
   return successResponse({}, "Photo " + p.decision + ".");
-}
-
-
-/**
- * ============================================================
- * HANDLER: _handleAdminPayment
- * ============================================================
- * PURPOSE:
- * Processes payment verification actions: confirm or mark-not-found.
- * Delegates to _confirmPayment() or _markPaymentNotFound().
- *
- * AUTHENTICATION:
- * Requires board role.
- *
- * PARAMETERS REQUIRED:
- *   token: session token
- *   payment_id: the payment to process
- *   action: "confirm" or "not_found"
- *
- * RESPONSE:
- * { "success": true, "data": {}, "message": "Payment confirmed and membership activated." }
- * ============================================================
- */
-function _handleAdminPayment(p) {
-  // Step 1: Verify caller is a board member
-  var auth = requireAuth(p.token, "board");
-  if (!auth.ok) return auth.response;
-
-  // Step 2: Check required parameters
-  if (!p.payment_id) {
-    return errorResponse("payment_id is required.", "MISSING_PARAM");
-  }
-  if (!p.action) {
-    return errorResponse("action is required (confirm or not_found).", "MISSING_PARAM");
-  }
-
-  // Step 3: Route to the appropriate payment processing function
-  if (p.action === "confirm") {
-    return _confirmPayment(p.payment_id, auth.session.email);
-  }
-  if (p.action === "not_found") {
-    return _markPaymentNotFound(p.payment_id, auth.session.email);
-  }
-
-  // Unknown action
-  return errorResponse("action must be 'confirm' or 'not_found'.", "INVALID_PARAM");
-}
-
-
-// ============================================================
-// PAYMENT VERIFICATION
-// ============================================================
-
-function _confirmPayment(paymentId, verifiedBy) {
-  try {
-    var sheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
-    var data    = sheet.getDataRange().getValues();
-    var headers = data[0];
-    var idCol   = headers.indexOf("payment_id");
-    var stCol   = headers.indexOf("status");
-    var vdCol   = headers.indexOf("payment_verified_date");
-    var vbCol   = headers.indexOf("payment_verified_by");
-
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][idCol] !== paymentId) continue;
-
-      sheet.getRange(i + 1, stCol + 1).setValue("Verified");
-      sheet.getRange(i + 1, vdCol + 1).setValue(new Date());
-      sheet.getRange(i + 1, vbCol + 1).setValue(verifiedBy);
-
-      var hhId  = data[i][headers.indexOf("household_id")];
-      var email = data[i][headers.indexOf("primary_email")];
-      var hh    = getHouseholdById(hhId);
-
-      // Activate the household
-      updateHouseholdField(hhId, "active", true, verifiedBy);
-      updateHouseholdField(hhId, "application_status", "Approved", verifiedBy);
-
-      // Set expiration date (1 year from today, or +duration for temporary)
-      var expDate;
-      if (hh && hh.membership_duration_months) {
-        expDate = addDays(new Date(), hh.membership_duration_months * 30);
-      } else {
-        expDate = new Date(new Date().getFullYear(), 11, 31); // Dec 31 of current year
-      }
-      updateHouseholdField(hhId, "membership_expiration_date", expDate, verifiedBy);
-
-      // Set activation date on all individual members
-      var members = getHouseholdMembers(hhId);
-      for (var j = 0; j < members.length; j++) {
-        updateMemberField(members[j].individual_id, "activation_date", new Date(), verifiedBy);
-      }
-
-      // Send confirmation email to member
-      var level = getMembershipLevel(hh ? hh.membership_level_id : null);
-      sendEmail("tpl_026", email, {
-        FIRST_NAME:       _getPrimaryFirstName(hhId),
-        DUES_USD:         level ? level.annual_dues_usd : "",
-        DUES_BWP:         level ? level.annual_dues_bwp : "",
-        PAYMENT_METHOD:   data[i][headers.indexOf("payment_method")],
-        PAYMENT_REFERENCE: data[i][headers.indexOf("payment_reference")],
-        CONFIRMATION_DATE: formatDate(new Date()),
-        MEMBERSHIP_LEVEL:  hh ? hh.membership_type : "",
-        EXPIRATION_DATE:   formatDate(expDate),
-        IF_NEW_MEMBER:     !hh || !hh.first_login_date ? "true" : ""
-      });
-
-      logAuditEntry(verifiedBy, AUDIT_PAYMENT_VERIFIED, "Payment", paymentId,
-                    "Payment verified, household activated: " + hhId);
-      return successResponse({}, "Payment confirmed and membership activated.");
-    }
-    return errorResponse("Payment record not found.", "NOT_FOUND");
-  } catch (e) {
-    Logger.log("ERROR _confirmPayment: " + e);
-    return errorResponse("Could not confirm payment.", "SERVER_ERROR");
-  }
-}
-
-function _markPaymentNotFound(paymentId, markedBy) {
-  try {
-    var sheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
-    var data    = sheet.getDataRange().getValues();
-    var headers = data[0];
-    var idCol   = headers.indexOf("payment_id");
-    var stCol   = headers.indexOf("status");
-
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][idCol] !== paymentId) continue;
-      sheet.getRange(i + 1, stCol + 1).setValue("Not Found");
-      logAuditEntry(markedBy, AUDIT_PAYMENT_SUBMITTED, "Payment", paymentId,
-                    "Payment not found in account");
-      return successResponse({}, "Payment marked as not found.");
-    }
-    return errorResponse("Payment record not found.", "NOT_FOUND");
-  } catch (e) {
-    return errorResponse("Could not update payment.", "SERVER_ERROR");
-  }
 }
 
 
@@ -2407,6 +2202,28 @@ function _handleAdminClarifyPayment(p) {
     return successResponse(result);
   } catch (e) {
     return errorResponse("Error requesting clarification: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminPaymentReport
+ * PURPOSE: Board views payment history report with filters
+ */
+function _handleAdminPaymentReport(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+
+    var filters = {
+      membership_year: p.membership_year || null,
+      status: p.status || null
+    };
+
+    var result = getPaymentReport(filters);
+    if (!result.ok) return errorResponse(result.error || "Could not load report", "FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error generating report: " + e.toString(), "SERVER_ERROR");
   }
 }
 

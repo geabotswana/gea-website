@@ -63,17 +63,17 @@ clasp logs  # View console.log() output from recent executions
 ```
 Browser (Portal.html or Admin.html)
   ↓
-google.script.run.handlePortalApi(action, params)  [PREFERRED]
-  OR fetch() to doGet() [LEGACY]
+google.script.run.handlePortalApi(action, params)
   ↓
-Code.js :: doGet(e) or Code.js :: handlePortalApi()
+Code.js :: handlePortalApi()
   ↓
 _routeAction(action, params)
   ├─→ Public routes: login, logout
-  ├─→ Member routes: dashboard, profile, reservations, book, cancel, card, payment
-  └─→ Board routes: admin_pending, admin_approve, admin_deny, admin_members, admin_photo, admin_payment
+  ├─→ Member routes: dashboard, profile, reservations, book, cancel, card, submit_payment_verification, get_payment_status, upload_file, get_file_status, request_employment
+  ├─→ Applicant routes: application_status, confirm_documents, upload_document, submit_payment_proof
+  └─→ Board routes: admin_pending, admin_approve, admin_deny, admin_members, admin_photo, admin_pending_payments, admin_approve_payment, admin_reject_payment, admin_clarify_payment, admin_payment_report, admin_applications, admin_approve_file, admin_reject_file
   ↓
-Service modules (AuthService, MemberService, ReservationService, EmailService, NotificationService)
+Service modules (AuthService, MemberService, ReservationService, PaymentService, FileSubmissionService, ApplicationService, EmailService, NotificationService)
   ↓
 Google Sheets API calls
   ↓
@@ -191,7 +191,7 @@ container.appendChild(div);
 ### Payment Tracking (PAYMENT_TRACKING_ID)
 | Tab | Purpose | Key Lookup |
 |-----|---------|-----------|
-| Payments | Dues payments & records | `payment_id` or `household_id` |
+| Payments | Dues payments submitted by members with verification status | `payment_id` or `household_id` |
 
 ---
 
@@ -223,19 +223,39 @@ container.appendChild(div);
 - Usage tracking: getWeeklyUsage(), getMonthlyUsage(), calculateNextWeekStart()
 - Limit enforcement: Excess bookings flag as pending for board approval
 
+**PaymentService.js** (600+ lines - Phase 1 & Phase 2)
+- Phase 1: Payment submission, verification workflow, treasurer approval/rejection/clarification
+  - submitPaymentVerification() — Member submits payment proof with file upload
+  - listPendingPaymentVerifications() — List all unverified payments
+  - approvePaymentVerification(), rejectPaymentVerification(), requestPaymentClarification()
+  - calculateProratedDues() — Calculate quarterly dues
+- Phase 2: Exchange rates and reporting
+  - fetchAndUpdateExchangeRate() (via API nightly), getExchangeRate() (fallback to default)
+  - getPaymentReport(filters) — Generate payment history with optional membership_year/status filters
+
+**FileSubmissionService.js** (400+ lines - Document & Photo Uploads)
+- File submission workflow: Documents (passport/omang), photos, employment verification
+- Two-tier document approval: RSO review → GEA admin review
+- One-tier photo approval: GEA admin only → Cloud Storage transfer
+- Functions: submitFile(), getSubmissionHistory(), approveSubmission(), rejectSubmission()
+- RSO approval links: One-time URLs with expiration (336-hour window)
+- Cloud Storage integration: Transfer approved photos to gs://gea-member-data/
+- Audit trail: Track all uploads, reviews, approvals, rejections with timestamps
+
 **EmailService.js** (336 lines)
 - sendEmail(templateId, recipient, variables) → Core email dispatcher
 - Fetches template from sheet, replaces placeholders, wraps in HTML
 - From: "Gaborone Employee Association", Reply-to: board@geabotswana.org
 - 30+ template IDs for all communications
 
-**NotificationService.js** (400 lines)
+**NotificationService.js** (400+ lines)
 - runNightlyTasks() → Daily at 2:00 AM GMT+2
   - Membership renewals (30-day, 7-day warnings)
   - Document expiration alerts (6-month passport warnings)
   - Guest list deadline reminders
   - Session purge (delete expired sessions)
   - Bump window expiration (promote tentative to confirmed)
+  - Exchange rate update via API (USD to BWP)
 - triggerRsoDailySummary() → Daily at 6:00 AM (RSO gets daily event list)
 - sendHolidayCalReminder() → Yearly on Nov 1 (board reminder)
 
@@ -310,11 +330,13 @@ container.appendChild(div);
 - **3-column layout:** Sidebar navigation + main content + optional details pane
 - Same login, but requires role="board"
 - Key admin functions:
-  - **Dashboard:** Stats (pending reservations, pending photos, payment queue, today's reservations)
+  - **Dashboard:** Stats (pending reservations, pending photos, unverified payments, today's reservations)
   - **Reservations:** Approve/deny excess bookings, view event calendar
   - **Members:** Search member directory, view household details
   - **Photos:** Review photo submissions (approve/reject with reason, transfers approved to Cloud Storage)
-  - **Payments:** Verify payment confirmations, activate memberships
+  - **Payments:** Two sub-views:
+    - **Pending Verification:** List unverified payments with approve/reject buttons
+    - **Payment Report:** Filterable report with membership year and status filters, summary totals, CSV export
 
 **Critical admin functions:**
 - `showPage('reservations')` → _handleAdminPending() (list pending bookings)
@@ -322,6 +344,56 @@ container.appendChild(div);
 - `denyReservation(id)` → _handleAdminDeny() (record reason, send email)
 - `approvePhoto(individualId)` → _handleAdminPhoto(decision="approved") (transfers to Cloud Storage)
 - `rejectPhoto(individualId, reason)` → _handleAdminPhoto(decision="rejected")
+- `loadPayments()` → admin_pending_payments (list unverified)
+- `confirmPayment(id)` → admin_approve_payment (approve and verify)
+- `markPaymentNotFound(id)` → admin_reject_payment with reason
+- `loadPaymentReport()` → admin_payment_report (with filters)
+
+---
+
+## Payment Features: Phase 1 & Phase 2
+
+### Phase 1: Core Payment Verification (Feb-Mar 2026)
+**Implementation Complete. See:** [CLAUDE_Payments_Implementation.md](docs/implementation/CLAUDE_Payments_Implementation.md) - PART A through PART H
+
+**Member Portal Features:**
+- Payment Details page with payment method instructions (PayPal, SDFCU, Zelle, Absa)
+- Register Payment Made form (file upload, method, amount, currency, date)
+- Payment status tracking (submitted, verified, rejected, clarification_requested)
+- Email notifications (submission confirmation, treasurer review, approval/rejection)
+
+**Treasurer Admin Features:**
+- Pending Payments view with list of unverified submissions
+- Approve payment → sets verified_date, sends confirmation email to member
+- Reject payment with reason → notified member to resubmit
+- Request clarification → ask member for additional info
+- Audit trail of all actions logged
+
+**Backend:** PaymentService.js (10 functions for submission, verification, status tracking)
+**Pro-ration:** Dues calculated by quarter (Q1: 100%, Q2: 75%, Q3: 50%, Q4: 25%)
+**Email Templates:** tpl_061 through tpl_065 (5 templates for payment notifications)
+
+### Phase 2: Payment Enhancements (Mar 13, 2026)
+**Implementation Complete. See:** [CLAUDE_Payments_Implementation.md](docs/implementation/CLAUDE_Payments_Implementation.md) - PART B, PART G, PART I, PART K
+
+**1. Automatic Exchange Rate (Phase 2):**
+- Daily fetch from open.er-api.com (no API key required)
+- Integrated into `runNightlyTasks()` at 2:00 AM GMT+2
+- Dynamic storage in Configuration sheet (no hardcoded rates)
+- Fallback to EXCHANGE_RATE_DEFAULT if API unavailable
+- Used in payment submission for USD↔BWP conversion
+
+**2. Payment History Report (Phase 2):**
+- New Payment Report tab in Admin Portal
+- Filters: Membership year (All/2025-26/2026-27), Status (Verified/Submitted/Rejected/Clarification)
+- Report table: Household, Email, Amount USD, Amount BWP, Method, Status, Date
+- Summary section: Verified count, total collected USD, total collected BWP
+- CSV export for spreadsheet download
+
+**3. Code Quality (Phase 2):**
+- Pro-ration fix: Removed dead code, using config constants
+- Legacy consolidation: Removed 4 old handlers, unified to new PaymentService flow
+- Standardized verification workflow (approve/reject/clarify)
 
 ---
 

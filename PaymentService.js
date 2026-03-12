@@ -80,6 +80,7 @@ function submitPaymentVerification(params) {
     // Phase 1: All payments are "Dues Payment"
     var paymentId = generateId("PAY");
     var paymentsSheet = _getPaymentsSheet_();
+    var exchangeRate = getExchangeRate();
     var payload = {
       payment_id: paymentId,
       household_id: params.household_id,
@@ -88,8 +89,8 @@ function submitPaymentVerification(params) {
       payment_method: params.payment_method,
       currency: currency,
       amount: amountPaid,
-      amount_usd: currency === "USD" ? amountPaid : Math.round(amountPaid / 13.45 * 100) / 100,
-      amount_bwp: currency === "BWP" ? amountPaid : Math.round(amountPaid * 13.45 * 100) / 100,
+      amount_usd: currency === "USD" ? amountPaid : Math.round(amountPaid / exchangeRate * 100) / 100,
+      amount_bwp: currency === "BWP" ? amountPaid : Math.round(amountPaid * exchangeRate * 100) / 100,
       payment_type: "Dues Payment",
       applied_to_period: params.membership_year,
       payment_reference: params.payment_reference || "",
@@ -396,31 +397,22 @@ function calculateProratedDues(annualDuesUsd) {
   // Membership year is Aug-Jul
   // Q1: Aug-Oct (100%), Q2: Nov-Jan (75%), Q3: Feb-Apr (50%), Q4: May-Jul (25%)
   var quarterPercentage;
-  if (month >= 7) { // Aug-Oct
-    quarterPercentage = 100;
-  } else if (month >= 10) { // Nov-Jan (impossible in this branch)
-    quarterPercentage = 75;
-  } else if (month >= 1) { // Feb-Apr
-    quarterPercentage = 50;
-  } else { // May-Jul
-    quarterPercentage = 25;
-  }
 
   // If August-October (month 7-9), it's Q1 (100%)
   if (month >= 7 && month <= 9) {
-    quarterPercentage = 100;
+    quarterPercentage = QUARTER_PERCENTAGES["Q1"];
   }
   // If November-January (month 10-0), it's Q2 (75%)
   else if (month === 10 || month === 11 || month === 0) {
-    quarterPercentage = 75;
+    quarterPercentage = QUARTER_PERCENTAGES["Q2"];
   }
   // If February-April (month 1-3), it's Q3 (50%)
   else if (month >= 1 && month <= 3) {
-    quarterPercentage = 50;
+    quarterPercentage = QUARTER_PERCENTAGES["Q3"];
   }
   // If May-July (month 4-6), it's Q4 (25%)
   else {
-    quarterPercentage = 25;
+    quarterPercentage = QUARTER_PERCENTAGES["Q4"];
   }
 
   return Math.round(annualDuesUsd * (quarterPercentage / 100) * 100) / 100;
@@ -516,4 +508,140 @@ function _getAllPayments_() {
 function _getPaymentsForHousehold_(householdId) {
   var all = _getAllPayments_();
   return all.filter(function(p) { return p.household_id === householdId; });
+}
+
+/**
+ * FUNCTION: fetchAndUpdateExchangeRate
+ * PURPOSE: Fetch current USD to BWP exchange rate from API and save to Configuration sheet
+ * Called nightly by runNightlyTasks() to keep exchange rate current
+ * @returns {Object} - Result with new rate or error
+ */
+function fetchAndUpdateExchangeRate() {
+  try {
+    var response = UrlFetchApp.fetch(EXCHANGE_RATE_API_URL, { muteHttpExceptions: true });
+    var httpCode = response.getResponseCode();
+
+    if (httpCode !== 200) {
+      Logger.log("WARNING: Exchange rate API returned status " + httpCode);
+      logAuditEntry("system", "PAYMENT_CONFIG", "Exchange Rate", "fetch_failed",
+        "Exchange rate API call failed with status " + httpCode + ". Using default rate.");
+      return { ok: false, error: "API returned status " + httpCode, using_default: true };
+    }
+
+    var json = JSON.parse(response.getContentText());
+    if (!json.rates || !json.rates.BWP) {
+      Logger.log("WARNING: Exchange rate API response missing BWP rate");
+      logAuditEntry("system", "PAYMENT_CONFIG", "Exchange Rate", "invalid_response",
+        "Exchange rate API response invalid or missing BWP rate");
+      return { ok: false, error: "Invalid API response", using_default: true };
+    }
+
+    var newRate = json.rates.BWP;
+    setConfigValue("exchange_rate_usd_to_bwp", newRate);
+    setConfigValue("exchange_rate_last_updated", new Date());
+
+    logAuditEntry("system", "PAYMENT_CONFIG", "Exchange Rate", "updated",
+      "Exchange rate updated: 1 USD = " + newRate + " BWP");
+
+    Logger.log("Exchange rate updated: 1 USD = " + newRate + " BWP");
+    return { ok: true, rate: newRate };
+  } catch (e) {
+    Logger.log("ERROR fetchAndUpdateExchangeRate: " + e);
+    logAuditEntry("system", "PAYMENT_CONFIG", "Exchange Rate", "error",
+      "Failed to fetch exchange rate: " + String(e));
+    return { ok: false, error: String(e), using_default: true };
+  }
+}
+
+/**
+ * FUNCTION: getExchangeRate
+ * PURPOSE: Get current exchange rate from Configuration sheet or default
+ * @returns {number} - Exchange rate (USD to BWP)
+ */
+function getExchangeRate() {
+  try {
+    var rate = getConfigValue("exchange_rate_usd_to_bwp");
+    if (rate && !isNaN(rate)) {
+      return Number(rate);
+    }
+  } catch (e) {
+    Logger.log("WARNING: Could not read exchange rate from config: " + e);
+  }
+
+  // Fall back to default
+  return EXCHANGE_RATE_DEFAULT;
+}
+
+/**
+ * FUNCTION: getPaymentReport
+ * PURPOSE: Generate payment history report with optional filters
+ * @param {Object} filters - Optional filters: { membership_year, status }
+ * @returns {Object} - Report data with payments, summary, and ok flag
+ */
+function getPaymentReport(filters) {
+  try {
+    filters = filters || {};
+    var payments = _getAllPayments_();
+
+    // Filter by membership year if provided
+    if (filters.membership_year) {
+      payments = payments.filter(function(p) {
+        return p.applied_to_period === filters.membership_year;
+      });
+    }
+
+    // Filter by status if provided (verified, submitted, rejected, clarification_requested)
+    if (filters.status) {
+      payments = payments.filter(function(p) {
+        if (filters.status === "verified") {
+          return p.payment_verified_date;
+        } else if (filters.status === "submitted") {
+          return !p.payment_verified_date && !p.notes;
+        } else if (filters.status === "rejected") {
+          return p.notes && p.notes.indexOf("REJECTED:") === 0;
+        } else if (filters.status === "clarification_requested") {
+          return p.notes && p.notes.indexOf("CLARIFICATION:") === 0;
+        }
+        return false;
+      });
+    }
+
+    // Calculate summary
+    var summary = {
+      total_payments: payments.length,
+      verified_count: 0,
+      submitted_count: 0,
+      rejected_count: 0,
+      clarification_count: 0,
+      total_collected_usd: 0,
+      total_collected_bwp: 0
+    };
+
+    payments.forEach(function(p) {
+      if (p.payment_verified_date) {
+        summary.verified_count++;
+        summary.total_collected_usd += Number(p.amount_usd || 0);
+        summary.total_collected_bwp += Number(p.amount_bwp || 0);
+      } else if (p.notes && p.notes.indexOf("REJECTED:") === 0) {
+        summary.rejected_count++;
+      } else if (p.notes && p.notes.indexOf("CLARIFICATION:") === 0) {
+        summary.clarification_count++;
+      } else {
+        summary.submitted_count++;
+      }
+    });
+
+    // Round financial totals
+    summary.total_collected_usd = Math.round(summary.total_collected_usd * 100) / 100;
+    summary.total_collected_bwp = Math.round(summary.total_collected_bwp * 100) / 100;
+
+    return {
+      ok: true,
+      payments: payments,
+      summary: summary
+    };
+  } catch (e) {
+    Logger.log("ERROR getPaymentReport: " + e);
+    return { ok: false, error: String(e) };
+  }
 }

@@ -1254,22 +1254,30 @@
       <!-- Payment verification and confirmation                      -->
       <!-- ========================================================== -->
       <div id="payments" class="page">
-        <h1 class="page-title">Payment Verification</h1>
-        
-        <div class="search-bar">
-          <input type="text" class="search-input" id="paySearchInput" placeholder="Search by member name or email...">
+        <h1 class="page-title">Payment Management</h1>
+
+        <!-- View Tabs -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+          <button class="filter-btn active" onclick="showPaymentView('pending');">Pending Verification</button>
+          <button class="filter-btn" onclick="showPaymentView('report');">Payment Report</button>
         </div>
+
+        <!-- PENDING PAYMENTS VIEW -->
+        <div id="paymentPendingView">
+          <div class="search-bar">
+            <input type="text" class="search-input" id="paySearchInput" placeholder="Search by household or method...">
+          </div>
         
         <div class="card">
           <div class="table-container">
             <table id="payTable">
               <thead>
                 <tr>
-                  <th>Member Name</th>
-                  <th>Email</th>
-                  <th>Amount</th>
+                  <th>Household</th>
+                  <th>Method</th>
+                  <th>Amount (USD)</th>
                   <th>Submitted</th>
-                  <th>Reference</th>
+                  <th>Currency</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -1281,6 +1289,75 @@
             <div class="empty-state-icon">✓</div>
             <div class="empty-state-text">No pending payments</div>
             <div class="empty-state-subtext">All payment submissions have been verified</div>
+          </div>
+        </div>
+        </div>
+
+        <!-- PAYMENT REPORT VIEW -->
+        <div id="paymentReportView" style="display: none;">
+          <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div>
+              <label style="display: block; font-size: 12px; color: #666; margin-bottom: 4px;">Membership Year:</label>
+              <select id="reportYearFilter" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <option value="">All Years</option>
+                <option value="2025-26">2025-26</option>
+                <option value="2026-27">2026-27</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 12px; color: #666; margin-bottom: 4px;">Status:</label>
+              <select id="reportStatusFilter" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <option value="">All</option>
+                <option value="verified">Verified</option>
+                <option value="submitted">Submitted</option>
+                <option value="rejected">Rejected</option>
+                <option value="clarification_requested">Clarification Requested</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+              <button class="btn btn-primary" onclick="loadPaymentReport();">Generate Report</button>
+            </div>
+            <div style="display: flex; align-items: flex-end; margin-left: auto;">
+              <button class="btn btn-secondary" onclick="exportPaymentReportToCSV();">Export to CSV</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-container">
+              <table id="reportTable">
+                <thead>
+                  <tr>
+                    <th>Household</th>
+                    <th>Primary Email</th>
+                    <th>Amount USD</th>
+                    <th>Amount BWP</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                  </tr>
+                </thead>
+                <tbody id="reportTableBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="background: #f9f9f9; padding: 16px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #333;">Summary</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Total Verified</div>
+                <div style="font-size: 20px; font-weight: bold; color: #4CAF50;" id="summaryVerifiedCount">—</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Total Collected (USD)</div>
+                <div style="font-size: 20px; font-weight: bold; color: #2196F3;" id="summaryUSDTotal">—</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #666; margin-bottom: 4px;">Total Collected (BWP)</div>
+                <div style="font-size: 20px; font-weight: bold; color: #2196F3;" id="summaryBWPTotal">—</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2254,14 +2331,14 @@
   function loadPayments() {
     var tbody = document.getElementById('payTableBody');
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading payments...</td></tr>';
-    
-    apiCall('admin_payment', {}).then(function(res) {
+
+    apiCall('admin_pending_payments', {}).then(function(res) {
       if (!res.success) {
         showError('Failed to load payments: ' + res.message);
         return;
       }
-      
-      var payments = res.data.payments || [];
+
+      var payments = res.data.verifications || [];
       
       if (payments.length === 0) {
         document.getElementById('payTable').style.display = 'none';
@@ -2273,38 +2350,31 @@
       document.getElementById('payEmpty').style.display = 'none';
       
       tbody.innerHTML = '';
-      
+
       payments.forEach(function(payment) {
-        var submitted = new Date(payment.submitted_date).toLocaleDateString('en-US', {
+        var submitted = new Date(payment.payment_submitted_date).toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
           year: 'numeric'
         });
-        
+
         var row = document.createElement('tr');
 
         // Build row safely using DOM methods to prevent XSS
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.member_name || 'Unknown'; return td; })());
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.email || ''; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.household_name || 'Unknown'; return td; })());
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.payment_method || ''; return td; })());
 
         var amountTd = document.createElement('td');
-        amountTd.textContent = '$' + (payment.amount || '0.00');
+        amountTd.textContent = '$' + (payment.amount_usd || '0.00');
         row.appendChild(amountTd);
 
         var submittedTd = document.createElement('td');
         submittedTd.textContent = submitted;
         row.appendChild(submittedTd);
 
-        var refTd = document.createElement('td');
-        var refCode = document.createElement('code');
-        refCode.style.fontFamily = 'Roboto Mono';
-        refCode.style.fontSize = '11px';
-        refCode.style.background = '#F5F5F5';
-        refCode.style.padding = '2px 4px';
-        refCode.style.borderRadius = '2px';
-        refCode.textContent = payment.reference || '';
-        refTd.appendChild(refCode);
-        row.appendChild(refTd);
+        var currencyTd = document.createElement('td');
+        currencyTd.textContent = payment.currency || 'USD';
+        row.appendChild(currencyTd);
 
         var actionTd = document.createElement('td');
         var confirmBtn = document.createElement('button');
@@ -2332,10 +2402,10 @@
    */
   function confirmPayment(paymentId) {
     if (!confirm('Confirm this payment submission?')) return;
-    
-    apiCall('admin_payment', {
+
+    apiCall('admin_approve_payment', {
       payment_id: paymentId,
-      action: 'confirm'
+      notes: ''
     }).then(function(res) {
       if (!res.success) {
         showError('Failed to confirm payment: ' + res.message);
@@ -2344,16 +2414,16 @@
       loadPayments();
     });
   }
-  
+
   /**
    * Marks a payment submission as not found during verification.
    */
   function markPaymentNotFound(paymentId) {
-    if (!confirm('Mark this payment as not found?')) return;
-    
-    apiCall('admin_payment', {
+    if (!confirm('Mark this payment as not found in account?')) return;
+
+    apiCall('admin_reject_payment', {
       payment_id: paymentId,
-      action: 'not_found'
+      reason: 'Payment not found in account'
     }).then(function(res) {
       if (!res.success) {
         showError('Failed to update payment: ' + res.message);
@@ -2372,12 +2442,148 @@
       var filter = searchInput.value.toLowerCase();
       var tbody = document.getElementById('payTableBody');
       var rows = tbody.getElementsByTagName('tr');
-      
+
       for (var i = 0; i < rows.length; i++) {
         var text = rows[i].textContent.toLowerCase();
         rows[i].style.display = text.includes(filter) ? '' : 'none';
       }
     });
+  }
+
+  /**
+   * Switch between pending payments and report views.
+   */
+  function showPaymentView(viewName) {
+    var pendingView = document.getElementById('paymentPendingView');
+    var reportView = document.getElementById('paymentReportView');
+    var buttons = document.querySelectorAll('#payments .filter-btn');
+
+    if (viewName === 'pending') {
+      pendingView.style.display = 'block';
+      reportView.style.display = 'none';
+      buttons[0].classList.add('active');
+      buttons[1].classList.remove('active');
+      loadPayments();
+    } else if (viewName === 'report') {
+      pendingView.style.display = 'none';
+      reportView.style.display = 'block';
+      buttons[0].classList.remove('active');
+      buttons[1].classList.add('active');
+      loadPaymentReport();
+    }
+  }
+
+  /**
+   * Load and display payment report with filters.
+   */
+  function loadPaymentReport() {
+    var year = document.getElementById('reportYearFilter').value;
+    var status = document.getElementById('reportStatusFilter').value;
+    var tbody = document.getElementById('reportTableBody');
+
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">Loading report...</td></tr>';
+
+    apiCall('admin_payment_report', {
+      membership_year: year || null,
+      status: status || null
+    }).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load report: ' + res.message);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red; padding: 20px;">Error loading report</td></tr>';
+        return;
+      }
+
+      var payments = res.data.payments || [];
+      var summary = res.data.summary || {};
+
+      if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No payments match filter criteria</td></tr>';
+      } else {
+        tbody.innerHTML = '';
+        payments.forEach(function(payment) {
+          var submitted = new Date(payment.payment_submitted_date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+
+          var statusBadge;
+          if (payment.payment_verified_date) {
+            statusBadge = '<span style="background: #4CAF50; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">Verified</span>';
+          } else if (payment.notes && payment.notes.indexOf('REJECTED:') === 0) {
+            statusBadge = '<span style="background: #f44336; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">Rejected</span>';
+          } else if (payment.notes && payment.notes.indexOf('CLARIFICATION:') === 0) {
+            statusBadge = '<span style="background: #ff9800; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">Clarification</span>';
+          } else {
+            statusBadge = '<span style="background: #2196F3; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px;">Submitted</span>';
+          }
+
+          var row = document.createElement('tr');
+          row.innerHTML = '';
+
+          var householdTd = document.createElement('td');
+          householdTd.textContent = payment.household_name || 'Unknown';
+          row.appendChild(householdTd);
+
+          var emailTd = document.createElement('td');
+          emailTd.textContent = payment.household_id || '';
+          row.appendChild(emailTd);
+
+          var usdTd = document.createElement('td');
+          usdTd.textContent = '$' + (payment.amount_usd || '0.00');
+          row.appendChild(usdTd);
+
+          var bwpTd = document.createElement('td');
+          bwpTd.textContent = '₱' + (payment.amount_bwp || '0.00');
+          row.appendChild(bwpTd);
+
+          var methodTd = document.createElement('td');
+          methodTd.textContent = payment.payment_method || '';
+          row.appendChild(methodTd);
+
+          var statusTd = document.createElement('td');
+          statusTd.innerHTML = statusBadge;
+          row.appendChild(statusTd);
+
+          var submittedTd = document.createElement('td');
+          submittedTd.textContent = submitted;
+          row.appendChild(submittedTd);
+
+          tbody.appendChild(row);
+        });
+      }
+
+      // Update summary
+      document.getElementById('summaryVerifiedCount').textContent = summary.verified_count || 0;
+      document.getElementById('summaryUSDTotal').textContent = '$' + (summary.total_collected_usd || 0).toFixed(2);
+      document.getElementById('summaryBWPTotal').textContent = '₱' + (summary.total_collected_bwp || 0).toFixed(0);
+    }).catch(function(err) {
+      showError('Error: ' + err.message);
+    });
+  }
+
+  /**
+   * Export payment report to CSV format.
+   */
+  function exportPaymentReportToCSV() {
+    var table = document.getElementById('reportTable');
+    var rows = table.querySelectorAll('tr');
+    var csv = [];
+
+    rows.forEach(function(row) {
+      var cells = row.querySelectorAll('th, td');
+      var rowData = [];
+      cells.forEach(function(cell) {
+        rowData.push('"' + (cell.textContent || '').replace(/"/g, '""') + '"');
+      });
+      csv.push(rowData.join(','));
+    });
+
+    var csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+    var link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', 'payment-report-' + new Date().toISOString().split('T')[0] + '.csv');
+    link.click();
   }
   
   // ============================================================ //

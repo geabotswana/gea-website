@@ -57,6 +57,9 @@ function runNightlyTasks() {
   // 7. Clean up expired sessions
   purgeExpiredSessions();
 
+  // 8. Update exchange rate from API
+  fetchAndUpdateExchangeRate();
+
   Logger.log("=== Nightly tasks complete ===");
 }
 

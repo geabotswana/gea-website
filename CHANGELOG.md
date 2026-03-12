@@ -11,18 +11,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Phase 2 Payment Features (Mar 13, 2026)
+
+**Automatic Exchange Rate Management:**
+- `fetchAndUpdateExchangeRate()` in PaymentService.js — Fetches USD↔BWP rate nightly from open.er-api.com
+- `getExchangeRate()` helper — Reads from Configuration sheet with EXCHANGE_RATE_DEFAULT fallback
+- Integrated into `runNightlyTasks()` (2:00 AM GMT+2)
+- Configuration-based storage: no API key needed, no hardcoded rates
+
+**Payment History Report:**
+- New `getPaymentReport(filters)` function in PaymentService.js
+- `admin_payment_report` route in Code.js
+- Admin Portal: Payment Management page with two tabs
+  - **Pending Verification:** Current unverified payments list
+  - **Payment Report:** Filterable historical report with:
+    - Membership year filter
+    - Status filter (Verified, Submitted, Rejected, Clarification Requested)
+    - Summary section (verified count, total collected USD/BWP)
+    - CSV export button
+- Report columns: Household, Email, Amount USD, Amount BWP, Method, Status, Submitted Date
+
+**Code Quality Improvements:**
+- Pro-ration fix: Removed dead code block, now uses QUARTER_PERCENTAGES config constants
+- Legacy consolidation: Removed old payment handlers (_handlePaymentSubmit, _handleAdminPayment, _confirmPayment, _markPaymentNotFound)
+- Streamlined payment verification workflow in PaymentService.js
+
+**Updated Documentation:**
+- CLAUDE.md: Updated request flow routes, PaymentService description, Admin.html features
+- CLAUDE_Payments_Implementation.md: Comprehensive Phase 2 documentation including:
+  - Updated exchange rate system (open.er-api.com, Configuration storage)
+  - Payment report feature specifications and implementation
+  - Backend routes and PaymentService functions
+  - Phase 2 configuration constants
+  - Implementation status and testing checklist
+- CHANGELOG.md: This file documenting all Phase 2 changes
+
 #### Documentation Organization
 - **docs/** folder structure with organized documentation:
   - `docs/policies/` — GEA policies (Membership, Reservations, Payments, Guest List, Document Submission, Data Management, Security/Privacy, Communications, Audit/Compliance)
   - `docs/reference/` — Quick reference materials (Facility Rules, Membership Categories Matrix, Roles/Permissions Matrix)
   - `docs/development/` — Development standards and repository organization guidelines
   - `docs/decisions/` — Board decisions and policy evaluations
-  - `docs/implementation/` — Implementation guides (planned)
-  - `docs/workflows/` — Workflow documentation (planned)
+  - `docs/implementation/` — Implementation guides
+  - `docs/workflows/` — Workflow documentation
   - `docs/archive/` — Archived content
 - **docs/README.md** — Master documentation index with navigation, status tracking, and document relationships
 
 ### Removed
+
+#### Legacy Payment Handlers (Mar 13, 2026 - Phase 2)
+- `_handlePaymentSubmit(p)` from Code.js — Replaced by `_handleSubmitPaymentVerification(p)` using PaymentService
+- `_handleAdminPayment(p)` from Code.js — Replaced by `_handleAdminApprovePayment`, `_handleAdminRejectPayment`, `_handleAdminClarifyPayment`
+- `_confirmPayment(paymentId, verifiedBy)` helper — Functionality absorbed into PaymentService.approvePaymentVerification()
+- `_markPaymentNotFound(paymentId, markedBy)` helper — Replaced by rejectPaymentVerification() with reason parameter
+- `action="payment"` route — Consolidated to `action="submit_payment_verification"`
+- `action="admin_payment"` route — Consolidated to three routes: approve, reject, clarify
+- Duplicate constant: `EXCHANGE_RATE_USD_TO_BWP` (removed from Config.js; now dynamic in Configuration sheet)
+- Duplicate constant: `EXCHANGE_RATE_LAST_UPDATED` (replaced by Configuration sheet entry)
 
 #### Redundant & Temporary Documentation
 - **MEMBERSHIP_LEVELS.md** — Removed from root; superseded by `docs/reference/MEMBERSHIP_CATEGORIES_MATRIX.md` (newer, more detailed version with regulatory basis)

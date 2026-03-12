@@ -430,13 +430,9 @@ var ABSA_SWIFT          = "BARCBWGX";
 // - Exchange rate published monthly; members see both USD and calculated BWP amount
 // ============================================================
 
-// Current monthly exchange rate (USD to BWP)
-// Update this value each month after board decision on rate
-// Example: 1 USD = 13.5 BWP (use decimal value)
-var EXCHANGE_RATE_USD_TO_BWP = 13.5;
-
-// Month and year of last rate update (for reference)
-var EXCHANGE_RATE_LAST_UPDATED = "February 22, 2026";
+// Exchange rate API for automatic daily updates (USD to BWP)
+// Free tier: 1500 requests/month, no API key required
+var EXCHANGE_RATE_API_URL = "https://open.er-api.com/v6/latest/USD";
 
 // Authorized board members who can update exchange rate
 // (Consider implementing update restriction to board treasurer/secretary)

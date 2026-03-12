@@ -37,10 +37,11 @@ Code.js :: doGet(e) or Code.js :: handlePortalApi()
   ↓
 _routeAction(action, params)
   ├─→ Public routes: login, logout
-  ├─→ Member routes: dashboard, profile, reservations, book, cancel, card, payment
-  └─→ Board routes: admin_pending, admin_approve, admin_deny, admin_members, admin_photo, admin_payment
+  ├─→ Member routes: dashboard, profile, reservations, book, cancel, card, submit_payment_verification, get_payment_status, upload_file, get_file_status, request_employment
+  ├─→ Applicant routes: application_status, confirm_documents, upload_document, submit_payment_proof
+  └─→ Board routes: admin_pending, admin_approve, admin_deny, admin_members, admin_photo, admin_pending_payments, admin_approve_payment, admin_reject_payment, admin_clarify_payment, admin_payment_report, admin_applications, admin_approve_file, admin_reject_file
   ↓
-Service modules (AuthService, MemberService, ReservationService, EmailService, NotificationService)
+Service modules (AuthService, MemberService, ReservationService, PaymentService, FileSubmissionService, ApplicationService, EmailService, NotificationService)
   ↓
 Google Sheets API calls
   ↓
@@ -299,7 +300,52 @@ function replaceTemplateVars(template, variables)    // {{PLACEHOLDER}} replacem
 function validateEmail(email)                         // Format check
 ```
 
-### NotificationService.js (400 lines)
+### PaymentService.js (600+ lines)
+
+**Responsibilities:**
+- Payment submission and verification workflow (Phase 1)
+- Payment history reporting with filters (Phase 2)
+- Pro-ration calculations by quarter
+- Exchange rate management (API fetch & storage) (Phase 2)
+- Treasurer review and approval/rejection
+
+**Key Functions:**
+```javascript
+function submitPaymentVerification(params)            // Member submits payment proof
+function getPaymentVerificationStatus(householdId, membershipYear)  // Check status
+function listPendingPaymentVerifications()            // Treasurer view list
+function approvePaymentVerification(paymentId, treasurerEmail, notes)  // Approve
+function rejectPaymentVerification(paymentId, treasurerEmail, reason)  // Reject
+function requestPaymentClarification(paymentId, treasurerEmail, request)  // Ask for info
+function getPaymentReport(filters)                    // Generate filtered report
+function calculateProratedDues(annualDuesUsd)        // Quarterly pro-ration
+function fetchAndUpdateExchangeRate()                // Nightly API update
+function getExchangeRate()                           // Read current rate with fallback
+```
+
+### FileSubmissionService.js (400+ lines)
+
+**Responsibilities:**
+- Document and photo upload workflow
+- Two-tier document approval (RSO → GEA admin)
+- One-tier photo approval (GEA admin only)
+- Employment verification requests
+- Cloud Storage integration for approved files
+- One-time RSO approval links with expiration
+- Submission history and audit trail
+
+**Key Functions:**
+```javascript
+function submitFile(params)                          // Member uploads document/photo
+function getSubmissionHistory(householdId, documentType)  // View submission history
+function approveSubmission(submissionId, approverEmail)  // Approve and move to Cloud Storage
+function rejectSubmission(submissionId, approverEmail, reason)  // Reject and notify
+function generateRsoApprovalLink(submissionId)       // Create one-time approval URL
+function handleRsoApproval(linkToken, decision, reason)  // RSO reviews via link
+function getSubmissionStatus(submissionId)           // Check current status
+```
+
+### NotificationService.js (400+ lines)
 
 **Responsibilities:**
 - Nightly automated tasks (2:00 AM GMT+2)
@@ -308,16 +354,18 @@ function validateEmail(email)                         // Format check
 - Guest list reminders
 - Session cleanup
 - Bump window monitoring
+- Exchange rate updates (Phase 2)
 
 **Key Functions:**
 ```javascript
-function runNightlyTasks()                          // Main nightly runner
+function runNightlyTasks()                          // Main nightly runner (includes exchange rate update)
 function sendMembershipRenewals()                   // 30-day, 7-day warnings
 function sendDocumentExpirationAlerts()             // 6-month passport warnings
 function sendGuestListReminders()                   // Deadline reminders
 function triggerRsoDailySummary()                   // 6:00 AM RSO digest
 function sendHolidayCalReminder()                   // Yearly on Nov 1
 function processBumpingDeadlines()                  // Auto-confirm excess bookings
+function fetchAndUpdateExchangeRate()               // Update USD↔BWP rate from API
 ```
 
 ### Utilities.js (517 lines)
@@ -435,7 +483,9 @@ function uploadDocument(type, file)    // Submit document
 - **Reservations:** Approve/deny excess bookings, view event calendar
 - **Members:** Search directory, view household details
 - **Photos:** Review photo submissions (approve/reject)
-- **Payments:** Verify payment confirmations, activate memberships
+- **Payments:** Two sub-views:
+  - Pending Verification: List unverified payments with approve/reject buttons
+  - Payment Report: Filterable report with membership year/status filters, summary totals, CSV export
 
 **Key Admin Functions:**
 ```javascript
@@ -443,7 +493,11 @@ function approveReservation(id)         // Approval handler
 function denyReservation(id, reason)   // Denial handler
 function approvePhoto(individualId)    // Photo approval
 function rejectPhoto(individualId, reason)
-function verifyPayment(paymentId)      // Activate membership
+function loadPayments()                 // Load pending payments
+function confirmPayment(paymentId)      // Approve payment
+function markPaymentNotFound(paymentId) // Reject payment
+function loadPaymentReport()            // Generate filtered report
+function exportPaymentReportToCSV()     // CSV download
 function searchMembers(query)           // Member directory
 ```
 

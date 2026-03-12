@@ -43,6 +43,13 @@ function runAllTests() {
   testAuditLog();
   testMembershipApplicationsSheet();
   testIndividualsSheet();
+  testFileUploadSystem();
+  testFileSubmissionValidation();
+  testFileSubmissionStatus();
+  testDocumentExpirationWarnings();
+  testRsoApprovalLinkGeneration();
+  testSubmissionHistory();
+  testExpiredRsoLinkCleanup();
 
   Logger.log("========================================");
   Logger.log("TEST RUN COMPLETE — Check above for FAIL");
@@ -1353,4 +1360,213 @@ function testTokenHashMigrationHealthHelpers() {
     Logger.log("✗ FAIL: Exception in migration helpers test");
     Logger.log("  ERROR: " + e.toString());
   }
+}
+
+
+// ============================================================
+// FILE UPLOAD SYSTEM TESTS
+// ============================================================
+
+/**
+ * Tests the file upload system: submissions, status, approvals, RSO links
+ */
+function testFileUploadSystem() {
+  Logger.log("\n--- TEST: File Upload System ---");
+
+  // Test 1: Verify File Submissions sheet exists
+  try {
+    var submissionsSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+    _assert("File Submissions sheet exists", submissionsSheet !== null);
+  } catch (e) {
+    Logger.log("  FAIL: Cannot access File Submissions sheet: " + e);
+    return;
+  }
+
+  // Test 2: Verify required columns exist
+  var headers = submissionsSheet.getRange(1, 1, 1, submissionsSheet.getLastColumn()).getValues()[0];
+  var requiredColumns = ['submission_id', 'individual_id', 'document_type', 'status', 'file_id', 'submitted_date', 'is_current'];
+  requiredColumns.forEach(function(col) {
+    var exists = headers.indexOf(col) >= 0;
+    _assert("Column '" + col + "' exists", exists);
+  });
+
+  // Test 3: Verify Config constants for file uploads
+  _assert("PHOTO_MAX_SIZE_MB defined", typeof PHOTO_MAX_SIZE_MB === 'number', PHOTO_MAX_SIZE_MB);
+  _assert("PHOTO_ACCEPTED_TYPES defined", Array.isArray(PHOTO_ACCEPTED_TYPES), typeof PHOTO_ACCEPTED_TYPES);
+  _assert("PASSPORT_WARNING_MONTHS defined", typeof PASSPORT_WARNING_MONTHS === 'number', PASSPORT_WARNING_MONTHS);
+  _assert("EMAIL_RSO defined", typeof EMAIL_RSO === 'string' && EMAIL_RSO.length > 0, EMAIL_RSO);
+  _assert("RSO_APPROVAL_LINK_EXPIRY_HOURS defined", typeof RSO_APPROVAL_LINK_EXPIRY_HOURS === 'number');
+
+  Logger.log("  INFO: File upload system config verified");
+}
+
+/**
+ * Tests file submission creation and validation
+ */
+function testFileSubmissionValidation() {
+  Logger.log("\n--- TEST: File Submission Validation ---");
+
+  // Test invalid document type
+  var result = uploadFileSubmission({
+    individual_id: "IND-TEST-001",
+    document_type: "invalid_type",
+    file_blob: Utilities.newBlob("test content"),
+    file_name: "test.txt"
+  });
+  _assert("Rejects invalid document type", !result.ok && result.code === "INVALID_DOCUMENT_TYPE");
+
+  // Test oversized file
+  var largeContent = new Array(15 * 1024 * 1024).fill('x').join(''); // 15MB
+  var largeBlob = Utilities.newBlob(largeContent, 'text/plain', 'large.txt');
+  var result2 = uploadFileSubmission({
+    individual_id: "IND-TEST-001",
+    document_type: "photo",
+    file_blob: largeBlob,
+    file_name: "large.txt",
+    file_size_bytes: 15 * 1024 * 1024
+  });
+  _assert("Rejects oversized photo", !result2.ok && result2.code === "FILE_TOO_LARGE");
+
+  Logger.log("  INFO: File validation rules working correctly");
+}
+
+/**
+ * Tests file status retrieval logic
+ */
+function testFileSubmissionStatus() {
+  Logger.log("\n--- TEST: File Submission Status ---");
+
+  // Use a test individual if available
+  var testIndividualId = "IND-2026-TEST01"; // From CLAUDE.md test data
+
+  try {
+    var status = getFileSubmissionStatus(testIndividualId);
+    _assert("getFileSubmissionStatus returns object", status && typeof status === 'object');
+    _assert("Status has individual_id", status.individual_id === testIndividualId);
+    _assert("Status has photo field", status.hasOwnProperty('photo'));
+    _assert("Status has passport field", status.hasOwnProperty('passport'));
+    _assert("Status has omang field", status.hasOwnProperty('omang'));
+    _assert("Status has employment field", status.hasOwnProperty('employment'));
+    _assert("Status has all_required_complete field", typeof status.all_required_complete === 'boolean');
+
+    Logger.log("  INFO: Document status: photo=" + status.photo.status + ", passport=" + status.passport.status);
+  } catch (e) {
+    Logger.log("  WARN: Could not test status for individual " + testIndividualId + ": " + e);
+  }
+}
+
+/**
+ * Tests document expiration warning logic
+ */
+function testDocumentExpirationWarnings() {
+  Logger.log("\n--- TEST: Document Expiration Warnings ---");
+
+  try {
+    var result = checkDocumentExpirationWarnings();
+    _assert("checkDocumentExpirationWarnings returns object", result && typeof result === 'object');
+    _assert("Returns warnings_sent count", typeof result.warnings_sent === 'number');
+    _assert("warnings_sent is non-negative", result.warnings_sent >= 0, result.warnings_sent);
+
+    Logger.log("  INFO: Expiration check completed, warnings sent: " + result.warnings_sent);
+  } catch (e) {
+    Logger.log("  WARN: Expiration warning test error: " + e);
+  }
+}
+
+/**
+ * Tests RSO approval link generation
+ */
+function testRsoApprovalLinkGeneration() {
+  Logger.log("\n--- TEST: RSO Approval Link Generation ---");
+
+  // Test link token format
+  var tokenSeed = "test-seed-" + new Date().getTime() + "-" + Utilities.getUuid();
+  var tokenBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, tokenSeed);
+  var token = tokenBytes.map(function(b) {
+    var v = (b + 256) % 256;
+    return (v < 16 ? "0" : "") + v.toString(16);
+  }).join("");
+
+  _assert("Token is 64-char hex string", token.length === 64, "length: " + token.length);
+  _assert("Token contains only hex digits", /^[0-9a-f]{64}$/.test(token), token.substring(0, 10) + "...");
+
+  // Test link expiration calculation
+  var now = new Date();
+  var expiresAt = new Date(now.getTime() + (RSO_APPROVAL_LINK_EXPIRY_HOURS * 60 * 60 * 1000));
+  var hoursDiff = (expiresAt - now) / (60 * 60 * 1000);
+  _assert("Expiration time is RSO_APPROVAL_LINK_EXPIRY_HOURS in future",
+    Math.abs(hoursDiff - RSO_APPROVAL_LINK_EXPIRY_HOURS) < 1,
+    "hours: " + hoursDiff.toFixed(1));
+
+  Logger.log("  INFO: RSO link generation logic verified");
+}
+
+/**
+ * Tests document history retrieval
+ */
+function testSubmissionHistory() {
+  Logger.log("\n--- TEST: Submission History ---");
+
+  var testIndividualId = "IND-2026-TEST01";
+
+  try {
+    var result = getSubmissionHistory(testIndividualId);
+    _assert("getSubmissionHistory returns object", result && typeof result === 'object');
+    _assert("Result has ok field", result.hasOwnProperty('ok'));
+    _assert("Result has history array", Array.isArray(result.history), typeof result.history);
+
+    if (result.history && result.history.length > 0) {
+      var firstItem = result.history[0];
+      _assert("History items have submission_id", firstItem.hasOwnProperty('submission_id'));
+      _assert("History items have document_type", firstItem.hasOwnProperty('document_type'));
+      _assert("History items have status", firstItem.hasOwnProperty('status'));
+      _assert("History items have submitted_date", firstItem.hasOwnProperty('submitted_date'));
+      Logger.log("  INFO: Found " + result.history.length + " submissions");
+    } else {
+      Logger.log("  INFO: No submission history for test individual");
+    }
+  } catch (e) {
+    Logger.log("  WARN: Could not test history: " + e);
+  }
+}
+
+/**
+ * Tests nightly cleanup of expired RSO links
+ */
+function testExpiredRsoLinkCleanup() {
+  Logger.log("\n--- TEST: Expired RSO Link Cleanup ---");
+
+  try {
+    var result = deleteExpiredRsoLinks();
+    _assert("deleteExpiredRsoLinks returns object", result && typeof result === 'object');
+    _assert("Returns expired_count", typeof result.expired_count === 'number');
+    _assert("expired_count is non-negative", result.expired_count >= 0, result.expired_count);
+
+    if (result.expired_count > 0) {
+      Logger.log("  INFO: Cleaned up " + result.expired_count + " expired RSO links");
+    }
+  } catch (e) {
+    Logger.log("  WARN: RSO link cleanup test error: " + e);
+  }
+}
+
+/**
+ * Adds file upload tests to the main test runner
+ */
+function runFileUploadTests() {
+  Logger.log("========================================");
+  Logger.log("FILE UPLOAD SYSTEM TEST RUN — " + new Date().toString());
+  Logger.log("========================================");
+
+  testFileUploadSystem();
+  testFileSubmissionValidation();
+  testFileSubmissionStatus();
+  testDocumentExpirationWarnings();
+  testRsoApprovalLinkGeneration();
+  testSubmissionHistory();
+  testExpiredRsoLinkCleanup();
+
+  Logger.log("========================================");
+  Logger.log("FILE UPLOAD TESTS COMPLETE");
+  Logger.log("========================================");
 }

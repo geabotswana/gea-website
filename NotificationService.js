@@ -80,7 +80,7 @@ function triggerRsoDailySummary() {
 function sendHolidayCalReminder() {
   Logger.log("Holiday calendar reminder trigger fired.");
   var currentYear = new Date().getFullYear();
-  sendEmail("tpl_027", EMAIL_BOARD, {
+  sendEmailFromBoard("tpl_027", EMAIL_BOARD, {
     CURRENT_YEAR: currentYear,
     NEXT_YEAR:    currentYear + 1
   });
@@ -381,7 +381,7 @@ function sendPhotoReminders() {
       // Only send to the Primary member to avoid flooding a household
       if (m.relationship_to_primary !== RELATIONSHIP_PRIMARY) continue;
 
-      sendEmail("tpl_016", m.email, {
+      sendEmailFromBoard("tpl_016", m.email, {
         FIRST_NAME:              m.first_name,
         IF_FAMILY_MISSING_PHOTOS: missingPhotos.length > 1 ? "true" : "",
         MISSING_PHOTOS_LIST:     missingList

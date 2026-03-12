@@ -441,13 +441,13 @@ function updatePhotoStatus(individualId, status, decidedBy, rejectionReason) {
   if (status === "approved") {
     updateMemberField(individualId, "photo_approved_by",   decidedBy,   decidedBy);
     updateMemberField(individualId, "photo_approved_date", new Date(), decidedBy);
-    if (m.email) sendEmail("tpl_017", m.email, { FIRST_NAME: m.first_name });
+    if (m.email) sendEmailFromBoard("tpl_017", m.email, { FIRST_NAME: m.first_name });
     logAuditEntry(decidedBy, AUDIT_PHOTO_APPROVED, "Individual", individualId, "Photo approved");
 
   } else if (status === "rejected") {
     var reason = rejectionReason || "Photo did not meet requirements";
     updateMemberField(individualId, "photo_rejection_reason", reason, decidedBy);
-    if (m.email) sendEmail("tpl_018", m.email, {
+    if (m.email) sendEmailFromBoard("tpl_018", m.email, {
       FIRST_NAME:       m.first_name,
       REJECTION_REASON: reason
     });
@@ -489,17 +489,17 @@ function checkBirthdays() {
         var parentEmail = _getPrimaryEmail(m.household_id);
         var recipients  = parentEmail && parentEmail !== m.email
                           ? [m.email, parentEmail] : [m.email];
-        sendEmail("tpl_023", recipients, {
+        sendEmailFromBoard("tpl_023", recipients, {
           FIRST_NAME:  m.first_name,
           PARENT_NAME: _getPrimaryFullName(m.household_id),
           IF_NO_EMAIL: !m.email ? "true" : ""
         });
 
       } else if (age === AGE_VOTING && hh && hh.membership_type === CATEGORY_FULL) {
-        sendEmail("tpl_024", m.email, { FIRST_NAME: m.first_name });
+        sendEmailFromBoard("tpl_024", m.email, { FIRST_NAME: m.first_name });
 
       } else {
-        sendEmail("tpl_022", m.email, { FIRST_NAME: m.first_name });
+        sendEmailFromBoard("tpl_022", m.email, { FIRST_NAME: m.first_name });
       }
       Logger.log("Birthday email sent: " + m.email + " (age " + age + ")");
     }
@@ -527,7 +527,7 @@ function checkExpiringDocuments() {
 
       var expDate = new Date(m.document_expiration_date);
       if (expDate <= warnBefore && expDate > new Date()) {
-        sendEmail("tpl_015", m.email, {
+        sendEmailFromBoard("tpl_015", m.email, {
           FIRST_NAME:               m.first_name,
           DOCUMENT_TYPE:            m.document_type || "Passport",
           DOCUMENT_NUMBER:          m.document_number || "",
@@ -579,15 +579,15 @@ function checkExpiringMemberships() {
       };
 
       if (expDate.getTime() === in30.getTime()) {
-        sendEmail("tpl_004", primaryEmail, vars);
+        sendEmailFromBoard("tpl_004", primaryEmail, vars);
         Logger.log("30-day renewal reminder: " + primaryEmail);
       }
       if (expDate.getTime() === in7.getTime()) {
-        sendEmail("tpl_005", primaryEmail, vars);
+        sendEmailFromBoard("tpl_005", primaryEmail, vars);
         Logger.log("7-day renewal reminder: " + primaryEmail);
       }
       if (expDate.getTime() === today.getTime()) {
-        sendEmail("tpl_006", primaryEmail, vars);
+        sendEmailFromBoard("tpl_006", primaryEmail, vars);
         updateHouseholdField(hh.household_id, "active", false, "system");
         Logger.log("Expired + deactivated: " + hh.household_id);
       }

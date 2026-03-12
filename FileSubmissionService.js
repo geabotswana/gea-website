@@ -150,7 +150,7 @@ function generateRsoApprovalLink(submission_id) {
     var baseUrl = ScriptApp.getService().getUrl();
     var linkUrl = baseUrl + "?action=rso_approve&token=" + encodeURIComponent(token);
 
-    sendEmail("tpl_058", EMAIL_RSO, {
+    sendEmailFromBoard("tpl_058", EMAIL_RSO, {
       SUBMISSION_ID: submission_id,
       APPROVAL_LINK: linkUrl,
       EXPIRES_AT: formatDate(expiresAt, false)

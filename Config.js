@@ -25,8 +25,8 @@
  *
  * SYSTEM: Gaborone Employee Association Management System
  * WEBSITE: www.geabotswana.org
- * LAST UPDATED: February 22, 2026
- * UPDATED BY: Claude Code (Sequential eligibility flow + sponsor requirements + exchange rate mechanism)
+ * LAST UPDATED: March 12, 2026
+ * UPDATED BY: Claude Code (Payment verification system + email templates)
  * ============================================================
  */
 
@@ -75,9 +75,8 @@ var TAB_SESSIONS            = "Sessions";
 
 // GEA Payment Tracking tabs
 var TAB_PAYMENTS            = "Payments";
-var TAB_PAYMENT_VERIFICATIONS = "Payment Verifications";
-var TAB_MEMBERSHIP_PRICING   = "Membership Pricing";
-var TAB_RATES                = "Rates";
+var TAB_MEMBERSHIP_PRICING  = "Membership Pricing";
+var TAB_RATES               = "Rates";
 
 
 // ============================================================

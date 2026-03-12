@@ -308,7 +308,7 @@ function approveReservation(reservationId, approvedBy, notes) {
   if (hh) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
-      sendEmail("tpl_010", primaryEmail, {
+      sendEmailFromBoard("tpl_010", primaryEmail, {
         FIRST_NAME:               _getPrimaryFirstName(hh.household_id),
         FACILITY:                 res.facility,
         RESERVATION_DATE:         formatDate(new Date(res.event_date)),
@@ -350,7 +350,7 @@ function denyReservation(reservationId, deniedBy, reason) {
   if (hh) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
-      sendEmail("tpl_011", primaryEmail, {
+      sendEmailFromBoard("tpl_011", primaryEmail, {
         FIRST_NAME:       _getPrimaryFirstName(hh.household_id),
         FACILITY:         res.facility,
         RESERVATION_DATE: formatDate(new Date(res.event_date)),
@@ -390,7 +390,7 @@ function cancelReservation(reservationId, cancelledBy, reason) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
       var boardCancelled = cancelledBy !== primaryEmail;
-      sendEmail("tpl_012", primaryEmail, {
+      sendEmailFromBoard("tpl_012", primaryEmail, {
         FIRST_NAME:          _getPrimaryFirstName(hh.household_id),
         FACILITY:            res.facility,
         RESERVATION_DATE:    formatDate(new Date(res.event_date)),
@@ -482,7 +482,7 @@ function sendGuestListReminders() {
       if (!primaryEmail) continue;
 
       var hh = getHouseholdById(res.household_id);
-      sendEmail("tpl_013", primaryEmail, {
+      sendEmailFromBoard("tpl_013", primaryEmail, {
         FIRST_NAME:           _getPrimaryFirstName(res.household_id),
         FACILITY:             res.facility,
         RESERVATION_DATE:     formatDate(new Date(res.event_date)),
@@ -569,7 +569,7 @@ function sendRsoDailySummary() {
     }
 
     var noRes = todayReservations.length === 0 ? "true" : "";
-    sendEmail("tpl_014", EMAIL_RSO, {
+    sendEmailFromBoard("tpl_014", EMAIL_RSO, {
       TODAY_DATE:          formatDate(new Date()),
       IF_NO_RESERVATIONS:  noRes,
       RESERVATIONS_BLOCK:  block,
@@ -737,11 +737,11 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
 
   if (row.status === STATUS_CONFIRMED) {
     // Auto-confirmed tennis — just send confirmation to member
-    sendEmail("tpl_007", params.primaryEmail, baseVars);
+    sendEmailFromBoard("tpl_007", params.primaryEmail, baseVars);
 
   } else {
     // Pending — send acknowledgment to member
-    sendEmail("tpl_008", params.primaryEmail, Object.assign({}, baseVars, {
+    sendEmailFromBoard("tpl_008", params.primaryEmail, Object.assign({}, baseVars, {
       APPROVAL_REASON: limitCheck.isExcess
                        ? "your household has exceeded the booking limit"
                        : "board and Management Officer approval",
@@ -766,15 +766,15 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
     });
 
     if (limitCheck.isExcess && params.facility === FACILITY_TENNIS) {
-      sendEmail("tpl_030", EMAIL_BOARD, limitVars);
+      sendEmailFromBoard("tpl_030", EMAIL_BOARD, limitVars);
     } else if (params.facility === FACILITY_LEOBO || params.facility === FACILITY_WHOLE) {
       if (limitCheck.isExcess) {
-        sendEmail("tpl_031", EMAIL_MGT, limitVars);
+        sendEmailFromBoard("tpl_031", EMAIL_MGT, limitVars);
       } else {
-        sendEmail("tpl_019", EMAIL_MGT, limitVars);
+        sendEmailFromBoard("tpl_019", EMAIL_MGT, limitVars);
       }
     } else {
-      sendEmail("tpl_009", EMAIL_BOARD, limitVars);
+      sendEmailFromBoard("tpl_009", EMAIL_BOARD, limitVars);
     }
 
     // Send limit-reached notice to member if excess

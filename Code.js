@@ -707,7 +707,7 @@ function _handlePaymentSubmit(p) {
 
   // Notify the board
   var level = getMembershipLevel(hh.membership_level_id);
-  sendEmail("tpl_025", EMAIL_BOARD, {
+  sendEmailFromBoard("tpl_025", EMAIL_BOARD, {
     MEMBER_NAME:      hh.household_name,
     MEMBER_EMAIL:     auth.session.email,
     MEMBERSHIP_LEVEL: hh.membership_type,
@@ -2346,14 +2346,13 @@ function _handleAdminApprovePayment(p) {
     var auth = requireAuth(p.token, "board");
     if (!auth.success) return auth;
 
-    if (!p.verification_id) {
-      return errorResponse("verification_id is required.", "INVALID_PARAM");
+    if (!p.payment_id) {
+      return errorResponse("payment_id is required.", "INVALID_PARAM");
     }
 
     var result = approvePaymentVerification(
-      p.verification_id,
+      p.payment_id,
       auth.session.email,
-      p.paid_in_full !== false,
       p.notes || ""
     );
 
@@ -2373,11 +2372,11 @@ function _handleAdminRejectPayment(p) {
     var auth = requireAuth(p.token, "board");
     if (!auth.success) return auth;
 
-    if (!p.verification_id || !p.reason) {
-      return errorResponse("verification_id and reason are required.", "INVALID_PARAM");
+    if (!p.payment_id || !p.reason) {
+      return errorResponse("payment_id and reason are required.", "INVALID_PARAM");
     }
 
-    var result = rejectPaymentVerification(p.verification_id, auth.session.email, p.reason);
+    var result = rejectPaymentVerification(p.payment_id, auth.session.email, p.reason);
     if (!result.ok) return errorResponse(result.error || "Rejection failed", "FAILED");
     return successResponse(result);
   } catch (e) {
@@ -2394,12 +2393,12 @@ function _handleAdminClarifyPayment(p) {
     var auth = requireAuth(p.token, "board");
     if (!auth.success) return auth;
 
-    if (!p.verification_id || !p.clarification_request) {
-      return errorResponse("verification_id and clarification_request are required.", "INVALID_PARAM");
+    if (!p.payment_id || !p.clarification_request) {
+      return errorResponse("payment_id and clarification_request are required.", "INVALID_PARAM");
     }
 
     var result = requestPaymentClarification(
-      p.verification_id,
+      p.payment_id,
       auth.session.email,
       p.clarification_request
     );
@@ -2409,4 +2408,108 @@ function _handleAdminClarifyPayment(p) {
   } catch (e) {
     return errorResponse("Error requesting clarification: " + e.toString(), "SERVER_ERROR");
   }
+}
+
+
+/**
+ * One-time setup function: Adds missing payment verification email templates
+ * Run this once, then can be deleted.
+ * Select from dropdown: addPaymentTemplates()
+ * Click Run
+ */
+function addPaymentTemplates() {
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_EMAIL_TEMPLATES);
+
+    var newTemplates = [
+      {
+        template_id: 'tpl_061',
+        template_name: 'Payment Submitted',
+        subject: 'GEA Payment Submitted - Confirmation {{PAYMENT_ID}}',
+        body: 'Dear {{FIRST_NAME}},\n\nThank you for submitting your membership dues payment.\n\nPAYMENT SUBMISSION DETAILS:\nPayment Reference: {{PAYMENT_ID}}\nMembership Year: {{MEMBERSHIP_YEAR}}\nAmount Submitted: {{AMOUNT}} {{CURRENCY}}\nPayment Method: {{PAYMENT_METHOD}}\nTransaction Date: {{TRANSACTION_DATE}}\nSubmission Date: {{SUBMISSION_DATE}}\n\nWHAT HAPPENS NEXT:\nOur treasurer will verify receipt of your payment. This typically takes 2-3 business days. Once verified, your membership status will be updated in the portal.\n\nYou will receive a confirmation email once verification is complete.\n\nQUESTIONS?\nIf you have questions about your payment submission, please contact board@geabotswana.org.\n\nGaborone Employee Association\nwww.geabotswana.org\nboard@geabotswana.org',
+        active: true
+      },
+      {
+        template_id: 'tpl_062',
+        template_name: 'Payment Submitted (Board)',
+        subject: '[ACTION REQUIRED] Payment Verification Needed - {{MEMBER_EMAIL}}',
+        body: 'GEA Board,\n\nA member has submitted payment proof for verification.\n\nPAYMENT DETAILS:\nPayment ID: {{PAYMENT_ID}}\nMember: {{FIRST_NAME}} {{LAST_NAME}} ({{MEMBER_EMAIL}})\nHousehold: {{HOUSEHOLD_NAME}} ({{HOUSEHOLD_ID}})\nMembership Year: {{MEMBERSHIP_YEAR}}\nAmount: {{AMOUNT}} {{CURRENCY}}\nPayment Method: {{PAYMENT_METHOD}}\nTransaction Date: {{TRANSACTION_DATE}}\nSubmission Date: {{SUBMISSION_DATE}}\n\nACTION REQUIRED:\nPlease verify receipt of this payment in the member\'s account and confirm in the Admin Portal.\n\nVERIFY PAYMENT: Log in to Board Admin Portal and navigate to Payments section.\n\nOnce verified, the member will be notified and their membership activated.\n\nGEA System',
+        active: true
+      },
+      {
+        template_id: 'tpl_063',
+        template_name: 'Payment Verified',
+        subject: 'GEA Payment Confirmed - Membership Active',
+        body: 'Dear {{FIRST_NAME}},\n\nExcellent news! We have verified your payment and your membership is now fully active.\n\nPAYMENT VERIFIED:\nPayment ID: {{PAYMENT_ID}}\nAmount: {{AMOUNT_PAID}} {{CURRENCY}}\nMembership Year: {{MEMBERSHIP_YEAR}}\nVerified By: {{PAYMENT_VERIFIED_BY}}\nVerification Date: {{VERIFICATION_DATE}}\n\nMEMBERSHIP STATUS:\nStatus: ACTIVE\nValid Through: {{MEMBERSHIP_EXPIRATION_DATE}}\n\nYOUR NEXT STEPS:\n[ ] Log in to the Member Portal: www.geabotswana.org\n[ ] Download your digital membership card\n[ ] Explore facility reservations and events\n[ ] Update your profile information if needed\n\nYou now have full access to all GEA facilities and member benefits. Enjoy!\n\nQUESTIONS?\nIf you have any questions, please contact board@geabotswana.org.\n\nGaborone Employee Association\nwww.geabotswana.org\nboard@geabotswana.org',
+        active: true
+      },
+      {
+        template_id: 'tpl_064',
+        template_name: 'Payment Rejected',
+        subject: 'GEA Payment Verification - Action Required',
+        body: 'Dear {{FIRST_NAME}},\n\nWe have reviewed your payment submission and are unable to verify it at this time.\n\nPAYMENT STATUS:\nPayment ID: {{PAYMENT_ID}}\nMembership Year: {{MEMBERSHIP_YEAR}}\nStatus: NOT VERIFIED\n\nREASON FOR REJECTION:\n{{REJECTION_REASON}}\n\nWHAT TO DO:\nPlease resubmit your payment. Make sure to include:\n1. A clear receipt or screenshot of your transaction\n2. The transaction confirmation details (date, amount, reference number)\n3. Any relevant bank or payment provider information\n\nHOW TO RESUBMIT:\nLog in to the Member Portal at www.geabotswana.org and submit your payment verification again. You can use the same submission form and upload an updated receipt.\n\nNEED HELP?\nIf you believe this rejection was in error or need assistance, please contact board@geabotswana.org with your payment reference and details.\n\nGaborone Employee Association\nwww.geabotswana.org\nboard@geabotswana.org',
+        active: true
+      },
+      {
+        template_id: 'tpl_065',
+        template_name: 'Payment Clarification Requested',
+        subject: 'GEA Payment Verification - Additional Information Needed',
+        body: 'Dear {{FIRST_NAME}},\n\nThank you for submitting your membership dues payment. We are reviewing it and need some additional information before we can verify it.\n\nPAYMENT DETAILS:\nPayment ID: {{PAYMENT_ID}}\nMembership Year: {{MEMBERSHIP_YEAR}}\nAmount: {{AMOUNT}} {{CURRENCY}}\n\nCLARIFICATION NEEDED:\n{{CLARIFICATION_REQUEST}}\n\nDEADLINE:\nPlease provide the requested information by {{DEADLINE}}.\n\nHOW TO RESPOND:\nLog in to the Member Portal at www.geabotswana.org and resubmit your payment verification with the additional details or documentation requested above.\n\nQUESTIONS?\nIf you have questions about what information is needed, please contact board@geabotswana.org and reference your Payment ID.\n\nThank you for your prompt attention to this matter.\n\nGaborone Employee Association\nwww.geabotswana.org\nboard@geabotswana.org',
+        active: true
+      }
+    ];
+
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    for (var i = 0; i < newTemplates.length; i++) {
+      var row = [];
+      for (var j = 0; j < headers.length; j++) {
+        var header = headers[j];
+        row.push(newTemplates[i][header] || '');
+      }
+      sheet.appendRow(row);
+    }
+
+    Logger.log('SUCCESS: Added 5 new payment verification templates (tpl_061 - tpl_065)');
+  } catch (e) {
+    Logger.log('ERROR adding templates: ' + e);
+  }
+}
+
+
+/**
+ * Setup: Sync standardized email templates from repo
+ *
+ * All 65 email templates have been standardized with:
+ * - Consistent greetings (Dear {{FIRST_NAME}}, GEA Board, etc.)
+ * - Standard signature blocks (Gaborone Employee Association / www.geabotswana.org / board@geabotswana.org)
+ * - Footer: "This is an automated message from the GEA Management System. Feel free to reply if you have any questions or comments."
+ *
+ * The authoritative source is: GEA System Backend.xlsx (in repo root)
+ *
+ * INSTRUCTIONS TO SYNC:
+ * 1. Open the GEA System Backend.xlsx file from the repo root
+ * 2. Copy the entire "Email Templates" sheet (all rows including header)
+ * 3. In Google Sheets (GEA System Backend spreadsheet):
+ *    a. Go to "Email Templates" tab
+ *    b. Select all data (Ctrl+A)
+ *    c. Delete all content except header row
+ *    d. Paste the copied data
+ * 4. Or, use the Apps Script Data import feature if available
+ *
+ * Reference document: EMAIL_TEMPLATES_REFERENCE.md (in repo root)
+ */
+function setupEmailTemplates_Instructions() {
+  Logger.log("Email templates standardization complete!");
+  Logger.log("");
+  Logger.log("All 65 templates now have:");
+  Logger.log("- Consistent greetings");
+  Logger.log("- Standard signature blocks");
+  Logger.log("- Footer explaining it's an automated message that accepts replies");
+  Logger.log("");
+  Logger.log("Authoritative source: GEA System Backend.xlsx");
+  Logger.log("Reference guide: EMAIL_TEMPLATES_REFERENCE.md");
+  Logger.log("");
+  Logger.log("To sync to Google Sheets, copy the Email Templates sheet from the .xlsx");
+  Logger.log("and paste it into the Google Sheets version.");
 }

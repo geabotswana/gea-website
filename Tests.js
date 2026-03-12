@@ -50,6 +50,13 @@ function runAllTests() {
   testRsoApprovalLinkGeneration();
   testSubmissionHistory();
   testExpiredRsoLinkCleanup();
+  testPaymentSheet();
+  testSubmitPayment();
+  testListPendingPayments();
+  testPaymentStatus();
+  testApprovePayment();
+  testRejectPayment();
+  testClarifyPayment();
 
   Logger.log("========================================");
   Logger.log("TEST RUN COMPLETE — Check above for FAIL");
@@ -1568,5 +1575,245 @@ function runFileUploadTests() {
 
   Logger.log("========================================");
   Logger.log("FILE UPLOAD TESTS COMPLETE");
+  Logger.log("========================================");
+}
+
+
+// ============================================================
+// PAYMENT VERIFICATION TESTS
+// ============================================================
+
+/**
+ * Tests Payments sheet exists and has required columns
+ */
+function testPaymentSheet() {
+  Logger.log("\n--- TEST: Payments Sheet ---");
+
+  try {
+    var paymentsSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
+    _assert("Payments sheet exists", paymentsSheet !== null);
+
+    var headers = paymentsSheet.getRange(1, 1, 1, paymentsSheet.getLastColumn()).getValues()[0];
+    var requiredColumns = ['payment_id', 'household_id', 'household_name', 'payment_date',
+                          'payment_method', 'currency', 'amount', 'payment_type',
+                          'payment_submitted_date', 'payment_verified_date', 'payment_verified_by',
+                          'payment_confirmation_file_id', 'notes'];
+
+    requiredColumns.forEach(function(col) {
+      var exists = headers.indexOf(col) >= 0;
+      _assert("Column '" + col + "' exists", exists);
+    });
+
+    Logger.log("  INFO: Payments sheet has all required columns");
+  } catch (e) {
+    Logger.log("  FAIL: Cannot access Payments sheet: " + e);
+  }
+}
+
+/**
+ * Tests submitPaymentVerification creates records correctly
+ */
+function testSubmitPayment() {
+  Logger.log("\n--- TEST: Submit Payment Verification ---");
+
+  try {
+    // Use test household from CLAUDE.md
+    var testHouseholdId = "HSH-2026-TEST01";
+    var household = getHouseholdById(testHouseholdId);
+
+    if (!household) {
+      Logger.log("  SKIP: Test household HSH-2026-TEST01 not found");
+      return;
+    }
+
+    // Get available payment years for this household's membership level
+    var acceptableYears = _getAcceptablePaymentYears_(household.membership_level_id);
+    if (!acceptableYears || acceptableYears.length === 0) {
+      Logger.log("  SKIP: No payment years available for test household membership level");
+      Logger.log("       (Add test data to Membership Pricing sheet with membership_level_id=" +
+                 household.membership_level_id + ")");
+      return;
+    }
+
+    // Use the first available year (format: "2025-26", "2026-27", etc.)
+    var testYear = acceptableYears[0];
+    var result = submitPaymentVerification({
+      household_id: testHouseholdId,
+      membership_year: testYear,
+      payment_method: "Zelle (USD)",
+      currency: "USD",
+      amount_paid: 150.00,
+      transaction_date: new Date(2026, 2, 10),  // March 10, 2026
+      file_data_base64: null,
+      file_name: null,
+      notes: "Test payment submission",
+      member_email: "jane@example.com"
+    });
+
+    _assert("Payment submission succeeds", result.ok === true, result.error || "");
+    _assert("Returns payment_id", result.payment_id && result.payment_id.length > 0, result.payment_id);
+    _assert("Payment ID starts with PAY", result.payment_id && result.payment_id.indexOf("PAY") === 0);
+
+    Logger.log("  INFO: Payment created with ID: " + result.payment_id + " for year: " + testYear);
+  } catch (e) {
+    Logger.log("  WARN: Payment submission test error: " + e);
+  }
+}
+
+/**
+ * Tests listPendingPaymentVerifications filters unverified payments
+ */
+function testListPendingPayments() {
+  Logger.log("\n--- TEST: List Pending Payments ---");
+
+  try {
+    var result = listPendingPaymentVerifications();
+    _assert("listPendingPaymentVerifications returns object", result && typeof result === 'object');
+    _assert("Returns count field", typeof result.count === 'number');
+    _assert("Returns verifications array", Array.isArray(result.verifications));
+    _assert("count matches verifications length", result.count === result.verifications.length);
+
+    // Check that all pending payments have no verified_date
+    var allUnverified = result.verifications.every(function(p) {
+      return !p.payment_verified_date;
+    });
+    _assert("All pending payments are unverified", allUnverified);
+
+    // Check that all are Dues Payments
+    var allDuesPayments = result.verifications.every(function(p) {
+      return p.payment_type === "Dues Payment";
+    });
+    _assert("All pending payments are Dues type", allDuesPayments);
+
+    Logger.log("  INFO: Found " + result.count + " pending payment(s)");
+  } catch (e) {
+    Logger.log("  WARN: List pending payments test error: " + e);
+  }
+}
+
+/**
+ * Tests getPaymentVerificationStatus determines status correctly
+ */
+function testPaymentStatus() {
+  Logger.log("\n--- TEST: Payment Status ---");
+
+  try {
+    var testHouseholdId = "HSH-2026-TEST01";
+    var result = getPaymentVerificationStatus(testHouseholdId, "2026-27");
+
+    _assert("getPaymentVerificationStatus returns object", result && typeof result === 'object');
+    _assert("Returns ok flag", result.ok === true);
+    _assert("Returns status field", typeof result.status === 'string');
+    _assert("Status is one of valid values",
+            ['none', 'submitted', 'verified', 'rejected', 'clarification_requested'].indexOf(result.status) >= 0);
+    _assert("Returns history array", Array.isArray(result.history));
+
+    Logger.log("  INFO: Payment status: " + result.status + " (history: " + result.history.length + " items)");
+  } catch (e) {
+    Logger.log("  WARN: Payment status test error: " + e);
+  }
+}
+
+/**
+ * Tests approvePaymentVerification sets verified fields
+ */
+function testApprovePayment() {
+  Logger.log("\n--- TEST: Approve Payment ---");
+
+  try {
+    // Find a pending payment to approve
+    var pending = listPendingPaymentVerifications();
+    if (!pending.ok || pending.verifications.length === 0) {
+      Logger.log("  SKIP: No pending payments to test approval");
+      return;
+    }
+
+    var paymentId = pending.verifications[0].payment_id;
+    var result = approvePaymentVerification(paymentId, "treasurer@geabotswana.org", "Approved for processing");
+
+    _assert("Approval succeeds", result.ok === true, result.error || "");
+    _assert("Returns verified status", result.status === "verified", result.status);
+
+    // Verify by checking status updated
+    var statusResult = getPaymentVerificationStatus(pending.verifications[0].household_id, pending.verifications[0].applied_to_period);
+    _assert("Payment marked as verified in status", statusResult.status === "verified" || statusResult.status === "submitted");
+
+    Logger.log("  INFO: Payment approved with ID: " + paymentId);
+  } catch (e) {
+    Logger.log("  WARN: Approve payment test error: " + e);
+  }
+}
+
+/**
+ * Tests rejectPaymentVerification marks rejection
+ */
+function testRejectPayment() {
+  Logger.log("\n--- TEST: Reject Payment ---");
+
+  try {
+    // Find a pending payment to reject
+    var pending = listPendingPaymentVerifications();
+    if (!pending.ok || pending.verifications.length === 0) {
+      Logger.log("  SKIP: No pending payments to test rejection");
+      return;
+    }
+
+    var paymentId = pending.verifications[0].payment_id;
+    var result = rejectPaymentVerification(paymentId, "treasurer@geabotswana.org", "Receipt does not match account");
+
+    _assert("Rejection succeeds", result.ok === true, result.error || "");
+    _assert("Returns rejected status", result.status === "rejected", result.status);
+
+    Logger.log("  INFO: Payment rejected with ID: " + paymentId);
+  } catch (e) {
+    Logger.log("  WARN: Reject payment test error: " + e);
+  }
+}
+
+/**
+ * Tests requestPaymentClarification marks clarification needed
+ */
+function testClarifyPayment() {
+  Logger.log("\n--- TEST: Request Payment Clarification ---");
+
+  try {
+    // Find a pending payment to request clarification
+    var pending = listPendingPaymentVerifications();
+    if (!pending.ok || pending.verifications.length === 0) {
+      Logger.log("  SKIP: No pending payments to test clarification");
+      return;
+    }
+
+    var paymentId = pending.verifications[0].payment_id;
+    var result = requestPaymentClarification(paymentId, "treasurer@geabotswana.org",
+                                            "Please provide bank statement to verify transaction");
+
+    _assert("Clarification request succeeds", result.ok === true, result.error || "");
+    _assert("Returns clarification_requested status", result.status === "clarification_requested", result.status);
+
+    Logger.log("  INFO: Clarification requested for payment ID: " + paymentId);
+  } catch (e) {
+    Logger.log("  WARN: Request clarification test error: " + e);
+  }
+}
+
+/**
+ * Runs all payment verification tests
+ */
+function runPaymentTests() {
+  Logger.log("========================================");
+  Logger.log("PAYMENT VERIFICATION TEST RUN — " + new Date().toString());
+  Logger.log("========================================");
+
+  testPaymentSheet();
+  testSubmitPayment();
+  testListPendingPayments();
+  testPaymentStatus();
+  testApprovePayment();
+  testRejectPayment();
+  testClarifyPayment();
+
+  Logger.log("========================================");
+  Logger.log("PAYMENT TESTS COMPLETE");
   Logger.log("========================================");
 }

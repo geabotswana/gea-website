@@ -262,7 +262,7 @@ function setPassword(individualId, plainPassword, boardEmail) {
     // Send the member an email confirming their password is set
     // (use tpl_032 - Password Set Confirmation)
     if (member.email) {
-      sendEmail("tpl_032", member.email, {
+      sendEmailFromBoard("tpl_032", member.email, {
         FIRST_NAME: member.first_name
       });
     }
@@ -687,7 +687,7 @@ function _sendFirstLoginWelcome(member) {
     .join(", ");
   var level = getMembershipLevel(hh.membership_level_id);
 
-  sendEmail("tpl_021", member.email, {
+  sendEmailFromBoard("tpl_021", member.email, {
     FIRST_NAME:       member.first_name,
     MEMBERSHIP_LEVEL: hh.membership_type,
     EXPIRATION_DATE:  hh.membership_expiration_date

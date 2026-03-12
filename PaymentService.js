@@ -7,14 +7,17 @@
  *
  * Handles member payment submissions, treasurer verification,
  * pro-ration calculations, and payment status tracking.
+ *
+ * Uses existing Payments sheet (GEA Payment Tracking workbook)
+ * with verification status tracked via payment_verified_date.
  * ============================================================
  */
 
 /**
  * FUNCTION: submitPaymentVerification
- * PURPOSE: Member submits payment verification claim with proof
+ * PURPOSE: Member submits payment proof to claim dues payment
  * @param {Object} params - Payment submission parameters
- * @returns {Object} - Result with verification_id or error
+ * @returns {Object} - Result with payment_id or error
  */
 function submitPaymentVerification(params) {
   try {
@@ -57,7 +60,6 @@ function submitPaymentVerification(params) {
 
     // Handle file upload if provided
     var fileId = null;
-    var fileName = null;
     if (params.file_data_base64 && params.file_name) {
       try {
         var blob = Utilities.newBlob(
@@ -68,58 +70,60 @@ function submitPaymentVerification(params) {
         var folder = DriveApp.getFolderById(FOLDER_PAYMENT_CONFIRMATIONS);
         var file = folder.createFile(blob);
         fileId = file.getId();
-        fileName = file.getName();
       } catch (e) {
         Logger.log("WARNING: Could not save payment proof file: " + e);
         // Continue without file
       }
     }
 
-    // Create Payment Verifications record
-    var verificationId = generateId("PV");
-    var verificationsSheet = _getPaymentVerificationsSheet_();
+    // Create or update Payments sheet record
+    // Phase 1: All payments are "Dues Payment"
+    var paymentId = generateId("PAY");
+    var paymentsSheet = _getPaymentsSheet_();
     var payload = {
-      verification_id: verificationId,
+      payment_id: paymentId,
       household_id: params.household_id,
       household_name: household.household_name || "",
-      member_email: params.member_email || "",
-      membership_year: params.membership_year,
+      payment_date: txDate,
       payment_method: params.payment_method,
       currency: currency,
-      amount_paid: amountPaid,
-      transaction_date: txDate,
-      file_id: fileId || "",
-      file_name: fileName || "",
-      notes: String(params.notes || "").substring(0, 500),
-      status: "submitted",
-      submitted_date: new Date(),
-      submitted_by_email: params.member_email || ""
+      amount: amountPaid,
+      amount_usd: currency === "USD" ? amountPaid : Math.round(amountPaid / 13.45 * 100) / 100,
+      amount_bwp: currency === "BWP" ? amountPaid : Math.round(amountPaid * 13.45 * 100) / 100,
+      payment_type: "Dues Payment",
+      applied_to_period: params.membership_year,
+      payment_reference: params.payment_reference || "",
+      payment_confirmation_file_id: fileId || "",
+      payment_submitted_date: now,
+      payment_verified_date: "",  // NULL until treasurer approves
+      payment_verified_by: "",    // Empty until verified
+      notes: String(params.notes || "").substring(0, 500)
     };
 
-    _appendRowByHeaders_(verificationsSheet, payload);
+    _appendRowByHeaders_(paymentsSheet, payload);
 
-    // Send confirmation email to member (tpl_061)
+    // Send confirmation email to member (tpl_061) - FROM board@
     try {
-      sendEmail("tpl_061", params.member_email, {
-        VERIFICATION_ID: verificationId,
+      sendEmailFromBoard("tpl_061", params.member_email, {
+        PAYMENT_ID: paymentId,
         HOUSEHOLD_NAME: household.household_name,
         MEMBERSHIP_YEAR: params.membership_year,
         PAYMENT_METHOD: params.payment_method,
         AMOUNT: amountPaid,
         CURRENCY: currency,
         TRANSACTION_DATE: formatDate(txDate, false),
-        SUBMISSION_DATE: formatDate(new Date(), true)
+        SUBMISSION_DATE: formatDate(now, true)
       });
     } catch (e) {
       Logger.log("WARNING: Could not send member confirmation email: " + e);
     }
 
-    // Send action email to treasurer (tpl_062)
+    // Send action email to treasurer (tpl_062) - FROM board@
     try {
       var member = getMemberByEmail(params.member_email);
       var memberName = member ? (member.first_name + " " + member.last_name) : params.member_email;
-      sendEmail("tpl_062", TREASURER_EMAIL, {
-        VERIFICATION_ID: verificationId,
+      sendEmailFromBoard("tpl_062", TREASURER_EMAIL, {
+        PAYMENT_ID: paymentId,
         HOUSEHOLD_NAME: household.household_name,
         HOUSEHOLD_ID: params.household_id,
         FIRST_NAME: member ? member.first_name : "",
@@ -130,8 +134,7 @@ function submitPaymentVerification(params) {
         AMOUNT: amountPaid,
         CURRENCY: currency,
         TRANSACTION_DATE: formatDate(txDate, false),
-        SUBMISSION_DATE: formatDate(new Date(), true),
-        FILE_NAME: fileName || "",
+        SUBMISSION_DATE: formatDate(now, true),
         NOTES: params.notes || "",
         ADMIN_PORTAL_LINK: ScriptApp.getService().getUrl()
       });
@@ -140,10 +143,10 @@ function submitPaymentVerification(params) {
     }
 
     // Audit log
-    logAuditEntry(params.member_email || "member", AUDIT_PAYMENT_SUBMITTED, "PaymentVerification", verificationId,
-      "Payment verification submitted: " + params.payment_method + " - " + amountPaid + " " + currency);
+    logAuditEntry(params.member_email || "member", AUDIT_PAYMENT_SUBMITTED, "Payment", paymentId,
+      "Payment submitted: " + params.payment_method + " - " + amountPaid + " " + currency);
 
-    return { ok: true, verification_id: verificationId, message: "Payment verification submitted successfully" };
+    return { ok: true, payment_id: paymentId, message: "Payment submitted successfully" };
   } catch (e) {
     Logger.log("ERROR submitPaymentVerification: " + e);
     return { ok: false, error: String(e), code: "SERVER_ERROR" };
@@ -159,25 +162,39 @@ function submitPaymentVerification(params) {
  */
 function getPaymentVerificationStatus(householdId, membershipYear) {
   try {
-    var verifications = _getPaymentVerificationsForHousehold_(householdId);
-    var relevantVerifications = verifications.filter(function(v) {
-      return v.membership_year === membershipYear;
+    var payments = _getPaymentsForHousehold_(householdId);
+    var relevantPayments = payments.filter(function(p) {
+      return p.applied_to_period === membershipYear && p.payment_type === "Dues Payment";
     });
 
-    // Sort by submitted date (newest first)
-    relevantVerifications.sort(function(a, b) {
-      return new Date(b.submitted_date) - new Date(a.submitted_date);
+    // Sort by submission date (newest first)
+    relevantPayments.sort(function(a, b) {
+      return new Date(b.payment_submitted_date) - new Date(a.payment_submitted_date);
     });
 
-    var currentStatus = relevantVerifications.length > 0 ? relevantVerifications[0].status : "none";
+    // Determine current status
+    var currentStatus = "none";
+    var currentPayment = null;
+    if (relevantPayments.length > 0) {
+      currentPayment = relevantPayments[0];
+      if (currentPayment.payment_verified_date) {
+        currentStatus = "verified";
+      } else if (currentPayment.notes && currentPayment.notes.indexOf("REJECTED:") === 0) {
+        currentStatus = "rejected";
+      } else if (currentPayment.notes && currentPayment.notes.indexOf("CLARIFICATION:") === 0) {
+        currentStatus = "clarification_requested";
+      } else {
+        currentStatus = "submitted";
+      }
+    }
 
     return {
       ok: true,
       household_id: householdId,
       membership_year: membershipYear,
       status: currentStatus,
-      current_verification: relevantVerifications.length > 0 ? relevantVerifications[0] : null,
-      history: relevantVerifications
+      current_payment: currentPayment,
+      history: relevantPayments
     };
   } catch (e) {
     Logger.log("ERROR getPaymentVerificationStatus: " + e);
@@ -187,19 +204,20 @@ function getPaymentVerificationStatus(householdId, membershipYear) {
 
 /**
  * FUNCTION: listPendingPaymentVerifications
- * PURPOSE: Treasurer views all pending payment verifications
+ * PURPOSE: Treasurer views all pending payment verifications (not yet verified)
  * @returns {Object} - List of pending verifications
  */
 function listPendingPaymentVerifications() {
   try {
-    var verifications = _getAllPaymentVerifications_();
-    var pending = verifications.filter(function(v) {
-      return v.status === "submitted";
+    var payments = _getAllPayments_();
+    // Pending = submitted but not yet verified (payment_verified_date is empty)
+    var pending = payments.filter(function(p) {
+      return p.payment_type === "Dues Payment" && !p.payment_verified_date;
     });
 
     // Sort by submission date (newest first)
     pending.sort(function(a, b) {
-      return new Date(b.submitted_date) - new Date(a.submitted_date);
+      return new Date(b.payment_submitted_date) - new Date(a.payment_submitted_date);
     });
 
     return { ok: true, count: pending.length, verifications: pending };
@@ -212,49 +230,51 @@ function listPendingPaymentVerifications() {
 /**
  * FUNCTION: approvePaymentVerification
  * PURPOSE: Treasurer verifies and approves payment
- * @param {string} verificationId - Verification ID to approve
+ * @param {string} paymentId - Payment ID to approve
  * @param {string} treasurerEmail - Treasurer's email
- * @param {boolean} paidInFull - Is account fully paid?
  * @param {string} treasurerNotes - Optional notes
  * @returns {Object} - Result
  */
-function approvePaymentVerification(verificationId, treasurerEmail, paidInFull, treasurerNotes) {
+function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
   try {
-    var found = _findPaymentVerificationById_(verificationId);
+    var found = _findPaymentById_(paymentId);
     if (!found) {
-      return { ok: false, error: "Verification not found", code: "NOT_FOUND" };
+      return { ok: false, error: "Payment not found", code: "NOT_FOUND" };
     }
 
-    // Update verification record
-    _setPaymentVerificationFields_(found, {
-      status: "verified",
-      verified_by_email: treasurerEmail,
-      verified_date: new Date(),
-      paid_in_full: paidInFull === true,
-      balance_remaining: paidInFull === true ? 0 : null,
-      treasurer_notes: treasurerNotes || ""
+    var now = new Date();
+    // Update payment record
+    _setPaymentFields_(found, {
+      payment_verified_date: now,
+      payment_verified_by: treasurerEmail,
+      notes: String(treasurerNotes || "").substring(0, 500)
     });
 
-    // Send verification email to member (tpl_063)
+    // Send verification email to member (tpl_063) - FROM board@
     try {
       var household = getHouseholdById(found.obj.household_id);
-      sendEmail("tpl_063", found.obj.member_email, {
-        VERIFICATION_ID: verificationId,
-        HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
-        MEMBERSHIP_YEAR: found.obj.membership_year,
-        AMOUNT_PAID: found.obj.amount_paid,
-        CURRENCY: found.obj.currency,
-        VERIFICATION_DATE: formatDate(new Date(), true)
-      });
+      var primaryMember = household ? getMemberById(household.primary_member_id) : null;
+      var memberEmail = primaryMember ? primaryMember.email : "";
+
+      if (memberEmail) {
+        sendEmailFromBoard("tpl_063", memberEmail, {
+          PAYMENT_ID: paymentId,
+          HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
+          MEMBERSHIP_YEAR: found.obj.applied_to_period,
+          AMOUNT_PAID: found.obj.amount,
+          CURRENCY: found.obj.currency,
+          VERIFICATION_DATE: formatDate(now, true)
+        });
+      }
     } catch (e) {
       Logger.log("WARNING: Could not send member verification email: " + e);
     }
 
     // Audit log
-    logAuditEntry(treasurerEmail, AUDIT_PAYMENT_VERIFIED, "PaymentVerification", verificationId,
-      "Payment approved - " + found.obj.amount_paid + " " + found.obj.currency);
+    logAuditEntry(treasurerEmail, AUDIT_PAYMENT_VERIFIED, "Payment", paymentId,
+      "Payment approved - " + found.obj.amount + " " + found.obj.currency);
 
-    return { ok: true, verification_id: verificationId, status: "verified" };
+    return { ok: true, payment_id: paymentId, status: "verified" };
   } catch (e) {
     Logger.log("ERROR approvePaymentVerification: " + e);
     return { ok: false, error: String(e), code: "SERVER_ERROR" };
@@ -264,45 +284,48 @@ function approvePaymentVerification(verificationId, treasurerEmail, paidInFull, 
 /**
  * FUNCTION: rejectPaymentVerification
  * PURPOSE: Treasurer rejects payment with reason
- * @param {string} verificationId - Verification ID to reject
+ * @param {string} paymentId - Payment ID to reject
  * @param {string} treasurerEmail - Treasurer's email
  * @param {string} reason - Rejection reason
  * @returns {Object} - Result
  */
-function rejectPaymentVerification(verificationId, treasurerEmail, reason) {
+function rejectPaymentVerification(paymentId, treasurerEmail, reason) {
   try {
-    var found = _findPaymentVerificationById_(verificationId);
+    var found = _findPaymentById_(paymentId);
     if (!found) {
-      return { ok: false, error: "Verification not found", code: "NOT_FOUND" };
+      return { ok: false, error: "Payment not found", code: "NOT_FOUND" };
     }
 
-    // Update verification record
-    _setPaymentVerificationFields_(found, {
-      status: "not_verified",
-      verified_by_email: treasurerEmail,
-      verified_date: new Date(),
-      treasurer_notes: reason || "Rejected"
+    // Mark as rejected in notes field
+    var rejectionNote = "REJECTED: " + (reason || "Payment verification failed");
+    _setPaymentFields_(found, {
+      notes: rejectionNote.substring(0, 500)
     });
 
-    // Send rejection email to member (tpl_064)
+    // Send rejection email to member (tpl_064) - FROM board@
     try {
       var household = getHouseholdById(found.obj.household_id);
-      sendEmail("tpl_064", found.obj.member_email, {
-        VERIFICATION_ID: verificationId,
-        HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
-        MEMBERSHIP_YEAR: found.obj.membership_year,
-        REJECTION_REASON: reason || "Payment verification failed. Please contact the treasurer for details.",
-        RESUBMIT_LINK: ScriptApp.getService().getUrl()
-      });
+      var primaryMember = household ? getMemberById(household.primary_member_id) : null;
+      var memberEmail = primaryMember ? primaryMember.email : "";
+
+      if (memberEmail) {
+        sendEmailFromBoard("tpl_064", memberEmail, {
+          PAYMENT_ID: paymentId,
+          HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
+          MEMBERSHIP_YEAR: found.obj.applied_to_period,
+          REJECTION_REASON: reason || "Payment verification failed. Please contact the treasurer for details.",
+          RESUBMIT_LINK: ScriptApp.getService().getUrl()
+        });
+      }
     } catch (e) {
       Logger.log("WARNING: Could not send member rejection email: " + e);
     }
 
     // Audit log
-    logAuditEntry(treasurerEmail, AUDIT_PAYMENT_REJECTED, "PaymentVerification", verificationId,
+    logAuditEntry(treasurerEmail, AUDIT_PAYMENT_REJECTED, "Payment", paymentId,
       "Payment rejected: " + reason);
 
-    return { ok: true, verification_id: verificationId, status: "not_verified" };
+    return { ok: true, payment_id: paymentId, status: "rejected" };
   } catch (e) {
     Logger.log("ERROR rejectPaymentVerification: " + e);
     return { ok: false, error: String(e), code: "SERVER_ERROR" };
@@ -312,45 +335,48 @@ function rejectPaymentVerification(verificationId, treasurerEmail, reason) {
 /**
  * FUNCTION: requestPaymentClarification
  * PURPOSE: Treasurer requests clarification from member
- * @param {string} verificationId - Verification ID
+ * @param {string} paymentId - Payment ID
  * @param {string} treasurerEmail - Treasurer's email
  * @param {string} clarificationRequest - What clarification needed
  * @returns {Object} - Result
  */
-function requestPaymentClarification(verificationId, treasurerEmail, clarificationRequest) {
+function requestPaymentClarification(paymentId, treasurerEmail, clarificationRequest) {
   try {
-    var found = _findPaymentVerificationById_(verificationId);
+    var found = _findPaymentById_(paymentId);
     if (!found) {
-      return { ok: false, error: "Verification not found", code: "NOT_FOUND" };
+      return { ok: false, error: "Payment not found", code: "NOT_FOUND" };
     }
 
-    // Update verification record
-    _setPaymentVerificationFields_(found, {
-      status: "clarification_requested",
-      verified_by_email: treasurerEmail,
-      verified_date: new Date(),
-      treasurer_notes: clarificationRequest || "Clarification requested"
+    // Mark as clarification requested in notes field
+    var clarNote = "CLARIFICATION: " + (clarificationRequest || "Please provide additional information");
+    _setPaymentFields_(found, {
+      notes: clarNote.substring(0, 500)
     });
 
-    // Send clarification email to member (tpl_065)
+    // Send clarification email to member (tpl_065) - FROM board@
     try {
       var household = getHouseholdById(found.obj.household_id);
-      sendEmail("tpl_065", found.obj.member_email, {
-        VERIFICATION_ID: verificationId,
-        HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
-        MEMBERSHIP_YEAR: found.obj.membership_year,
-        CLARIFICATION_REQUEST: clarificationRequest || "Please provide additional information about your payment.",
-        DEADLINE: formatDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), false)
-      });
+      var primaryMember = household ? getMemberById(household.primary_member_id) : null;
+      var memberEmail = primaryMember ? primaryMember.email : "";
+
+      if (memberEmail) {
+        sendEmailFromBoard("tpl_065", memberEmail, {
+          PAYMENT_ID: paymentId,
+          HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
+          MEMBERSHIP_YEAR: found.obj.applied_to_period,
+          CLARIFICATION_REQUEST: clarificationRequest || "Please provide additional information about your payment.",
+          DEADLINE: formatDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), false)
+        });
+      }
     } catch (e) {
       Logger.log("WARNING: Could not send member clarification email: " + e);
     }
 
     // Audit log
-    logAuditEntry(treasurerEmail, AUDIT_PAYMENT_CLARIFICATION, "PaymentVerification", verificationId,
+    logAuditEntry(treasurerEmail, AUDIT_PAYMENT_CLARIFICATION, "Payment", paymentId,
       "Clarification requested: " + clarificationRequest);
 
-    return { ok: true, verification_id: verificationId, status: "clarification_requested" };
+    return { ok: true, payment_id: paymentId, status: "clarification_requested" };
   } catch (e) {
     Logger.log("ERROR requestPaymentClarification: " + e);
     return { ok: false, error: String(e), code: "SERVER_ERROR" };
@@ -425,10 +451,10 @@ function _getAcceptablePaymentYears_(membershipLevelId) {
 }
 
 /**
- * HELPER: Get Payment Verifications sheet
+ * HELPER: Get Payments sheet
  */
-function _getPaymentVerificationsSheet_() {
-  return SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_PAYMENT_VERIFICATIONS);
+function _getPaymentsSheet_() {
+  return SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
 }
 
 /**
@@ -442,15 +468,15 @@ function _appendRowByHeaders_(sheet, obj) {
 }
 
 /**
- * HELPER: Find payment verification by ID
+ * HELPER: Find payment by ID
  */
-function _findPaymentVerificationById_(verificationId) {
-  var sheet = _getPaymentVerificationsSheet_();
+function _findPaymentById_(paymentId) {
+  var sheet = _getPaymentsSheet_();
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
   for (var i = 1; i < data.length; i++) {
     var obj = rowToObject(headers, data[i]);
-    if (obj.verification_id === verificationId) {
+    if (obj.payment_id === paymentId) {
       return { sheet: sheet, headers: headers, rowIndex: i + 1, obj: obj };
     }
   }
@@ -458,9 +484,9 @@ function _findPaymentVerificationById_(verificationId) {
 }
 
 /**
- * HELPER: Set payment verification fields
+ * HELPER: Set payment fields
  */
-function _setPaymentVerificationFields_(found, patch) {
+function _setPaymentFields_(found, patch) {
   var headers = found.headers;
   for (var key in patch) {
     if (!patch.hasOwnProperty(key)) continue;
@@ -473,10 +499,10 @@ function _setPaymentVerificationFields_(found, patch) {
 }
 
 /**
- * HELPER: Get all payment verifications
+ * HELPER: Get all payments
  */
-function _getAllPaymentVerifications_() {
-  var sheet = _getPaymentVerificationsSheet_();
+function _getAllPayments_() {
+  var sheet = _getPaymentsSheet_();
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
   var out = [];
@@ -485,9 +511,9 @@ function _getAllPaymentVerifications_() {
 }
 
 /**
- * HELPER: Get payment verifications for a household
+ * HELPER: Get payments for a household
  */
-function _getPaymentVerificationsForHousehold_(householdId) {
-  var all = _getAllPaymentVerifications_();
-  return all.filter(function(v) { return v.household_id === householdId; });
+function _getPaymentsForHousehold_(householdId) {
+  var all = _getAllPayments_();
+  return all.filter(function(p) { return p.household_id === householdId; });
 }

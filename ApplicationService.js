@@ -393,7 +393,7 @@ function confirmDocumentsUploaded(applicationId, email) {
 
     // Notify board
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-    sendEmail("tpl_043", boardEmail, {
+    sendEmailFromBoard("tpl_043", boardEmail, {
       "APPLICANT_NAME": application.first_name + " " + application.last_name,
       "APPLICATION_ID": applicationId,
       "MEMBERSHIP_CATEGORY": application.membership_category
@@ -521,7 +521,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
 
       // Notify RSO and applicant
       var rsoEmail = getConfigValue("RSO_EMAIL") || "rso@geabotswana.org";
-      sendEmail("tpl_044", rsoEmail, {
+      sendEmailFromBoard("tpl_044", rsoEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId,
         "EMAIL": application.email
@@ -596,7 +596,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
       // Notify board
       var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-      sendEmail("tpl_047", boardEmail, {
+      sendEmailFromBoard("tpl_047", boardEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId
       });
@@ -614,7 +614,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
       // Notify board and applicant
       var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-      sendEmail("tpl_046", boardEmail, {
+      sendEmailFromBoard("tpl_046", boardEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId,
         "RSO_NOTES": privateNotes || ""
@@ -682,7 +682,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
 
       // Notify treasurer
       var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
-      sendEmail("tpl_050", treasurerEmail, {
+      sendEmailFromBoard("tpl_050", treasurerEmail, {
         "APPLICANT_NAME": application.first_name + " " + application.last_name,
         "APPLICATION_ID": applicationId,
         "PAYMENT_REFERENCE": paymentRef,
@@ -786,7 +786,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     });
 
     var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
-    sendEmail("tpl_050", treasurerEmail, {
+    sendEmailFromBoard("tpl_050", treasurerEmail, {
       "APPLICANT_NAME": application.first_name + " " + application.last_name,
       "APPLICATION_ID": applicationId,
       "PAYMENT_METHOD": paymentMethod,
@@ -875,14 +875,14 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     // Send welcome emails
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
 
-    sendEmail("tpl_051", application.email, {
+    sendEmailFromBoard("tpl_051", application.email, {
       "APPLICANT_NAME": application.first_name,
       "MEMBERSHIP_CATEGORY": application.membership_category,
       "EXPIRATION_DATE": formatDate(expirationDate, "GMT+2", "MMMM dd, yyyy"),
       "PORTAL_URL": "https://geabotswana.org/member.html"
     });
 
-    sendEmail("tpl_052", boardEmail, {
+    sendEmailFromBoard("tpl_052", boardEmail, {
       "APPLICANT_NAME": application.first_name + " " + application.last_name,
       "MEMBERSHIP_CATEGORY": application.membership_category,
       "HOUSEHOLD_TYPE": application.household_type

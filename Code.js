@@ -76,6 +76,12 @@ function doGet(e) {
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
+  if (action === "serve_documents") {
+    return HtmlService.createHtmlOutputFromFile("DocumentUploadPortal")
+      .setTitle("GEA Documents & Photos")
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
   // Serve the image diagnostic page as HTML
   if (action === "image_diagnostic") {
     return _handleImageDiagnostic(params);
@@ -168,6 +174,13 @@ function _routeAction(action, params) {
     case "confirm_documents":   return _handleConfirmDocuments(params);
     case "upload_document":     return _handleUploadDocument(params);
     case "submit_payment_proof": return _handleSubmitPaymentProof(params);
+    case "upload_file": return _handleFileUpload(params);
+    case "get_file_status": return _handleGetFileStatus(params);
+    case "approve_file": return _handleApproveFileSubmission(params);
+    case "reject_file": return _handleRejectFileSubmission(params);
+    case "request_employment": return _handleRequestEmploymentVerification(params);
+    case "get_submission_history": return _handleGetSubmissionHistory(params);
+    case "rso_approve": return _handleRsoApprovalLink(params);
 
     // ── BOARD / ADMIN ────────────────────────────────────────
     case "admin_pending": return _handleAdminPending(params);
@@ -1733,6 +1746,155 @@ function _handleSubmitPaymentProof(p) {
     }
   } catch (e) {
     return errorResponse("Error submitting payment proof: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleFileUpload
+ * PURPOSE: Upload document/photo/employment file for current member.
+ */
+function _handleFileUpload(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) return auth;
+
+    if (!p.individual_id || !p.document_type || !p.file_data_base64 || !p.file_name) {
+      return errorResponse("Missing required fields.", "INVALID_PARAM");
+    }
+
+    var blob = Utilities.newBlob(
+      Utilities.base64Decode(p.file_data_base64),
+      p.file_content_type || "application/octet-stream",
+      p.file_name
+    );
+
+    var result = uploadFileSubmission({
+      individual_id: p.individual_id,
+      document_type: p.document_type,
+      file_blob: blob,
+      file_name: p.file_name,
+      file_size_bytes: Number(p.file_size_bytes || 0),
+      upload_device_type: p.upload_device_type || "web",
+      user_email: auth.session.email
+    });
+
+    if (!result.ok) return errorResponse(result.error, result.code || "UPLOAD_FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error uploading file: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleGetFileStatus
+ * PURPOSE: Get per-individual file submission status dashboard data.
+ */
+function _handleGetFileStatus(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) return auth;
+    if (!p.individual_id) return errorResponse("individual_id is required.", "INVALID_PARAM");
+
+    var result = getFileSubmissionStatus(p.individual_id);
+    if (result.ok === false) return errorResponse(result.error || "Could not load status", "NOT_FOUND");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error retrieving file status: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleApproveFileSubmission
+ * PURPOSE: Board/admin approves a file submission.
+ */
+function _handleApproveFileSubmission(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+    if (!p.submission_id) return errorResponse("submission_id is required.", "INVALID_PARAM");
+
+    var result = approveFileSubmission(p.submission_id, auth.session.email);
+    if (!result.ok) return errorResponse(result.error || "Approval failed", "APPROVAL_FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error approving file: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRejectFileSubmission
+ * PURPOSE: Board/admin rejects a file submission.
+ */
+function _handleRejectFileSubmission(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+    if (!p.submission_id || !p.rejection_reason) {
+      return errorResponse("submission_id and rejection_reason are required.", "INVALID_PARAM");
+    }
+
+    var result = rejectFileSubmission(p.submission_id, p.rejection_reason, auth.session.email);
+    if (!result.ok) return errorResponse(result.error || "Rejection failed", "REJECTION_FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error rejecting file: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRequestEmploymentVerification
+ * PURPOSE: Board/admin requests employment verification files for a household.
+ */
+function _handleRequestEmploymentVerification(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+    if (!p.household_id || !p.individual_ids) {
+      return errorResponse("household_id and individual_ids are required.", "INVALID_PARAM");
+    }
+
+    var ids = p.individual_ids;
+    if (typeof ids === "string") {
+      try { ids = JSON.parse(ids); } catch (ignore) { ids = ids.split(","); }
+    }
+
+    var result = requestEmploymentVerification(p.household_id, ids, p.request_reason || "");
+    if (!result.ok) return errorResponse(result.error || "Request failed", "REQUEST_FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error requesting employment verification: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleGetSubmissionHistory
+ * PURPOSE: Return submission history entries for a member.
+ */
+function _handleGetSubmissionHistory(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) return auth;
+    if (!p.individual_id) return errorResponse("individual_id is required.", "INVALID_PARAM");
+    var result = getSubmissionHistory(p.individual_id);
+    if (!result.ok) return errorResponse(result.error || "History fetch failed", "HISTORY_FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error retrieving submission history: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRsoApprovalLink
+ * PURPOSE: Public one-time RSO approval endpoint.
+ */
+function _handleRsoApprovalLink(p) {
+  try {
+    if (!p.token) return errorResponse("token is required.", "INVALID_PARAM");
+    var result = handleRsoApprovalLink(p.token, p.decision || p.action_decision || "approve", p.rejection_reason || "");
+    if (!result.ok) return errorResponse(result.error || "RSO action failed", "RSO_ACTION_FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error processing RSO approval link: " + e.toString(), "SERVER_ERROR");
   }
 }
 

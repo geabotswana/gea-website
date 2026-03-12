@@ -1839,52 +1839,116 @@
       <!-- Submit payment confirmation                               -->
       <!-- ========================================================== -->
       <div id="payment" class="page">
-        <h1 class="page-title">Submit Payment</h1>
+        <h1 class="page-title">Membership Payment</h1>
         <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
 
         <div class="info-box">
-          📧 Payment submissions are verified by the board. You'll receive email confirmation once your payment is confirmed.
+          💰 Annual membership dues are due by July 31. Submit your payment below using your preferred method.
         </div>
-        
+
+        <!-- Payment Methods Instructions -->
         <div class="card">
-          <div class="card-header">
-            <h2 class="card-title">Payment Information</h2>
+          <h2 class="card-title">Payment Methods</h2>
+          <div style="margin-bottom: 20px;">
+            <p style="color: #666; margin-bottom: 15px;">Choose your preferred payment method and use the reference shown below:</p>
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+              <strong>Payment Reference:</strong>
+              <div id="paymentReference" style="font-size: 16px; font-weight: 600; color: var(--color-primary); margin-top: 8px;">Loading...</div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin-bottom: 10px; color: var(--color-primary);">💳 PayPal (USD) - Preferred</h4>
+              <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Link: <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px;">https://www.paypal.com/ncp/payment/F7A4GEURTGA4L</code></p>
+              <p style="font-size: 13px; color: #666;">Include the reference above in payment notes.</p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏦 Zelle (USD) - Preferred</h4>
+              <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Email: <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px;">geaboard@gmail.com</code></p>
+              <p style="font-size: 13px; color: #666;">Include the reference above. Typically 1-3 business days.</p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏛️ Bank Transfer / Absa (BWP)</h4>
+              <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Account: U.S. Embassy – GEA<br/>Account #: 1005193 | Branch: 290267</p>
+              <p style="font-size: 13px; color: #666;">Include the reference above exactly.</p>
+            </div>
+
+            <div style="background: #fff3e0; padding: 12px; border-radius: 4px; border-left: 4px solid var(--color-warning);">
+              <strong>Amount Due:</strong>
+              <div id="amountDueDisplay" style="font-size: 16px; color: var(--color-primary); margin-top: 8px;">Loading...</div>
+            </div>
           </div>
-          <form onsubmit="submitPayment(event)">
+        </div>
+
+        <!-- Register Payment Made Form -->
+        <div class="card">
+          <h2 class="card-title">Register Payment Made</h2>
+          <p style="color: #666; margin-bottom: 15px; font-size: 13px;">Submit proof of your payment below. The treasurer will verify within 3-5 business days.</p>
+
+          <form id="paymentVerificationForm" onsubmit="submitPaymentVerification(event)">
             <div class="form-group">
-              <label class="form-label">Payment Method</label>
-              <select id="paymentMethod" class="form-input" required>
+              <label class="form-label">Membership Year</label>
+              <select id="membershipYearSelect" class="form-input" required onchange="updatePaymentAmount()">
+                <option value="">-- Select membership year --</option>
+              </select>
+              <small style="color: #999;">Only available years are shown</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Payment Method Used</label>
+              <select id="paymentMethodSelect" class="form-input" required>
                 <option value="">-- Select payment method --</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cash">Cash</option>
-                <option value="Check">Check</option>
-                <option value="Other">Other</option>
+                <option value="PayPal (USD)">PayPal (USD)</option>
+                <option value="SDFCU Member2Member (USD)">SDFCU Member2Member (USD)</option>
+                <option value="Zelle (USD)">Zelle (USD)</option>
+                <option value="Absa (BWP)">Absa (BWP)</option>
               </select>
             </div>
+
             <div class="form-group">
-              <label class="form-label">Payment Reference</label>
-              <input type="text" id="paymentReference" class="form-input" placeholder="e.g., Receipt number, transaction ID" required>
+              <label class="form-label">Currency</label>
+              <select id="currencySelect" class="form-input" required>
+                <option value="USD">USD (US Dollars)</option>
+                <option value="BWP">BWP (Pula)</option>
+              </select>
             </div>
+
             <div class="form-group">
-              <label class="form-label">Payment Date</label>
-              <input type="date" id="paymentDate" class="form-input" required>
+              <label class="form-label">Amount Paid</label>
+              <input type="number" id="amountPaidInput" class="form-input" min="0" step="0.01" placeholder="0.00" required>
+              <small style="color: #999;" id="suggestedAmountHint"></small>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-              <div class="form-group">
-                <label class="form-label">Amount (USD)</label>
-                <input type="number" id="amountUSD" class="form-input" min="0" step="0.01" placeholder="0.00">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Amount (BWP)</label>
-                <input type="number" id="amountBWP" class="form-input" min="0" step="0.01" placeholder="0.00">
-              </div>
+
+            <div class="form-group">
+              <label class="form-label">Transaction Date</label>
+              <input type="date" id="transactionDateInput" class="form-input" required>
+              <small style="color: #999;">When you sent the payment</small>
             </div>
+
+            <div class="form-group">
+              <label class="form-label">Proof of Payment (optional)</label>
+              <input type="file" id="paymentProofInput" class="form-input" accept=".jpg,.jpeg,.png,.pdf">
+              <small style="color: #999;">Screenshot or PDF showing transaction (max 5 MB)</small>
+            </div>
+
             <div class="form-group">
               <label class="form-label">Notes (optional)</label>
-              <textarea id="paymentNotes" class="form-input" placeholder="Any additional information..." style="resize: vertical; min-height: 80px;"></textarea>
+              <textarea id="paymentNotesInput" class="form-input" placeholder="Transaction ref, delays, etc." style="min-height: 60px;"></textarea>
+              <small style="color: #999;">Max 500 characters</small>
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Payment</button>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Payment Verification</button>
+            <div id="paymentSubmitMessage" style="margin-top: 12px; text-align: center; min-height: 20px;"></div>
           </form>
+        </div>
+
+        <!-- Payment Status -->
+        <div class="card">
+          <h2 class="card-title">Your Payment Status</h2>
+          <div id="paymentStatusDisplay">
+            <p style="text-align: center; color: #999;">Select a membership year above to view status</p>
+          </div>
         </div>
 
         <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
@@ -3906,7 +3970,7 @@ function submitLogin(event) {
         loadCard();
         break;
       case 'payment':
-        // Payment page doesn't need to load data
+        loadPayments();
         break;
       case 'applicant':
         loadApplicantPortal();
@@ -5358,49 +5422,170 @@ function submitLogin(event) {
   // ============================================================ //
   // SECTION: PAYMENTS                                            //
   // ============================================================ //
-  
+
   /**
-   * Submits a payment confirmation.
+   * Load payment page with membership year options and current status.
    */
-  function submitPayment(event) {
+  function loadPayments() {
+    if (!currentUser) return;
+
+    // Initialize form
+    var today = new Date();
+    document.getElementById('transactionDateInput').valueAsDate = today;
+
+    // Load household info to get household name for payment reference
+    apiCall('dashboard', {}).then(function(res) {
+      if (!res.success || !res.data.household) return;
+
+      var household = res.data.household;
+      var householdName = household.household_name || 'Household';
+
+      // Populate membership year dropdown (placeholder - needs Membership Pricing lookup)
+      var yearSelect = document.getElementById('membershipYearSelect');
+      // For Phase 1, we'll populate with current year
+      yearSelect.innerHTML = '<option value="2025-26">2025-26</option><option value="2026-27">2026-27</option>';
+
+      // Update payment reference
+      document.getElementById('paymentReference').textContent = householdName + ' - (select year above)';
+
+      // Load payment status for current selection
+      updatePaymentStatus();
+    });
+  }
+
+  /**
+   * Update payment amount and display when membership year changes.
+   */
+  function updatePaymentAmount() {
+    var year = document.getElementById('membershipYearSelect').value;
+    if (!year) return;
+
+    var household = currentUser.household_id;
+    var reference = document.querySelector('#paymentReference');
+    if (reference) {
+      reference.textContent = currentUser.household_name + ' - ' + year;
+    }
+
+    // For Phase 1, use a simple calculation. In Phase 2, fetch from Membership Pricing sheet
+    var baseAmount = 50; // Placeholder
+    var today = new Date();
+    var month = today.getMonth();
+    var quarterPercentage;
+
+    if (month >= 7 && month <= 9) quarterPercentage = 100;
+    else if (month >= 10 || month === 0 || month === 11) quarterPercentage = 75;
+    else if (month >= 1 && month <= 3) quarterPercentage = 50;
+    else quarterPercentage = 25;
+
+    var proratedUsd = Math.round(baseAmount * (quarterPercentage / 100) * 100) / 100;
+    var exchangeRate = 13.45; // Default from Config
+    var proratedBwp = Math.round(proratedUsd * exchangeRate * 100) / 100;
+
+    var display = document.getElementById('amountDueDisplay');
+    display.textContent = '$' + proratedUsd.toFixed(2) + ' USD (or P' + proratedBwp.toFixed(2) + ' BWP)';
+
+    var hint = document.getElementById('suggestedAmountHint');
+    hint.textContent = 'Suggested amount: $' + proratedUsd.toFixed(2) + ' USD or P' + proratedBwp.toFixed(2) + ' BWP';
+
+    updatePaymentStatus();
+  }
+
+  /**
+   * Update payment status display based on selected membership year.
+   */
+  function updatePaymentStatus() {
+    var year = document.getElementById('membershipYearSelect').value;
+    if (!year || !currentUser) return;
+
+    apiCall('get_payment_status', {
+      household_id: currentUser.household_id,
+      membership_year: year
+    }).then(function(res) {
+      var display = document.getElementById('paymentStatusDisplay');
+      if (!res.success) {
+        display.innerHTML = '<p style="text-align: center; color: #999;">Could not load status</p>';
+        return;
+      }
+
+      var status = res.data.status;
+      var html = '<div style="text-align: center; padding: 20px;">';
+
+      if (status === 'none') {
+        html += '<div style="font-size: 14px; color: #999;">No payment submitted yet</div>';
+      } else if (status === 'submitted') {
+        html += '<div style="font-size: 14px; color: var(--color-warning);">⏳ Payment submitted - awaiting treasurer verification (3-5 business days)</div>';
+      } else if (status === 'verified') {
+        html += '<div style="font-size: 14px; color: var(--color-success);">✓ Payment verified - membership active!</div>';
+      } else if (status === 'not_verified') {
+        html += '<div style="font-size: 14px; color: var(--color-danger);">✗ Payment could not be verified - please resubmit</div>';
+      } else if (status === 'clarification_requested') {
+        html += '<div style="font-size: 14px; color: var(--color-warning);">❓ Treasurer needs clarification on your payment</div>';
+      }
+
+      html += '</div>';
+      display.innerHTML = html;
+    });
+  }
+
+  /**
+   * Submit payment verification.
+   */
+  function submitPaymentVerification(event) {
     event.preventDefault();
-    
-    var method = document.getElementById('paymentMethod').value;
-    var reference = document.getElementById('paymentReference').value;
-    var date = document.getElementById('paymentDate').value;
-    var amountUSD = parseFloat(document.getElementById('amountUSD').value) || 0;
-    var amountBWP = parseFloat(document.getElementById('amountBWP').value) || 0;
-    var notes = document.getElementById('paymentNotes').value;
-    
+
+    if (!currentUser) {
+      showError('Not logged in');
+      return;
+    }
+
+    var year = document.getElementById('membershipYearSelect').value;
+    var method = document.getElementById('paymentMethodSelect').value;
+    var currency = document.getElementById('currencySelect').value;
+    var amount = parseFloat(document.getElementById('amountPaidInput').value);
+    var date = document.getElementById('transactionDateInput').value;
+    var notes = document.getElementById('paymentNotesInput').value;
+
+    if (!year || !method || !currency || !amount || !date) {
+      showError('Please fill in all required fields');
+      return;
+    }
+
     var btn = event.target.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.textContent = 'Submitting...';
-    
-    apiCall('payment', {
+    var messageDiv = document.getElementById('paymentSubmitMessage');
+
+    apiCall('submit_payment_verification', {
+      household_id: currentUser.household_id,
+      membership_year: year,
       payment_method: method,
-      payment_reference: reference,
-      payment_date: date,
-      amount_usd: amountUSD,
-      amount_bwp: amountBWP,
-      notes: notes
+      currency: currency,
+      amount_paid: amount,
+      transaction_date: date,
+      notes: notes,
+      member_email: currentUser.email
     }).then(function(res) {
       btn.disabled = false;
-      btn.textContent = 'Submit Payment';
-      
+      btn.textContent = 'Submit Payment Verification';
+
       if (!res.success) {
-        showError('Failed to submit payment: ' + res.message);
+        messageDiv.style.color = 'var(--color-danger)';
+        messageDiv.textContent = '✗ Error: ' + res.message;
         return;
       }
-      
-      // Success — reset form
-      document.querySelector('form').reset();
-      var successBox = document.createElement('div');
-      successBox.className = 'success-box';
-      successBox.innerHTML = '✓ Payment submitted successfully! The board will verify and confirm your submission.';
-      document.querySelector('#payment .card').insertAdjacentElement('beforebegin', successBox);
+
+      messageDiv.style.color = 'var(--color-success)';
+      messageDiv.textContent = '✓ Payment submitted! You will receive confirmation email within 3-5 business days.';
+      document.getElementById('paymentVerificationForm').reset();
+      setTimeout(function() { updatePaymentStatus(); }, 1000);
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Payment Verification';
+      messageDiv.style.color = 'var(--color-danger)';
+      messageDiv.textContent = '✗ Error: ' + err.message;
     });
   }
-  
+
   // ============================================================ //
   // SECTION: UTILITIES                                           //
   // ============================================================ //

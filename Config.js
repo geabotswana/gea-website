@@ -92,6 +92,8 @@ var FOLDER_MEMBERSHIP_APPLICATIONS  = "1NNSnUQElNRl1pDzr0pYVlTzXJod2aN6T";
 var FOLDER_BRAND_ASSETS             = "1kxQ0hcFO3jQHIiOro2HksaJw56lpvDV0";
 var FOLDER_PAYMENT_CONFIRMATIONS    = "1vmcu23niZhkC6b2Ctw6gmVLxwM2dKUee";
 var FOLDER_PASSPORT_SCANS           = "1uNDYDRLo_NpHTgNMvdiobuni5Jm_6kk8";
+var FOLDER_EMPLOYMENT_VERIFICATION  = "1Ee9acuyKpbfEv7NVHCJqfRcaBExJHOEs";
+var FOLDER_FILE_SUBMISSION_ARCHIVE  = "1r-G03qnH-kN_1FBaze5OAtq3WfjyDYuy";
 
 
 // ============================================================
@@ -164,7 +166,7 @@ var EMAIL_SECRETARY       = "secretary@geabotswana.org";
 // Distribution lists (Google Groups)
 var EMAIL_BOARD           = "board@geabotswana.org";
 var EMAIL_MEMBERS         = "members@geabotswana.org";
-var EMAIL_RSO             = "treasurer@geabotswana.org";
+var EMAIL_RSO             = "rso-notify@geabotswana.org";
 var EMAIL_MGT             = "mgt-notify@geabotswana.org";
 
 // System no-reply address (for board notifications - replies redirect here, not to current user)
@@ -337,6 +339,14 @@ var PASSPORT_WARNING_MONTHS     = 6;
 // Youth document policy
 var YOUTH_DOCUMENT_REQUIRED     = false; // Require docs for under-16? (pending review)
 
+// Cloud Storage settings
+var CLOUD_STORAGE_MEMBER_DATA_BUCKET = "gea-member-data";
+var CLOUD_STORAGE_PUBLIC_BUCKET      = "gea-public-assets";
+var CLOUD_STORAGE_REGION             = "us-central1";
+
+// One-time link expiry for RSO approval workflow
+var RSO_APPROVAL_LINK_EXPIRY_HOURS   = 336;
+
 
 // ============================================================
 // SECTION 13: PAYMENT CONFIGURATION
@@ -464,7 +474,9 @@ var PHOTO_STATUS_APPROVED   = "approved";
 var PHOTO_STATUS_REJECTED   = "rejected";
 
 // Photo upload constraints
-var PHOTO_MAX_SIZE_MB       = 2;                      // Maximum file size in MB
+var PHOTO_MAX_SIZE_MB       = 5;                      // Maximum file size in MB
+var PHOTO_PREVIEW_WIDTH_PX  = 600;
+var PHOTO_PREVIEW_HEIGHT_PX = 600;
 var PHOTO_ACCEPTED_TYPES    = ["image/jpeg",
                                "image/png"];           // Accepted file types
 

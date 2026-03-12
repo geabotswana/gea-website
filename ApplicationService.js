@@ -60,7 +60,7 @@ function createApplicationRecord(formData, createdBy) {
     }
 
     // Check if email already exists
-    var existingMember = getMemberByEmail(formData.email);
+    var existingMember = getMemberByEmail(formData.email, true);
     if (existingMember) {
       return { success: false, message: "An account with this email already exists." };
     }
@@ -315,7 +315,7 @@ function createApplicationRecord(formData, createdBy) {
  */
 function getApplicationForApplicant(email) {
   try {
-    var member = getMemberByEmail(email);
+    var member = getMemberByEmail(email, true);
     if (!member) {
       return { success: false, message: "Member not found." };
     }

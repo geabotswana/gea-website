@@ -69,7 +69,7 @@ function login(email, password) {
   }
 
   // Find the member by email
-  var member = getMemberByEmail(email);
+  var member = getMemberByEmail(email, true);
   if (!member || !member.password_hash) {
     // Generic message: don't reveal if email exists or if password is not set
     return { success: false, message: "Invalid email or password." };

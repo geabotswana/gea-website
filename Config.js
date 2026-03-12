@@ -75,6 +75,9 @@ var TAB_SESSIONS            = "Sessions";
 
 // GEA Payment Tracking tabs
 var TAB_PAYMENTS            = "Payments";
+var TAB_PAYMENT_VERIFICATIONS = "Payment Verifications";
+var TAB_MEMBERSHIP_PRICING   = "Membership Pricing";
+var TAB_RATES                = "Rates";
 
 
 // ============================================================
@@ -161,6 +164,7 @@ var COLOR_BORDER_GRAY     = "#E0E0E0";   // Dividers, borders
 // Board member accounts
 var EMAIL_CHAIR           = "chair@geabotswana.org";
 var EMAIL_TREASURER       = "treasurer@geabotswana.org";
+var TREASURER_EMAIL       = EMAIL_TREASURER;  // Alias for payment processing
 var EMAIL_SECRETARY       = "secretary@geabotswana.org";
 
 // Distribution lists (Google Groups)
@@ -300,6 +304,36 @@ var FACILITIES_REQUIRING_APPROVAL = [
   FACILITY_LEOBO,
   FACILITY_WHOLE
 ];
+
+
+// ============================================================
+// SECTION 10B: PAYMENT SYSTEM
+// ============================================================
+// Payment methods, pro-ration, and exchange rates.
+// ============================================================
+
+var PAYMENT_METHODS = [
+  "PayPal (USD)",
+  "SDFCU Member2Member (USD)",
+  "Zelle (USD)",
+  "Absa (BWP)"
+];
+
+// Pro-ration by quarter (membership year is Aug-Jul)
+var QUARTER_PERCENTAGES = {
+  "Q1": 100,  // Aug-Oct
+  "Q2": 75,   // Nov-Jan
+  "Q3": 50,   // Feb-Apr
+  "Q4": 25    // May-Jul
+};
+
+// Default exchange rate (USD to BWP) - overridden by daily exchange rate updates
+var EXCHANGE_RATE_DEFAULT = 13.45;
+
+// Payment verification rules
+var PAYMENT_MAX_AGE_DAYS = 60;  // Payments older than this are rejected
+var PAYMENT_MAX_AMOUNT_USD = 500;
+var PAYMENT_MAX_AMOUNT_BWP = 5000;
 
 
 // ============================================================
@@ -523,7 +557,10 @@ var AUDIT_MEMBER_CREATED        = "MEMBER_CREATED";
 var AUDIT_MEMBER_UPDATED        = "MEMBER_UPDATED";
 var AUDIT_MEMBER_DEACTIVATED    = "MEMBER_DEACTIVATED";
 var AUDIT_PAYMENT_RECORDED      = "PAYMENT_RECORDED";
+var AUDIT_PAYMENT_SUBMITTED     = "PAYMENT_SUBMITTED";
 var AUDIT_PAYMENT_VERIFIED      = "PAYMENT_VERIFIED";
+var AUDIT_PAYMENT_REJECTED      = "PAYMENT_REJECTED";
+var AUDIT_PAYMENT_CLARIFICATION = "PAYMENT_CLARIFICATION";
 var AUDIT_RESERVATION_CREATED   = "RESERVATION_CREATED";
 var AUDIT_RESERVATION_APPROVED  = "RESERVATION_APPROVED";
 var AUDIT_RESERVATION_DENIED    = "RESERVATION_DENIED";

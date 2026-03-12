@@ -167,6 +167,8 @@ function _routeAction(action, params) {
     case "cancel":       return _handleCancel(params);
     case "card":         return _handleCard(params);
     case "payment":      return _handlePaymentSubmit(params);
+    case "submit_payment_verification": return _handleSubmitPaymentVerification(params);
+    case "get_payment_status": return _handleGetPaymentStatus(params);
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
 
     // Applicant routes (pending membership)
@@ -194,6 +196,10 @@ function _routeAction(action, params) {
     case "admin_approve_application": return _handleAdminApproveApplication(params);
     case "admin_deny_application":    return _handleAdminDenyApplication(params);
     case "admin_verify_payment":      return _handleAdminVerifyPayment(params);
+    case "admin_pending_payments": return _handleAdminPendingPayments(params);
+    case "admin_approve_payment": return _handleAdminApprovePayment(params);
+    case "admin_reject_payment": return _handleAdminRejectPayment(params);
+    case "admin_clarify_payment": return _handleAdminClarifyPayment(params);
 
     // ── DIAGNOSTICS ──────────────────────────────────────────
     case "image_diagnostic":  return _handleImageDiagnostic(params);
@@ -2253,4 +2259,154 @@ function _handleDeploymentInfoJsonp(params) {
   return ContentService
     .createTextOutput(callback + "(" + JSON.stringify(payload) + ");")
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+// ============================================================
+// PAYMENT VERIFICATION HANDLERS
+// ============================================================
+
+/**
+ * HANDLER: _handleSubmitPaymentVerification
+ * PURPOSE: Member submits payment verification
+ */
+function _handleSubmitPaymentVerification(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) return auth;
+
+    if (!p.household_id || !p.membership_year || !p.payment_method || !p.amount_paid) {
+      return errorResponse("Missing required fields.", "INVALID_PARAM");
+    }
+
+    var result = submitPaymentVerification({
+      household_id: p.household_id,
+      membership_year: p.membership_year,
+      payment_method: p.payment_method,
+      currency: p.currency || "USD",
+      amount_paid: Number(p.amount_paid),
+      transaction_date: p.transaction_date || new Date(),
+      file_data_base64: p.file_data_base64 || null,
+      file_name: p.file_name || null,
+      file_content_type: p.file_content_type || null,
+      notes: p.notes || "",
+      member_email: auth.session.email
+    });
+
+    if (!result.ok) return errorResponse(result.error || "Submission failed", result.code || "FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error submitting payment verification: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleGetPaymentStatus
+ * PURPOSE: Member checks their payment status
+ */
+function _handleGetPaymentStatus(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.success) return auth;
+
+    if (!p.household_id || !p.membership_year) {
+      return errorResponse("household_id and membership_year are required.", "INVALID_PARAM");
+    }
+
+    var result = getPaymentVerificationStatus(p.household_id, p.membership_year);
+    if (!result.ok) return errorResponse(result.error || "Could not load status", "NOT_FOUND");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error retrieving payment status: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminPendingPayments
+ * PURPOSE: Treasurer views pending payment verifications
+ */
+function _handleAdminPendingPayments(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+
+    var result = listPendingPaymentVerifications();
+    if (!result.ok) return errorResponse(result.error || "Could not load payments", "FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error retrieving pending payments: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminApprovePayment
+ * PURPOSE: Treasurer approves payment
+ */
+function _handleAdminApprovePayment(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+
+    if (!p.verification_id) {
+      return errorResponse("verification_id is required.", "INVALID_PARAM");
+    }
+
+    var result = approvePaymentVerification(
+      p.verification_id,
+      auth.session.email,
+      p.paid_in_full !== false,
+      p.notes || ""
+    );
+
+    if (!result.ok) return errorResponse(result.error || "Approval failed", "FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error approving payment: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRejectPayment
+ * PURPOSE: Treasurer rejects payment
+ */
+function _handleAdminRejectPayment(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+
+    if (!p.verification_id || !p.reason) {
+      return errorResponse("verification_id and reason are required.", "INVALID_PARAM");
+    }
+
+    var result = rejectPaymentVerification(p.verification_id, auth.session.email, p.reason);
+    if (!result.ok) return errorResponse(result.error || "Rejection failed", "FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error rejecting payment: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminClarifyPayment
+ * PURPOSE: Treasurer requests clarification
+ */
+function _handleAdminClarifyPayment(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.success) return auth;
+
+    if (!p.verification_id || !p.clarification_request) {
+      return errorResponse("verification_id and clarification_request are required.", "INVALID_PARAM");
+    }
+
+    var result = requestPaymentClarification(
+      p.verification_id,
+      auth.session.email,
+      p.clarification_request
+    );
+
+    if (!result.ok) return errorResponse(result.error || "Request failed", "FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error requesting clarification: " + e.toString(), "SERVER_ERROR");
+  }
 }

@@ -1,5 +1,7 @@
 # Reference Materials
 
+**Last Updated:** March 13, 2026
+
 Quick reference documents for board members, developers, and administrators.
 
 ## Quick Reference Guides
@@ -20,7 +22,7 @@ Quick reference documents for board members, developers, and administrators.
 
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [**Email Templates Inventory**](EMAIL_TEMPLATES.md) | All 30+ email templates with template IDs, triggers, placeholders, and purposes | Developers, board |
+| [**Email Templates Inventory**](EMAIL_TEMPLATES_REFERENCE.md) | All 30+ email templates with template IDs, triggers, placeholders, and purposes | Developers, board |
 
 ## Comprehensive Technical References
 

@@ -1,6 +1,6 @@
 # GEA Documentation Master Index
 
-**Last Updated:** March 3, 2026  
+**Last Updated:** March 13, 2026  
 **Maintained by:** GEA Treasurer & Development Team
 
 ---
@@ -67,8 +67,7 @@ These technical references support multiple audiences and are referenced through
 | **reference/MEMBERSHIP_ELIGIBILITY_FLOW.md** | Sequential 4-question decision tree; every applicant gets exactly ONE category | Markdown | ✅ Exists |
 | **reference/MEMBERSHIP_CATEGORIES_MATRIX.md** | Configuration table: six categories, regulatory basis, voting rights, guest invitation authority, facility access, active status | Markdown | ✅ Exists |
 | **reference/GEA_Reservations_Process_Spec.md** | Complete 10-step reservation lifecycle, approval routing, bumping logic, guest list workflow | Markdown | ✅ Exists |
-| [**reference/EMAIL_TEMPLATES.md**](reference/EMAIL_TEMPLATES.md) | All templates with triggers, placeholders, and purposes | Markdown | ✅ Exists |
-| [**reference/EMAIL_TEMPLATES_COMPLETE.md**](reference/EMAIL_TEMPLATES_COMPLETE.md) | Complete email template reference (full HTML bodies) | Markdown | ✅ Exists |
+| [**reference/EMAIL_TEMPLATES_REFERENCE.md**](reference/EMAIL_TEMPLATES_REFERENCE.md) | All templates with triggers, placeholders, and purposes | Markdown | ✅ Exists |
 | [**reference/FACILITY_RULES_QUICK_CARD.md**](reference/FACILITY_RULES_QUICK_CARD.md) | Hours, capacities, reservation limits, guest policies, usage tracking, closure info by facility (Tennis/Basketball, Leobo, Gym, Playground) | Markdown | ✅ Complete |
 | [**reference/ROLES_PERMISSIONS_MATRIX.md**](reference/ROLES_PERMISSIONS_MATRIX.md) | Who can do what (Member, Treasurer, Board, RSO, Applicant); approval authority; communication requirements | Markdown | ✅ Complete |
 | [**implementation/HOUSEHOLDS_COLUMNS_ANALYSIS.md**](implementation/HOUSEHOLDS_COLUMNS_ANALYSIS.md) | Data structure analysis for households table, column definitions, relationships | Markdown | ✅ Exists |
@@ -93,7 +92,7 @@ GEA Membership Policy (BOARD)
   └── Informs: CLAUDE_Membership_Implementation
         ├── References: GEA_System_Schema
         ├── References: ROLES_PERMISSIONS_MATRIX
-        └── References: EMAIL_TEMPLATES.md
+        └── References: EMAIL_TEMPLATES_REFERENCE.md
 ```
 
 ### Reservation System (Tier 1 Core Feature)
@@ -110,7 +109,7 @@ GEA Reservation Policy (BOARD) ✅ COMPLETE (v1.1)
   └── Informs: CLAUDE_Reservations_Implementation
         ├── References: GEA_System_Schema
         ├── References: ROLES_PERMISSIONS_MATRIX
-        └── References: EMAIL_TEMPLATES.md
+        └── References: EMAIL_TEMPLATES_REFERENCE.md
 ```
 
 ### Payment System (Tier 1 Core Feature)

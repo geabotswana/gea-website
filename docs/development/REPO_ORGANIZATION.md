@@ -1,6 +1,6 @@
 # GEA Website Repository Organization
 
-**Date:** March 3, 2026  
+**Last Updated:** March 13, 2026  
 **Repo:** gea-website (existing)  
 **Purpose:** Where to organize GEA documentation within existing repo structure
 
@@ -43,7 +43,7 @@ docs/
 │   ├── FACILITY_RULES_QUICK_CARD.md
 │   ├── ROLES_PERMISSIONS_MATRIX.md
 │   ├── MEMBERSHIP_CATEGORIES_MATRIX.md
-│   ├── EMAIL_TEMPLATES.md
+│   ├── EMAIL_TEMPLATES_REFERENCE.md
 │   ├── MEMBERSHIP_ELIGIBILITY_FLOW.md
 │   └── README.md
 │

@@ -1,6 +1,7 @@
 # **GEA COMMUNICATIONS POLICY**
 *Gaborone Employee Association*
 Effective: March 3, 2026
+Last Updated: March 13, 2026
 
 ## 1. Purpose
 This policy establishes standards for GEA member communications, including email tone, contact methods, notification frequency, and member preferences. The policy ensures communications are professional, timely, respectful, and aligned with GEA values.
@@ -113,10 +114,10 @@ Automated confirmations: Sent immediately (e.g., payment submission, reservation
 If issue cannot be resolved by deadline, send holding email with timeline for full response.
 
 ## 8. Email Template Consistency
-All GEA emails must use approved templates from EMAIL_TEMPLATES.md:
+All GEA emails must use approved templates from EMAIL_TEMPLATES_REFERENCE.md:
 Do NOT create custom emails – use existing templates
 Personalize with member name and relevant details
-Templates approved by Board and stored in EMAIL_TEMPLATES.md
+Templates approved by Board and stored in EMAIL_TEMPLATES_REFERENCE.md
 If new email type needed, get Board approval before sending
 
 Benefit: Consistent tone, professional appearance, legal compliance.
@@ -154,7 +155,7 @@ For new email types: Get Board approval via email before sending to members
 For routine emails: Treasurer has authority to send (no Board approval needed)
 
 ## 12. Related Documents
-EMAIL_TEMPLATES.md – Complete inventory of 32 approved email templates
+EMAIL_TEMPLATES_REFERENCE.md – Complete inventory of 32 approved email templates
 GEA Membership Policy – Member contact information requirements
 GEA Data Management Policy – Member data protection and privacy
 GEA_DOCUMENTATION_INDEX.md – Master navigation hub

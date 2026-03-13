@@ -3,6 +3,8 @@
 /**
  * Validate local markdown links in docs/*.md files.
  *
+ * Last updated: 2026-03-13
+ *
  * Usage:
  *   node scripts/validate-doc-links.js
  */

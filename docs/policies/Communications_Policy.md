@@ -1,6 +1,7 @@
 # **GEA COMMUNICATIONS POLICY**
 *Gaborone Employee Association*
 Effective: March 3, 2026
+Last Updated: March 13, 2026
 
 ## 1. Purpose
 This policy establishes standards for GEA member communications, including email tone, contact methods, notification frequency, and member preferences. The policy ensures communications are professional, timely, respectful, and aligned with GEA values.

@@ -1,5 +1,7 @@
 # Reference Materials
 
+**Last Updated:** March 13, 2026
+
 Quick reference documents for board members, developers, and administrators.
 
 ## Quick Reference Guides

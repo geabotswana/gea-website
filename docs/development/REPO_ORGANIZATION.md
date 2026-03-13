@@ -43,7 +43,7 @@ docs/
 │   ├── FACILITY_RULES_QUICK_CARD.md
 │   ├── ROLES_PERMISSIONS_MATRIX.md
 │   ├── MEMBERSHIP_CATEGORIES_MATRIX.md
-│   ├── EMAIL_TEMPLATES.md
+│   ├── EMAIL_TEMPLATES_REFERENCE.md
 │   ├── MEMBERSHIP_ELIGIBILITY_FLOW.md
 │   └── README.md
 │

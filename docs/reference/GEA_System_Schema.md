@@ -352,14 +352,16 @@ Records all payment transactions for membership dues.
 | `amount_bwp` | Number | Normalized to BWP |
 | `payment_type` | Enum | Dues Payment, Late Fee, Donation |
 | `applied_to_period` | Text | Which membership period (e.g., "2026-01") |
-| `recorded_by` | Email | Board member who recorded payment |
-| `notes` | Text | Payment notes |
-| `journal_entry_id` | Text | Link to accounting system (future) |
 | `payment_reference` | Text | Bank reference number or check number |
 | `payment_confirmation_file_id` | Text | Google Drive file ID for receipt/proof |
 | `payment_submitted_date` | Date | When member submitted payment |
 | `payment_verified_date` | Date | When board verified receipt |
 | `payment_verified_by` | Email | Board member who verified |
+| `notes` | Text | Payment notes |
+
+**Legacy/Optional Columns (may exist in older sheets):**
+- `recorded_by` (superseded by `payment_verified_by` + audit log)
+- `journal_entry_id` (reserved for future accounting integration)
 
 **Key Relationships:**
 - N:1 with Households
@@ -542,30 +544,43 @@ Tracks membership applications with complete workflow history from submission th
 |-------|------|-------|
 | `application_id` | Text | Unique ID (format: APP-2026-XXXXX) |
 | `household_id` | Text | FK to Households (NULL until approved) |
+| `primary_individual_id` | Text | FK to Individuals for primary applicant (set after household/person creation) |
 | `primary_applicant_name` | Text | Full name of person applying |
 | `primary_applicant_email` | Email | Email address of applicant |
-| `contact_phone` | Text | Phone number for follow-up |
+| `country_code_primary` | Text | Two-letter country code for applicant phone (e.g., BW, US) |
+| `phone_primary` | Text | Applicant phone number without country code |
+| `phone_primary_whatsapp` | Boolean | Whether applicant phone supports WhatsApp |
 | `membership_category` | Enum | Full, Affiliate, Associate, Diplomatic, Community, Temporary |
 | `household_type` | Enum | Individual, Family |
+| `employment_job_title` | Text | Applicant employment role/title |
+| `employment_posting_date` | Date | Applicant posting/arrival date |
+| `employment_departure_date` | Date | Applicant expected departure date |
+| `dues_amount` | Number (USD) | Annual dues amount (from membership level/rules) |
+| `membership_start_date` | Date | Set when membership is activated |
+| `membership_expiration_date` | Date | Set to membership-year end on activation |
 | `sponsor_name` | Text | If non-Full member, who is sponsoring |
 | `sponsor_email` | Email | Sponsor's email address |
 | `sponsor_verified` | Boolean | Board has verified sponsor eligibility |
 | `sponsor_verified_date` | Date | Date sponsor was verified |
 | `sponsor_verified_by` | Email | Board member who verified sponsor |
-| `application_form_file_id` | Text | Google Drive file ID for application form |
-| `supporting_documents_file_ids` | Text | Comma-separated list of Drive file IDs (optional) |
 | `submitted_date` | DateTime | When applicant submitted application |
-| `status` | Enum | Pending, Under Review, Approved, Denied, Withdrawn |
-| `assigned_to` | Email | Board member assigned to review |
-| `assigned_date` | DateTime | When assigned for review |
-| `reviewed_by` | Email | Board member who completed review |
-| `review_date` | DateTime | When review was completed |
-| `denial_reason` | Text | If denied, reason for denial |
-| `review_notes` | Text | Reviewer notes |
-| `approved_date` | Date | Date application was approved |
-| `dues_amount` | Number (USD) | Annual dues amount (from membership level) |
-| `membership_start_date` | Date | When membership begins (typically approval date) |
-| `membership_expiration_date` | Date | When membership expires (1 year from start) |
+| `status` | Enum | Workflow state (see status flow below) |
+| `documents_confirmed_date` | DateTime | Applicant confirmed all documents uploaded |
+| `board_initial_status` | Enum | approved, denied, pending |
+| `board_initial_reviewed_by` | Email | Board reviewer for initial board stage |
+| `board_initial_review_date` | DateTime | Timestamp for initial board decision |
+| `board_initial_notes` | Text | Internal notes for initial board stage |
+| `board_initial_denial_reason` | Text | Denial reason when board-initial stage denies |
+| `rso_status` | Enum | approved, denied, pending |
+| `rso_reviewed_by` | Email | RSO reviewer |
+| `rso_review_date` | DateTime | Timestamp for RSO decision |
+| `rso_private_notes` | Text | RSO-only/internal notes |
+| `board_final_status` | Enum | approved, denied, pending |
+| `board_final_reviewed_by` | Email | Board reviewer for final stage |
+| `board_final_review_date` | DateTime | Timestamp for final board decision |
+| `board_final_denial_reason` | Text | Denial reason when board-final stage denies |
+| `payment_status` | Enum | pending, submitted, verified |
+| `payment_id` | Text | FK to Payments once payment proof is submitted |
 | `created_date` | Date | When application record was created in system |
 | `last_modified_date` | Date | Last update |
 | `notes` | Text | Internal notes |
@@ -576,16 +591,16 @@ Tracks membership applications with complete workflow history from submission th
 
 **Status Flow:**
 
-1. `Pending` — Applicant has submitted form and documents, awaiting board assignment
-2. `Under Review` — Board member assigned, actively reviewing application
-3. `Approved` — Board approved membership
-   - Apps Script auto-creates Household record
-   - Apps Script auto-creates Individuals record for primary applicant
-   - household_id linked back to application
-   - Membership dates and dues set
-   - Household `active` flag set to TRUE
-4. `Denied` — Board denied application, `denial_reason` recorded
-5. `Withdrawn` — Applicant withdrew application
+1. `awaiting_docs` — Application submitted; applicant needs to upload/confirm required documents.
+2. `docs_confirmed` — Applicant confirmed required docs are uploaded.
+3. `board_initial_review` — Board reviews before RSO escalation.
+4. `rso_review` — RSO reviews documents and can loop back if issues found.
+5. `board_final_review` — Board makes final decision after RSO.
+6. `approved_pending_payment` — Applicant approved, awaiting payment submission.
+7. `payment_submitted` — Payment proof submitted and pending verification.
+8. `activated` — Treasurer verified payment; membership activated.
+9. `denied` — Application denied at board-initial or board-final stage.
+10. `withdrawn` — Applicant withdrew application.
 
 **Automation Upon Approval:**
 - New Household record created with dues, membership dates, and level

@@ -55,6 +55,11 @@ function doGet(e) {
     return _handleDeploymentInfoJsonp(params);
   }
 
+  // Public config value endpoint (JSONP for cross-origin wrappers)
+  if (action === "config_value_jsonp") {
+    return _handleConfigValueJsonp(params);
+  }
+
   // Serve the HTML portal shell (no auth needed)
   // Uses template evaluation to inject deployment metadata
   if (action === "serve") {
@@ -2066,6 +2071,33 @@ function _handleDeploymentInfoJsonp(params) {
     version: SYSTEM_VERSION,
     buildId: BUILD_ID,
     timestamp: DEPLOYMENT_TIMESTAMP
+  };
+
+  return ContentService
+    .createTextOutput(callback + "(" + JSON.stringify(payload) + ");")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+/**
+ * Public JSONP endpoint for one configuration value.
+ * Used by wrapper pages to read runtime switches across origins.
+ * @param {Object} params
+ * @returns {ContentService.TextOutput}
+ */
+function _handleConfigValueJsonp(params) {
+  var callback = params.callback || "callback";
+  var key = params.key || "";
+
+  if (!/^[A-Za-z0-9_.]+$/.test(callback)) {
+    return ContentService
+      .createTextOutput("Invalid callback name")
+      .setMimeType(ContentService.MimeType.TEXT);
+  }
+
+  var payload = {
+    success: true,
+    key: key,
+    value: key ? getConfigValue(String(key)) : null
   };
 
   return ContentService

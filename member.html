@@ -233,9 +233,12 @@
   };
 
   var STATUS_TIMEOUT_MS = 5000;
+  var CONFIG_TIMEOUT_MS = 5000;
+  var DEVPROD_CONFIG_KEY = 'show_devprod_box';
 
   var selectedEnv = localStorage.getItem('gea_env') || 'prod';
   var statusTimeout = null;
+  var devProdControlEnabled = true;
 
   console.log('TEST: member.html initialized. selectedEnv:', selectedEnv);
 
@@ -244,7 +247,7 @@
   // ================================================================
 
   function loadSelectedEnv() {
-    return localStorage.getItem('gea_env') || 'dev';
+    return localStorage.getItem('gea_env') || 'prod';
   }
 
   function saveSelectedEnv(env) {
@@ -261,6 +264,77 @@
   function setActiveEnvButton(env) {
     document.getElementById('envBtnDev').classList.toggle('active', env === 'dev');
     document.getElementById('envBtnProd').classList.toggle('active', env === 'prod');
+  }
+
+
+  function parseBooleanConfigValue(value, defaultValue) {
+    if (value === null || value === undefined || value === '') return defaultValue;
+    if (typeof value === 'boolean') return value;
+    var normalized = String(value).trim().toLowerCase();
+    if (['true', '1', 'yes', 'y'].indexOf(normalized) !== -1) return true;
+    if (['false', '0', 'no', 'n'].indexOf(normalized) !== -1) return false;
+    return defaultValue;
+  }
+
+  function setEnvironmentControlVisibility(isVisible) {
+    var panel = document.getElementById('envControlPanel');
+    if (!panel) return;
+    panel.style.display = isVisible ? 'flex' : 'none';
+  }
+
+  function requestConfigValue(key, callback) {
+    var callbackName = 'geaConfigValueCallback_' + Date.now();
+    var script = document.createElement('script');
+
+    function cleanup() {
+      if (window[callbackName]) delete window[callbackName];
+      if (script && script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    var timeoutId = setTimeout(function() {
+      cleanup();
+      callback(new Error('Config JSONP timeout'));
+    }, CONFIG_TIMEOUT_MS);
+
+    window[callbackName] = function(payload) {
+      clearTimeout(timeoutId);
+      cleanup();
+      callback(null, payload);
+    };
+
+    script.onerror = function() {
+      clearTimeout(timeoutId);
+      cleanup();
+      callback(new Error('Config JSONP request failed'));
+    };
+
+    var url = new URL(DEPLOYMENTS.prod.execUrl);
+    url.searchParams.set('action', 'config_value_jsonp');
+    url.searchParams.set('callback', callbackName);
+    url.searchParams.set('key', key);
+    script.src = url.toString();
+    script.async = true;
+    document.head.appendChild(script);
+  }
+
+  function initializeEnvironmentSelection() {
+    requestConfigValue(DEVPROD_CONFIG_KEY, function(err, payload) {
+      if (!err && payload && payload.success) {
+        devProdControlEnabled = parseBooleanConfigValue(payload.value, true);
+      }
+
+      if (!devProdControlEnabled) {
+        selectedEnv = 'prod';
+        saveSelectedEnv('prod');
+        setEnvironmentControlVisibility(false);
+        loadPortal('prod');
+        return;
+      }
+
+      selectedEnv = loadSelectedEnv();
+      setEnvironmentControlVisibility(true);
+      loadPortal(selectedEnv);
+    });
   }
 
   // ================================================================
@@ -418,6 +492,7 @@
     devBtn.addEventListener('click', function(e) {
       e.preventDefault();
       console.log('DEV button clicked. Current env:', selectedEnv);
+      if (!devProdControlEnabled) { return; }
       if (selectedEnv !== 'dev') {
         console.log('Switching to DEV...');
         loadPortal('dev');
@@ -429,6 +504,7 @@
     prodBtn.addEventListener('click', function(e) {
       e.preventDefault();
       console.log('PROD button clicked. Current env:', selectedEnv);
+      if (!devProdControlEnabled) { return; }
       if (selectedEnv !== 'prod') {
         console.log('Switching to PROD...');
         loadPortal('prod');
@@ -438,7 +514,7 @@
     });
 
     console.log('Environment buttons wired. Starting with:', selectedEnv);
-    loadPortal(selectedEnv);
+    initializeEnvironmentSelection();
   });
 </script>
 

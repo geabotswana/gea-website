@@ -1702,7 +1702,7 @@ These items are planned but not required for initial launch.
 
 1. **First:** Run D.0 (Discovery Task) to assess actual completion status
 2. **Immediate:** Complete PRIORITY-1 (Non-Member Portal, phases NMP.0-NMP.9)
-3. **Next:** Proceed to PRIORITY-1 remaining non-member portal gaps and reservations spec/schema reconciliation
+3. **Next:** Complete PRIORITY-2 (Admin Portal Polish, phases AP.0-AP.3)
 4. **Then:** Complete RES.PREP (Prep tasks for reservations system)
 5. **Then:** Build Reservations System (RES.2-6 backend, RES.3-4 guest lists, RES.5+ frontend)
 6. **Finally:** Support features (SUP.1+) and future enhancements

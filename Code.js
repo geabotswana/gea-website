@@ -156,6 +156,7 @@ function _routeAction(action, params) {
     case "login":  return _handleLogin(params);
     case "logout": return _handleLogout(params);
     case "deployment_info": return _handleDeploymentInfo();
+    case "get_config_value": return _handleGetConfigValue(params);
     case "submit_application": return _handleSubmitApplication(params);
 
 
@@ -394,6 +395,22 @@ function _handleDeploymentInfo() {
 // ============================================================
 // MEMBER HANDLERS
 // ============================================================
+
+/**
+ * Returns a single configuration value by key.
+ * Public endpoint used by wrappers/portals for runtime UI toggles.
+ * @param {{key:string}} p
+ * @returns {string}
+ */
+function _handleGetConfigValue(p) {
+  if (!p || !p.key) {
+    return errorResponse("Missing required parameter: key", "VALIDATION_ERROR");
+  }
+
+  var value = getConfigValue(String(p.key));
+  return successResponse({ key: String(p.key), value: value });
+}
+
 
 function _handleDashboard(p) {
   var auth = requireAuth(p.token);

@@ -83,6 +83,19 @@
       align-items: center;
       gap: 12px;
     }
+
+    .header-menu-btn {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--color-white);
+      font-size: 20px;
+      line-height: 1;
+      padding: 0;
+    }
     
     .header-logo {
       width: 40px;
@@ -913,33 +926,66 @@
     
     @media (max-width: 768px) {
       #mainContent {
-        flex-direction: column;
+        position: relative;
       }
       
       #sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--color-border-gray);
-        max-height: 200px;
-        overflow-x: auto;
-        padding: 0;
-        display: flex;
+        width: 260px;
+        height: calc(100vh - 60px);
+        position: fixed;
+        top: 60px;
+        left: 0;
+        z-index: 900;
+        border-bottom: none;
+        border-right: 1px solid var(--color-border-gray);
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        padding: 12px 0;
+      }
+
+      #sidebar.show-mobile {
+        transform: translateX(0);
+      }
+
+      body.sidebar-open {
+        overflow: hidden;
       }
       
       .nav-item {
-        padding: 12px 16px;
-        flex-shrink: 0;
-        border-left: none;
-        border-bottom: 3px solid transparent;
+        padding: 12px 20px;
+        min-height: 44px;
+        border-bottom: none;
+        border-left: 3px solid transparent;
       }
       
       .nav-item.active {
-        border-left: none;
-        border-bottom-color: var(--color-primary);
+        border-bottom-color: transparent;
+        border-left-color: var(--color-primary);
+      }
+
+      .header-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .header-right {
+        gap: 10px;
+      }
+
+      .header-user {
+        display: none;
+      }
+
+      .btn-logout {
+        min-width: 44px;
+        min-height: 44px;
       }
       
       #content {
         flex: 1;
+        width: 100%;
+        padding: 12px;
       }
       
       .grid-2, .grid-3 {
@@ -952,6 +998,38 @@
       
       .modal {
         width: 95%;
+        max-height: 88vh;
+      }
+
+      .modal-close,
+      button,
+      .btn,
+      .filter-btn {
+        min-height: 44px;
+      }
+
+      .environment-box {
+        left: 10px;
+        bottom: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #header {
+        padding: 0 10px;
+      }
+
+      .header-title {
+        font-size: 16px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .card-header {
+        margin: -14px -14px 12px -14px;
+        padding: 12px 14px;
       }
     }
 
@@ -1001,6 +1079,69 @@
     .nav-item .badge {
       margin-top: 2px;
     }
+
+    .environment-box {
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      width: 240px;
+      background: #0f1f3b;
+      color: #ffffff;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      z-index: 950;
+      overflow: hidden;
+      transition: width 0.25s ease, opacity 0.2s ease;
+    }
+
+    .environment-box[hidden] { display: none; }
+    .environment-box.collapsed { width: 104px; }
+
+    .environment-box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.07);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .environment-box-toggle {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: transparent;
+      color: var(--color-white);
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .environment-box-content {
+      padding: 10px;
+      font-size: 12px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .environment-box.collapsed .environment-box-content { display: none; }
+
+    .environment-pill {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .environment-pill.env-dev { background: #fff3cd; color: #6d4c00; }
+    .environment-pill.env-prod { background: #d1e7dd; color: #0f5132; }
+    .environment-pill.env-unknown { background: #e2e3e5; color: #41464b; }
+
   </style>
 </head>
 <body>
@@ -1045,6 +1186,7 @@
   <!-- ============================================================ -->
   <header id="header" style="display: none;">
     <div class="header-left">
+      <button class="header-menu-btn" id="sidebarToggleBtn" type="button" onclick="toggleMobileSidebar();" aria-label="Toggle navigation">☰</button>
       <div class="header-logo">
         <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-80.png" alt="GEA Logo">
       </div>
@@ -1070,28 +1212,28 @@
     <!-- Links to all admin pages with active state highlighting    -->
     <!-- ============================================================ -->
     <aside id="sidebar">
-      <div class="nav-item active" onclick="showPage('dashboard')">
+      <div class="nav-item active" onclick="showPage('dashboard', event)">
         <span class="nav-icon">📊</span>
         <span>Dashboard</span>
       </div>
-      <div class="nav-item" onclick="showPage('reservations')">
+      <div class="nav-item" onclick="showPage('reservations', event)">
         <span class="nav-icon">🗓️</span>
         <span>Pending Reservations</span>
       </div>
-      <div class="nav-item" onclick="showPage('members')">
+      <div class="nav-item" onclick="showPage('members', event)">
         <span class="nav-icon">👥</span>
         <span>Members</span>
       </div>
-      <div class="nav-item" onclick="showPage('applications')">
+      <div class="nav-item" onclick="showPage('applications', event)">
         <span class="nav-icon">📋</span>
         <span>Applications</span>
         <span id="applications-badge" class="badge">0</span>
       </div>
-      <div class="nav-item" onclick="showPage('photos')">
+      <div class="nav-item" onclick="showPage('photos', event)">
         <span class="nav-icon">📸</span>
         <span>Photo Review</span>
       </div>
-      <div class="nav-item" onclick="showPage('payments')">
+      <div class="nav-item" onclick="showPage('payments', event)">
         <span class="nav-icon">💳</span>
         <span>Payments</span>
       </div>
@@ -1407,6 +1549,18 @@
 
     </div>
   </div>
+
+  <div id="environmentBox" class="environment-box" hidden>
+    <div class="environment-box-header">
+      <span id="environmentBoxTitle">ENVIRONMENT</span>
+      <button id="environmentToggle" type="button" class="environment-box-toggle" onclick="toggleEnvironmentBox();" aria-label="Collapse environment box">−</button>
+    </div>
+    <div class="environment-box-content">
+      <div><strong>Mode:</strong> <span id="environmentLabel" class="environment-pill env-unknown">UNKNOWN</span></div>
+      <div id="environmentVersion">Version: —</div>
+      <div id="environmentBuild">Build: —</div>
+    </div>
+  </div>
 </div>
 
 <!-- ============================================================ -->
@@ -1531,12 +1685,17 @@
   var selectedReservationId = null;
   var selectedPaymentId = null;
   var selectedPhotoIndividualId = null;
+
+  var isSidebarOpenMobile = false;
+  var showDevProdBox = true;
   
   /**
    * Initialize the admin portal when the page loads.
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
+    initializeEnvironmentBox();
+
     if (currentToken) {
       // User has a valid session token — show authenticated UI
       showAuthenticatedUI();
@@ -1621,6 +1780,8 @@
     if (currentUser && currentUser.email) {
       document.getElementById('headerUserName').textContent = currentUser.email.split('@')[0];
     }
+
+    closeMobileSidebar();
   }
   
   /**
@@ -1686,7 +1847,7 @@
    * Hides all pages except the one specified, updates sidebar highlight,
    * and loads fresh data from the backend if needed.
    */
-  function showPage(pageName) {
+  function showPage(pageName, event) {
     // Hide all pages
     var pages = document.querySelectorAll('.page');
     pages.forEach(function(page) {
@@ -1704,7 +1865,11 @@
     navItems.forEach(function(item) {
       item.classList.remove('active');
     });
-    event.target.closest('.nav-item').classList.add('active');
+    if (event && event.currentTarget && event.currentTarget.classList.contains('nav-item')) {
+      event.currentTarget.classList.add('active');
+    }
+
+    closeMobileSidebar();
     
     // Load data for the requested page
     switch (pageName) {
@@ -1729,6 +1894,117 @@
     }
   }
   
+
+  /**
+   * Toggles mobile sidebar visibility and body scrolling lock.
+   */
+  function toggleMobileSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    isSidebarOpenMobile = !isSidebarOpenMobile;
+    if (isSidebarOpenMobile) {
+      sidebar.classList.add('show-mobile');
+      document.body.classList.add('sidebar-open');
+    } else {
+      sidebar.classList.remove('show-mobile');
+      document.body.classList.remove('sidebar-open');
+    }
+  }
+
+  /**
+   * Closes mobile sidebar if currently open.
+   */
+  function closeMobileSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    isSidebarOpenMobile = false;
+    sidebar.classList.remove('show-mobile');
+    document.body.classList.remove('sidebar-open');
+  }
+
+  /**
+   * Determines whether a configuration value should be treated as true.
+   * @param {*} value
+   * @returns {boolean}
+   */
+  function isTruthyConfigValue(value) {
+    if (typeof value === 'boolean') return value;
+    if (value === null || value === undefined) return false;
+    var normalized = String(value).trim().toLowerCase();
+    return ['true', '1', 'yes', 'y'].indexOf(normalized) !== -1;
+  }
+
+  /**
+   * Updates environment indicator content with values from backend metadata.
+   * @param {{timestamp:string,version:string,name:string}=} info
+   */
+  function renderEnvironmentInfo(info) {
+    var label = document.getElementById('environmentLabel');
+    var build = document.getElementById('environmentBuild');
+    var version = document.getElementById('environmentVersion');
+
+    var host = location.hostname || '';
+    var inferredEnv = host.indexOf('localhost') !== -1 ? 'DEV' : 'PROD';
+    var envClass = inferredEnv === 'DEV' ? 'env-dev' : 'env-prod';
+
+    label.textContent = inferredEnv;
+    label.className = 'environment-pill ' + envClass;
+    build.textContent = 'Build: ' + ((info && info.timestamp) || '—');
+    version.textContent = 'Version: ' + ((info && info.version) || '—');
+  }
+
+  /**
+   * Loads config and metadata for environment box, then renders visibility and state.
+   */
+  function initializeEnvironmentBox() {
+    var box = document.getElementById('environmentBox');
+    if (!box) return;
+
+    var stored = localStorage.getItem('gea_devprod_collapsed');
+    if (stored === 'true') {
+      box.classList.add('collapsed');
+      document.getElementById('environmentToggle').textContent = '+';
+    }
+
+    Promise.all([
+      apiCall('get_config_value', { key: 'show_devprod_box' }).catch(function() { return null; }),
+      apiCall('deployment_info', {}).catch(function() { return null; })
+    ]).then(function(results) {
+      var configRes = results[0];
+      var deployRes = results[1];
+
+      if (configRes && configRes.success) {
+        showDevProdBox = isTruthyConfigValue(configRes.data && configRes.data.value);
+      }
+
+      if (showDevProdBox) {
+        box.hidden = false;
+      }
+
+      if (deployRes && deployRes.success) {
+        renderEnvironmentInfo(deployRes.data);
+      } else {
+        renderEnvironmentInfo();
+      }
+    });
+  }
+
+  /**
+   * Toggles environment box collapsed state and persists preference in localStorage.
+   */
+  function toggleEnvironmentBox() {
+    var box = document.getElementById('environmentBox');
+    var toggle = document.getElementById('environmentToggle');
+    if (!box || !toggle) return;
+
+    box.classList.toggle('collapsed');
+    var collapsed = box.classList.contains('collapsed');
+    toggle.textContent = collapsed ? '+' : '−';
+    localStorage.setItem('gea_devprod_collapsed', collapsed ? 'true' : 'false');
+  }
+
   // ============================================================ //
   // SECTION: DASHBOARD                                           //
   // ============================================================ //

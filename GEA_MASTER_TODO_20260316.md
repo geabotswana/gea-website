@@ -568,7 +568,7 @@ Each Q&A is collapsible (click to expand)
 - Add JavaScript for localStorage persistence and config reading
 - Update visibility toggle logic in portal initialization
 
-**Status:** 🟡 PARTIAL — DEV/PROD environment indicator exists; bottom-left/minimize/config-toggle requirements still pending
+**Status:** ✅ COMPLETE (Mar 16, 2026) — moved to bottom-left, added collapse toggle with localStorage persistence (`gea_devprod_collapsed`), and added runtime config visibility control via `show_devprod_box`
 
 **Prerequisite:** AP.0 (current state assessment)
 
@@ -624,7 +624,7 @@ Each Q&A is collapsible (click to expand)
 - Forms work on mobile (keyboard behavior, submit visibility)
 - Images scale responsively
 
-**Status:** 🟡 TODO — not yet validated as fully mobile-responsive per this checklist
+**Status:** ✅ COMPLETE (Mar 16, 2026) — implemented mobile sidebar drawer/hamburger, touch-target sizing, tightened mobile spacing, and improved modal/content behavior at 768px and 480px breakpoints
 
 **Prerequisite:** AP.0 (current state assessment)
 
@@ -660,7 +660,12 @@ Each Q&A is collapsible (click to expand)
 - [ ] Tested in Chrome DevTools at 3+ breakpoints
 - [ ] No regressions in desktop view
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 16, 2026)
+
+**Validation Notes:**
+- DEV/PROD box implemented bottom-left with collapse state persisted in localStorage
+- Runtime visibility toggle wired to `show_devprod_box` config lookup
+- Mobile behaviors updated for 1024/768/480 breakpoints including hamburger/off-canvas nav and 44px touch targets
 
 **Prerequisite:** AP.1, AP.2 (both improvements)
 
@@ -1697,7 +1702,7 @@ These items are planned but not required for initial launch.
 
 1. **First:** Run D.0 (Discovery Task) to assess actual completion status
 2. **Immediate:** Complete PRIORITY-1 (Non-Member Portal, phases NMP.0-NMP.9)
-3. **Next:** Complete PRIORITY-2 (Admin Portal Polish, phases AP.0-AP.3)
+3. **Next:** Proceed to PRIORITY-1 remaining non-member portal gaps and reservations spec/schema reconciliation
 4. **Then:** Complete RES.PREP (Prep tasks for reservations system)
 5. **Then:** Build Reservations System (RES.2-6 backend, RES.3-4 guest lists, RES.5+ frontend)
 6. **Finally:** Support features (SUP.1+) and future enhancements

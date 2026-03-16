@@ -1817,3 +1817,62 @@ function runPaymentTests() {
   Logger.log("PAYMENT TESTS COMPLETE");
   Logger.log("========================================");
 }
+
+
+// ============================================================
+// SERVICE ACCOUNT SETUP TEST
+// ============================================================
+
+/**
+ * Tests that the Board service account is properly initialized in PropertiesService.
+ *
+ * SETUP REQUIRED:
+ * 1. Go to Project Settings (⚙️ icon, left sidebar)
+ * 2. Scroll to "Script Properties"
+ * 3. Add property: BOARD_SERVICE_ACCOUNT_JSON = [full service account JSON]
+ * 4. Click "Save script properties"
+ * 5. Run this test
+ *
+ * If all 3 tests pass, your setup is complete and you can send emails via Gmail API.
+ */
+function testServiceAccountSetup() {
+  Logger.log("========== SERVICE ACCOUNT SETUP TEST ==========");
+
+  // Test 1: Retrieve from PropertiesService
+  Logger.log("\n[TEST 1] Reading from PropertiesService...");
+  var account = _getBoardServiceAccount();
+  if (!account) {
+    Logger.log("[FAIL] Service account not found in properties");
+    Logger.log("  ACTION: Go to Project Settings > Script Properties");
+    Logger.log("          Add property BOARD_SERVICE_ACCOUNT_JSON with service account JSON");
+    return;
+  }
+  Logger.log("[PASS] Service account retrieved");
+  Logger.log("  Client Email: " + account.client_email);
+  Logger.log("  Project ID: " + account.project_id);
+
+  // Test 2: Verify key structure
+  Logger.log("\n[TEST 2] Validating key structure...");
+  if (account.private_key && account.private_key.includes("BEGIN PRIVATE KEY")) {
+    Logger.log("[PASS] Private key present and valid");
+  } else {
+    Logger.log("[FAIL] Private key missing or malformed");
+    return;
+  }
+
+  // Test 3: Try to create JWT
+  Logger.log("\n[TEST 3] Creating signed JWT...");
+  var jwt = _createSignedDomainDelegationJwt();
+  if (jwt) {
+    Logger.log("[PASS] JWT created successfully");
+    Logger.log("  JWT length: " + jwt.length + " chars");
+  } else {
+    Logger.log("[FAIL] JWT creation failed");
+    Logger.log("  Check that private key is valid and not corrupted");
+    return;
+  }
+
+  Logger.log("\n========== ALL TESTS PASSED ==========");
+  Logger.log("Service account setup is complete!");
+  Logger.log("You can now run testEmailTemplateSystem() to send test emails.");
+}

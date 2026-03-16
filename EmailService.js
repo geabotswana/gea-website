@@ -740,13 +740,68 @@ function escapeHtml(text) {
 // ============================================================
 
 /**
+ * Initializes the Board service account credentials in PropertiesService.
+ * Call this ONCE in the Apps Script editor to store the service account JSON.
+ * The key will persist across clasp push/pull operations.
+ *
+ * Usage in Apps Script editor:
+ *   initializeBoardServiceAccount({
+ *     "type": "service_account",
+ *     "project_id": "...",
+ *     "private_key_id": "...",
+ *     "private_key": "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
+ *     "client_email": "gea-apps-script@gea-association-platform.iam.gserviceaccount.com",
+ *     "client_id": "...",
+ *     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+ *     "token_uri": "https://oauth2.googleapis.com/token",
+ *     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+ *     "client_x509_cert_url": "..."
+ *   });
+ *
+ * @param {Object} serviceAccountJson  Complete service account JSON object
+ * @returns {boolean} true if saved successfully
+ */
+function initializeBoardServiceAccount(serviceAccountJson) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    props.setProperty("BOARD_SERVICE_ACCOUNT_JSON", JSON.stringify(serviceAccountJson));
+    Logger.log("Successfully stored Board service account credentials in PropertiesService");
+    return true;
+  } catch (e) {
+    Logger.log("ERROR initializeBoardServiceAccount: " + e);
+    return false;
+  }
+}
+
+/**
+ * Retrieves the Board service account credentials from PropertiesService.
+ * Reads the JSON that was stored by initializeBoardServiceAccount().
+ *
+ * @returns {Object|null} Service account JSON object, or null if not found/invalid
+ */
+function _getBoardServiceAccount() {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var json = props.getProperty("BOARD_SERVICE_ACCOUNT_JSON");
+    if (!json) {
+      Logger.log("ERROR: Board service account not initialized. Call initializeBoardServiceAccount() first.");
+      return null;
+    }
+    return JSON.parse(json);
+  } catch (e) {
+    Logger.log("ERROR _getBoardServiceAccount: " + e);
+    return null;
+  }
+}
+
+/**
  * Gets an access token for the service account via OAuth2.
  * Uses JWT grant flow to authenticate the service account.
  * @returns {string|null} Access token or null if request failed
  */
 /**
  * Gets an OAuth access token using Domain-Wide Delegation.
- * Service account key is stored in BoardEmailConfig.gs.
+ * Service account key is stored in PropertiesService (set via initializeBoardServiceAccount).
  *
  * Steps:
  * 1. Create a JWT with the delegated user in the 'sub' claim
@@ -793,12 +848,18 @@ function _getServiceAccountAccessToken() {
 
 /**
  * Creates and signs a JWT for domain-wide delegation.
- * The private key is stored in BOARD_SERVICE_ACCOUNT (from BoardEmailConfig.gs).
+ * The private key is stored in PropertiesService (set via initializeBoardServiceAccount).
  *
  * @returns {string|null} Signed JWT (header.payload.signature), or null if error
  */
 function _createSignedDomainDelegationJwt() {
   try {
+    var serviceAccount = _getBoardServiceAccount();
+    if (!serviceAccount) {
+      Logger.log("ERROR: Service account not initialized in PropertiesService");
+      return null;
+    }
+
     var now = Math.floor(Date.now() / 1000);
     var expiresAt = now + 3600;  // Token valid for 1 hour
 
@@ -808,7 +869,7 @@ function _createSignedDomainDelegationJwt() {
     };
 
     var payload = {
-      iss: BOARD_SERVICE_ACCOUNT.client_email || BOARD_SERVICE_ACCOUNT_EMAIL,
+      iss: serviceAccount.client_email || BOARD_SERVICE_ACCOUNT_EMAIL,
       sub: BOARD_EMAIL_DELEGATED_USER,  // Impersonate this user (has Send As delegation for board@)
       scope: 'https://www.googleapis.com/auth/gmail.send',
       aud: 'https://oauth2.googleapis.com/token',
@@ -829,7 +890,7 @@ function _createSignedDomainDelegationJwt() {
     var toSign = encodedHeader + '.' + encodedPayload;
 
     // Sign with service account's private key using RS256
-    var signature = Utilities.computeRsaSha256Signature(toSign, BOARD_SERVICE_ACCOUNT.private_key);
+    var signature = Utilities.computeRsaSha256Signature(toSign, serviceAccount.private_key);
     var encodedSignature = Utilities.base64Encode(signature)
       .replace(/\+/g, '-')
       .replace(/\//g, '_')

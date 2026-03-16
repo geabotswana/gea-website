@@ -42,7 +42,7 @@
  */
 function sendEmail(templateId, recipient, variables, replyTo) {
   try {
-    var template = getEmailTemplate(templateId);
+    var template = getEmailTemplateById(templateId);
     if (!template) {
       Logger.log("ERROR sendEmail: Template not found or inactive: " + templateId);
       return false;
@@ -83,7 +83,7 @@ function sendEmail(templateId, recipient, variables, replyTo) {
  */
 function sendEmailFromBoard(templateId, recipient, variables) {
   try {
-    var template = getEmailTemplate(templateId);
+    var template = getEmailTemplateById(templateId);
     if (!template) {
       Logger.log("ERROR sendEmailFromBoard: Template not found or inactive: " + templateId);
       return false;
@@ -163,7 +163,7 @@ function sendEmailFromBoard(templateId, recipient, variables) {
  */
 var _templateCache = {};
 
-function getEmailTemplate(templateId) {
+function getEmailTemplateById(templateId) {
   if (_templateCache[templateId]) return _templateCache[templateId];
   try {
     var data = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
@@ -186,6 +186,321 @@ function getEmailTemplate(templateId) {
   }
   Logger.log("Template not found or inactive: " + templateId);
   return null;
+}
+
+
+// ============================================================
+// DRIVE-BASED EMAIL TEMPLATE SYSTEM
+// ============================================================
+
+/**
+ * Cache for Drive-based email templates.
+ * Key: semantic_name, Value: { subject, htmlBody, placeholders, name }
+ */
+var _driveTemplateCache = {};
+
+/**
+ * Fetches a template from the Email Templates tab with Drive-based HTML bodies.
+ * Reads from the sheet and loads the HTML body from a Google Drive file.
+ *
+ * Sheet layout:
+ *   A=template_id, B=template_name, C=subject, D=body (legacy), E=active
+ *   F=semantic_name, G=display_name, H=drive_file_id, I=placeholders, J=notes
+ *
+ * @param {string} templateName  Semantic name of template (e.g., "MEM_APPLICATION_SUBMITTED_TO_APPLICANT")
+ * @returns {Object|null}        { subject, htmlBody, placeholders, name } or null if not found/inactive
+ */
+function getEmailTemplate(templateName) {
+  if (_driveTemplateCache[templateName]) {
+    return _driveTemplateCache[templateName];
+  }
+
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
+                  .getSheetByName(TAB_EMAIL_TEMPLATES);
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var semanticName = String(row[5]).trim();  // F = semantic_name
+      var active = row[4];                        // E = active
+
+      if (semanticName === templateName && active === true) {
+        var subject = String(row[2]).trim();           // C = subject
+        var driveFileId = String(row[7]).trim();       // H = drive_file_id
+        var placeholderStr = String(row[8]).trim();    // I = placeholders (comma-separated)
+        var displayName = String(row[6]).trim();       // G = display_name
+
+        // Parse placeholders from comma-separated string
+        var placeholders = [];
+        if (placeholderStr) {
+          placeholders = placeholderStr.split(',').map(function(p) {
+            return p.trim();
+          });
+        }
+
+        // Load HTML body from Drive file
+        var htmlBody = "";
+        if (driveFileId) {
+          try {
+            htmlBody = DriveApp.getFileById(driveFileId).getBlob().getDataAsString();
+          } catch (driveErr) {
+            Logger.log("ERROR getEmailTemplate: Could not load Drive file " + driveFileId + ": " + driveErr);
+            logAuditEntry("system", AUDIT_EMAIL_TEMPLATE_NOT_FOUND, "EmailTemplate", templateName,
+              "Drive file not accessible: " + driveErr);
+            return null;
+          }
+        }
+
+        var template = {
+          subject: subject,
+          htmlBody: htmlBody,
+          placeholders: placeholders,
+          name: displayName
+        };
+
+        _driveTemplateCache[templateName] = template;
+        logAuditEntry("system", AUDIT_EMAIL_TEMPLATE_LOADED, "EmailTemplate", templateName,
+          "Loaded with " + placeholders.length + " placeholders");
+        return template;
+      }
+    }
+
+    // Not found or inactive
+    logAuditEntry("system", AUDIT_EMAIL_TEMPLATE_NOT_FOUND, "EmailTemplate", templateName, "Not found or inactive");
+    return null;
+
+  } catch (e) {
+    Logger.log("ERROR getEmailTemplate(" + templateName + "): " + e);
+    logAuditEntry("system", AUDIT_EMAIL_TEMPLATE_NOT_FOUND, "EmailTemplate", templateName,
+      "Exception: " + e);
+    return null;
+  }
+}
+
+/**
+ * Substitutes variables into HTML body.
+ * Replaces {{VARIABLE}} tokens with values from the variables object.
+ *
+ * @param {string} htmlBody    Template HTML
+ * @param {Object} variables   Key-value pairs for substitution
+ * @returns {string}           HTML with substitutions applied
+ */
+function substituteTemplateVariables(htmlBody, variables) {
+  if (!htmlBody) return "";
+  if (typeof variables !== 'object' || variables === null) {
+    return htmlBody;
+  }
+
+  var result = htmlBody;
+  for (var key in variables) {
+    if (variables.hasOwnProperty(key)) {
+      var value = variables[key];
+      var safeValue = String(value === null || value === undefined ? "" : value);
+      var pattern = new RegExp('\\{\\{' + key + '\\}\\}', 'g');
+      result = result.replace(pattern, safeValue);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Validates that all required template variables are provided.
+ *
+ * @param {string} templateName     Semantic name of template
+ * @param {Object} providedVariables Variables object passed by caller
+ * @returns {Object}                { valid: boolean, missing: [], extra: [] }
+ */
+function validateTemplateVariables(templateName, providedVariables) {
+  var template = getEmailTemplate(templateName);
+  if (!template) {
+    return { valid: false, missing: [], extra: [] };
+  }
+
+  providedVariables = providedVariables || {};
+  var provided = Object.keys(providedVariables);
+  var required = template.placeholders || [];
+
+  var missing = [];
+  var extra = [];
+
+  for (var i = 0; i < required.length; i++) {
+    if (!providedVariables.hasOwnProperty(required[i])) {
+      missing.push(required[i]);
+    }
+  }
+
+  for (var j = 0; j < provided.length; j++) {
+    if (required.indexOf(provided[j]) === -1) {
+      extra.push(provided[j]);
+    }
+  }
+
+  return {
+    valid: missing.length === 0,
+    missing: missing,
+    extra: extra
+  };
+}
+
+/**
+ * Sends an email using a Drive-based template.
+ * Loads template, validates variables, substitutes placeholders, and sends via Gmail API.
+ *
+ * @param {string} templateName     Semantic name of template
+ * @param {string|Array} recipient  Email address(es)
+ * @param {Object} variables        Placeholder values
+ * @param {Object} options          Optional: { cc, bcc, attachments } — Phase 2
+ * @returns {boolean}               true if sent successfully
+ */
+function sendEmailFromTemplate(templateName, recipient, variables, options) {
+  try {
+    variables = variables || {};
+    options = options || {};
+
+    var template = getEmailTemplate(templateName);
+    if (!template) {
+      Logger.log("ERROR sendEmailFromTemplate: Template not found: " + templateName);
+      logAuditEntry("system", AUDIT_EMAIL_SEND_FAILED, "EmailTemplate", templateName, "Template not found");
+      return false;
+    }
+
+    // Validate variables (warn but continue if missing)
+    var validation = validateTemplateVariables(templateName, variables);
+    if (!validation.valid) {
+      Logger.log("WARNING sendEmailFromTemplate: Missing variables: " + validation.missing.join(", "));
+      logAuditEntry("system", AUDIT_EMAIL_MISSING_VARIABLES, "EmailTemplate", templateName,
+        "Missing: " + validation.missing.join(", "));
+    }
+
+    // Substitute variables in subject and body
+    var subject = substituteTemplateVariables(template.subject, variables);
+    var htmlBody = substituteTemplateVariables(template.htmlBody, variables);
+
+    var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
+
+    // Send via Gmail API with service account delegation
+    var accessToken = _getServiceAccountAccessToken();
+    if (!accessToken) {
+      Logger.log("ERROR sendEmailFromTemplate: Could not get service account access token");
+      logAuditEntry("system", AUDIT_EMAIL_SEND_FAILED, "EmailTemplate", templateName,
+        "Could not obtain access token");
+      return false;
+    }
+
+    // Build raw email message with GEA branding
+    var fromHeader = BOARD_EMAIL_DISPLAY_NAME + ' <' + BOARD_EMAIL_TO_SEND_FROM + '>';
+    var emailMessage = 'From: ' + fromHeader + '\r\n' +
+                       'To: ' + to + '\r\n' +
+                       'Subject: ' + subject + '\r\n' +
+                       'Content-Type: text/html; charset=UTF-8\r\n' +
+                       'MIME-Version: 1.0\r\n' +
+                       '\r\n' +
+                       htmlBody;
+
+    var encodedMessage = Utilities.base64Encode(emailMessage);
+    var payload = {
+      raw: encodedMessage
+    };
+
+    var fetchOptions = {
+      method: 'post',
+      headers: {
+        Authorization: 'Bearer ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    };
+
+    var response = UrlFetchApp.fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+      fetchOptions
+    );
+
+    if (response.getResponseCode() === 200) {
+      Logger.log("Email sent via template: " + templateName + " → " + to);
+      logAuditEntry("system", AUDIT_EMAIL_SENT_FROM_TEMPLATE, "EmailTemplate", templateName,
+        "Sent to " + to);
+      return true;
+    } else {
+      Logger.log("ERROR: Gmail API error: " + response.getContentText());
+      logAuditEntry("system", AUDIT_EMAIL_SEND_FAILED, "EmailTemplate", templateName,
+        "Gmail API error: " + response.getContentText());
+      return false;
+    }
+
+  } catch (e) {
+    Logger.log("ERROR sendEmailFromTemplate(" + templateName + "): " + e);
+    logAuditEntry("system", AUDIT_EMAIL_SEND_FAILED, "EmailTemplate", templateName,
+      "Exception: " + e);
+    return false;
+  }
+}
+
+/**
+ * Test the Drive-based email template system.
+ * Validates template loading, variable substitution, and sending.
+ */
+function testEmailTemplateSystem() {
+  Logger.log("========== EMAIL TEMPLATE SYSTEM TEST ==========");
+
+  var testTemplateName = "MEM_APPLICATION_SUBMITTED_TO_APPLICANT";
+  var testVariables = {
+    FIRST_NAME: "Jane",
+    APPLICATION_ID: "APP-2026-00001",
+    SUBMITTED_DATE: "March 16, 2026",
+    PORTAL_URL: "https://geabotswana.org/member.html"
+  };
+  var testRecipient = "michael.raney@geabotswana.org";
+
+  // Test 1: Load template
+  Logger.log("\n[TEST 1] Loading template...");
+  var template = getEmailTemplate(testTemplateName);
+  if (template && template.subject && template.htmlBody && template.placeholders) {
+    Logger.log("[PASS] Template loaded");
+    Logger.log("  Subject: " + template.subject);
+    Logger.log("  Placeholders: " + template.placeholders.join(", "));
+  } else {
+    Logger.log("[FAIL] Template not loaded or incomplete");
+    return;
+  }
+
+  // Test 2: Validate variables
+  Logger.log("\n[TEST 2] Validating variables...");
+  var validation = validateTemplateVariables(testTemplateName, testVariables);
+  if (validation.valid) {
+    Logger.log("[PASS] All required variables provided");
+  } else {
+    Logger.log("[WARN] Missing variables: " + validation.missing.join(", "));
+  }
+  if (validation.extra.length > 0) {
+    Logger.log("[WARN] Extra variables: " + validation.extra.join(", "));
+  }
+
+  // Test 3: Substitute variables
+  Logger.log("\n[TEST 3] Substituting variables...");
+  var substitutedBody = substituteTemplateVariables(template.htmlBody, testVariables);
+  var hasUnreplacedTokens = /\{\{[A-Z_]+\}\}/.test(substitutedBody);
+  if (!hasUnreplacedTokens) {
+    Logger.log("[PASS] All {{VARIABLES}} replaced");
+  } else {
+    Logger.log("[WARN] Some {{VARIABLES}} not replaced");
+  }
+
+  // Test 4: Send test email
+  Logger.log("\n[TEST 4] Sending test email...");
+  var sent = sendEmailFromTemplate(testTemplateName, testRecipient, testVariables);
+  if (sent) {
+    Logger.log("[PASS] Test email sent successfully");
+    Logger.log("  To: " + testRecipient);
+    Logger.log("  From: " + BOARD_EMAIL_TO_SEND_FROM);
+  } else {
+    Logger.log("[FAIL] Test email failed to send");
+  }
+
+  Logger.log("\n========== TEST COMPLETE ==========");
 }
 
 

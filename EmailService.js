@@ -581,7 +581,7 @@ function buildHtmlEmail(subject, plainText) {
     '.eh{background:#0A3161;padding:24px 30px;text-align:center;border-bottom:4px solid #B31942;}' +
     '.eh img{height:68px;width:68px;display:block;margin:0 auto 10px;}' +
     '.eh h1{color:#FFFFFF;font-size:16px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;margin:0 0 3px;}' +
-    '.eh p{color:#FFD700;font-size:10px;letter-spacing:3px;text-transform:uppercase;margin:0;}' +
+    '.eh p{color:#ABCAE9;font-size:10px;letter-spacing:3px;text-transform:uppercase;margin:0;}' +
     // Body
     '.eb{padding:28px 32px;background:#fff;}' +
     '.eb h2{color:#0A3161;font-size:18px;font-weight:bold;margin:0 0 8px;padding-bottom:8px;border-bottom:2px solid #B31942;}' +
@@ -604,9 +604,9 @@ function buildHtmlEmail(subject, plainText) {
     '.dv{border:none;border-top:1px solid #E0E0E0;margin:20px 0;}' +
     // Footer
     '.ef{background:#0A3161;padding:20px 30px;text-align:center;border-top:3px solid #B31942;}' +
-    '.ft{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#FFFFFF;margin-bottom:8px;}' +
-    '.ef p{font-size:11px;color:#FFFFFF;margin:3px 0;}' +
-    '.ef a{color:#FFD700;text-decoration:none;}' +
+    '.ft{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#B31942;margin-bottom:8px;}' +
+    '.ef p{font-size:11px;color:#B31942;margin:3px 0;}' +
+    '.ef a{color:#ABCAE9;text-decoration:none;}' +
     '.fa{font-size:10px;color:rgba(255,255,255,.4);margin-top:8px;}' +
     '@media(max-width:600px){.eb{padding:18px 16px;}.kv{flex-direction:column;}.kv2{text-align:left;}}' +
     '</style></head><body>' +

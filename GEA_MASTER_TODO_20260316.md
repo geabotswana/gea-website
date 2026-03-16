@@ -675,7 +675,7 @@ Each Q&A is collapsible (click to expand)
 
 ## SECTION 1: RESERVATIONS SYSTEM (Phases 2-4 Combined)
 
-**Why:** Core facility booking system that enables members to reserve tennis courts, basketball, Leobo, and other facilities. This is a major feature with complex approval workflows.
+**Why:** Core facility booking system that enables members to reserve TC/BC and Leobo. This is a major feature with complex approval workflows.
 
 **Overall Dependencies:**
 - ✅ Reservations sheet schema (may need verification)
@@ -698,7 +698,7 @@ Each Q&A is collapsible (click to expand)
 - reservation_id (unique key)
 - household_id (FK)
 - household_name (denormalized)
-- facility (TC, BC, Leobo, Whole Facility, etc.)
+- facility (TC/BC or Leobo only)
 - start_date, start_time, end_time (duration)
 - status (pending, approved, denied, waitlisted, cancelled)
 - approval_path (board_only, mgmt_then_board)
@@ -745,18 +745,14 @@ Each Q&A is collapsible (click to expand)
 
 **Calendar & Facilities:**
 - RESERVATIONS_CALENDAR_ID (Google Calendar ID for reservations)
-- FACILITY_TC (Tennis Court)
-- FACILITY_BC (Basketball Court)
+- FACILITY_TC_BC (Tennis Court/Basketball Court)
 - FACILITY_LEOBO (Leobo/Covered Meeting Area)
-- FACILITY_REC_CENTER (Rec Center, includes TC + BC + Leobo)
 - FACILITY_PLAYGROUND (walk-up only)
 - FACILITY_GYM (walk-up only)
 
 **Reservation Limits:**
-- HOUSEHOLD_TC_LIMIT_HOURS_PER_WEEK (3 hours)
-- HOUSEHOLD_BC_LIMIT_HOURS_PER_WEEK (3 hours)
+- HOUSEHOLD_TC_BC_LIMIT_HOURS_PER_WEEK (3 hours)
 - HOUSEHOLD_LEOBO_LIMIT_PER_MONTH (1 per month)
-- HOUSEHOLD_REC_CENTER_LIMIT_PER_MONTH (per spec, likely 1)
 
 **Approval Rules:**
 - EXCESS_BOOKING_DEFINITION (e.g., "beyond household limits")
@@ -862,10 +858,9 @@ Each Q&A is collapsible (click to expand)
 **What:** Implement backend logic to enforce household reservation limits and prevent double-booking
 
 **Business Rules:**
-- Tennis Court: max 3 hours per household per calendar week
-- Basketball Court: max 3 hours per household per calendar week
+- Tennis Court/Basketball Court (TC/BC): max 3 hours per household per calendar week
 - Leobo: max 1 per household per calendar month
-- Rec Center (combined): same rules (counts against TC + BC limits)
+- Combined TC/BC + Leobo reservations are not allowed in a single booking request
 - No overlapping time slots (no double-booking)
 
 **Implementation:**
@@ -955,8 +950,8 @@ Each Q&A is collapsible (click to expand)
 - Status: pending_board_approval
 - Notify board only
 
-**Path 2: Management Then Board** (Leobo, Whole Facility, exceeds limits)
-- Leobo, Rec Center, and excess bookings require Management approval first
+**Path 2: Management Then Board** (Leobo and applicable excess bookings)
+- Leobo and applicable excess bookings require Management approval first
 - Only after Mgmt approval goes to Board
 - Status progression:
   1. pending_mgmt_approval
@@ -1028,7 +1023,7 @@ Each Q&A is collapsible (click to expand)
 
 **Display:**
 - List all pending approvals for logged-in approver
-- Filter by type (Regular, Excess, Leobo, Whole Facility)
+- Filter by type (Regular, Excess, Leobo)
 - Show household, facility, time, approval deadline
 - [Approve] [Deny] buttons
 
@@ -1381,7 +1376,7 @@ submitted
 
 **Content:**
 - List all pending approvals for this board member
-- Filter by: type (Regular, Excess, Leobo, Whole Facility), facility, date range
+- Filter by: type (Regular, Excess, Leobo), facility, date range
 - Show: household, facility, time, approval deadline, household usage stats
 - [Approve] [Deny] buttons
 - Link to full reservation details
@@ -1429,7 +1424,7 @@ submitted
 
 **Features:**
 - Month/week/day view
-- Color coding: TC=blue, BC=green, Leobo=purple, Rec Center=orange
+- Color coding: TC/BC=blue, Leobo=purple
 - Status indication: pending=faded, approved=full color, cancelled=strikethrough
 - Click to view reservation details
 - Filters: show/hide by facility, household, status

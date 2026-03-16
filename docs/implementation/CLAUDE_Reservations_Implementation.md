@@ -6,7 +6,7 @@ Complete implementation guide for the GEA facility booking system, including rul
 
 ## Facilities & Booking Rules
 
-### Four Main Facilities
+### Reservable and Walk-Up Facilities
 
 1. **Tennis Court / Basketball Court (Dual-Use)** — Combined outdoor court (reservable)
    - Location: Presidents Drive plot
@@ -33,7 +33,7 @@ Complete implementation guide for the GEA facility booking system, including rul
    - Hours: 6am–8pm daily
    - Equipment: Swings, slides, climbing structures
 
-**Note:** "Whole Facility" bookings are reservation combinations (not a separate facility); members coordinate multiple facilities through the portal.
+**Important:** Rec Center/"Whole Facility" reservations are **not supported**. Members may reserve **only one facility per reservation**: either TC/BC or Leobo. A single reservation cannot include both TC/BC and Leobo.
 
 ### Booking Time Slots & Duration
 
@@ -48,7 +48,7 @@ Complete implementation guide for the GEA facility booking system, including rul
 |----------|-------|--------|-------|
 | Tennis Court/Basketball | 3 hours | Weekly (Mon–Sun) | Enforced nightly, resets Monday 2:00 AM GMT+2 |
 | Leobo | 1 booking | Monthly | Max 6 hours per booking; resets 1st of month 2:00 AM GMT+2 |
-| Rec Center | No limit | — | Subject to component limits (TC/BC 3hrs/week OR Leobo 1/month) |
+| Combined TC/BC + Leobo | Not allowed | — | A single reservation request cannot span both areas |
 
 ---
 
@@ -63,10 +63,10 @@ ReservationService.createReservation() validates:
   ├─ Household active & membership current
   ├─ Facility exists & date/time valid
   ├─ No double-booking (same facility overlaps)
-  ├─ Rec Center check: blocks if TC/BC OR Leobo already booked in slot
+  ├─ Cross-facility combination check: rejects any request that includes both TC/BC and Leobo
   ├─ Usage limits:
-  │  ├─ Tennis: weekly usage + this request ≤ 3 hours → Regular booking
-  │  └─ Tennis: weekly usage + this request > 3 hours → Excess booking
+  │  ├─ TC/BC: weekly usage + this request ≤ 3 hours → Regular booking
+  │  └─ TC/BC: weekly usage + this request > 3 hours → Excess booking
   │  ├─ Leobo: monthly usage + this request ≤ 6 hours → Regular booking
   │  └─ Leobo: monthly usage + this request > 6 hours → Excess booking
   └─ Generates reservation_id (RES-YYYY-MM-DD-###)
@@ -84,7 +84,7 @@ Sends email to board@geabotswana.org: "New Booking Submitted"
 
 ### STEP 2: Approval Routing (Facility-Dependent)
 
-#### Tennis Court / Basketball (TC/BC)
+#### Tennis Court/Basketball Court (TC/BC)
 
 **IF Regular booking** (usage ≤ 3 hrs/week after this):
 - AUTO-APPROVED (no board review needed)
@@ -111,12 +111,6 @@ Sends email to board@geabotswana.org: "New Booking Submitted"
   - Reservations sheet: mgmt_approval_required=FALSE, mgmt_approved_by=[NAME], board_approval_required=TRUE
 - Once Board approves (or denies): Proceed to STEP 3
 
-#### Rec Center (Whole Facility)
-
-**TWO-STAGE APPROVAL** (same as Leobo)
-- Mgmt must approve FIRST
-- Board approves SECOND
-- System tracks previous Whole Facility requests to prevent conflicts
 
 ### STEP 3: Board/Mgmt Review & Decision
 
@@ -128,7 +122,7 @@ Admin.html approveReservation(reservation_id)
   ├─ Send member email: "Booking Approved - Ready to Proceed"
   ├─ Set bumping deadline (if applicable):
   │  ├─ Tennis excess: bump_window_deadline = reservation_date - 1 day
-  │  └─ Leobo/Rec: bump_window_deadline = reservation_date - 5 business days
+  │  └─ Leobo excess: bump_window_deadline = reservation_date - 5 business days
   ├─ Guest list deadline auto-calculated:
   │  └─ guest_list_deadline = reservation_date - GUEST_LIST_SUBMISSION_DAYS_BEFORE (default 2 business days)
   └─ Status: "Confirmed" (ready for guest list submission)
@@ -224,7 +218,7 @@ NotificationService.runNightlyTasks() triggers at 6:00 AM GMT+2
 ```
 After approval, system sets bump_window_deadline:
   ├─ Tennis excess: 1 day before event
-  └─ Leobo/Rec excess: 5 business days before event
+  └─ Leobo excess: 5 business days before event
 
 During bump window:
   ├─ System monitors Regular bookings on same facility/time
@@ -315,9 +309,8 @@ Reservation date arrives
 
 | Facility | Regular Booking | Excess/Tentative Booking | Approvers | Timeline |
 |----------|-----------------|--------------------------|-----------|----------|
-| **Tennis/Basketball** | Auto-approved ✅ | Board approval required | board@geabotswana.org | 1 approval stage |
+| **Tennis Court/Basketball Court (TC/BC)** | Auto-approved ✅ | Board approval required | board@geabotswana.org | 1 approval stage |
 | **Leobo** | Board approval required | Board approval required | mgt-notify@, then board@ | 2 approval stages (Mgmt → Board) |
-| **Rec Center** | Board approval required | Board approval required | mgt-notify@, then board@ | 2 approval stages (Mgmt → Board) |
 | **Playground** | Walk-up only (no reservation) | N/A | N/A | N/A |
 | **Gym** | Walk-up only (no reservation) | N/A | N/A | N/A |
 
@@ -329,9 +322,9 @@ Calendar event titles use status tags to indicate booking state:
 
 | Tag | Meaning | Next Action |
 |-----|---------|-------------|
-| `[TENTATIVE]` | Pending first-stage approval | Awaiting Mgmt (Leobo/Rec) or Board (Tennis) |
-| `[TENTATIVE_EXCESS]` | Excess Tennis booking pending Board | Awaiting Board approval |
-| `[TENTATIVE_BOARD]` | Leobo/Rec pending second-stage Board approval | Awaiting Board approval (Mgmt already approved) |
+| `[TENTATIVE]` | Pending first-stage approval | Awaiting Mgmt (Leobo) or Board (TC/BC) |
+| `[TENTATIVE_EXCESS]` | Excess TC/BC booking pending Board | Awaiting Board approval |
+| `[TENTATIVE_BOARD]` | Leobo pending second-stage Board approval | Awaiting Board approval (Mgmt already approved) |
 | `[APPROVED]` | All approvals complete, ready for guest list | Guest list due X days before |
 | `[BUMPED_TO_CONFIRMED]` | Excess booking promoted during bump window | Event ready to proceed |
 | `[AUTO_CONFIRMED_EXCESS]` | Excess booking auto-approved after bump window | Event ready to proceed |
@@ -371,7 +364,7 @@ USAGE_TRACKING_RESET_TIME = "02:00"          // 2:00 AM GMT+2 (nightly)
 - `reservation_id` — Unique identifier (RES-YYYY-MM-DD-###)
 - `household_id`, `submitted_by_individual_id`, `submitted_by_email` — Who booked it
 - `submission_timestamp` — When booking request was created
-- `facility` — Tennis, Leobo, Rec Center, etc.
+- `facility` — Tennis Court/Basketball Court (TC/BC) or Leobo
 - `reservation_date`, `start_time`, `end_time`, `duration_hours` — When the booking is
 - `event_name`, `guest_count`, `notes` — Optional event details
 
@@ -394,7 +387,6 @@ USAGE_TRACKING_RESET_TIME = "02:00"          // 2:00 AM GMT+2 (nightly)
 
 ### Guest List Tracking
 - `guest_list_submitted`, `guest_list_deadline` — Deadline for submitting guest list
-- `previous_whole_facility_requests` — For Rec Center, tracks historical booking patterns
 
 ### Calendar Integration
 - `calendar_event_id` — Google Calendar event ID (enables updates/deletions)
@@ -418,7 +410,7 @@ USAGE_TRACKING_RESET_TIME = "02:00"          // 2:00 AM GMT+2 (nightly)
 
 ### Double-Booking Prevention
 - Same facility: no time slot overlaps allowed
-- Rec Center booking: blocks both TC/BC and Leobo slots for same time
+- Single reservation cannot include both TC/BC and Leobo in one request
 - System checks before approval to prevent conflicts
 
 ### Email Template Variables

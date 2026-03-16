@@ -376,7 +376,10 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
 
     // Substitute variables in subject and body
     var subject = substituteTemplateVariables(template.subject, variables);
-    var htmlBody = substituteTemplateVariables(template.htmlBody, variables);
+    var plainBody = substituteTemplateVariables(template.htmlBody, variables);
+
+    // Wrap in GEA master HTML template for consistent branding
+    var htmlBody = buildHtmlEmail(subject, plainBody);
 
     var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
 

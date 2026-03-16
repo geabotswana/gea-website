@@ -8,6 +8,7 @@
 index.html
 docs/**
 scripts/**
+BoardEmailConfig.gs
 .git
 .claude
 node_modules

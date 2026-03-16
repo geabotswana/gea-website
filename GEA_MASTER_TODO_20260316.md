@@ -2,7 +2,7 @@
 
 **Current Date:** March 16, 2026  
 **Owner:** Michael Raney (Treasurer)  
-**Status:** Phase 1 ✅ COMPLETE; Phases 2-7 in progress/planned
+**Status:** Discovery refreshed on Mar 16, 2026 — Phase 1 ✅ COMPLETE, major Phase 2 components ✅ implemented, Non-Member Portal and Reservations UX/workflow still in progress
 
 ---
 
@@ -56,7 +56,33 @@ This document establishes **mandatory standards** for:
 
 **Result:** This document becomes the authoritative source of truth for remaining work
 
-**Status:** 🟡 READY — Awaiting Claude Code execution
+**Status:** ✅ COMPLETE — Discovery executed Mar 16, 2026
+
+#### D.0 Findings Snapshot (Mar 16, 2026)
+
+**Evidence reviewed:** git history since Feb 23, 2026; Apps Script modules (`Code.js`, `ApplicationService.js`, `PaymentService.js`, `ReservationService.js`); portal files (`Portal.html`, `Admin.html`, `DocumentUploadPortal.html`); and spreadsheet snapshots (`GEA Member Directory (1).xlsx`, `GEA Reservations (1).xlsx`, `GEA System Backend (1).xlsx`, `GEA Payment Tracking (1).xlsx`).
+
+**Completed since original draft:**
+- ✅ Membership application workflow is implemented end-to-end (submit → board/RSO review → payment stage → activation)
+- ✅ Payment Verification Module is implemented (member submit, treasurer verify/reject/clarify, reporting endpoints)
+- ✅ File upload/document submission workflow is implemented (including RSO/GEA review states)
+- ✅ Core reservations backend exists (limits, conflict checks, approvals, cancellation, guest-list deadline helpers)
+- ✅ Security hardening and auth regression work completed in March sessions (token hashing, XSS hardening, tests)
+
+**Partially complete (requires polish or spec alignment):**
+- 🟡 Non-member/applicant experience exists inside `Portal.html` but not yet delivered as full spec-complete dedicated non-member portal package
+- 🟡 Admin portal has substantial payment/applications tooling, but mobile-first polish items remain
+- 🟡 Reservations implementation exists in code, but this document's schema/template assumptions are out of sync with current workbook headers and template inventory
+
+**Dependencies and blockers identified:**
+- ⚠️ Reservations sheet headers in snapshot differ from the richer process-spec field list; requires decision: extend schema now vs map existing simplified fields
+- ⚠️ Reservation email template IDs/names in backend do not exactly match this plan's expected naming set; requires reconciliation matrix before final RES rollout
+- ⚠️ Approval distro addresses still require board confirmation before production hardening
+
+**New completed items not originally reflected in this plan:**
+- ✅ Deployment sync metadata and DEV/PROD environment signaling completed
+- ✅ Applicant login fix for inactive households completed
+- ✅ Payment report and payment-verification admin UI shipped
 
 ---
 
@@ -98,7 +124,7 @@ These items unblock critical testing paths and should be done first among active
 - Route accordingly: `if (active) showMemberPortal() else showNonMemberPortal()`
 - Reuse existing authentication (users already logged in)
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL — applicant routing exists (`is_applicant` flow), but dedicated non-member portal routing/spec parity still pending
 
 **Prerequisite:** NMP.0 (spec review)
 
@@ -122,7 +148,7 @@ These items unblock critical testing paths and should be done first among active
 - Progress indicator for applicants (5-step timeline, visual)
 - Color-coded badges (amber/green/red/gray)
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL — applicant dashboard/status/timeline UI exists, but does not yet match full 4-card non-member spec
 
 **Prerequisite:** NMP.1 (routing)
 
@@ -159,7 +185,7 @@ These items unblock critical testing paths and should be done first among active
 
 **Visibility:** Show only if applicant (application_status not null) AND not rejected
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL — timeline/status view exists in applicant portal; needs alignment to this exact 5-step presentation spec
 
 **Prerequisite:** NMP.2 (dashboard)
 
@@ -230,7 +256,7 @@ Info-only (no form) IF applicant not yet approved
 - Dues fetched from Membership Pricing sheet (not hard-coded)
 - All form validation before submission
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL — payment verification backend and admin actions are implemented; non-member payment page UX/spec integration remains
 
 **Prerequisite:** NMP.2 (dashboard), Payment Verification Module exists
 
@@ -509,7 +535,7 @@ Each Q&A is collapsible (click to expand)
 
 **What:** Claude Code reviews existing Admin.html and related portal files to understand current layout, styling, and identify where changes need to be made
 
-**Status:** 🟡 TODO (part of D.0 Discovery)
+**Status:** ✅ COMPLETE (assessed in D.0)
 
 **Successor:** AP.1
 
@@ -542,7 +568,7 @@ Each Q&A is collapsible (click to expand)
 - Add JavaScript for localStorage persistence and config reading
 - Update visibility toggle logic in portal initialization
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL — DEV/PROD environment indicator exists; bottom-left/minimize/config-toggle requirements still pending
 
 **Prerequisite:** AP.0 (current state assessment)
 
@@ -598,7 +624,7 @@ Each Q&A is collapsible (click to expand)
 - Forms work on mobile (keyboard behavior, submit visibility)
 - Images scale responsively
 
-**Status:** 🟡 TODO
+**Status:** 🟡 TODO — not yet validated as fully mobile-responsive per this checklist
 
 **Prerequisite:** AP.0 (current state assessment)
 
@@ -696,7 +722,7 @@ Each Q&A is collapsible (click to expand)
 
 **Action:** Add any missing columns, verify data types, document schema
 
-**Status:** 🟡 TODO (needs verification)
+**Status:** ✅ VERIFIED (snapshot reviewed) — reservations/guest-list tabs exist but are simplified vs full spec; schema expansion decision required
 
 **Prerequisite:** D.0 (Discovery)
 
@@ -751,7 +777,7 @@ Each Q&A is collapsible (click to expand)
 
 **Action:** Create/review Config.gs, add all constants, document their purpose
 
-**Status:** 🟡 TODO (needs verification)
+**Status:** 🟡 PARTIAL — many reservation constants already exist in `Config.js`; some spec-specific constants/names still need reconciliation
 
 **Prerequisite:** RES-PREP.1 (schema verified)
 
@@ -785,7 +811,7 @@ Each Q&A is collapsible (click to expand)
 
 **Action:** Review GEA System Backend templates sheet, create any missing templates, document all 16
 
-**Status:** 🟡 TODO (needs verification)
+**Status:** 🟡 PARTIAL — templates exist through `tpl_065`, but reservation template numbering/naming differs from this section's expected set
 
 **Prerequisite:** RES-PREP.2 (constants defined)
 
@@ -1498,7 +1524,7 @@ submitted
 - Call from all major functions (approval, denial, cancellation, bumping)
 - Query for reports/compliance
 
-**Status:** 🟡 TODO (likely partially done)
+**Status:** ✅ COMPLETE (general audit framework exists and is actively used); reservation-specific completeness depends on RES workflow finalization
 
 **Prerequisite:** RES.2-4
 
@@ -1525,7 +1551,7 @@ submitted
 - Generate summary + detailed table
 - Email to board@geabotswana.org
 
-**Status:** 🟡 TODO (specified in payment module)
+**Status:** 🟡 PARTIAL — payment report capabilities exist in admin/payment module; scheduled monthly board-ready collections report still to finalize
 
 **Prerequisite:** Payment Verification Module, non-member portal
 
@@ -1697,5 +1723,5 @@ These items are planned but not required for initial launch.
 ---
 
 **Last Updated:** March 16, 2026  
-**Status:** Ready for Claude Code discovery and execution  
+**Status:** Discovery executed Mar 16, 2026; this document now updated with current implementation realities and remaining gaps  
 **Contact:** Michael Raney (Treasurer)

@@ -148,7 +148,7 @@ These items unblock critical testing paths and should be done first among active
 - Progress indicator for applicants (5-step timeline, visual)
 - Color-coded badges (amber/green/red/gray)
 
-**Status:** 🟡 PARTIAL — applicant dashboard/status/timeline UI exists, but does not yet match full 4-card non-member spec
+**Status:** 🟢 COMPLETE (Mar 16, 2026) — dedicated non-member dashboard now renders 4-card layout (status, action items, documents progress, quick links) in applicant portal
 
 **Prerequisite:** NMP.1 (routing)
 
@@ -185,7 +185,7 @@ These items unblock critical testing paths and should be done first among active
 
 **Visibility:** Show only if applicant (application_status not null) AND not rejected
 
-**Status:** 🟡 PARTIAL — timeline/status view exists in applicant portal; needs alignment to this exact 5-step presentation spec
+**Status:** 🟢 COMPLETE (Mar 16, 2026) — application status page now renders standardized 5-step timeline (submitted, documents, board approval, payment verification, activation)
 
 **Prerequisite:** NMP.2 (dashboard)
 
@@ -256,7 +256,7 @@ Info-only (no form) IF applicant not yet approved
 - Dues fetched from Membership Pricing sheet (not hard-coded)
 - All form validation before submission
 
-**Status:** 🟡 PARTIAL — payment verification backend and admin actions are implemented; non-member payment page UX/spec integration remains
+**Status:** 🟡 PARTIAL (Mar 16, 2026) — non-member payment page now includes structured method/date/notes/proof submission UI wired to `submit_payment_proof`; dues/proration/exchange-rate display is still pending full spec parity
 
 **Prerequisite:** NMP.2 (dashboard), Payment Verification Module exists
 
@@ -303,7 +303,7 @@ Info-only (no form) IF applicant not yet approved
 
 **Visibility:** Show if applicant (application_status not null) AND not rejected
 
-**Status:** 🟡 TODO
+**Status:** 🟢 COMPLETE (Mar 16, 2026) — documents page implemented in Non-Member Portal with per-household-member upload/replace controls and document confirmation action
 
 **Prerequisite:** NMP.1 (routing), File Upload Portal backend exists
 
@@ -428,7 +428,7 @@ Each Q&A is collapsible (click to expand)
 - Office hours: [if available, TBD]
 - Typical response time: 1-2 business days
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL (Mar 16, 2026) — Help & Contact page delivered with FAQ guidance and Treasurer contact CTA (mailto); structured backend contact-form route remains open
 
 **Prerequisite:** NMP.1 (routing)
 
@@ -469,7 +469,7 @@ Each Q&A is collapsible (click to expand)
 - 6 statuses × 5 sections = 30 visibility rules
 - See GEA_NonMemberPortal_Specification.md Section 8
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL (Mar 16, 2026) — non-member navigation menu and section routing implemented; full breakpoint/accessibility certification still pending
 
 **Prerequisite:** NMP.1-NMP.7 (all content pages)
 

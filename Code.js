@@ -1532,11 +1532,25 @@ function _handleSubmitPaymentProof(p) {
       return auth;
     }
 
+    var proofFileId = p.proof_file_id || '';
+
+    // Accept optional inline file payload for payment proof uploads.
+    if (!proofFileId && p.file_data_base64 && p.file_name) {
+      var proofBlob = Utilities.newBlob(
+        Utilities.base64Decode(p.file_data_base64),
+        p.file_content_type || "application/octet-stream",
+        p.file_name
+      );
+      var proofsFolder = DriveApp.getFolderById(FOLDER_DOCUMENTS);
+      var proofFile = proofsFolder.createFile(proofBlob);
+      proofFileId = proofFile.getId();
+    }
+
     var result = submitPaymentProof(
       p.application_id,
       auth.session.email,
       p.payment_method,
-      p.proof_file_id,
+      proofFileId,
       p.notes
     );
 

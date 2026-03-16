@@ -4639,8 +4639,15 @@ function submitLogin(event) {
    * APPLICANT PORTAL VIEW
    * Shows restricted interface for users with pending membership applications
    */
+  var applicantPortalState = {
+    activeSection: 'dashboard',
+    application: null
+  };
+
+  /**
+   * Loads the non-member portal data and renders the active section.
+   */
   function loadApplicantPortal() {
-    // Show special applicant dashboard instead of regular member dashboard
     showPage('applicant');
 
     apiCall('application_status', {}).then(function(res) {
@@ -4648,242 +4655,376 @@ function submitLogin(event) {
         showError('Failed to load application status: ' + res.message);
         return;
       }
-
-      var app = res.data;
-      var container = document.getElementById('applicantContent');
-      container.innerHTML = '';
-
-      // Main heading
-      var heading = document.createElement('h1');
-      heading.style.marginBottom = '30px';
-      heading.textContent = 'Your Membership Application';
-      container.appendChild(heading);
-
-      // Status Timeline
-      var statuses = ['awaiting_docs', 'docs_confirmed', 'board_initial_review', 'rso_review', 'board_final_review', 'approved_pending_payment', 'payment_submitted', 'activated'];
-      var statusLabels = ['Submitted', 'Docs Uploaded', 'Board Review', 'RSO Review', 'Final Approval', 'Payment', 'Processing', 'Active'];
-      var currentStatusIndex = statuses.indexOf(app.status);
-
-      var timelineDiv = document.createElement('div');
-      timelineDiv.style.marginBottom = '30px';
-
-      var flexRow = document.createElement('div');
-      flexRow.style.display = 'flex';
-      flexRow.style.justifyContent = 'space-between';
-      flexRow.style.marginBottom = '10px';
-      flexRow.style.fontSize = '12px';
-
-      for (var i = 0; i < statuses.length; i++) {
-        var isCompleted = i < currentStatusIndex;
-        var isCurrent = i === currentStatusIndex;
-        var statusClass = isCompleted ? 'status-completed' : isCurrent ? 'status-current' : 'status-pending';
-
-        var statusStep = document.createElement('div');
-        statusStep.className = statusClass;
-        statusStep.style.textAlign = 'center';
-        statusStep.style.flex = '1';
-
-        var circle = document.createElement('div');
-        circle.style.width = '24px';
-        circle.style.height = '24px';
-        circle.style.borderRadius = '50%';
-        circle.style.margin = '0 auto 4px';
-        circle.style.lineHeight = '24px';
-        if (isCompleted) {
-          circle.style.background = '#2E7D32';
-          circle.style.color = 'white';
-          circle.textContent = '✓';
-        } else if (isCurrent) {
-          circle.style.background = '#0A3161';
-          circle.style.color = 'white';
-          circle.textContent = (i + 1).toString();
-        } else {
-          circle.style.background = '#ddd';
-          circle.style.color = '#999';
-          circle.textContent = (i + 1).toString();
-        }
-        statusStep.appendChild(circle);
-
-        var label = document.createElement('div');
-        label.style.fontSize = '11px';
-        label.textContent = statusLabels[i];
-        statusStep.appendChild(label);
-
-        flexRow.appendChild(statusStep);
-      }
-
-      timelineDiv.appendChild(flexRow);
-      container.appendChild(timelineDiv);
-
-      // Current Status Message
-      var statusMsg = {
-        'awaiting_docs': 'Please upload your required documents below.',
-        'docs_confirmed': 'Your documents have been submitted for review by the board.',
-        'board_initial_review': 'Your application is under initial review. We will notify you of next steps.',
-        'rso_review': 'Your documents have been sent to our security team for review.',
-        'board_final_review': 'Your application is under final board review.',
-        'approved_pending_payment': 'Congratulations! Please submit payment to activate your membership.',
-        'payment_submitted': 'Your payment has been received. Awaiting Treasurer verification (2 business days).',
-        'activated': 'Your membership is active! Welcome to GEA.'
-      };
-
-      var statusCard = document.createElement('div');
-      statusCard.className = 'card';
-      statusCard.style.background = '#f0f4ff';
-      statusCard.style.padding = '20px';
-      statusCard.style.borderRadius = '8px';
-      statusCard.style.marginBottom = '20px';
-
-      var statusMsg_p = document.createElement('p');
-      statusMsg_p.style.color = '#0A3161';
-      statusMsg_p.style.fontWeight = '500';
-      statusMsg_p.textContent = statusMsg[app.status] || 'Membership application in progress.';
-      statusCard.appendChild(statusMsg_p);
-      container.appendChild(statusCard);
-
-      // Document Checklist
-      var docCard = document.createElement('div');
-      docCard.className = 'card';
-      docCard.style.marginBottom = '20px';
-
-      var docHeader = document.createElement('div');
-      docHeader.className = 'card-header';
-      var docTitle = document.createElement('h3');
-      docTitle.className = 'card-title';
-      docTitle.textContent = 'Document Checklist';
-      docHeader.appendChild(docTitle);
-      docCard.appendChild(docHeader);
-
-      var docContent = document.createElement('div');
-      docContent.style.padding = '16px';
-
-      if (app.individuals && app.individuals.length > 0) {
-        app.individuals.forEach(function(ind) {
-          var memberSection = document.createElement('div');
-          memberSection.style.marginBottom = '20px';
-          memberSection.style.paddingBottom = '16px';
-          memberSection.style.borderBottom = '1px solid #eee';
-
-          var memberName = document.createElement('strong');
-          memberName.textContent = (ind.first_name || '') + ' ' + (ind.last_name || '');
-          memberSection.appendChild(memberName);
-
-          var docsList = document.createElement('div');
-          docsList.style.marginTop = '8px';
-
-          var requiredDocs = ['passport', 'omang', 'photo'];
-          requiredDocs.forEach(function(docType) {
-            var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
-            var approved = submissions.find(function(s) { return s.status === 'verified' || s.is_current; });
-            var submitted = submissions.length > 0;
-
-            var statusIcon = approved ? '✅ Approved' : submitted ? '📤 Submitted' : '⏳ Pending';
-
-            var docRow = document.createElement('div');
-            docRow.style.marginBottom = '8px';
-            docRow.style.display = 'flex';
-            docRow.style.justifyContent = 'space-between';
-            docRow.style.alignItems = 'center';
-
-            var docLabel = document.createElement('span');
-            docLabel.textContent = docType.charAt(0).toUpperCase() + docType.slice(1) + ': ' + statusIcon;
-            docRow.appendChild(docLabel);
-
-            if (!approved) {
-              var uploadBtn = document.createElement('button');
-              uploadBtn.className = 'btn btn-small';
-              uploadBtn.style.fontSize = '11px';
-              uploadBtn.style.padding = '4px 8px';
-              uploadBtn.textContent = 'Upload';
-              uploadBtn.onclick = (function(indId, dType) {
-                return function() { triggerDocumentUpload(indId, dType); };
-              })(ind.individual_id, docType);
-              docRow.appendChild(uploadBtn);
-            }
-
-            docsList.appendChild(docRow);
-          });
-
-          memberSection.appendChild(docsList);
-          docContent.appendChild(memberSection);
-        });
-      }
-
-      docCard.appendChild(docContent);
-      container.appendChild(docCard);
-
-      // Confirm Documents Button
-      if (app.status === 'awaiting_docs') {
-        var confirmBtn = document.createElement('button');
-        confirmBtn.className = 'btn btn-primary';
-        confirmBtn.style.width = '100%';
-        confirmBtn.style.marginBottom = '20px';
-        confirmBtn.textContent = 'All Documents Uploaded';
-        confirmBtn.onclick = (function(appId) {
-          return function() { confirmDocuments(appId); };
-        })(app.application_id);
-        container.appendChild(confirmBtn);
-      }
-
-      // Payment Section (if approved pending payment)
-      if (app.status === 'approved_pending_payment') {
-        var paymentCard = document.createElement('div');
-        paymentCard.className = 'card';
-        paymentCard.style.marginBottom = '20px';
-
-        var paymentHeader = document.createElement('div');
-        paymentHeader.className = 'card-header';
-        var paymentTitle = document.createElement('h3');
-        paymentTitle.className = 'card-title';
-        paymentTitle.textContent = 'Payment Instructions';
-        paymentHeader.appendChild(paymentTitle);
-        paymentCard.appendChild(paymentHeader);
-
-        var paymentContent = document.createElement('div');
-        paymentContent.style.padding = '16px';
-
-        var duesP = document.createElement('p');
-        duesP.style.marginBottom = '12px';
-        var duesStrong = document.createElement('strong');
-        duesStrong.textContent = 'Membership Dues:';
-        duesP.appendChild(duesStrong);
-        duesP.appendChild(document.createTextNode(' Varies by category'));
-        paymentContent.appendChild(duesP);
-
-        var methodsP = document.createElement('p');
-        methodsP.style.marginBottom = '12px';
-        var methodsStrong = document.createElement('strong');
-        methodsStrong.textContent = 'Payment Methods:';
-        methodsP.appendChild(methodsStrong);
-        paymentContent.appendChild(methodsP);
-
-        var methodsList = document.createElement('ul');
-        methodsList.style.marginLeft = '20px';
-        methodsList.style.marginBottom = '12px';
-        var methods = ['Bank Transfer', 'PayPal', 'SDFCU', 'Zelle', 'Cash'];
-        methods.forEach(function(method) {
-          var li = document.createElement('li');
-          li.textContent = method;
-          methodsList.appendChild(li);
-        });
-        paymentContent.appendChild(methodsList);
-
-        var paymentBtn = document.createElement('button');
-        paymentBtn.className = 'btn btn-primary';
-        paymentBtn.style.width = '100%';
-        paymentBtn.textContent = 'Submit Payment Proof';
-        paymentBtn.onclick = (function(appId) {
-          return function() { submitPaymentProof(appId); };
-        })(app.application_id);
-        paymentContent.appendChild(paymentBtn);
-
-        paymentCard.appendChild(paymentContent);
-        container.appendChild(paymentCard);
-      }
-
+      applicantPortalState.application = res.data;
+      renderApplicantPortalSection(applicantPortalState.activeSection || 'dashboard');
     }).catch(function(err) {
       showError('Error loading application: ' + err.message);
     });
+  }
+
+  /**
+   * Renders a specific non-member portal section.
+   * @param {string} sectionName
+   */
+  function renderApplicantPortalSection(sectionName) {
+    var app = applicantPortalState.application;
+    var container = document.getElementById('applicantContent');
+    if (!app || !container) return;
+
+    applicantPortalState.activeSection = sectionName || 'dashboard';
+    container.innerHTML = '';
+    container.appendChild(buildApplicantPageHeader(app));
+    container.appendChild(buildApplicantNav(applicantPortalState.activeSection));
+
+    if (applicantPortalState.activeSection === 'status') {
+      container.appendChild(buildApplicantStatusSection(app));
+    } else if (applicantPortalState.activeSection === 'documents') {
+      container.appendChild(buildApplicantDocumentsSection(app));
+    } else if (applicantPortalState.activeSection === 'payment') {
+      container.appendChild(buildApplicantPaymentSection(app));
+    } else if (applicantPortalState.activeSection === 'help') {
+      container.appendChild(buildApplicantHelpSection());
+    } else {
+      container.appendChild(buildApplicantDashboardSection(app));
+    }
+  }
+
+  function buildApplicantPageHeader(app) {
+    var wrapper = document.createElement('div');
+    wrapper.style.marginBottom = '20px';
+    var h = document.createElement('h1');
+    h.textContent = 'Non-Member Portal';
+    wrapper.appendChild(h);
+    var p = document.createElement('p');
+    p.style.color = '#666';
+    p.textContent = 'Track your application, upload documents, and complete payment verification.';
+    wrapper.appendChild(p);
+    var badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.style.display = 'inline-block';
+    badge.style.marginTop = '8px';
+    badge.style.background = getApplicantStatusBadgeColor(app.status);
+    badge.style.color = '#fff';
+    badge.textContent = 'Status: ' + formatApplicantStatusLabel(app.status);
+    wrapper.appendChild(badge);
+    return wrapper;
+  }
+
+  function buildApplicantNav(activeSection) {
+    var nav = document.createElement('div');
+    nav.style.display = 'flex';
+    nav.style.flexWrap = 'wrap';
+    nav.style.gap = '8px';
+    nav.style.marginBottom = '20px';
+    [
+      { id: 'dashboard', label: 'Dashboard' },
+      { id: 'status', label: 'Application Status' },
+      { id: 'documents', label: 'Documents' },
+      { id: 'payment', label: 'Payment Verification' },
+      { id: 'help', label: 'Help & Contact' }
+    ].forEach(function(item) {
+      var btn = document.createElement('button');
+      btn.className = activeSection === item.id ? 'btn btn-primary' : 'btn';
+      btn.style.minHeight = '44px';
+      btn.textContent = item.label;
+      btn.onclick = function() { renderApplicantPortalSection(item.id); };
+      nav.appendChild(btn);
+    });
+    return nav;
+  }
+
+  function buildApplicantDashboardSection(app) {
+    var wrapper = document.createElement('div');
+    [
+      { title: 'Membership Status', body: getApplicantStatusMessage(app.status) },
+      { title: 'Action Items', body: getApplicantActionMessage(app.status) },
+      { title: 'Documents Progress', body: getApplicantDocumentSummary(app) },
+      { title: 'Quick Links', body: 'Use the buttons above to open your application status, documents, payment, and help.' }
+    ].forEach(function(card) {
+      var block = document.createElement('div');
+      block.className = 'card';
+      block.style.marginBottom = '12px';
+      var title = document.createElement('h3');
+      title.className = 'card-title';
+      title.style.padding = '16px 16px 0';
+      title.textContent = card.title;
+      block.appendChild(title);
+      var text = document.createElement('p');
+      text.style.padding = '8px 16px 16px';
+      text.style.color = '#555';
+      text.textContent = card.body;
+      block.appendChild(text);
+      wrapper.appendChild(block);
+    });
+    return wrapper;
+  }
+
+  function buildApplicantStatusSection(app) {
+    var section = document.createElement('div');
+    section.appendChild(buildApplicantTimelineCard(app));
+    var statusCard = document.createElement('div');
+    statusCard.className = 'card';
+    statusCard.style.marginTop = '12px';
+    statusCard.style.padding = '16px';
+    statusCard.textContent = getApplicantStatusMessage(app.status);
+    section.appendChild(statusCard);
+    return section;
+  }
+
+  function buildApplicantTimelineCard(app) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.padding = '16px';
+    var title = document.createElement('h3');
+    title.className = 'card-title';
+    title.textContent = 'Application Timeline';
+    card.appendChild(title);
+
+    var steps = [
+      { label: 'Application Submitted', complete: true },
+      { label: 'Documents Uploaded', complete: app.status !== 'awaiting_docs' },
+      { label: 'Board Approval', complete: ['approved_pending_payment', 'payment_submitted', 'activated'].indexOf(app.status) !== -1 },
+      { label: 'Payment Verification', complete: ['payment_submitted', 'activated'].indexOf(app.status) !== -1 },
+      { label: 'Membership Activated', complete: app.status === 'activated' }
+    ];
+
+    steps.forEach(function(step) {
+      var row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.padding = '8px 0';
+      row.style.borderBottom = '1px solid #eee';
+      var icon = document.createElement('span');
+      icon.style.marginRight = '10px';
+      icon.textContent = step.complete ? '✅' : '⏳';
+      row.appendChild(icon);
+      var label = document.createElement('span');
+      label.textContent = step.label;
+      row.appendChild(label);
+      card.appendChild(row);
+    });
+    return card;
+  }
+
+  function buildApplicantDocumentsSection(app) {
+    var wrapper = document.createElement('div');
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.padding = '16px';
+    var title = document.createElement('h3');
+    title.className = 'card-title';
+    title.textContent = 'Documents';
+    card.appendChild(title);
+
+    (app.individuals || []).forEach(function(ind) {
+      var member = document.createElement('div');
+      member.style.padding = '12px 0';
+      member.style.borderBottom = '1px solid #eee';
+      var memberName = document.createElement('strong');
+      memberName.textContent = (ind.first_name || '') + ' ' + (ind.last_name || '');
+      member.appendChild(memberName);
+
+      ['passport', 'omang', 'photo'].forEach(function(docType) {
+        var row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.marginTop = '8px';
+        var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+        var label = document.createElement('span');
+        label.textContent = docType.toUpperCase() + ': ' + (submissions.length > 0 ? '✅ Uploaded' : '⏳ Pending');
+        row.appendChild(label);
+        var upload = document.createElement('button');
+        upload.className = 'btn btn-small';
+        upload.textContent = submissions.length > 0 ? 'Replace' : 'Upload';
+        upload.onclick = function() { triggerDocumentUpload(ind.individual_id, docType); };
+        row.appendChild(upload);
+        member.appendChild(row);
+      });
+      card.appendChild(member);
+    });
+
+    if (app.status === 'awaiting_docs') {
+      var confirm = document.createElement('button');
+      confirm.className = 'btn btn-primary';
+      confirm.style.marginTop = '12px';
+      confirm.style.width = '100%';
+      confirm.textContent = 'All Documents Uploaded';
+      confirm.onclick = function() { confirmDocuments(app.application_id); };
+      card.appendChild(confirm);
+    }
+
+    wrapper.appendChild(card);
+    return wrapper;
+  }
+
+  /**
+   * Builds the non-member payment section and submission form.
+   * @param {Object} app Application payload returned by application_status.
+   * @returns {HTMLElement} Card element containing payment guidance and optional form.
+   */
+  function buildApplicantPaymentSection(app) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.padding = '16px';
+
+    var title = document.createElement('h3');
+    title.className = 'card-title';
+    title.textContent = 'Payment Verification';
+    card.appendChild(title);
+
+    var text = document.createElement('p');
+    text.style.marginBottom = '10px';
+    text.textContent = app.status === 'approved_pending_payment'
+      ? 'Your application is approved pending payment. Submit your payment details below.'
+      : 'Payment submission opens after your application is approved.';
+    card.appendChild(text);
+
+    var methods = document.createElement('ul');
+    methods.style.margin = '0 0 12px 20px';
+    ['PayPal (USD)', 'SDFCU Member2Member (USD)', 'Zelle (USD)', 'Absa (BWP)'].forEach(function(m) {
+      var li = document.createElement('li');
+      li.textContent = m;
+      methods.appendChild(li);
+    });
+    card.appendChild(methods);
+
+    if (app.status === 'approved_pending_payment') {
+      var methodLabel = document.createElement('label');
+      methodLabel.className = 'form-label';
+      methodLabel.textContent = 'Payment Method';
+      card.appendChild(methodLabel);
+
+      var methodSelect = document.createElement('select');
+      methodSelect.id = 'applicantPaymentMethod';
+      methodSelect.className = 'form-input';
+      methodSelect.style.marginBottom = '12px';
+      ['PayPal (USD)', 'SDFCU Member2Member (USD)', 'Zelle (USD)', 'Absa (BWP)'].forEach(function(method) {
+        var option = document.createElement('option');
+        option.value = method;
+        option.textContent = method;
+        methodSelect.appendChild(option);
+      });
+      card.appendChild(methodSelect);
+
+      var dateLabel = document.createElement('label');
+      dateLabel.className = 'form-label';
+      dateLabel.textContent = 'Transaction Date';
+      card.appendChild(dateLabel);
+
+      var dateInput = document.createElement('input');
+      dateInput.id = 'applicantPaymentDate';
+      dateInput.type = 'date';
+      dateInput.className = 'form-input';
+      dateInput.style.marginBottom = '12px';
+      card.appendChild(dateInput);
+
+      var notesLabel = document.createElement('label');
+      notesLabel.className = 'form-label';
+      notesLabel.textContent = 'Notes (optional)';
+      card.appendChild(notesLabel);
+
+      var notesInput = document.createElement('textarea');
+      notesInput.id = 'applicantPaymentNotes';
+      notesInput.className = 'form-input';
+      notesInput.maxLength = 500;
+      notesInput.style.minHeight = '70px';
+      notesInput.style.marginBottom = '12px';
+      notesInput.placeholder = 'Include amount paid, transfer reference, and any useful context.';
+      card.appendChild(notesInput);
+
+      var fileLabel = document.createElement('label');
+      fileLabel.className = 'form-label';
+      fileLabel.textContent = 'Proof of Payment (optional)';
+      card.appendChild(fileLabel);
+
+      var fileInput = document.createElement('input');
+      fileInput.id = 'applicantPaymentProofFile';
+      fileInput.type = 'file';
+      fileInput.accept = '.jpg,.jpeg,.png,.pdf';
+      fileInput.className = 'form-input';
+      fileInput.style.marginBottom = '12px';
+      card.appendChild(fileInput);
+
+      var submitBtn = document.createElement('button');
+      submitBtn.className = 'btn btn-primary';
+      submitBtn.style.width = '100%';
+      submitBtn.textContent = 'Submit Payment Proof';
+      submitBtn.onclick = function() { submitPaymentProof(app.application_id); };
+      card.appendChild(submitBtn);
+    }
+
+    return card;
+  }
+
+  function buildApplicantHelpSection() {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.padding = '16px';
+    var title = document.createElement('h3');
+    title.className = 'card-title';
+    title.textContent = 'Help & Contact';
+    card.appendChild(title);
+    var faq = document.createElement('ul');
+    faq.style.margin = '0 0 16px 20px';
+    ['Application review normally takes 1-2 weeks once documents are complete.', 'Payment verification normally takes 2-5 business days.', 'You can upload replacement documents at any time before activation.'].forEach(function(item) {
+      var li = document.createElement('li');
+      li.textContent = item;
+      faq.appendChild(li);
+    });
+    card.appendChild(faq);
+    var contact = document.createElement('a');
+    contact.href = 'mailto:treasurer@geabotswana.org?subject=GEA%20Portal%20Question';
+    contact.className = 'btn btn-primary';
+    contact.style.display = 'inline-block';
+    contact.textContent = 'Contact Treasurer';
+    card.appendChild(contact);
+    return card;
+  }
+
+  function getApplicantStatusBadgeColor(status) {
+    if (status === 'activated') return '#2E7D32';
+    if (status === 'rejected') return '#C62828';
+    if (status === 'approved_pending_payment' || status === 'payment_submitted') return '#1565C0';
+    return '#E65100';
+  }
+
+  function formatApplicantStatusLabel(status) {
+    return String(status || 'unknown').replace(/_/g, ' ').split(' ').map(function(part) { return part.charAt(0).toUpperCase() + part.slice(1); }).join(' ');
+  }
+
+  function getApplicantStatusMessage(status) {
+    var messages = {
+      awaiting_docs: 'Upload required identity documents for each listed household member.',
+      docs_confirmed: 'Documents received. Your application is in review.',
+      board_initial_review: 'Application is currently in board review.',
+      rso_review: 'Application is in RSO review.',
+      board_final_review: 'Application is in final board review.',
+      approved_pending_payment: 'Application approved. Submit your payment verification to proceed.',
+      payment_submitted: 'Payment submitted. Treasurer verification is in progress.',
+      activated: 'Membership activated. You now have full portal access.'
+    };
+    return messages[status] || 'Membership application in progress.';
+  }
+
+  function getApplicantActionMessage(status) {
+    if (status === 'awaiting_docs') return 'Next step: upload all required documents, then confirm.';
+    if (status === 'approved_pending_payment') return 'Next step: submit payment verification details.';
+    if (status === 'payment_submitted') return 'Next step: wait for treasurer verification.';
+    return 'No immediate action required. We will email you for next steps.';
+  }
+
+  function getApplicantDocumentSummary(app) {
+    var requiredCount = 0;
+    var submittedCount = 0;
+    (app.individuals || []).forEach(function(ind) {
+      ['passport', 'omang', 'photo'].forEach(function(docType) {
+        requiredCount += 1;
+        var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+        if (submissions.length > 0) submittedCount += 1;
+      });
+    });
+    return submittedCount + ' of ' + requiredCount + ' required uploads submitted.';
   }
 
   function confirmDocuments(applicationId) {
@@ -4932,40 +5073,66 @@ function submitLogin(event) {
     input.click();
   }
 
+  /**
+   * Submits payment proof from non-member payment form.
+   * @param {string} applicationId Application identifier.
+   */
   function submitPaymentProof(applicationId) {
-    var method = prompt('Payment method (Bank Transfer / PayPal / SDFCU / Zelle / Cash):');
-    if (!method) return;
+    var method = document.getElementById('applicantPaymentMethod');
+    var dateInput = document.getElementById('applicantPaymentDate');
+    var notesInput = document.getElementById('applicantPaymentNotes');
+    var fileInput = document.getElementById('applicantPaymentProofFile');
 
-    // Create a temporary file input for proof image
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = function(e) {
-      var file = e.target.files[0];
-      if (!file) return;
+    if (!method || !method.value) {
+      showError('Please select a payment method.');
+      return;
+    }
+    if (!dateInput || !dateInput.value) {
+      showError('Please select the transaction date.');
+      return;
+    }
 
+    var payload = {
+      application_id: applicationId,
+      payment_method: method.value,
+      notes: 'Transaction date: ' + dateInput.value + (notesInput && notesInput.value ? (' | ' + notesInput.value.trim()) : '')
+    };
+
+    var file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showError('Proof file must be 5 MB or smaller.');
+        return;
+      }
       var reader = new FileReader();
       reader.onload = function(evt) {
-        var base64 = evt.target.result.split(',')[1];
-        apiCall('submit_payment_proof', {
-          application_id: applicationId,
-          payment_method: method,
-          proof_file_id: 'uploaded',
-          notes: ''
-        }).then(function(res) {
-          if (res.success) {
-            showError('Payment submitted! Awaiting Treasurer verification.', 'success');
-            loadApplicantPortal();
-          } else {
-            showError('Error: ' + res.message);
-          }
-        }).catch(function(err) {
-          showError('Error: ' + err.message);
-        });
+        payload.file_data_base64 = String(evt.target.result).split(',')[1];
+        payload.file_name = file.name;
+        payload.file_content_type = file.type || 'application/octet-stream';
+        submitApplicantPaymentPayload(payload);
       };
       reader.readAsDataURL(file);
-    };
-    input.click();
+      return;
+    }
+
+    submitApplicantPaymentPayload(payload);
+  }
+
+  /**
+   * Sends payment proof payload to backend and refreshes applicant view.
+   * @param {Object} payload Payment proof payload for submit_payment_proof action.
+   */
+  function submitApplicantPaymentPayload(payload) {
+    apiCall('submit_payment_proof', payload).then(function(res) {
+      if (res.success) {
+        showError('Payment submitted! Awaiting Treasurer verification.', 'success');
+        loadApplicantPortal();
+      } else {
+        showError('Error: ' + res.message);
+      }
+    }).catch(function(err) {
+      showError('Error: ' + err.message);
+    });
   }
 
   function loadDashboard() {

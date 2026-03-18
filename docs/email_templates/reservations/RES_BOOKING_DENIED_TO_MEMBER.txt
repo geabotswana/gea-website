@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Unfortunately, your reservation request was not approved.
+
+The GEA Board was unable to approve your reservation request for {{FACILITY_NAME}}.
+
+Reservation ID: {{RESERVATION_ID}}
+Requested Date: {{REQUESTED_DATE}}
+Reason: {{DENIAL_REASON}}
+
+If you have questions, please contact: {{CONTACT_EMAIL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

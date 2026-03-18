@@ -1,0 +1,20 @@
+Dear {{FIRST_NAME}},
+
+Daily Report Summary
+
+Here is your daily administrative summary.
+
+Report Date: {{REPORT_DATE}}
+Pending Applications: {{PENDING_APPLICATIONS}}
+Pending Payments: {{PENDING_PAYMENTS}}
+Pending Documents: {{PENDING_DOCUMENTS}}
+
+Review all items in the admin portal: {{PORTAL_LINK}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

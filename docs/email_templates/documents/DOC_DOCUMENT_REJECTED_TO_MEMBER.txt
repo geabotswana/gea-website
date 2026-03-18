@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your document submission was not approved.
+
+Unfortunately, your submitted document was not approved. Please resubmit a corrected document.
+
+Document Type: {{DOCUMENT_TYPE}}
+Reason: {{REJECTION_REASON}}
+Resubmit By: {{RESUBMIT_DEADLINE}}
+
+Please submit a corrected document through your member portal.
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

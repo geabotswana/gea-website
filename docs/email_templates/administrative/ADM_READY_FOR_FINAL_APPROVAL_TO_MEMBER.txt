@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your application is progressing!
+
+Good news! Your application is ready for final board approval.
+
+Application ID: {{APPLICATION_ID}}
+Next Step: {{NEXT_STEP}}
+Expected Timeline: {{TIMELINE}}
+
+Thank you for your patience!
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

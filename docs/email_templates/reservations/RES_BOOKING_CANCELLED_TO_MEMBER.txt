@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your reservation has been cancelled.
+
+Your reservation for {{FACILITY_NAME}} has been cancelled.
+
+Reservation ID: {{RESERVATION_ID}}
+Original Date: {{ORIGINAL_DATE}}
+Reason: {{CANCELLATION_REASON}}
+
+Feel free to book another date for {{FACILITY_NAME}} through your member portal.
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

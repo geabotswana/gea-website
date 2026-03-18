@@ -1,0 +1,18 @@
+Dear {{FIRST_NAME}},
+
+Your GEA membership renewal is due in just 7 days!
+
+Your current membership expires on {{RENEWAL_DEADLINE}}. Please renew your membership urgently to avoid losing access to GEA benefits.
+
+Membership Year: {{MEMBERSHIP_YEAR}}
+Renewal Deadline: {{RENEWAL_DEADLINE}}
+
+Renew now: {{PORTAL_URL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

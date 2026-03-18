@@ -1,0 +1,20 @@
+Dear {{FIRST_NAME}},
+
+Please submit your GEA member photos.
+
+We need you to submit member photos for your household to complete your membership profile.
+
+Submission Deadline: {{SUBMISSION_DEADLINE}}
+
+Photo Requirements:
+{{PHOTO_REQUIREMENTS}}
+
+Submit your photos here: {{PORTAL_URL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

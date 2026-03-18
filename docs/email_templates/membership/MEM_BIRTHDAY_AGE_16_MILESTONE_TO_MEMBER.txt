@@ -1,0 +1,18 @@
+Dear {{FIRST_NAME}},
+
+Happy 16th Birthday, {{FIRST_NAME}}!
+
+Congratulations on turning 16! You are now eligible for adult membership with the Gaborone Expatriate Association.
+
+Next Steps:
+- {{ADULT_MEMBERSHIP_INFO}}
+- Visit your member portal to upgrade your membership: {{PORTAL_URL}}
+- Enjoy full access to all GEA facilities and activities
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

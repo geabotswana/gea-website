@@ -1,0 +1,17 @@
+Dear {{FIRST_NAME}},
+
+Happy 15th Birthday, {{FIRST_NAME}}!
+
+Today marks a special milestone! You're turning 15, and your household will soon be able to upgrade your membership to full adult membership.
+
+{{ADULT_MEMBERSHIP_SOON}}
+
+We look forward to seeing you at GEA events and activities!
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your payment could not be verified.
+
+Unfortunately, we were unable to verify your payment.
+
+Payment ID: {{PAYMENT_ID}}
+Reason: {{REJECTION_REASON}}
+Resubmit By: {{RESUBMIT_DEADLINE}}
+
+Please contact us for assistance: {{CONTACT_EMAIL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

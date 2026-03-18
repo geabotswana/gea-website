@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your member photos have been approved!
+
+Congratulations! Your member photos have been approved by the GEA Board.
+
+Approved: {{APPROVED_DATE}}
+Photo Count: {{PHOTO_COUNT}}
+Membership Card Issued: {{CARD_ISSUANCE_DATE}}
+
+Your membership is now fully activated!
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

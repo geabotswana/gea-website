@@ -1,0 +1,21 @@
+Dear {{FIRST_NAME}},
+
+An item requires management review.
+
+A submission requires management review and approval.
+
+Item Type: {{BOARD_ITEM_TYPE}}
+Member: {{MEMBER_NAME}}
+Reference ID: {{REQUEST_ID}}
+Decision Needed By: {{APPROVAL_DEADLINE}}
+
+Summary:
+{{REQUEST_SUMMARY}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

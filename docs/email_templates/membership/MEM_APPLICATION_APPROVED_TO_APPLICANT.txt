@@ -1,0 +1,24 @@
+Dear {{FIRST_NAME}},
+
+We are delighted to inform you that your application to the Gaborone Expatriate Association has been approved!
+
+Congratulations! You are now eligible to join GEA. Please complete your membership by making your membership payment.
+
+Application ID: {{APPLICATION_ID}}
+Membership Fee: {{PAYMENT_AMOUNT}}
+Payment Due: {{PAYMENT_DEADLINE}}
+
+Next Steps:
+- Log into your member portal: {{PORTAL_URL}}
+- Submit your membership payment
+- Once payment is verified, your membership will be activated
+
+Please complete your payment by the deadline to secure your membership.
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

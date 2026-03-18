@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your file has been received.
+
+Thank you for submitting your file. We have received it and will process it shortly.
+
+File: {{FILE_NAME}}
+Reference Number: {{REFERENCE_NUMBER}}
+Submitted: {{SUBMISSION_DATE}}
+
+Track your submission in your member portal: {{PORTAL_URL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

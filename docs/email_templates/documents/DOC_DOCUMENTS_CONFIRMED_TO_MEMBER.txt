@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your documents have been confirmed.
+
+We have received and confirmed your submitted documents.
+
+Documents: {{DOCUMENT_TYPES}}
+Confirmed Date: {{CONFIRMATION_DATE}}
+
+Next Step:
+{{NEXT_STEP}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

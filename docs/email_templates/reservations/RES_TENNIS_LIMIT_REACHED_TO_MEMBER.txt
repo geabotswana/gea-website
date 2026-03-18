@@ -1,0 +1,17 @@
+Dear {{FIRST_NAME}},
+
+You have reached your tennis court reservation limit.
+
+You currently have {{CURRENT_RESERVATIONS}} active tennis court reservations, which is at your limit of {{LIMIT}}.
+
+{{WAITLIST_INFO}}
+
+Contact the Board if you have questions about your reservation limit.
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

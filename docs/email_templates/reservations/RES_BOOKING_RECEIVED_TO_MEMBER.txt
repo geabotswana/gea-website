@@ -1,0 +1,22 @@
+Dear {{FIRST_NAME}},
+
+Thank you for your reservation request!
+
+We have received your reservation request. Here are the details:
+
+Reservation ID: {{RESERVATION_ID}}
+Facility: {{FACILITY_NAME}}
+Date: {{RESERVATION_DATE}}
+Time: {{RESERVATION_TIME}}
+
+Your reservation is being reviewed. You will receive confirmation within 1-2 business days.
+
+Monitor your member portal for status updates: {{PORTAL_URL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

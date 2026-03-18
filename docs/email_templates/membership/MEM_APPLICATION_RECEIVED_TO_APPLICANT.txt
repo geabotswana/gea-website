@@ -1,0 +1,23 @@
+Dear {{FIRST_NAME}},
+
+Thank you for submitting your application to the Gaborone Expatriate Association (GEA)! We appreciate your interest in joining our community.
+
+We have received your application and it is now being reviewed by our Board. Here are your submission details:
+
+Application ID: {{APPLICATION_ID}}
+Submitted: {{SUBMITTED_DATE}}
+
+What happens next?
+- Your application will be reviewed by the GEA Board
+- You will receive notification of the Board's decision within 7-10 business days
+- Log into your member portal to check application status at any time: {{PORTAL_URL}}
+
+If you have any questions about your application, please don't hesitate to contact us.
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

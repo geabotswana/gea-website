@@ -1,0 +1,19 @@
+Dear {{FIRST_NAME}},
+
+Your reservation is pending review.
+
+Your reservation request for {{FACILITY_NAME}} is currently being reviewed by the GEA Board.
+
+Reservation ID: {{RESERVATION_ID}}
+Requested Date: {{RESERVATION_DATE}}
+Review Deadline: {{REVIEW_DEADLINE}}
+
+You will be notified of the Board's decision by {{REVIEW_DEADLINE}}.
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

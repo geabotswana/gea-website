@@ -1,0 +1,21 @@
+Dear {{FIRST_NAME}},
+
+Important holiday information for GEA facilities.
+
+Please note that GEA facilities will have limited availability or be closed during the upcoming holidays.
+
+Holiday: {{HOLIDAY_NAME}}
+Dates: {{DATES}}
+
+Facility Closures:
+{{FACILITY_CLOSURES}}
+
+Thank you for planning ahead!
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

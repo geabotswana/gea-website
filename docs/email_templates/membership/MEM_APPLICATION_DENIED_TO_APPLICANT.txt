@@ -1,0 +1,18 @@
+Dear {{FIRST_NAME}},
+
+Thank you for your interest in the Gaborone Expatriate Association.
+
+After careful review, the GEA Board regrets to inform you that your application has not been approved at this time.
+
+Application ID: {{APPLICATION_ID}}
+Reason: {{DENIAL_REASON}}
+
+If you have questions about this decision, please contact the GEA Board at {{CONTACT_EMAIL}}.
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

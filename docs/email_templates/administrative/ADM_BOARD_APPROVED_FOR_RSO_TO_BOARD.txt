@@ -1,0 +1,20 @@
+Dear {{FIRST_NAME}},
+
+Board Approval Notification
+
+The board has approved this application for RSO processing.
+
+Applicant: {{APPLICANT_NAME}}
+Application ID: {{APPLICATION_ID}}
+Approved: {{APPROVAL_DATE}}
+
+RSO Next Steps:
+{{RSO_NEXT_STEPS}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

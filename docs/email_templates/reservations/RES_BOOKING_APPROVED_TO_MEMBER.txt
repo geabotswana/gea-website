@@ -1,0 +1,21 @@
+Dear {{FIRST_NAME}},
+
+Your reservation has been approved!
+
+Great news! Your reservation request has been approved by the GEA Board.
+
+Reservation ID: {{RESERVATION_ID}}
+Facility: {{FACILITY_NAME}}
+Date: {{RESERVATION_DATE}}
+Time: {{RESERVATION_TIME}}
+Guest Limit: {{GUEST_LIMIT}}
+
+Please submit your guest list before the deadline. View details in your member portal: {{PORTAL_URL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

@@ -1,0 +1,20 @@
+Dear {{FIRST_NAME}},
+
+You have requested to book additional Leobo stays.
+
+Thank you for your request to exceed the standard Leobo Lodge reservation limit.
+
+Requested Date: {{REQUESTED_DATE}}
+Reason: {{REASON}}
+
+Your request is being reviewed by the Board. You will be notified of the decision shortly.
+
+View request status: {{APPROVAL_URL}}
+
+Best regards,
+Gaborone Expatriate Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.

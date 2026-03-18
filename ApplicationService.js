@@ -530,7 +530,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
 
       // Notify RSO and applicant
       var rsoEmail = getConfigValue("RSO_EMAIL") || "rso@geabotswana.org";
-      sendEmailFromTemplate("ADM_RSO_DOCUMENT_APPROVAL_REQUEST_TO_BOARD", rsoEmail, {
+      sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO", rsoEmail, {
         FIRST_NAME:       "RSO Team",
         APPLICANT_NAME:   application.first_name + " " + application.last_name,
         APPLICATION_ID:   applicationId,

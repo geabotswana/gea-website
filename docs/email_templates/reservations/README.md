@@ -17,7 +17,7 @@ Guest list deadline approaching
   └─ RES_GUEST_LIST_DEADLINE_REMINDER_TO_MEMBER
 ```
 
-## Templates (16)
+## Templates (17)
 
 ### Booking Lifecycle
 
@@ -70,7 +70,12 @@ Sent to the board when a member's tennis request exceeds the weekly household li
 - Recipient: Board
 - Variables: `{{MEMBER_NAME}}`, `{{MEMBER_EMAIL}}`, `{{HOURS_USED}}`, `{{TENNIS_WEEKLY_LIMIT_HOURS}}`, `{{EXISTING_BOOKINGS_LIST}}`, `{{RESERVATION_DATE}}`, `{{START_TIME}}`, `{{END_TIME}}`, `{{DURATION_HOURS}}`, `{{EVENT_NAME}}`, `{{IF_GUESTS}}`, `{{GUEST_COUNT}}`, `{{GUEST_LIST_LINK}}`, `{{OTHER_EVENTS_LIST}}`, `{{APPROVE_LINK}}`, `{{DENY_LINK}}`, `{{BUMP_DEADLINE}}`
 
-**RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_BOARD.txt**
+**RES_LEOBO_APPROVAL_REQUEST_TO_MGT.txt**
+Sent to the Management Officer when a standard (non-excess) Leobo reservation requires approval.
+- Recipient: Management Officer
+- Variables: `{{MEMBER_NAME}}`, `{{MEMBER_EMAIL}}`, `{{MEMBER_PHONE}}`, `{{FACILITY}}`, `{{RESERVATION_DATE}}`, `{{START_TIME}}`, `{{END_TIME}}`, `{{DURATION_HOURS}}`, `{{EVENT_NAME}}`, `{{IF_GUESTS}}`, `{{GUEST_COUNT}}`, `{{GUEST_LIST_LINK}}`, `{{OTHER_EVENTS_LIST}}`, `{{MEMBERSHIP_LEVEL}}`, `{{MEMBERSHIP_STATUS}}`, `{{HOUSEHOLD_NAME}}`, `{{LEOBO_USAGE}}`, `{{LEOBO_MONTHLY_LIMIT}}`, `{{APPROVE_LINK}}`, `{{DENY_LINK}}`, `{{BUMP_DEADLINE}}`
+
+**RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MGT.txt**
 Sent to the Management Officer when a member's Leobo request exceeds the monthly household limit. Includes existing Leobo bookings and bump window.
 - Recipient: Management Officer
 - Variables: `{{LEOBO_USAGE}}`, `{{LEOBO_MONTHLY_LIMIT}}`, `{{HOURS_USED}}`, `{{LEOBO_MAX_HOURS}}`, `{{EXISTING_BOOKINGS_LIST}}`, `{{MEMBER_NAME}}`, `{{MEMBER_EMAIL}}`, `{{MEMBER_PHONE}}`, `{{FACILITY}}`, `{{RESERVATION_DATE}}`, `{{START_TIME}}`, `{{END_TIME}}`, `{{DURATION_HOURS}}`, `{{EVENT_NAME}}`, `{{IF_GUESTS}}`, `{{GUEST_COUNT}}`, `{{GUEST_LIST_LINK}}`, `{{OTHER_EVENTS_LIST}}`, `{{MEMBERSHIP_LEVEL}}`, `{{MEMBERSHIP_STATUS}}`, `{{HOUSEHOLD_NAME}}`, `{{APPROVE_LINK}}`, `{{DENY_LINK}}`, `{{BUMP_DEADLINE}}`, `{{LEOBO_BUMP_WINDOW_DAYS}}`

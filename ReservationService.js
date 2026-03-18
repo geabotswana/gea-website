@@ -774,9 +774,9 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
       sendEmailFromTemplate("RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_BOARD", EMAIL_BOARD, approvalVars);
     } else if (params.facility === FACILITY_LEOBO || params.facility === FACILITY_WHOLE) {
       if (limitCheck.isExcess) {
-        sendEmailFromTemplate("RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_BOARD", EMAIL_MGT, approvalVars);
+        sendEmailFromTemplate("RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MGT", EMAIL_MGT, approvalVars);
       } else {
-        sendEmailFromTemplate("RES_BOOKING_APPROVAL_REQUEST_TO_BOARD", EMAIL_MGT, approvalVars);
+        sendEmailFromTemplate("RES_LEOBO_APPROVAL_REQUEST_TO_MGT", EMAIL_MGT, approvalVars);
       }
     } else {
       sendEmailFromTemplate("RES_BOOKING_APPROVAL_REQUEST_TO_BOARD", EMAIL_BOARD, approvalVars);

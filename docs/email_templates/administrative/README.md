@@ -2,7 +2,7 @@
 
 Internal board communications. These emails are sent TO the board, not to members. They notify board officers of pending actions, RSO updates, and application status changes.
 
-## Templates (12)
+## Templates (13)
 
 ### Application Workflow — Board Notifications
 
@@ -48,24 +48,24 @@ Sent to board confirming that applicant documents have been forwarded to RSO.
 - Recipient: Board
 - Variables: `{{FIRST_NAME}}`, `{{APPLICANT_NAME}}`, `{{APPLICATION_ID}}`, `{{DOCUMENT_TYPES}}`, `{{SUBMISSION_DATE}}`, `{{RSO_CONTACT}}`
 
-**ADM_RSO_DOCUMENT_APPROVAL_REQUEST_TO_BOARD.txt**
-Sent when RSO requests board approval of specific documents.
-- Recipient: Board
+**ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO.txt**
+Sent to RSO when applicant documents are ready for security review.
+- Recipient: RSO
 - Variables: `{{FIRST_NAME}}`, `{{APPLICANT_NAME}}`, `{{APPLICATION_ID}}`, `{{DOCUMENT_TYPES}}`, `{{APPROVAL_DEADLINE}}`
 
 **ADM_RSO_DOCUMENT_ISSUE_TO_BOARD.txt**
-Sent when RSO flags a problem with submitted documents.
+Sent to the board when RSO flags a problem with submitted documents.
 - Recipient: Board
 - Variables: `{{FIRST_NAME}}`, `{{APPLICANT_NAME}}`, `{{APPLICATION_ID}}`, `{{ISSUE_DESCRIPTION}}`, `{{DEADLINE_TO_RESOLVE}}`
 
-**ADM_RSO_DAILY_SUMMARY_TO_BOARD.txt**
-Daily digest sent to board with pending items across applications, payments, and documents.
-- Recipient: Board
-- Variables: `{{FIRST_NAME}}`, `{{REPORT_DATE}}`, `{{PENDING_APPLICATIONS}}`, `{{PENDING_PAYMENTS}}`, `{{PENDING_DOCUMENTS}}`, `{{PORTAL_LINK}}`
+**ADM_DAILY_SUMMARY_TO_RSO.txt**
+Daily digest sent to RSO with all reservations scheduled for today.
+- Recipient: RSO
+- Variables: `{{TODAY_DATE}}`, `{{IF_NO_RESERVATIONS}}`, `{{RESERVATIONS_BLOCK}}`, `{{TOTAL_RESERVATIONS}}`, `{{TOTAL_MEMBERS}}`, `{{TOTAL_GUESTS}}`
 
-### Management
+### Management Officer
 
-**ADM_MGT_APPROVAL_REQUEST_TO_BOARD.txt**
-Sent when a Management Officer approval is required (e.g. Leobo reservations).
-- Recipient: Board
+**ADM_MGT_APPROVAL_REQUEST_TO_MGT.txt**
+Sent to the Management Officer when their approval is required for a request.
+- Recipient: Management Officer
 - Variables: `{{FIRST_NAME}}`, `{{BOARD_ITEM_TYPE}}`, `{{MEMBER_NAME}}`, `{{REQUEST_ID}}`, `{{APPROVAL_DEADLINE}}`, `{{REQUEST_SUMMARY}}`

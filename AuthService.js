@@ -260,10 +260,10 @@ function setPassword(individualId, plainPassword, boardEmail) {
                   "Password set by board member");
     
     // Send the member an email confirming their password is set
-    // (use tpl_032 - Password Set Confirmation)
     if (member.email) {
-      sendEmailFromBoard("tpl_032", member.email, {
-        FIRST_NAME: member.first_name
+      sendEmailFromTemplate("MEM_PASSWORD_SET_TO_MEMBER", member.email, {
+        FIRST_NAME: member.first_name,
+        PORTAL_URL: URL_MEMBER_PORTAL
       });
     }
     
@@ -687,13 +687,11 @@ function _sendFirstLoginWelcome(member) {
     .join(", ");
   var level = getMembershipLevel(hh.membership_level_id);
 
-  sendEmailFromBoard("tpl_021", member.email, {
-    FIRST_NAME:       member.first_name,
-    MEMBERSHIP_LEVEL: hh.membership_type,
-    EXPIRATION_DATE:  hh.membership_expiration_date
-                      ? formatDate(new Date(hh.membership_expiration_date)) : "",
-    IF_FAMILY:        hh.household_type === HOUSEHOLD_FAMILY ? "true" : "",
-    FAMILY_MEMBERS_LIST: familyNames
+  sendEmailFromTemplate("MEM_FIRST_LOGIN_WELCOME_TO_MEMBER", member.email, {
+    FIRST_NAME:          member.first_name,
+    HOUSEHOLD_NAME:      member.last_name + " Household",
+    PASSWORD_RESET_LINK: URL_MEMBER_PORTAL,
+    PORTAL_URL:          URL_MEMBER_PORTAL
   });
 }
 

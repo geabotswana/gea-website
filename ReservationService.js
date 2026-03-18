@@ -308,20 +308,14 @@ function approveReservation(reservationId, approvedBy, notes) {
   if (hh) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
-      sendEmailFromBoard("tpl_010", primaryEmail, {
-        FIRST_NAME:               _getPrimaryFirstName(hh.household_id),
-        FACILITY:                 res.facility,
-        RESERVATION_DATE:         formatDate(new Date(res.event_date)),
-        START_TIME:               formatTime(new Date(res.start_time)),
-        END_TIME:                 formatTime(new Date(res.end_time)),
-        EVENT_NAME:               res.event_name,
-        APPROVED_BY:              approvedBy,
-        RESERVATION_ID:           reservationId,
-        IF_GUESTS:                res.has_guests ? "true" : "",
-        IF_GUEST_LIST_SUBMITTED:  res.guest_list_submitted ? "true" : "",
-        IF_GUEST_LIST_PENDING:    (!res.guest_list_submitted && res.has_guests) ? "true" : "",
-        GUEST_LIST_DEADLINE:      res.guest_list_deadline
-                                  ? formatDate(new Date(res.guest_list_deadline)) : ""
+      sendEmailFromTemplate("RES_BOOKING_APPROVED_TO_MEMBER", primaryEmail, {
+        FIRST_NAME:       _getPrimaryFirstName(hh.household_id),
+        RESERVATION_ID:   reservationId,
+        FACILITY_NAME:    res.facility,
+        RESERVATION_DATE: formatDate(new Date(res.event_date)),
+        RESERVATION_TIME: formatTime(new Date(res.start_time)) + " – " + formatTime(new Date(res.end_time)),
+        GUEST_LIMIT:      res.guest_count || "",
+        PORTAL_URL:       URL_MEMBER_PORTAL
       });
     }
   }
@@ -350,14 +344,13 @@ function denyReservation(reservationId, deniedBy, reason) {
   if (hh) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
-      sendEmailFromBoard("tpl_011", primaryEmail, {
+      sendEmailFromTemplate("RES_BOOKING_DENIED_TO_MEMBER", primaryEmail, {
         FIRST_NAME:       _getPrimaryFirstName(hh.household_id),
-        FACILITY:         res.facility,
-        RESERVATION_DATE: formatDate(new Date(res.event_date)),
-        START_TIME:       formatTime(new Date(res.start_time)),
-        END_TIME:         formatTime(new Date(res.end_time)),
-        EVENT_NAME:       res.event_name,
-        DENIAL_REASON:    reason || "No reason provided"
+        FACILITY_NAME:    res.facility,
+        RESERVATION_ID:   reservationId,
+        REQUESTED_DATE:   formatDate(new Date(res.event_date)),
+        DENIAL_REASON:    reason || "No reason provided",
+        CONTACT_EMAIL:    EMAIL_BOARD
       });
     }
   }
@@ -390,17 +383,12 @@ function cancelReservation(reservationId, cancelledBy, reason) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
       var boardCancelled = cancelledBy !== primaryEmail;
-      sendEmailFromBoard("tpl_012", primaryEmail, {
+      sendEmailFromTemplate("RES_BOOKING_CANCELLED_TO_MEMBER", primaryEmail, {
         FIRST_NAME:          _getPrimaryFirstName(hh.household_id),
-        FACILITY:            res.facility,
-        RESERVATION_DATE:    formatDate(new Date(res.event_date)),
-        START_TIME:          formatTime(new Date(res.start_time)),
-        END_TIME:            formatTime(new Date(res.end_time)),
-        EVENT_NAME:          res.event_name,
-        CANCELLED_BY:        cancelledBy,
-        IF_REASON:           reason ? "true" : "",
-        CANCELLATION_REASON: reason || "",
-        IF_BOARD_CANCELLED:  boardCancelled ? "true" : ""
+        FACILITY_NAME:       res.facility,
+        RESERVATION_ID:      res.reservation_id,
+        ORIGINAL_DATE:       formatDate(new Date(res.event_date)),
+        CANCELLATION_REASON: reason || ""
       });
     }
   }
@@ -482,14 +470,13 @@ function sendGuestListReminders() {
       if (!primaryEmail) continue;
 
       var hh = getHouseholdById(res.household_id);
-      sendEmailFromBoard("tpl_013", primaryEmail, {
-        FIRST_NAME:           _getPrimaryFirstName(res.household_id),
-        FACILITY:             res.facility,
-        RESERVATION_DATE:     formatDate(new Date(res.event_date)),
-        START_TIME:           formatTime(new Date(res.start_time)),
-        END_TIME:             formatTime(new Date(res.end_time)),
-        EVENT_NAME:           res.event_name,
-        GUEST_LIST_DEADLINE:  formatDate(deadline)
+      sendEmailFromTemplate("RES_GUEST_LIST_DEADLINE_REMINDER_TO_MEMBER", primaryEmail, {
+        FIRST_NAME:       _getPrimaryFirstName(res.household_id),
+        RESERVATION_ID:   res.reservation_id,
+        FACILITY_NAME:    res.facility,
+        RESERVATION_DATE: formatDate(new Date(res.event_date)),
+        DEADLINE:         formatDate(deadline),
+        PORTAL_URL:       URL_MEMBER_PORTAL
       });
       Logger.log("Guest list reminder sent: " + primaryEmail + " for " + res.reservation_id);
     }
@@ -737,17 +724,25 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
 
   if (row.status === STATUS_CONFIRMED) {
     // Auto-confirmed tennis — just send confirmation to member
-    sendEmailFromBoard("tpl_007", params.primaryEmail, baseVars);
+    sendEmailFromTemplate("RES_BOOKING_RECEIVED_TO_MEMBER", params.primaryEmail, {
+      FIRST_NAME:       baseVars.FIRST_NAME,
+      RESERVATION_ID:   baseVars.RESERVATION_ID,
+      FACILITY_NAME:    baseVars.FACILITY,
+      RESERVATION_DATE: baseVars.RESERVATION_DATE,
+      RESERVATION_TIME: baseVars.START_TIME + " – " + baseVars.END_TIME,
+      PORTAL_URL:       URL_MEMBER_PORTAL
+    });
 
   } else {
     // Pending — send acknowledgment to member
-    sendEmailFromBoard("tpl_008", params.primaryEmail, Object.assign({}, baseVars, {
-      APPROVAL_REASON: limitCheck.isExcess
-                       ? "your household has exceeded the booking limit"
-                       : "board and Management Officer approval",
-      IF_LEOBO: (params.facility === FACILITY_LEOBO || params.facility === FACILITY_WHOLE)
-                ? "true" : ""
-    }));
+    var reviewDeadline = addDays(new Date(), 3);
+    sendEmailFromTemplate("RES_BOOKING_PENDING_REVIEW_TO_MEMBER", params.primaryEmail, {
+      FIRST_NAME:       baseVars.FIRST_NAME,
+      FACILITY_NAME:    baseVars.FACILITY,
+      RESERVATION_ID:   baseVars.RESERVATION_ID,
+      RESERVATION_DATE: baseVars.RESERVATION_DATE,
+      REVIEW_DEADLINE:  formatDate(reviewDeadline)
+    });
 
     // Send approval request to board / MGT
     var limitVars = Object.assign({}, baseVars, {

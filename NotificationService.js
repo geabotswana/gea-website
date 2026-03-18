@@ -83,9 +83,11 @@ function triggerRsoDailySummary() {
 function sendHolidayCalReminder() {
   Logger.log("Holiday calendar reminder trigger fired.");
   var currentYear = new Date().getFullYear();
-  sendEmailFromBoard("tpl_027", EMAIL_BOARD, {
-    CURRENT_YEAR: currentYear,
-    NEXT_YEAR:    currentYear + 1
+  sendEmailFromTemplate("RES_HOLIDAY_CALENDAR_REMINDER_TO_MEMBER", EMAIL_BOARD, {
+    FIRST_NAME:        "GEA Board",
+    HOLIDAY_NAME:      currentYear + "-" + (currentYear + 1) + " Holiday Schedule",
+    DATES:             "Please review the Holiday Calendar sheet for upcoming closure dates",
+    FACILITY_CLOSURES: "All GEA facilities (Tennis, Leobo, Gym, Playground)"
   });
 }
 
@@ -384,10 +386,13 @@ function sendPhotoReminders() {
       // Only send to the Primary member to avoid flooding a household
       if (m.relationship_to_primary !== RELATIONSHIP_PRIMARY) continue;
 
-      sendEmailFromBoard("tpl_016", m.email, {
-        FIRST_NAME:              m.first_name,
-        IF_FAMILY_MISSING_PHOTOS: missingPhotos.length > 1 ? "true" : "",
-        MISSING_PHOTOS_LIST:     missingList
+      var deadline = new Date();
+      deadline.setDate(deadline.getDate() + 14);
+      sendEmailFromTemplate("DOC_PHOTO_SUBMISSION_REMINDER_TO_MEMBER", m.email, {
+        FIRST_NAME:          m.first_name,
+        SUBMISSION_DEADLINE: formatDate(deadline),
+        PHOTO_REQUIREMENTS:  "Clear, front-facing photo on a plain background (JPG or PNG, max 5MB)",
+        PORTAL_URL:          URL_MEMBER_PORTAL
       });
 
       updateMemberField(m.individual_id, "photo_reminder_sent", true, "system");

@@ -285,7 +285,13 @@ function createApplicationRecord(formData, createdBy) {
       "SUBMITTED_DATE": formatDate(new Date(), true)
     };
     Logger.log("[DEBUG] Board email variables:", JSON.stringify(boardEmailVars));
-    sendEmailFromBoard("tpl_042", boardEmail, boardEmailVars);
+    sendEmailFromTemplate("ADM_NEW_APPLICATION_BOARD_TO_BOARD", boardEmail, {
+      FIRST_NAME:            "Board",
+      APPLICANT_NAME:        boardEmailVars["APPLICANT_NAME"],
+      APPLICATION_ID:        boardEmailVars["APPLICATION_ID"],
+      APPLICATION_DATE:      boardEmailVars["SUBMITTED_DATE"],
+      BOARD_REVIEW_DEADLINE: formatDate(addDays(new Date(), 3))
+    });
 
     return {
       success: true,
@@ -393,10 +399,13 @@ function confirmDocumentsUploaded(applicationId, email) {
 
     // Notify board
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-    sendEmailFromBoard("tpl_043", boardEmail, {
-      "APPLICANT_NAME": application.first_name + " " + application.last_name,
-      "APPLICATION_ID": applicationId,
-      "MEMBERSHIP_CATEGORY": application.membership_category
+    sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_BOARD", boardEmail, {
+      FIRST_NAME:      "Board",
+      APPLICANT_NAME:  application.first_name + " " + application.last_name,
+      APPLICATION_ID:  applicationId,
+      DOCUMENT_TYPES:  "Passport / Omang / Photo",
+      SUBMISSION_DATE: formatDate(new Date()),
+      RSO_CONTACT:     getConfigValue("RSO_EMAIL") || "rso@geabotswana.org"
     });
 
     return { success: true, message: "Documents confirmed for review." };
@@ -521,10 +530,12 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
 
       // Notify RSO and applicant
       var rsoEmail = getConfigValue("RSO_EMAIL") || "rso@geabotswana.org";
-      sendEmailFromBoard("tpl_044", rsoEmail, {
-        "APPLICANT_NAME": application.first_name + " " + application.last_name,
-        "APPLICATION_ID": applicationId,
-        "EMAIL": application.email
+      sendEmailFromTemplate("ADM_RSO_DOCUMENT_APPROVAL_REQUEST_TO_BOARD", rsoEmail, {
+        FIRST_NAME:       "RSO Team",
+        APPLICANT_NAME:   application.first_name + " " + application.last_name,
+        APPLICATION_ID:   applicationId,
+        DOCUMENT_TYPES:   "Passport / Omang / Photo",
+        APPROVAL_DEADLINE: formatDate(addDays(new Date(), 5))
       });
 
       sendEmail("tpl_044", application.email, {
@@ -596,9 +607,12 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
       // Notify board
       var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-      sendEmailFromBoard("tpl_047", boardEmail, {
-        "APPLICANT_NAME": application.first_name + " " + application.last_name,
-        "APPLICATION_ID": applicationId
+      sendEmailFromTemplate("ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD", boardEmail, {
+        FIRST_NAME:     "Board",
+        APPLICANT_NAME: application.first_name + " " + application.last_name,
+        APPLICATION_ID: applicationId,
+        APPROVAL_DATE:  formatDate(new Date()),
+        RSO_NEXT_STEPS: "RSO review and document verification complete. Ready for final board approval."
       });
 
     } else if (decision === "denied") {
@@ -614,10 +628,12 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
       // Notify board and applicant
       var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-      sendEmailFromBoard("tpl_046", boardEmail, {
-        "APPLICANT_NAME": application.first_name + " " + application.last_name,
-        "APPLICATION_ID": applicationId,
-        "RSO_NOTES": privateNotes || ""
+      sendEmailFromTemplate("ADM_RSO_DOCUMENT_ISSUE_TO_BOARD", boardEmail, {
+        FIRST_NAME:           "Board",
+        APPLICANT_NAME:       application.first_name + " " + application.last_name,
+        APPLICATION_ID:       applicationId,
+        ISSUE_DESCRIPTION:    privateNotes || "RSO identified issues with the submitted documents.",
+        DEADLINE_TO_RESOLVE:  formatDate(addDays(new Date(), 7))
       });
 
       sendEmail("tpl_046", application.email, {
@@ -882,10 +898,13 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
       "PORTAL_URL": "https://geabotswana.org/member.html"
     });
 
-    sendEmailFromBoard("tpl_052", boardEmail, {
-      "APPLICANT_NAME": application.first_name + " " + application.last_name,
-      "MEMBERSHIP_CATEGORY": application.membership_category,
-      "HOUSEHOLD_TYPE": application.household_type
+    sendEmailFromTemplate("ADM_BOARD_FINAL_APPROVAL_TO_BOARD", boardEmail, {
+      FIRST_NAME:       "Board",
+      APPLICANT_NAME:   application.first_name + " " + application.last_name,
+      APPLICATION_ID:   applicationId,
+      MEMBERSHIP_TYPE:  application.membership_category + " – " + (application.household_type || ""),
+      APPROVAL_DATE:    formatDate(new Date()),
+      ACTIVATION_DATE:  formatDate(new Date())
     });
 
     return { success: true, message: "Membership activated successfully." };

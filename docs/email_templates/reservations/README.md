@@ -17,7 +17,7 @@ Guest list deadline approaching
   └─ RES_GUEST_LIST_DEADLINE_REMINDER_TO_MEMBER
 ```
 
-## Templates (12)
+## Templates (16)
 
 ### Booking Lifecycle
 
@@ -58,7 +58,24 @@ Reminder sent when the guest list submission deadline is approaching. Member mus
 - Recipient: Member
 - Variables: `{{FIRST_NAME}}`, `{{RESERVATION_ID}}`, `{{FACILITY_NAME}}`, `{{RESERVATION_DATE}}`, `{{DEADLINE}}`, `{{PORTAL_URL}}`
 
-### Excess Booking Requests
+### Board Approval Requests
+
+**RES_BOOKING_APPROVAL_REQUEST_TO_BOARD.txt**
+Sent to the board when a non-excess reservation requires approval.
+- Recipient: Board
+- Variables: `{{MEMBER_NAME}}`, `{{MEMBER_EMAIL}}`, `{{MEMBER_PHONE}}`, `{{FACILITY}}`, `{{RESERVATION_DATE}}`, `{{START_TIME}}`, `{{END_TIME}}`, `{{EVENT_NAME}}`, `{{SUBMISSION_TIMESTAMP}}`, `{{IF_GUESTS}}`, `{{GUEST_COUNT}}`, `{{GUEST_LIST_LINK}}`, `{{OTHER_EVENTS_LIST}}`, `{{MEMBERSHIP_LEVEL}}`, `{{MEMBERSHIP_STATUS}}`, `{{LEOBO_USAGE}}`, `{{LEOBO_MONTHLY_LIMIT}}`, `{{APPROVE_LINK}}`, `{{DENY_LINK}}`
+
+**RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_BOARD.txt**
+Sent to the board when a member's tennis request exceeds the weekly household limit (3 hrs/week). Includes existing bookings this week and bump deadline.
+- Recipient: Board
+- Variables: `{{MEMBER_NAME}}`, `{{MEMBER_EMAIL}}`, `{{HOURS_USED}}`, `{{TENNIS_WEEKLY_LIMIT_HOURS}}`, `{{EXISTING_BOOKINGS_LIST}}`, `{{RESERVATION_DATE}}`, `{{START_TIME}}`, `{{END_TIME}}`, `{{DURATION_HOURS}}`, `{{EVENT_NAME}}`, `{{IF_GUESTS}}`, `{{GUEST_COUNT}}`, `{{GUEST_LIST_LINK}}`, `{{OTHER_EVENTS_LIST}}`, `{{APPROVE_LINK}}`, `{{DENY_LINK}}`, `{{BUMP_DEADLINE}}`
+
+**RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_BOARD.txt**
+Sent to the Management Officer when a member's Leobo request exceeds the monthly household limit. Includes existing Leobo bookings and bump window.
+- Recipient: Management Officer
+- Variables: `{{LEOBO_USAGE}}`, `{{LEOBO_MONTHLY_LIMIT}}`, `{{HOURS_USED}}`, `{{LEOBO_MAX_HOURS}}`, `{{EXISTING_BOOKINGS_LIST}}`, `{{MEMBER_NAME}}`, `{{MEMBER_EMAIL}}`, `{{MEMBER_PHONE}}`, `{{FACILITY}}`, `{{RESERVATION_DATE}}`, `{{START_TIME}}`, `{{END_TIME}}`, `{{DURATION_HOURS}}`, `{{EVENT_NAME}}`, `{{IF_GUESTS}}`, `{{GUEST_COUNT}}`, `{{GUEST_LIST_LINK}}`, `{{OTHER_EVENTS_LIST}}`, `{{MEMBERSHIP_LEVEL}}`, `{{MEMBERSHIP_STATUS}}`, `{{HOUSEHOLD_NAME}}`, `{{APPROVE_LINK}}`, `{{DENY_LINK}}`, `{{BUMP_DEADLINE}}`, `{{LEOBO_BUMP_WINDOW_DAYS}}`
+
+### Excess Booking Requests (Member-Facing)
 
 **RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_MEMBER.txt**
 Sent when a member requests tennis court time beyond the weekly limit (3 hrs/week).
@@ -69,6 +86,13 @@ Sent when a member requests tennis court time beyond the weekly limit (3 hrs/wee
 Sent when a member requests a Leobo stay beyond the monthly limit (1/month).
 - Recipient: Member
 - Variables: `{{FIRST_NAME}}`, `{{REQUESTED_DATE}}`, `{{REASON}}`, `{{APPROVAL_URL}}`
+
+### Waitlist
+
+**RES_WAITLIST_SLOT_OPENED_TO_MEMBER.txt**
+Sent when a waitlisted slot becomes available. Notifies the member and provides a direct booking link.
+- Recipient: Member
+- Variables: `{{FIRST_NAME}}`, `{{FACILITY}}`, `{{RESERVATION_DATE}}`, `{{START_TIME}}`, `{{END_TIME}}`, `{{WAITLIST_HOLD_HOURS}}`
 
 ### Limit Notifications
 

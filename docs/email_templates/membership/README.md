@@ -2,7 +2,7 @@
 
 Emails covering the full member lifecycle — from application through renewal, plus milestone and birthday communications.
 
-## Templates (12)
+## Templates (14)
 
 ### Application
 
@@ -22,6 +22,11 @@ Sent when an application is not approved. Includes the reason and a contact for 
 - Variables: `{{FIRST_NAME}}`, `{{APPLICATION_ID}}`, `{{DENIAL_REASON}}`, `{{CONTACT_EMAIL}}`
 
 ### Onboarding
+
+**MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT.txt**
+Sent when a new applicant account is created. Provides temporary login credentials and next steps for document upload.
+- Recipient: Applicant
+- Variables: `{{FIRST_NAME}}`, `{{EMAIL}}`, `{{TEMP_PASSWORD}}`, `{{LOGIN_URL}}`
 
 **MEM_FIRST_LOGIN_WELCOME_TO_MEMBER.txt**
 Sent on a member's first login to the portal after activation. Introduces available features.
@@ -49,6 +54,11 @@ Urgent 7-day renewal warning. Sent July 24 to members who have not yet renewed.
 Sent when a membership expires without renewal. Includes reactivation amount and instructions.
 - Recipient: Member
 - Variables: `{{FIRST_NAME}}`, `{{EXPIRED_DATE}}`, `{{REACTIVATION_AMOUNT}}`, `{{PORTAL_URL}}`
+
+**MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER.txt**
+Sent when the treasurer verifies payment and activates a new membership. Confirms active status and summarises facility booking rules.
+- Recipient: New Member
+- Variables: `{{APPLICANT_NAME}}`
 
 ### Documents
 

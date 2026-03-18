@@ -1,0 +1,23 @@
+Dear {{FIRST_NAME}},
+
+Good news! A reservation you were waitlisted for has become available.
+
+AVAILABLE SLOT:
+Facility: {{FACILITY}}
+Date: {{RESERVATION_DATE}}
+Time: {{START_TIME}} - {{END_TIME}}
+
+This slot is available on a first-come, first-served basis. Book it now before someone else does!
+
+Book this slot: www.geabotswana.org/reservations
+
+Please note: This slot will be held for {{WAITLIST_HOLD_HOURS}} hours before being released to all members.
+
+Questions? Contact board@geabotswana.org.
+
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Feel free to reply if you have any questions or comments.

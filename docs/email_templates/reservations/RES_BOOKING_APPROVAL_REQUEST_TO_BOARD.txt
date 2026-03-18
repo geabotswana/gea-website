@@ -1,0 +1,36 @@
+GEA Board,
+
+A reservation request requires your approval.
+
+RESERVATION DETAILS:
+Requested by: {{MEMBER_NAME}} ({{MEMBER_EMAIL}}, {{MEMBER_PHONE}})
+Facility: {{FACILITY}}
+Date: {{RESERVATION_DATE}}
+Time: {{START_TIME}} - {{END_TIME}}
+Event: {{EVENT_NAME}}
+Submitted: {{SUBMISSION_TIMESTAMP}}
+
+{{IF_GUESTS}}Guests: {{GUEST_COUNT}} guests listed
+Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
+
+OTHER EVENTS ON {{RESERVATION_DATE}}:
+{{OTHER_EVENTS_LIST}}
+
+HOUSEHOLD STATUS:
+Membership: {{MEMBERSHIP_LEVEL}} - {{MEMBERSHIP_STATUS}}
+Leobo reservations this month: {{LEOBO_USAGE}} of {{LEOBO_MONTHLY_LIMIT}}
+
+Please review and respond:
+APPROVE: {{APPROVE_LINK}}
+DENY: {{DENY_LINK}}
+
+Or log in to the Board Admin Portal: www.geabotswana.org/admin
+
+This request will escalate if not reviewed within 24 hours.
+
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. Feel free to reply if you have any questions or comments.

@@ -891,11 +891,8 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     // Send welcome emails
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
 
-    sendEmailFromBoard("tpl_051", application.email, {
-      "APPLICANT_NAME": application.first_name,
-      "MEMBERSHIP_CATEGORY": application.membership_category,
-      "EXPIRATION_DATE": formatDate(expirationDate, "GMT+2", "MMMM dd, yyyy"),
-      "PORTAL_URL": "https://geabotswana.org/member.html"
+    sendEmailFromTemplate("MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER", application.email, {
+      APPLICANT_NAME: application.first_name
     });
 
     sendEmailFromTemplate("ADM_BOARD_FINAL_APPROVAL_TO_BOARD", boardEmail, {

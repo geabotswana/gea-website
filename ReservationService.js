@@ -760,16 +760,26 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
       DENY_LINK:            URL_ADMIN_PORTAL + "?action=deny&id="    + row.reservation_id
     });
 
+    // Board/MGT approval request — map baseVars names to template placeholders
+    var approvalVars = Object.assign({}, limitVars, {
+      MEMBER_NAME:          limitVars.FULL_NAME,
+      EXISTING_BOOKINGS_LIST: "",
+      GUEST_LIST_LINK:      "",
+      OTHER_EVENTS_LIST:    "(check Admin Portal for other events)",
+      DURATION_HOURS:       "",
+      LEOBO_BUMP_WINDOW_DAYS: getConfigValue("LEOBO_BUMP_WINDOW_DAYS") || ""
+    });
+
     if (limitCheck.isExcess && params.facility === FACILITY_TENNIS) {
-      sendEmailFromBoard("tpl_030", EMAIL_BOARD, limitVars);
+      sendEmailFromTemplate("RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_BOARD", EMAIL_BOARD, approvalVars);
     } else if (params.facility === FACILITY_LEOBO || params.facility === FACILITY_WHOLE) {
       if (limitCheck.isExcess) {
-        sendEmailFromBoard("tpl_031", EMAIL_MGT, limitVars);
+        sendEmailFromTemplate("RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_BOARD", EMAIL_MGT, approvalVars);
       } else {
-        sendEmailFromBoard("tpl_019", EMAIL_MGT, limitVars);
+        sendEmailFromTemplate("RES_BOOKING_APPROVAL_REQUEST_TO_BOARD", EMAIL_MGT, approvalVars);
       }
     } else {
-      sendEmailFromBoard("tpl_009", EMAIL_BOARD, limitVars);
+      sendEmailFromTemplate("RES_BOOKING_APPROVAL_REQUEST_TO_BOARD", EMAIL_BOARD, approvalVars);
     }
 
     // Send limit-reached notice to member if excess

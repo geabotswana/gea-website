@@ -103,41 +103,34 @@ function submitPaymentVerification(params) {
 
     _appendRowByHeaders_(paymentsSheet, payload);
 
-    // Send confirmation email to member (tpl_061) - FROM board@
+    // Look up member for email personalization
+    var member = getMemberByEmail(params.member_email);
+    var memberFirstName = member ? member.first_name : "";
+    var memberName = member ? (member.first_name + " " + member.last_name) : params.member_email;
+
+    // Send confirmation email to member
     try {
-      sendEmailFromBoard("tpl_061", params.member_email, {
+      sendEmailFromTemplate("PAY_PAYMENT_SUBMITTED_TO_MEMBER", params.member_email, {
+        FIRST_NAME: memberFirstName,
         PAYMENT_ID: paymentId,
-        HOUSEHOLD_NAME: household.household_name,
-        MEMBERSHIP_YEAR: params.membership_year,
-        PAYMENT_METHOD: params.payment_method,
         AMOUNT: amountPaid,
         CURRENCY: currency,
-        TRANSACTION_DATE: formatDate(txDate, false),
-        SUBMISSION_DATE: formatDate(now, true)
+        SUBMISSION_DATE: formatDate(now, true),
+        NEXT_STEP: "The GEA Treasurer will review your payment within 5 business days. You will be notified by email when your payment is verified."
       });
     } catch (e) {
       Logger.log("WARNING: Could not send member confirmation email: " + e);
     }
 
-    // Send action email to treasurer (tpl_062) - FROM board@
+    // Send FYI email to treasurer
     try {
-      var member = getMemberByEmail(params.member_email);
-      var memberName = member ? (member.first_name + " " + member.last_name) : params.member_email;
-      sendEmailFromBoard("tpl_062", TREASURER_EMAIL, {
+      sendEmailFromTemplate("PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD", TREASURER_EMAIL, {
+        FIRST_NAME: "Treasurer",
+        MEMBER_NAME: memberName,
         PAYMENT_ID: paymentId,
-        HOUSEHOLD_NAME: household.household_name,
-        HOUSEHOLD_ID: params.household_id,
-        FIRST_NAME: member ? member.first_name : "",
-        LAST_NAME: member ? member.last_name : "",
-        MEMBER_EMAIL: params.member_email,
-        MEMBERSHIP_YEAR: params.membership_year,
-        PAYMENT_METHOD: params.payment_method,
         AMOUNT: amountPaid,
         CURRENCY: currency,
-        TRANSACTION_DATE: formatDate(txDate, false),
-        SUBMISSION_DATE: formatDate(now, true),
-        NOTES: params.notes || "",
-        ADMIN_PORTAL_LINK: ScriptApp.getService().getUrl()
+        STATUS: "Submitted — awaiting review"
       });
     } catch (e) {
       Logger.log("WARNING: Could not send treasurer notification email: " + e);
@@ -251,20 +244,20 @@ function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
       notes: String(treasurerNotes || "").substring(0, 500)
     });
 
-    // Send verification email to member (tpl_063) - FROM board@
+    // Send verification email to member
     try {
       var household = getHouseholdById(found.obj.household_id);
       var primaryMember = household ? getMemberById(household.primary_member_id) : null;
       var memberEmail = primaryMember ? primaryMember.email : "";
 
       if (memberEmail) {
-        sendEmailFromBoard("tpl_063", memberEmail, {
+        sendEmailFromTemplate("PAY_PAYMENT_VERIFIED_TO_MEMBER", memberEmail, {
+          FIRST_NAME: primaryMember ? primaryMember.first_name : "",
           PAYMENT_ID: paymentId,
-          HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
-          MEMBERSHIP_YEAR: found.obj.applied_to_period,
-          AMOUNT_PAID: found.obj.amount,
+          AMOUNT: found.obj.amount,
           CURRENCY: found.obj.currency,
-          VERIFICATION_DATE: formatDate(now, true)
+          VERIFICATION_DATE: formatDate(now, true),
+          MEMBERSHIP_ACTIVATED: "Active"
         });
       }
     } catch (e) {
@@ -303,19 +296,19 @@ function rejectPaymentVerification(paymentId, treasurerEmail, reason) {
       notes: rejectionNote.substring(0, 500)
     });
 
-    // Send rejection email to member (tpl_064) - FROM board@
+    // Send rejection email to member
     try {
       var household = getHouseholdById(found.obj.household_id);
       var primaryMember = household ? getMemberById(household.primary_member_id) : null;
       var memberEmail = primaryMember ? primaryMember.email : "";
 
       if (memberEmail) {
-        sendEmailFromBoard("tpl_064", memberEmail, {
+        sendEmailFromTemplate("PAY_PAYMENT_REJECTED_TO_MEMBER", memberEmail, {
+          FIRST_NAME: primaryMember ? primaryMember.first_name : "",
           PAYMENT_ID: paymentId,
-          HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
-          MEMBERSHIP_YEAR: found.obj.applied_to_period,
           REJECTION_REASON: reason || "Payment verification failed. Please contact the treasurer for details.",
-          RESUBMIT_LINK: ScriptApp.getService().getUrl()
+          RESUBMIT_DEADLINE: formatDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), false),
+          CONTACT_EMAIL: TREASURER_EMAIL
         });
       }
     } catch (e) {
@@ -354,19 +347,19 @@ function requestPaymentClarification(paymentId, treasurerEmail, clarificationReq
       notes: clarNote.substring(0, 500)
     });
 
-    // Send clarification email to member (tpl_065) - FROM board@
+    // Send clarification email to member
     try {
       var household = getHouseholdById(found.obj.household_id);
       var primaryMember = household ? getMemberById(household.primary_member_id) : null;
       var memberEmail = primaryMember ? primaryMember.email : "";
 
       if (memberEmail) {
-        sendEmailFromBoard("tpl_065", memberEmail, {
+        sendEmailFromTemplate("PAY_PAYMENT_CLARIFICATION_REQUESTED_TO_MEMBER", memberEmail, {
+          FIRST_NAME: primaryMember ? primaryMember.first_name : "",
           PAYMENT_ID: paymentId,
-          HOUSEHOLD_NAME: household ? household.household_name : found.obj.household_name,
-          MEMBERSHIP_YEAR: found.obj.applied_to_period,
-          CLARIFICATION_REQUEST: clarificationRequest || "Please provide additional information about your payment.",
-          DEADLINE: formatDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), false)
+          CLARIFICATION_NEEDED: clarificationRequest || "Please provide additional information about your payment.",
+          DEADLINE: formatDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), false),
+          CONTACT_EMAIL: TREASURER_EMAIL
         });
       }
     } catch (e) {

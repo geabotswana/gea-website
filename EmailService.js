@@ -195,20 +195,21 @@ function getEmailTemplateById(templateId) {
 
 /**
  * Cache for Drive-based email templates.
- * Key: semantic_name, Value: { subject, htmlBody, placeholders, name }
+ * Key: semantic_name, Value: { subject, body, placeholders, name }
  */
 var _driveTemplateCache = {};
 
 /**
- * Fetches a template from the Email Templates tab with Drive-based HTML bodies.
- * Reads from the sheet and loads the HTML body from a Google Drive file.
+ * Fetches a template from the Email Templates tab with Drive-based plain text bodies.
+ * Reads from the sheet and loads the body from a plain text (.txt) file in Google Drive.
+ * The body is passed through buildHtmlEmail() at send time for GEA branding.
  *
  * Sheet layout:
  *   A=template_id, B=template_name, C=subject, D=body (legacy), E=active
  *   F=semantic_name, G=display_name, H=drive_file_id, I=placeholders, J=notes
  *
  * @param {string} templateName  Semantic name of template (e.g., "MEM_APPLICATION_SUBMITTED_TO_APPLICANT")
- * @returns {Object|null}        { subject, htmlBody, placeholders, name } or null if not found/inactive
+ * @returns {Object|null}        { subject, body, placeholders, name } or null if not found/inactive
  */
 function getEmailTemplate(templateName) {
   if (_driveTemplateCache[templateName]) {
@@ -239,11 +240,11 @@ function getEmailTemplate(templateName) {
           });
         }
 
-        // Load HTML body from Drive file
-        var htmlBody = "";
+        // Load plain text body from Drive .txt file
+        var body = "";
         if (driveFileId) {
           try {
-            htmlBody = DriveApp.getFileById(driveFileId).getBlob().getDataAsString();
+            body = DriveApp.getFileById(driveFileId).getBlob().getDataAsString();
           } catch (driveErr) {
             Logger.log("ERROR getEmailTemplate: Could not load Drive file " + driveFileId + ": " + driveErr);
             logAuditEntry("system", AUDIT_EMAIL_TEMPLATE_NOT_FOUND, "EmailTemplate", templateName,
@@ -254,7 +255,7 @@ function getEmailTemplate(templateName) {
 
         var template = {
           subject: subject,
-          htmlBody: htmlBody,
+          body: body,
           placeholders: placeholders,
           name: displayName
         };
@@ -376,7 +377,7 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
 
     // Substitute variables in subject and body
     var subject = substituteTemplateVariables(template.subject, variables);
-    var plainBody = substituteTemplateVariables(template.htmlBody, variables);
+    var plainBody = substituteTemplateVariables(template.body, variables);
 
     // Wrap in GEA master HTML template for consistent branding
     var htmlBody = buildHtmlEmail(subject, plainBody);
@@ -461,7 +462,7 @@ function testEmailTemplateSystem() {
   // Test 1: Load template
   Logger.log("\n[TEST 1] Loading template...");
   var template = getEmailTemplate(testTemplateName);
-  if (template && template.subject && template.htmlBody && template.placeholders) {
+  if (template && template.subject && template.body && template.placeholders) {
     Logger.log("[PASS] Template loaded");
     Logger.log("  Subject: " + template.subject);
     Logger.log("  Placeholders: " + template.placeholders.join(", "));
@@ -484,7 +485,7 @@ function testEmailTemplateSystem() {
 
   // Test 3: Substitute variables
   Logger.log("\n[TEST 3] Substituting variables...");
-  var substitutedBody = substituteTemplateVariables(template.htmlBody, testVariables);
+  var substitutedBody = substituteTemplateVariables(template.body, testVariables);
   var hasUnreplacedTokens = /\{\{[A-Z_]+\}\}/.test(substitutedBody);
   if (!hasUnreplacedTokens) {
     Logger.log("[PASS] All {{VARIABLES}} replaced");

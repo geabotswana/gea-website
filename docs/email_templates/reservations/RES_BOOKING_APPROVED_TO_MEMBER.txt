@@ -1,4 +1,4 @@
-Dear {{FIRST_NAME}},
+﻿Dear {{FIRST_NAME}},
 
 Your reservation has been approved!
 
@@ -13,9 +13,9 @@ Guest Limit: {{GUEST_LIMIT}}
 Please submit your guest list before the deadline. View details in your member portal: {{PORTAL_URL}}
 
 Best regards,
-Gaborone Expatriate Association
+Gaborone Employee Association
 Email: board@geabotswana.org
 Website: www.geabotswana.org
 
 ---
-This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

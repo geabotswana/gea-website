@@ -1,6 +1,6 @@
-Dear {{FIRST_NAME}},
+﻿Dear {{FIRST_NAME}},
 
-Welcome to the Gaborone Expatriate Association member community!
+Welcome to the Gaborone Employee Association member community!
 
 Your account for {{HOUSEHOLD_NAME}} has been created. You now have access to the GEA member portal where you can manage your membership, make reservations, submit documents, and more.
 
@@ -16,9 +16,9 @@ If this is your first time logging in, you'll need to set your password using th
 Log in to your portal: {{PORTAL_URL}}
 
 Best regards,
-Gaborone Expatriate Association
+Gaborone Employee Association
 Email: board@geabotswana.org
 Website: www.geabotswana.org
 
 ---
-This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

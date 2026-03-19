@@ -1,17 +1,17 @@
-Dear {{FIRST_NAME}},
+﻿Dear {{FIRST_NAME}},
 
 Important: Your passport is expiring soon.
 
 Our records indicate that your passport will expire on {{EXPIRATION_DATE}}.
 
-As a member of the Gaborone Expatriate Association, you may need a valid passport for certain activities. We recommend renewing your passport before it expires.
+As a member of the Gaborone Employee Association, you may need a valid passport for certain activities. We recommend renewing your passport before it expires.
 
 For information on passport renewal, visit: {{RENEWAL_URL}}
 
 Best regards,
-Gaborone Expatriate Association
+Gaborone Employee Association
 Email: board@geabotswana.org
 Website: www.geabotswana.org
 
 ---
-This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

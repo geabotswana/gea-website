@@ -1,4 +1,4 @@
-Dear {{FIRST_NAME}},
+﻿Dear GEA Board,
 
 Board Notification
 
@@ -10,9 +10,9 @@ Submitted: {{APPLICATION_DATE}}
 Review Deadline: {{BOARD_REVIEW_DEADLINE}}
 
 Best regards,
-Gaborone Expatriate Association
+Gaborone Employee Association
 Email: board@geabotswana.org
 Website: www.geabotswana.org
 
 ---
-This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

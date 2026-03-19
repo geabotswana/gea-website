@@ -1,0 +1,25 @@
+﻿Dear {{FIRST_NAME}},
+
+Thank you for submitting your guest list for your upcoming reservation.
+
+Reservation: {{RESERVATION_ID}}
+Facility: {{FACILITY_NAME}}
+Event Date: {{RESERVATION_DATE}}
+Guests Submitted: {{GUEST_COUNT}}
+
+Your guest list has been received and will be reviewed by the RSO before your event. Please ensure all guests bring a valid photo ID on the day of the event.
+
+Guest List Submission Deadline: {{DEADLINE}}
+
+If your guest list needs to change, please contact us at board@geabotswana.org before the deadline.
+
+You can view your reservation details in the Member Portal:
+{{PORTAL_URL}}
+
+Best regards,
+Gaborone Employee Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

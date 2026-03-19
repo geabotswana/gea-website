@@ -1,8 +1,8 @@
-Dear {{FIRST_NAME}},
+﻿Dear {{FIRST_NAME}},
 
 Your GEA membership has expired.
 
-Your membership with the Gaborone Expatriate Association expired on {{EXPIRED_DATE}}.
+Your membership with the Gaborone Employee Association expired on {{EXPIRED_DATE}}.
 
 To reactivate your membership and regain access to all GEA benefits and facilities, please submit a reactivation payment.
 
@@ -12,9 +12,9 @@ Reactivation Amount: {{REACTIVATION_AMOUNT}}
 Reactivate your membership here: {{PORTAL_URL}}
 
 Best regards,
-Gaborone Expatriate Association
+Gaborone Employee Association
 Email: board@geabotswana.org
 Website: www.geabotswana.org
 
 ---
-This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

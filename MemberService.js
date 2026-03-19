@@ -419,6 +419,38 @@ function createMemberRecord(householdId, individualData, createdBy) {
 
 
 // ============================================================
+// HOUSEHOLD MEMBER MANAGEMENT
+// ============================================================
+
+/**
+ * Deactivates a household member by setting active=false.
+ * Cannot be used on PRIMARY members.
+ *
+ * @param {string} individualId   The individual_id to deactivate
+ * @param {string} actingBy       Email of the user performing the action (for audit log)
+ * @returns {{ ok: boolean, error?: string }}
+ */
+function deactivateMember(individualId, actingBy) {
+  try {
+    var m = getMemberById(individualId);
+    if (!m) return { ok: false, error: "Member not found." };
+
+    if (m.relationship_to_primary === RELATIONSHIP_PRIMARY) {
+      return { ok: false, error: "Cannot deactivate the primary member of a household." };
+    }
+
+    updateMemberField(individualId, "active", false, actingBy);
+    logAuditEntry(actingBy, AUDIT_MEMBER_DEACTIVATED, "Individual", individualId,
+                  "Deactivated: " + (m.first_name || "") + " " + (m.last_name || ""));
+    return { ok: true };
+  } catch (e) {
+    Logger.log("ERROR deactivateMember(" + individualId + "): " + e);
+    return { ok: false, error: "Failed to deactivate member." };
+  }
+}
+
+
+// ============================================================
 // PHOTO MANAGEMENT
 // ============================================================
 
@@ -498,19 +530,22 @@ function checkBirthdays() {
                           ? [m.email, parentEmail] : [m.email];
         sendEmailFromTemplate("MEM_BIRTHDAY_AGE_15_MILESTONE_TO_MEMBER", recipients, {
           FIRST_NAME:           m.first_name,
+          BIRTHDAY_DATE:        formatDate(new Date(m.date_of_birth)),
           ADULT_MEMBERSHIP_SOON: "In one year, at age 16, they will be eligible to apply for adult membership"
         });
 
       } else if (age === AGE_VOTING && hh && hh.membership_type === CATEGORY_FULL) {
         sendEmailFromTemplate("MEM_BIRTHDAY_AGE_16_MILESTONE_TO_MEMBER", m.email, {
           FIRST_NAME:            m.first_name,
+          BIRTHDAY_DATE:         formatDate(new Date(m.date_of_birth)),
           ADULT_MEMBERSHIP_INFO: "You are now eligible to apply for full adult membership.",
           PORTAL_URL:            URL_MEMBER_PORTAL
         });
 
       } else {
         sendEmailFromTemplate("MEM_BIRTHDAY_GREETING_TO_MEMBER", m.email, {
-          FIRST_NAME: m.first_name
+          FIRST_NAME:    m.first_name,
+          BIRTHDAY_DATE: formatDate(new Date(m.date_of_birth))
         });
       }
       Logger.log("Birthday email sent: " + m.email + " (age " + age + ")");

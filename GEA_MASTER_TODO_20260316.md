@@ -1,8 +1,8 @@
 # GEA Management System — Master To-Do List
 
-**Current Date:** March 16, 2026  
-**Owner:** Michael Raney (Treasurer)  
-**Status:** Discovery refreshed on Mar 16, 2026 — Phase 1 ✅ COMPLETE, major Phase 2 components ✅ implemented, Non-Member Portal and Reservations UX/workflow still in progress
+**Current Date:** March 19, 2026
+**Owner:** Michael Raney (Treasurer)
+**Status:** Mar 19, 2026 — NMP.6-8 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE (limits, excess, calendar events, notifications, admin UI). RES.3 ✅ COMPLETE (guest list submit, RSO review, final summary email). ⚠️ Manual step: add Guest Lists sheet columns + add 2 new email templates to Drive/sheet (see RES.3 notes).
 
 ---
 
@@ -371,7 +371,7 @@ Info-only (no form) IF applicant not yet approved
 
 **Visibility:** Show if applicant (application_status not null) AND not rejected
 
-**Status:** 🟡 TODO
+**Status:** 🟢 COMPLETE (Mar 19, 2026) — Household Management page implemented: overview card, family members card (add spouse/child, edit, remove), household staff card (add, edit, remove), modals for all actions. Backend: `get_household_members`, `add_household_member`, `remove_household_member`, `edit_household_member` routes + `deactivateMember()` in MemberService.js. All user data via textContent; closures for all event handlers.
 
 **Prerequisite:** NMP.1 (routing)
 
@@ -428,7 +428,7 @@ Each Q&A is collapsible (click to expand)
 - Office hours: [if available, TBD]
 - Typical response time: 1-2 business days
 
-**Status:** 🟡 PARTIAL (Mar 16, 2026) — Help & Contact page delivered with FAQ guidance and Treasurer contact CTA (mailto); structured backend contact-form route remains open
+**Status:** 🟢 COMPLETE (Mar 19, 2026) — Full FAQ (4 collapsible topic groups, 20 Q&As), contact form (subject dropdown, 1000-char textarea, urgent flag, success/error feedback) wired to `send_contact_message` backend route, and contact info card. Backend sends to `EMAIL_TREASURER` via MailApp with replyTo set to member email; logs `CONTACT_MESSAGE_SENT` to Audit Log.
 
 **Prerequisite:** NMP.1 (routing)
 
@@ -469,7 +469,7 @@ Each Q&A is collapsible (click to expand)
 - 6 statuses × 5 sections = 30 visibility rules
 - See GEA_NonMemberPortal_Specification.md Section 8
 
-**Status:** 🟡 PARTIAL (Mar 16, 2026) — non-member navigation menu and section routing implemented; full breakpoint/accessibility certification still pending
+**Status:** 🟢 COMPLETE (Mar 19, 2026) — Responsive layout implemented: hamburger toggle nav (desktop pill row → tablet/mobile collapsible drawer with aria-expanded/aria-current), 2-column dashboard card grid (→ 1-column at ≤768px), max-width container, edge-to-edge cards at ≤480px. All buttons ≥44px. ARIA roles on nav element.
 
 **Prerequisite:** NMP.1-NMP.7 (all content pages)
 
@@ -812,7 +812,7 @@ Each Q&A is collapsible (click to expand)
 
 **Action:** Review GEA System Backend templates sheet, create any missing templates, document all 16
 
-**Status:** 🟡 PARTIAL — templates exist through `tpl_065`, but reservation template numbering/naming differs from this section's expected set
+**Status:** 🟡 PARTIAL (Mar 19, 2026) — Drive-based semantic template system fully migrated (58 templates, all tpl_XXX calls replaced with semantic names in all service files). Reservation templates that exist: RES_BOOKING_RECEIVED_TO_MEMBER, RES_BOOKING_APPROVAL_REQUEST_TO_BOARD, RES_BOOKING_APPROVED_TO_MEMBER, RES_BOOKING_DENIED_TO_MEMBER, RES_BOOKING_DENIED_BOARD_COPY_TO_BOARD, RES_BOOKING_CANCELLED_TO_MEMBER, RES_BOOKING_PENDING_REVIEW_TO_MEMBER, RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_BOARD, RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_MEMBER, RES_LEOBO_APPROVAL_REQUEST_TO_MGT, RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MGT, RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MEMBER, RES_GUEST_LIST_DEADLINE_REMINDER_TO_MEMBER, RES_WAITLIST_SLOT_OPENED_TO_MEMBER, RES_LEOBO_LIMIT_REACHED_TO_MEMBER, RES_TENNIS_LIMIT_REACHED_TO_MEMBER, RES_HOLIDAY_CALENDAR_REMINDER_TO_MEMBER. Remaining gaps (management approved/denied, guest list submitted/RSO-rejected, approval reminders) to be created when RES.2+ backend is implemented.
 
 **Prerequisite:** RES-PREP.2 (constants defined)
 
@@ -870,7 +870,7 @@ Each Q&A is collapsible (click to expand)
 - Check against household limits
 - Return validation result with reason if invalid
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — `checkReservationLimits()`, `hasConflict()`, `getTennisHoursThisWeek()`, `getLeoboReservationsThisMonth()` all in ReservationService.js. `ALL_FACILITIES` constant added to Config.js (was missing, causing runtime error).
 
 **Prerequisite:** RES-PREP.1 (schema), RES-PREP.2 (config)
 
@@ -897,7 +897,7 @@ Each Q&A is collapsible (click to expand)
 - Create approval record (status = 'pending')
 - Notify board with special email template (tpl_023)
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — `createReservation()` already sets `is_excess_reservation`, calculates `bump_window_deadline`, routes to pending status. Excess member notifications migrated from legacy `tpl_028`/`tpl_029` to `RES_TENNIS_LIMIT_REACHED_TO_MEMBER` and `RES_LEOBO_LIMIT_REACHED_TO_MEMBER`.
 
 **Prerequisite:** RES.2.1 (limit validation)
 
@@ -929,7 +929,7 @@ Each Q&A is collapsible (click to expand)
   - approval_path
   - links to admin portals
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — `createCalendarEvent()` and `updateCalendarEventStatus()` added to ReservationService.js. Uses existing `CALENDAR_ID` constant and `calendar` OAuth scope. Events created on booking, updated (colour + title tag) on approve/deny/cancel and nightly bump-window auto-confirm. Colours: red=pending, yellow=tentative, green=confirmed, grey=cancelled.
 
 **Prerequisite:** RES.2.2 (excess marking)
 
@@ -964,7 +964,7 @@ Each Q&A is collapsible (click to expand)
 - Route approval notifications accordingly
 - Update status based on approvers' responses
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL (Mar 19, 2026) — Routing logic exists in `_sendReservationNotifications()`: Tennis→board, Leobo/Whole→MGT, excess Tennis→board. Two-stage MGT→Board approval tracking (status progression from pending_mgmt to pending_board) not yet implemented. Deferred to RES.4.
 
 **Prerequisite:** RES-PREP.4 (distros confirmed), RES.2.3 (calendar events)
 
@@ -1005,7 +1005,7 @@ Each Q&A is collapsible (click to expand)
 - Send email via MailApp
 - Log audit entry
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — `_sendReservationNotifications()` sends to member (pending/confirmed), board (standard, excess tennis), MGT (leobo, excess leobo). Legacy tpl_ calls replaced with semantic template names. Member limit-reached notices use `RES_TENNIS_LIMIT_REACHED_TO_MEMBER` / `RES_LEOBO_LIMIT_REACHED_TO_MEMBER`.
 
 **Prerequisite:** RES-PREP.3 (templates), RES.2.4 (routing)
 
@@ -1033,7 +1033,7 @@ Each Q&A is collapsible (click to expand)
 
 **Complexity:** Medium-High (involves data aggregation, multi-stage logic)
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — Admin.html has `loadReservations()` (fetches pending, shows table), `openReservationDetail()` (real data from cache), `approveReservation()`, `denyReservation()`. Field name bugs (`res.date` → `res.event_date`, `res.member_name` → `res.household_name`) and hardcoded placeholder data fixed. Reservation detail modal now shows all fields from the actual reservation record.
 
 **Prerequisite:** RES.2.5 (email notifications)
 
@@ -1076,7 +1076,7 @@ submitted
 - Send reminder email to each approver
 - Log audit entries
 
-**Status:** 🟡 TODO
+**Status:** 🟡 PARTIAL (Mar 19, 2026) — `processBumpWindowExpirations()` exists (promotes TENTATIVE→CONFIRMED when bump window passes). Daily approval reminders not yet implemented (deferred: needs `RES_APPROVAL_REMINDER_TO_BOARD` template and approval reminder function).
 
 **Prerequisite:** RES.2.6 (approval interface)
 
@@ -1124,7 +1124,7 @@ submitted
 - Check deadline, set final-call reminder
 - Send confirmation email to member (tpl_031)
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — `submitGuestList()` in ReservationService.js writes to Guest Lists sheet, marks reservation, sends confirmation email. Portal.html shows "Submit Guest List" button for approved reservations with guests; dynamic guest-row modal (name/relationship/nationality). ⚠️ Manual: Guest Lists sheet needs columns: guest_list_id, reservation_id, household_id, household_name, primary_email, facility, event_date, guests_json, guest_count, submitted_date, submission_status, rso_reviewed_by, rso_review_date, rejection_reason. Also add `RES_GUEST_LIST_SUBMITTED_TO_MEMBER` to Drive/sheet.
 
 **Prerequisite:** RES.2 (bookings approved), RES-PREP.3 (templates)
 
@@ -1162,7 +1162,7 @@ submitted
 - Send member notification emails (tpl_033 for rejections)
 - Update Guest Lists sheet with RSO decision
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — `acknowledgeGuestList()` and `rejectGuestList()` in ReservationService.js. Rejection resets `guest_list_submitted` so member can resubmit. Admin.html has "Guest Lists" nav + table + detail panel with Acknowledge/Reject actions. ⚠️ Manual: add `RES_GUEST_LIST_RSO_REJECTED_TO_MEMBER` to Drive/sheet.
 
 **Prerequisite:** RES.3.1 (submission form)
 
@@ -1193,7 +1193,7 @@ submitted
 - Format nicely (table, clear layout)
 - Store PDF reference for audit trail
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 19, 2026) — Implemented as `_sendFinalGuestListSummary()` called from `acknowledgeGuestList()`. Sends a formatted plain-text email to EMAIL_RSO with full guest details (name/relationship/nationality), event info, and ID verification reminder. PDF generation deferred (GAS has no native PDF-from-text; would require a Docs template — not warranted at current volume).
 
 **Prerequisite:** RES.3.2 (RSO approval)
 

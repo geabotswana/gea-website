@@ -994,6 +994,89 @@
     .status-pending {
       color: #999;
     }
+
+    /* ============================================================ */
+    /* NMP.8 — APPLICANT PORTAL RESPONSIVE LAYOUT                   */
+    /* ============================================================ */
+
+    #applicantContent {
+      max-width: 900px;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    /* Nav: horizontal pill row on desktop */
+    .applicant-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    /* Hamburger button: hidden on desktop */
+    .applicant-nav-toggle {
+      display: none;
+    }
+
+    /* Dashboard 2-up card grid */
+    .applicant-card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Tablet (≤768px) ── */
+    @media (max-width: 768px) {
+      .applicant-card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Collapse nav behind hamburger */
+      .applicant-nav-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 10px 16px;
+        min-height: 44px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #f9f9f9;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+      }
+
+      .applicant-nav {
+        display: none;
+        flex-direction: column;
+      }
+
+      .applicant-nav.open {
+        display: flex;
+      }
+
+      .applicant-nav button {
+        width: 100%;
+        text-align: left;
+      }
+    }
+
+    /* ── Mobile (≤480px) ── */
+    @media (max-width: 480px) {
+      #applicantContent {
+        padding: 0;
+      }
+
+      #applicantContent .card {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1665,8 +1748,8 @@
               <label class="form-label">Facility</label>
               <select id="facility" class="form-input" required>
                 <option value="">-- Select a facility --</option>
-                <option value="Tennis Courts">Tennis Courts</option>
-                <option value="Leobo Lodge">Leobo Lodge</option>
+                <option value="Tennis Court">Tennis Court</option>
+                <option value="Leobo">Leobo Lodge</option>
               </select>
             </div>
             <div class="form-group">
@@ -1720,7 +1803,39 @@
 
         <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
       </div>
-      
+
+      <!-- Guest List Submission Modal -->
+      <div id="guestListModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="guestListModalTitle">
+        <div class="modal" style="max-width:620px; max-height:90vh; overflow-y:auto;">
+          <div class="modal-header">
+            <h2 class="modal-title" id="guestListModalTitle">Submit Guest List</h2>
+            <button class="modal-close" onclick="closeGuestListModal();" aria-label="Close">&times;</button>
+          </div>
+          <div style="padding: 16px 20px;">
+            <p id="guestListModalMeta" style="color:#666; font-size:14px; margin-bottom:12px;"></p>
+            <p style="font-size:13px; color:#555; margin-bottom:16px;">
+              Both names are required for all guests. ID number (omang or passport) is required for guests over 18.
+            </p>
+
+            <!-- Saved guests picker (shown after profiles load) -->
+            <div id="savedGuestsSection" style="display:none; margin-bottom:16px;">
+              <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Add from Saved Guests</label>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <select id="savedGuestPicker" class="form-input" style="flex:1; font-size:13px;"></select>
+                <button type="button" class="btn btn-secondary btn-small" onclick="addSavedGuest();">+ Add</button>
+              </div>
+            </div>
+
+            <div id="guestListRows"></div>
+            <button type="button" class="btn btn-secondary btn-small" onclick="addGuestRow(null);" style="margin-top:8px;">+ Add Guest</button>
+          </div>
+          <div class="modal-footer" style="padding:12px 20px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeGuestListModal();">Cancel</button>
+            <button class="btn btn-primary" id="submitGuestListBtn" onclick="submitGuestListForm();">Submit Guest List</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ========================================================== -->
       <!-- PAGE: PROFILE                                              -->
       <!-- View and edit member profile information                  -->
@@ -4682,6 +4797,8 @@ function submitLogin(event) {
       container.appendChild(buildApplicantDocumentsSection(app));
     } else if (applicantPortalState.activeSection === 'payment') {
       container.appendChild(buildApplicantPaymentSection(app));
+    } else if (applicantPortalState.activeSection === 'household') {
+      container.appendChild(buildApplicantHouseholdSection());
     } else if (applicantPortalState.activeSection === 'help') {
       container.appendChild(buildApplicantHelpSection());
     } else {
@@ -4711,39 +4828,78 @@ function submitLogin(event) {
   }
 
   function buildApplicantNav(activeSection) {
-    var nav = document.createElement('div');
-    nav.style.display = 'flex';
-    nav.style.flexWrap = 'wrap';
-    nav.style.gap = '8px';
-    nav.style.marginBottom = '20px';
-    [
+    var navItems = [
       { id: 'dashboard', label: 'Dashboard' },
-      { id: 'status', label: 'Application Status' },
+      { id: 'household', label: 'My Household' },
+      { id: 'status',    label: 'Application Status' },
       { id: 'documents', label: 'Documents' },
-      { id: 'payment', label: 'Payment Verification' },
-      { id: 'help', label: 'Help & Contact' }
-    ].forEach(function(item) {
+      { id: 'payment',   label: 'Payment Verification' },
+      { id: 'help',      label: 'Help & Contact' }
+    ];
+
+    var activeLabel = 'Menu';
+    for (var k = 0; k < navItems.length; k++) {
+      if (navItems[k].id === activeSection) { activeLabel = navItems[k].label; break; }
+    }
+
+    var wrapper = document.createElement('div');
+
+    // Hamburger toggle (visible only on tablet/mobile via CSS)
+    var toggle = document.createElement('button');
+    toggle.className = 'applicant-nav-toggle';
+    toggle.setAttribute('aria-label', 'Toggle navigation menu');
+    toggle.setAttribute('aria-expanded', 'false');
+    var toggleText = document.createElement('span');
+    toggleText.textContent = activeLabel;
+    var toggleIcon = document.createElement('span');
+    toggleIcon.textContent = '☰';
+    toggleIcon.setAttribute('aria-hidden', 'true');
+    toggle.appendChild(toggleText);
+    toggle.appendChild(toggleIcon);
+
+    var nav = document.createElement('nav');
+    nav.className = 'applicant-nav';
+    nav.setAttribute('role', 'navigation');
+    nav.setAttribute('aria-label', 'Portal sections');
+
+    toggle.onclick = function() {
+      var isOpen = nav.classList.contains('open');
+      nav.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      toggleIcon.textContent = isOpen ? '☰' : '✕';
+    };
+
+    navItems.forEach(function(item) {
       var btn = document.createElement('button');
       btn.className = activeSection === item.id ? 'btn btn-primary' : 'btn';
       btn.style.minHeight = '44px';
       btn.textContent = item.label;
-      btn.onclick = function() { renderApplicantPortalSection(item.id); };
+      btn.setAttribute('aria-current', activeSection === item.id ? 'page' : 'false');
+      btn.onclick = function() {
+        nav.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggleIcon.textContent = '☰';
+        renderApplicantPortalSection(item.id);
+      };
       nav.appendChild(btn);
     });
-    return nav;
+
+    wrapper.appendChild(toggle);
+    wrapper.appendChild(nav);
+    return wrapper;
   }
 
   function buildApplicantDashboardSection(app) {
-    var wrapper = document.createElement('div');
+    var grid = document.createElement('div');
+    grid.className = 'applicant-card-grid';
     [
-      { title: 'Membership Status', body: getApplicantStatusMessage(app.status) },
-      { title: 'Action Items', body: getApplicantActionMessage(app.status) },
+      { title: 'Membership Status',  body: getApplicantStatusMessage(app.status) },
+      { title: 'Action Items',       body: getApplicantActionMessage(app.status) },
       { title: 'Documents Progress', body: getApplicantDocumentSummary(app) },
-      { title: 'Quick Links', body: 'Use the buttons above to open your application status, documents, payment, and help.' }
+      { title: 'Quick Links',        body: 'Use the navigation above to open your application status, documents, payment, and help.' }
     ].forEach(function(card) {
       var block = document.createElement('div');
       block.className = 'card';
-      block.style.marginBottom = '12px';
       var title = document.createElement('h3');
       title.className = 'card-title';
       title.style.padding = '16px 16px 0';
@@ -4754,9 +4910,9 @@ function submitLogin(event) {
       text.style.color = '#555';
       text.textContent = card.body;
       block.appendChild(text);
-      wrapper.appendChild(block);
+      grid.appendChild(block);
     });
-    return wrapper;
+    return grid;
   }
 
   function buildApplicantStatusSection(app) {
@@ -4958,29 +5114,882 @@ function submitLogin(event) {
   }
 
   function buildApplicantHelpSection() {
+    var wrapper = document.createElement('div');
+
+    // ── FAQ ──────────────────────────────────────────────────
+    var faqCard = document.createElement('div');
+    faqCard.className = 'card';
+    faqCard.style.padding = '16px';
+    faqCard.style.marginBottom = '12px';
+
+    var faqTitle = document.createElement('h3');
+    faqTitle.className = 'card-title';
+    faqTitle.textContent = 'Frequently Asked Questions';
+    faqCard.appendChild(faqTitle);
+
+    var faqTopics = [
+      {
+        topic: 'Application Process',
+        items: [
+          ['How long does the application take?',
+           'Once all required documents are submitted and confirmed, board review typically takes 1–2 weeks. RSO security review adds another 3–5 business days.'],
+          ['What documents are required?',
+           'Each household member needs a passport and Omang (national ID). A clear member photo is also required. Staff members need an Omang and employment details.'],
+          ['Can I edit my application after submitting?',
+           'You can add or update household members and upload replacement documents at any time before your application is activated.'],
+          ['What happens if my application is rejected?',
+           'You will receive an email with the reason. You may reapply after addressing the stated concerns. Contact the Treasurer for guidance.'],
+          ['Can a rejected applicant reapply?',
+           'Yes. Please contact the Treasurer to discuss next steps before submitting a new application.']
+        ]
+      },
+      {
+        topic: 'Payment & Membership',
+        items: [
+          ['When does my membership activate?',
+           'Membership activates once the Treasurer verifies your payment. This typically takes 2–5 business days after submission.'],
+          ['What currencies are accepted?',
+           'Dues can be paid in USD or BWP. Exchange rates are updated daily. Contact the Treasurer if you need a specific rate confirmed.'],
+          ['What payment methods are accepted?',
+           'PayPal, Zelle, SDFCU transfer, and Absa bank transfer are all accepted. Instructions are shown on the Payment Verification page.'],
+          ['Can I get a refund?',
+           'Membership dues are generally non-refundable. Contact the Treasurer directly if you have exceptional circumstances.'],
+          ['What is the membership year?',
+           'The GEA membership year runs from August 1 to July 31. Dues are pro-rated by quarter if you join mid-year.']
+        ]
+      },
+      {
+        topic: 'Household & Family Members',
+        items: [
+          ['Can I add family members after activation?',
+           'Yes. Use the My Household section to add a spouse, children, or a staff member at any time.'],
+          ['What is the age threshold for children?',
+           'Children aged 15 gain unaccompanied access to certain facilities. At age 16, they become eligible for adult membership in their own right.'],
+          ['How many staff members can I register?',
+           'Each household may register one staff member (e.g. nanny or driver). Staff have limited access and cannot make reservations independently.'],
+          ['Can I remove a family member?',
+           'Yes. Use the Remove button in the My Household section. Removals are permanent and cannot be undone from the portal.'],
+          ['Does a spouse need separate membership?',
+           'No. A spouse is included under the household membership at no additional cost for Family membership categories.']
+        ]
+      },
+      {
+        topic: 'Technical & Access',
+        items: [
+          ['How do I reset my password?',
+           'Use the "Forgot password?" link on the login page, or contact the Treasurer to have a new temporary password issued.'],
+          ['Why can\'t I see certain sections?',
+           'Some sections only appear once your application reaches a certain stage. For example, Payment Verification is only shown once your application is approved.'],
+          ['My documents show as pending — what does that mean?',
+           'Pending means your upload is awaiting review by the RSO and then GEA Admin. This normally takes 3–5 business days. No action needed from you.'],
+          ['How do I check the status of my payment?',
+           'Visit the Payment Verification section. The current status (Submitted, Verified, or Clarification Needed) is shown there.']
+        ]
+      }
+    ];
+
+    faqTopics.forEach(function(topicGroup) {
+      var topicHeader = document.createElement('h4');
+      topicHeader.style.margin = '16px 0 8px';
+      topicHeader.style.color = '#0A3161';
+      topicHeader.textContent = topicGroup.topic;
+      faqCard.appendChild(topicHeader);
+
+      topicGroup.items.forEach(function(qa) {
+        var item = document.createElement('div');
+        item.style.cssText = 'border:1px solid #e0e0e0;border-radius:4px;margin-bottom:6px;overflow:hidden;';
+
+        var question = document.createElement('button');
+        question.style.cssText = 'width:100%;text-align:left;padding:10px 12px;background:#f9f9f9;' +
+          'border:none;cursor:pointer;font-size:14px;font-weight:bold;display:flex;' +
+          'justify-content:space-between;align-items:center;min-height:44px;';
+        var qText = document.createElement('span');
+        qText.textContent = qa[0];
+        var arrow = document.createElement('span');
+        arrow.textContent = '+';
+        arrow.style.fontSize = '18px';
+        arrow.style.color = '#666';
+        question.appendChild(qText);
+        question.appendChild(arrow);
+
+        var answer = document.createElement('div');
+        answer.style.cssText = 'display:none;padding:10px 12px;font-size:14px;color:#444;' +
+          'border-top:1px solid #e0e0e0;background:#fff;';
+        answer.textContent = qa[1];
+
+        question.onclick = (function(ans, arr) {
+          return function() {
+            var open = ans.style.display !== 'none';
+            ans.style.display = open ? 'none' : 'block';
+            arr.textContent = open ? '+' : '−';
+          };
+        })(answer, arrow);
+
+        item.appendChild(question);
+        item.appendChild(answer);
+        faqCard.appendChild(item);
+      });
+    });
+
+    wrapper.appendChild(faqCard);
+
+    // ── CONTACT FORM ─────────────────────────────────────────
+    var formCard = document.createElement('div');
+    formCard.className = 'card';
+    formCard.style.padding = '16px';
+    formCard.style.marginBottom = '12px';
+
+    var formTitle = document.createElement('h3');
+    formTitle.className = 'card-title';
+    formTitle.textContent = 'Contact the Treasurer';
+    formCard.appendChild(formTitle);
+
+    var desc = document.createElement('p');
+    desc.style.color = '#555';
+    desc.style.marginBottom = '16px';
+    desc.textContent = 'Send a message directly to the Treasurer. You will receive a reply at your email address within 1–2 business days.';
+    formCard.appendChild(desc);
+
+    // Subject dropdown
+    var subjectSel = document.createElement('select');
+    subjectSel.style.cssText = 'width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;' +
+      'font-size:14px;margin-bottom:12px;min-height:44px;box-sizing:border-box;';
+    [
+      'Payment Question',
+      'Application Status',
+      'Household Update',
+      'Document Question',
+      'General Inquiry'
+    ].forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt;
+      subjectSel.appendChild(o);
+    });
+    formCard.appendChild(_buildHelpLabel('Subject'));
+    formCard.appendChild(subjectSel);
+
+    // Message
+    var messageArea = document.createElement('textarea');
+    messageArea.style.cssText = 'width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;' +
+      'font-size:14px;box-sizing:border-box;resize:vertical;min-height:120px;';
+    messageArea.maxLength = 1000;
+    messageArea.placeholder = 'Describe your question or issue (max 1000 characters)...';
+    formCard.appendChild(_buildHelpLabel('Message *'));
+    formCard.appendChild(messageArea);
+
+    var charCount = document.createElement('div');
+    charCount.style.cssText = 'text-align:right;font-size:12px;color:#888;margin-top:4px;';
+    charCount.textContent = '0 / 1000';
+    messageArea.oninput = function() {
+      charCount.textContent = messageArea.value.length + ' / 1000';
+    };
+    formCard.appendChild(charCount);
+
+    // Urgent checkbox
+    var urgentRow = document.createElement('div');
+    urgentRow.style.cssText = 'display:flex;align-items:center;gap:8px;margin:12px 0;';
+    var urgentChk = document.createElement('input');
+    urgentChk.type = 'checkbox';
+    urgentChk.id = 'contactUrgent';
+    urgentChk.style.width = '18px';
+    urgentChk.style.height = '18px';
+    var urgentLabel = document.createElement('label');
+    urgentLabel.htmlFor = 'contactUrgent';
+    urgentLabel.textContent = 'Mark as urgent';
+    urgentLabel.style.fontSize = '14px';
+    urgentRow.appendChild(urgentChk);
+    urgentRow.appendChild(urgentLabel);
+    formCard.appendChild(urgentRow);
+
+    var formError = document.createElement('p');
+    formError.style.cssText = 'color:#c62828;display:none;margin:8px 0;';
+    var formSuccess = document.createElement('p');
+    formSuccess.style.cssText = 'color:#2e7d32;display:none;margin:8px 0;';
+    formCard.appendChild(formError);
+    formCard.appendChild(formSuccess);
+
+    var sendBtn = document.createElement('button');
+    sendBtn.className = 'btn btn-primary';
+    sendBtn.style.minHeight = '44px';
+    sendBtn.textContent = 'Send Message';
+    sendBtn.onclick = function() {
+      var msg = messageArea.value.trim();
+      if (!msg) {
+        formError.textContent = 'Please enter a message.';
+        formError.style.display = 'block';
+        formSuccess.style.display = 'none';
+        return;
+      }
+      formError.style.display = 'none';
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+
+      apiCall('send_contact_message', {
+        subject: subjectSel.value,
+        message: msg,
+        urgent:  urgentChk.checked
+      }).then(function(res) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send Message';
+        if (!res.success) {
+          formError.textContent = res.message || 'Failed to send message.';
+          formError.style.display = 'block';
+          return;
+        }
+        messageArea.value = '';
+        charCount.textContent = '0 / 1000';
+        urgentChk.checked = false;
+        formSuccess.textContent = 'Message sent. The Treasurer will reply within 1-2 business days.';
+        formSuccess.style.display = 'block';
+      }).catch(function(err) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send Message';
+        formError.textContent = 'Error: ' + err.message;
+        formError.style.display = 'block';
+      });
+    };
+    formCard.appendChild(sendBtn);
+    wrapper.appendChild(formCard);
+
+    // ── CONTACT INFO ──────────────────────────────────────────
+    var infoCard = document.createElement('div');
+    infoCard.className = 'card';
+    infoCard.style.padding = '16px';
+
+    var infoTitle = document.createElement('h3');
+    infoTitle.className = 'card-title';
+    infoTitle.textContent = 'Contact Information';
+    infoCard.appendChild(infoTitle);
+
+    [
+      ['Email', 'treasurer@geabotswana.org'],
+      ['Typical Response Time', '1–2 business days'],
+      ['Portal Support', 'board@geabotswana.org']
+    ].forEach(function(row) {
+      var r = document.createElement('div');
+      r.style.cssText = 'display:flex;padding:8px 0;border-bottom:1px solid #eee;font-size:14px;';
+      var label = document.createElement('span');
+      label.style.cssText = 'font-weight:bold;width:180px;flex-shrink:0;';
+      label.textContent = row[0] + ':';
+      var val = document.createElement('span');
+      val.textContent = row[1];
+      r.appendChild(label);
+      r.appendChild(val);
+      infoCard.appendChild(r);
+    });
+
+    wrapper.appendChild(infoCard);
+    return wrapper;
+  }
+
+  function _buildHelpLabel(text) {
+    var label = document.createElement('label');
+    label.style.cssText = 'display:block;font-weight:bold;font-size:13px;margin-bottom:4px;';
+    label.textContent = text;
+    return label;
+  }
+
+  // ─── NMP.6: HOUSEHOLD MANAGEMENT ────────────────────────────
+
+  /**
+   * Builds the My Household section. Makes an API call to fetch members,
+   * then renders overview, family, and staff cards.
+   */
+  function buildApplicantHouseholdSection() {
+    var wrapper = document.createElement('div');
+
+    var loadingCard = document.createElement('div');
+    loadingCard.className = 'card';
+    loadingCard.style.padding = '16px';
+    var loadingText = document.createElement('p');
+    loadingText.style.color = '#666';
+    loadingText.textContent = 'Loading household members...';
+    loadingCard.appendChild(loadingText);
+    wrapper.appendChild(loadingCard);
+
+    apiCall('get_household_members', {}).then(function(res) {
+      if (!res.success) {
+        wrapper.innerHTML = '';
+        var errCard = document.createElement('div');
+        errCard.className = 'card';
+        errCard.style.padding = '16px';
+        var errText = document.createElement('p');
+        errText.style.color = '#c62828';
+        errText.textContent = 'Could not load household: ' + (res.message || 'Unknown error');
+        errCard.appendChild(errText);
+        wrapper.appendChild(errCard);
+        return;
+      }
+      var hh      = res.data.household;
+      var members = res.data.members || [];
+      var selfId  = res.data.self_id;
+
+      var family = members.filter(function(m) {
+        return m.relationship_to_primary !== 'Staff';
+      });
+      var staff = members.filter(function(m) {
+        return m.relationship_to_primary === 'Staff';
+      });
+      var hasSpouse = members.some(function(m) {
+        return m.relationship_to_primary === 'Spouse';
+      });
+      var hasStaff = staff.length > 0;
+
+      wrapper.innerHTML = '';
+      wrapper.appendChild(_buildHouseholdOverviewCard(hh, members));
+      wrapper.appendChild(_buildFamilyMembersCard(family, selfId, hh, hasSpouse));
+      wrapper.appendChild(_buildHouseholdStaffCard(staff, selfId, hasStaff));
+    }).catch(function(err) {
+      wrapper.innerHTML = '';
+      var errCard = document.createElement('div');
+      errCard.className = 'card';
+      errCard.style.padding = '16px';
+      var errText = document.createElement('p');
+      errText.style.color = '#c62828';
+      errText.textContent = 'Error loading household: ' + err.message;
+      errCard.appendChild(errText);
+      wrapper.appendChild(errCard);
+    });
+
+    return wrapper;
+  }
+
+  function _buildHouseholdOverviewCard(hh, members) {
     var card = document.createElement('div');
     card.className = 'card';
     card.style.padding = '16px';
+    card.style.marginBottom = '12px';
+
     var title = document.createElement('h3');
     title.className = 'card-title';
-    title.textContent = 'Help & Contact';
+    title.textContent = 'Household Overview';
     card.appendChild(title);
-    var faq = document.createElement('ul');
-    faq.style.margin = '0 0 16px 20px';
-    ['Application review normally takes 1-2 weeks once documents are complete.', 'Payment verification normally takes 2-5 business days.', 'You can upload replacement documents at any time before activation.'].forEach(function(item) {
-      var li = document.createElement('li');
-      li.textContent = item;
-      faq.appendChild(li);
+
+    var primary = members.filter(function(m) {
+      return m.relationship_to_primary === 'Primary';
+    })[0] || {};
+    var familyCount = members.filter(function(m) {
+      return m.relationship_to_primary !== 'Staff';
+    }).length;
+    var staffCount = members.filter(function(m) {
+      return m.relationship_to_primary === 'Staff';
+    }).length;
+
+    [
+      ['Household Name', hh.household_name || '—'],
+      ['Household ID',   hh.household_id   || '—'],
+      ['Type',           hh.household_type  || '—'],
+      ['Primary Contact', (primary.first_name || '') + ' ' + (primary.last_name || '')],
+      ['Email',          primary.email      || '—'],
+      ['Phone',          (primary.country_code_primary ? '+' + primary.country_code_primary + ' ' : '') + (primary.phone_primary || '—')],
+      ['Family Members', String(familyCount)],
+      ['Staff Members',  String(staffCount)]
+    ].forEach(function(pair) {
+      var row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.padding = '6px 0';
+      row.style.borderBottom = '1px solid #eee';
+      var label = document.createElement('span');
+      label.style.fontWeight = 'bold';
+      label.style.width = '160px';
+      label.style.flexShrink = '0';
+      label.textContent = pair[0] + ':';
+      var val = document.createElement('span');
+      val.textContent = pair[1];
+      row.appendChild(label);
+      row.appendChild(val);
+      card.appendChild(row);
     });
-    card.appendChild(faq);
-    var contact = document.createElement('a');
-    contact.href = 'mailto:treasurer@geabotswana.org?subject=GEA%20Portal%20Question';
-    contact.className = 'btn btn-primary';
-    contact.style.display = 'inline-block';
-    contact.textContent = 'Contact Treasurer';
-    card.appendChild(contact);
+
     return card;
   }
+
+  function _buildFamilyMembersCard(family, selfId, hh, hasSpouse) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.padding = '16px';
+    card.style.marginBottom = '12px';
+
+    var title = document.createElement('h3');
+    title.className = 'card-title';
+    title.textContent = 'Family Members';
+    card.appendChild(title);
+
+    if (family.length === 0) {
+      var empty = document.createElement('p');
+      empty.style.color = '#666';
+      empty.style.padding = '8px 0';
+      empty.textContent = 'No family members listed.';
+      card.appendChild(empty);
+    }
+
+    family.forEach(function(m) {
+      var row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.padding = '10px 0';
+      row.style.borderBottom = '1px solid #eee';
+
+      var info = document.createElement('div');
+      var name = document.createElement('strong');
+      name.textContent = (m.first_name || '') + ' ' + (m.last_name || '');
+      info.appendChild(name);
+      var rel = document.createElement('span');
+      rel.style.marginLeft = '8px';
+      rel.style.color = '#666';
+      rel.style.fontSize = '13px';
+      rel.textContent = '(' + (m.relationship_to_primary || '') + ')';
+      info.appendChild(rel);
+      if (m.date_of_birth) {
+        var dob = document.createElement('div');
+        dob.style.fontSize = '12px';
+        dob.style.color = '#888';
+        dob.textContent = 'DOB: ' + m.date_of_birth;
+        info.appendChild(dob);
+      }
+      row.appendChild(info);
+
+      var btns = document.createElement('div');
+      btns.style.display = 'flex';
+      btns.style.gap = '6px';
+
+      if (m.relationship_to_primary !== 'Primary') {
+        var editBtn = document.createElement('button');
+        editBtn.className = 'btn btn-small';
+        editBtn.style.minHeight = '36px';
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = (function(ind) {
+          return function() { _openEditMemberModal(ind); };
+        })(m);
+        btns.appendChild(editBtn);
+
+        if (m.individual_id !== selfId) {
+          var removeBtn = document.createElement('button');
+          removeBtn.className = 'btn btn-small btn-danger';
+          removeBtn.style.minHeight = '36px';
+          removeBtn.textContent = 'Remove';
+          removeBtn.onclick = (function(ind) {
+            return function() { _openRemoveMemberModal(ind); };
+          })(m);
+          btns.appendChild(removeBtn);
+        }
+      }
+
+      row.appendChild(btns);
+      card.appendChild(row);
+    });
+
+    var addBtns = document.createElement('div');
+    addBtns.style.display = 'flex';
+    addBtns.style.gap = '8px';
+    addBtns.style.marginTop = '12px';
+
+    if (!hasSpouse && hh.household_type === 'Family') {
+      var addSpouseBtn = document.createElement('button');
+      addSpouseBtn.className = 'btn';
+      addSpouseBtn.style.minHeight = '44px';
+      addSpouseBtn.textContent = '+ Add Spouse';
+      addSpouseBtn.onclick = function() { _openAddMemberModal('Spouse'); };
+      addBtns.appendChild(addSpouseBtn);
+    }
+
+    var addChildBtn = document.createElement('button');
+    addChildBtn.className = 'btn';
+    addChildBtn.style.minHeight = '44px';
+    addChildBtn.textContent = '+ Add Child';
+    addChildBtn.onclick = function() { _openAddMemberModal('Child'); };
+    addBtns.appendChild(addChildBtn);
+
+    card.appendChild(addBtns);
+    return card;
+  }
+
+  function _buildHouseholdStaffCard(staff, selfId, hasStaff) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.padding = '16px';
+    card.style.marginBottom = '12px';
+
+    var title = document.createElement('h3');
+    title.className = 'card-title';
+    title.textContent = 'Household Staff';
+    card.appendChild(title);
+
+    if (staff.length === 0) {
+      var empty = document.createElement('p');
+      empty.style.color = '#666';
+      empty.style.padding = '8px 0';
+      empty.textContent = 'No staff members listed.';
+      card.appendChild(empty);
+    }
+
+    staff.forEach(function(m) {
+      var row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.padding = '10px 0';
+      row.style.borderBottom = '1px solid #eee';
+
+      var info = document.createElement('div');
+      var name = document.createElement('strong');
+      name.textContent = (m.first_name || '') + ' ' + (m.last_name || '');
+      info.appendChild(name);
+      if (m.employment_role) {
+        var role = document.createElement('div');
+        role.style.fontSize = '13px';
+        role.style.color = '#555';
+        role.textContent = 'Role: ' + m.employment_role;
+        info.appendChild(role);
+      }
+      if (m.employment_start_date) {
+        var dates = document.createElement('div');
+        dates.style.fontSize = '12px';
+        dates.style.color = '#888';
+        dates.textContent = 'From: ' + m.employment_start_date +
+          (m.employment_end_date ? '  To: ' + m.employment_end_date : '');
+        info.appendChild(dates);
+      }
+      row.appendChild(info);
+
+      var btns = document.createElement('div');
+      btns.style.display = 'flex';
+      btns.style.gap = '6px';
+
+      var editBtn = document.createElement('button');
+      editBtn.className = 'btn btn-small';
+      editBtn.style.minHeight = '36px';
+      editBtn.textContent = 'Edit Profile';
+      editBtn.onclick = (function(ind) {
+        return function() { _openEditMemberModal(ind); };
+      })(m);
+      btns.appendChild(editBtn);
+
+      if (m.individual_id !== selfId) {
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'btn btn-small btn-danger';
+        removeBtn.style.minHeight = '36px';
+        removeBtn.textContent = 'Remove';
+        removeBtn.onclick = (function(ind) {
+          return function() { _openRemoveMemberModal(ind); };
+        })(m);
+        btns.appendChild(removeBtn);
+      }
+
+      row.appendChild(btns);
+      card.appendChild(row);
+    });
+
+    if (!hasStaff) {
+      var addBtn = document.createElement('button');
+      addBtn.className = 'btn';
+      addBtn.style.minHeight = '44px';
+      addBtn.style.marginTop = '12px';
+      addBtn.textContent = '+ Add Staff Member';
+      addBtn.onclick = function() { _openAddMemberModal('Staff'); };
+      card.appendChild(addBtn);
+    }
+
+    return card;
+  }
+
+  function _closeHouseholdModal() {
+    var overlay = document.getElementById('hhModalOverlay');
+    if (overlay) overlay.parentNode.removeChild(overlay);
+  }
+
+  function _refreshHouseholdSection() {
+    renderApplicantPortalSection('household');
+  }
+
+  function _buildModalOverlay(titleText) {
+    var overlay = document.createElement('div');
+    overlay.id = 'hhModalOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;' +
+      'background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+    var modal = document.createElement('div');
+    modal.style.cssText = 'background:#fff;border-radius:8px;padding:24px;width:90%;max-width:480px;' +
+      'max-height:90vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+
+    var h = document.createElement('h3');
+    h.style.marginTop = '0';
+    h.textContent = titleText;
+    modal.appendChild(h);
+
+    overlay.appendChild(modal);
+    return { overlay: overlay, modal: modal };
+  }
+
+  function _buildLabeledInput(labelText, inputEl) {
+    var group = document.createElement('div');
+    group.style.marginBottom = '12px';
+    var label = document.createElement('label');
+    label.style.display = 'block';
+    label.style.marginBottom = '4px';
+    label.style.fontWeight = 'bold';
+    label.style.fontSize = '13px';
+    label.textContent = labelText;
+    group.appendChild(label);
+    group.appendChild(inputEl);
+    return group;
+  }
+
+  function _buildTextInput(placeholder, value) {
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.style.cssText = 'width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;' +
+      'box-sizing:border-box;font-size:14px;';
+    input.placeholder = placeholder || '';
+    input.value = value || '';
+    return input;
+  }
+
+  function _buildDateInput(value) {
+    var input = document.createElement('input');
+    input.type = 'date';
+    input.style.cssText = 'width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;' +
+      'box-sizing:border-box;font-size:14px;';
+    input.value = value || '';
+    return input;
+  }
+
+  function _buildModalButtons(submitText, onSubmit) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
+
+    var cancel = document.createElement('button');
+    cancel.className = 'btn';
+    cancel.style.minHeight = '44px';
+    cancel.textContent = 'Cancel';
+    cancel.onclick = _closeHouseholdModal;
+
+    var submit = document.createElement('button');
+    submit.className = 'btn btn-primary';
+    submit.style.minHeight = '44px';
+    submit.textContent = submitText;
+    submit.onclick = onSubmit;
+
+    row.appendChild(cancel);
+    row.appendChild(submit);
+    return { row: row, submitBtn: submit };
+  }
+
+  function _openAddMemberModal(relationship) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Add ' + relationship);
+    var modal = parts.modal;
+
+    var firstNameInput  = _buildTextInput('First name');
+    var lastNameInput   = _buildTextInput('Last name');
+    var emailInput      = _buildTextInput('Email (optional)');
+    var phoneInput      = _buildTextInput('Phone number');
+    var dobInput        = _buildDateInput('');
+
+    modal.appendChild(_buildLabeledInput('First Name *', firstNameInput));
+    modal.appendChild(_buildLabeledInput('Last Name *', lastNameInput));
+    modal.appendChild(_buildLabeledInput('Email', emailInput));
+
+    var omangInput, roleInput, startInput, endInput;
+
+    if (relationship === 'Child') {
+      modal.appendChild(_buildLabeledInput('Date of Birth *', dobInput));
+    } else {
+      modal.appendChild(_buildLabeledInput('Phone', phoneInput));
+    }
+
+    if (relationship === 'Staff') {
+      roleInput  = _buildTextInput('e.g. Nanny, Driver');
+      startInput = _buildDateInput('');
+      endInput   = _buildDateInput('');
+      omangInput = _buildTextInput('Omang / National ID number');
+      modal.appendChild(_buildLabeledInput('Role *', roleInput));
+      modal.appendChild(_buildLabeledInput('Start Date', startInput));
+      modal.appendChild(_buildLabeledInput('End Date', endInput));
+      modal.appendChild(_buildLabeledInput('Omang Number *', omangInput));
+    }
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Add ' + relationship, function() {
+      var params = {
+        relationship: relationship,
+        first_name:   firstNameInput.value.trim(),
+        last_name:    lastNameInput.value.trim(),
+        email:        emailInput.value.trim()
+      };
+
+      if (relationship === 'Child') {
+        params.date_of_birth = dobInput.value;
+      } else {
+        params.phone_primary = phoneInput.value.trim();
+      }
+
+      if (relationship === 'Staff') {
+        params.omang_number          = omangInput.value.trim();
+        params.employment_role       = roleInput.value.trim();
+        params.employment_start_date = startInput.value;
+        params.employment_end_date   = endInput.value;
+      }
+
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Adding...';
+
+      apiCall('add_household_member', params).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to add member.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Add ' + relationship;
+          return;
+        }
+        _closeHouseholdModal();
+        _refreshHouseholdSection();
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Add ' + relationship;
+      });
+    });
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
+  function _openEditMemberModal(member) {
+    _closeHouseholdModal();
+    var rel = member.relationship_to_primary || '';
+    var parts = _buildModalOverlay('Edit ' + rel + ': ' + (member.first_name || '') + ' ' + (member.last_name || ''));
+    var modal = parts.modal;
+
+    var firstNameInput = _buildTextInput('First name', member.first_name);
+    var lastNameInput  = _buildTextInput('Last name',  member.last_name);
+    var emailInput     = _buildTextInput('Email',      member.email);
+    var phoneInput     = _buildTextInput('Phone',      member.phone_primary);
+    var dobInput       = _buildDateInput(member.date_of_birth);
+
+    modal.appendChild(_buildLabeledInput('First Name', firstNameInput));
+    modal.appendChild(_buildLabeledInput('Last Name',  lastNameInput));
+    modal.appendChild(_buildLabeledInput('Email',      emailInput));
+    modal.appendChild(_buildLabeledInput('Phone',      phoneInput));
+
+    var omangInput, roleInput, startInput, endInput;
+
+    if (rel === 'Child') {
+      modal.appendChild(_buildLabeledInput('Date of Birth', dobInput));
+    }
+
+    if (rel === 'Staff') {
+      roleInput  = _buildTextInput('Role', member.employment_role);
+      startInput = _buildDateInput(member.employment_start_date);
+      endInput   = _buildDateInput(member.employment_end_date);
+      omangInput = _buildTextInput('Omang Number', member.omang_number);
+      modal.appendChild(_buildLabeledInput('Role', roleInput));
+      modal.appendChild(_buildLabeledInput('Start Date', startInput));
+      modal.appendChild(_buildLabeledInput('End Date', endInput));
+      modal.appendChild(_buildLabeledInput('Omang Number', omangInput));
+    }
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Save Changes', function() {
+      var params = {
+        individual_id: member.individual_id,
+        first_name:    firstNameInput.value.trim(),
+        last_name:     lastNameInput.value.trim(),
+        email:         emailInput.value.trim(),
+        phone_primary: phoneInput.value.trim()
+      };
+      if (rel === 'Child')  params.date_of_birth = dobInput.value;
+      if (rel === 'Staff') {
+        params.employment_role       = roleInput.value.trim();
+        params.employment_start_date = startInput.value;
+        params.employment_end_date   = endInput.value;
+        params.omang_number          = omangInput.value.trim();
+      }
+
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Saving...';
+
+      apiCall('edit_household_member', params).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to save changes.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Save Changes';
+          return;
+        }
+        _closeHouseholdModal();
+        _refreshHouseholdSection();
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Save Changes';
+      });
+    });
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
+  function _openRemoveMemberModal(member) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Remove Household Member');
+    var modal = parts.modal;
+
+    var warning = document.createElement('p');
+    warning.style.color = '#555';
+    var nameSpan = document.createElement('strong');
+    nameSpan.textContent = (member.first_name || '') + ' ' + (member.last_name || '');
+    warning.textContent = 'Are you sure you want to remove ';
+    warning.appendChild(nameSpan);
+    warning.appendChild(document.createTextNode(' from your household? This cannot be undone.'));
+    modal.appendChild(warning);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Confirm Remove', function() {
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Removing...';
+      apiCall('remove_household_member', { individual_id: member.individual_id }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to remove member.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Confirm Remove';
+          return;
+        }
+        _closeHouseholdModal();
+        _refreshHouseholdSection();
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Confirm Remove';
+      });
+    });
+
+    // Style confirm button as danger
+    btns.submitBtn.className = 'btn btn-danger';
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
+  // ─── END NMP.6 ───────────────────────────────────────────────
 
   function getApplicantStatusBadgeColor(status) {
     if (status === 'activated') return '#2E7D32';
@@ -5251,30 +6260,61 @@ function submitLogin(event) {
         // Body
         var tbody = document.createElement('tbody');
         reservations.forEach(function(res) {
-          var canCancel = res.status === 'STATUS_PENDING' || res.status === 'STATUS_CONFIRMED';
+          var canCancel = res.status === 'Pending' || res.status === 'Confirmed' || res.status === 'Tentative';
 
           var row = document.createElement('tr');
 
           // Date
           var dateTd = document.createElement('td');
-          dateTd.textContent = res.event_date || '—';
+          var dateStr = res.event_date ? new Date(res.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+          dateTd.textContent = dateStr;
           row.appendChild(dateTd);
 
-          // Facility
+          // Facility + time
           var facilityTd = document.createElement('td');
-          facilityTd.textContent = res.facility || '—';
+          var facilityText = (res.facility || '—');
+          if (res.start_time && res.end_time) {
+            facilityText += ' (' + new Date(res.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) +
+                            ' – ' + new Date(res.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ')';
+          }
+          facilityTd.textContent = facilityText;
           row.appendChild(facilityTd);
 
           // Status
           var statusTd = document.createElement('td');
           var statusSpan = document.createElement('span');
-          statusSpan.className = 'badge badge-' + (res.status === 'STATUS_CONFIRMED' ? 'confirmed' : (res.status === 'STATUS_PENDING' ? 'pending' : 'cancelled'));
+          var statusClass = { 'Pending': 'pending', 'Confirmed': 'confirmed', 'Tentative': 'confirmed',
+                              'Approved': 'approved', 'Cancelled': 'cancelled', 'Completed': 'cancelled' };
+          statusSpan.className = 'badge badge-' + (statusClass[res.status] || 'pending');
           statusSpan.textContent = res.status || 'Pending';
           statusTd.appendChild(statusSpan);
           row.appendChild(statusTd);
 
           // Action
           var actionTd = document.createElement('td');
+          var needsGuestList = res.has_guests && !res.guest_list_submitted &&
+                               (res.status === 'Confirmed' || res.status === 'Tentative' || res.status === 'Approved');
+          var guestListDone  = res.has_guests && res.guest_list_submitted;
+
+          if (needsGuestList) {
+            var glBtn = document.createElement('button');
+            glBtn.className = 'btn btn-primary btn-small';
+            glBtn.textContent = 'Submit Guest List';
+            glBtn.style.marginBottom = '4px';
+            glBtn.onclick = (function(resId, facility, eventDate) {
+              return function() { openGuestListModal(resId, facility, eventDate); };
+            })(res.reservation_id, res.facility, res.event_date);
+            actionTd.appendChild(glBtn);
+            actionTd.appendChild(document.createElement('br'));
+          }
+          if (guestListDone) {
+            var glBadge = document.createElement('span');
+            glBadge.className = 'badge badge-approved';
+            glBadge.textContent = 'Guest List Submitted';
+            glBadge.style.marginBottom = '4px';
+            actionTd.appendChild(glBadge);
+            actionTd.appendChild(document.createElement('br'));
+          }
           if (canCancel) {
             var cancelBtn = document.createElement('button');
             cancelBtn.className = 'btn btn-danger btn-small';
@@ -5283,7 +6323,8 @@ function submitLogin(event) {
               return function() { cancelReservation(resId); };
             })(res.reservation_id);
             actionTd.appendChild(cancelBtn);
-          } else {
+          }
+          if (!needsGuestList && !guestListDone && !canCancel) {
             actionTd.textContent = '—';
           }
           row.appendChild(actionTd);
@@ -5341,7 +6382,7 @@ function submitLogin(event) {
       }
       
       // Success — reset form and reload
-      document.querySelector('form').reset();
+      event.target.reset();
       alert('Reservation submitted! Status: ' + res.data.status);
       loadReservations();
     });
@@ -5370,7 +6411,258 @@ function submitLogin(event) {
   document.getElementById('hasGuests').addEventListener('change', function() {
     document.getElementById('guestCountDiv').style.display = this.checked ? 'block' : 'none';
   });
-  
+
+  // ---- GUEST LIST MODAL ----
+
+  var _guestListReservationId = null;
+
+  // Cached saved guest profiles for the current household
+  var _savedGuestProfiles = [];
+
+  /**
+   * Opens the guest list submission modal for a reservation.
+   * Also loads the household's saved guest profiles.
+   */
+  function openGuestListModal(resId, facility, eventDate) {
+    _guestListReservationId = resId;
+    var dateStr = eventDate
+      ? new Date(eventDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      : '';
+    document.getElementById('guestListModalMeta').textContent =
+      facility + (dateStr ? ' — ' + dateStr : '') + ' (' + resId + ')';
+    document.getElementById('guestListRows').innerHTML = '';
+    document.getElementById('savedGuestsSection').style.display = 'none';
+    _savedGuestProfiles = [];
+    addGuestRow(null); // start with one blank row
+    document.getElementById('guestListModal').style.display = 'flex';
+
+    // Load saved profiles in background
+    apiCall('get_guest_profiles', {}).then(function(res) {
+      if (!res.success || !res.data || !res.data.profiles || !res.data.profiles.length) return;
+      _savedGuestProfiles = res.data.profiles;
+      var picker = document.getElementById('savedGuestPicker');
+      picker.innerHTML = '';
+      var placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '-- Select a saved guest --';
+      picker.appendChild(placeholder);
+      _savedGuestProfiles.forEach(function(profile, idx) {
+        var opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = profile.last_name + ', ' + profile.first_name +
+          (profile.id_number ? ' (' + maskIdNumber(profile.id_number) + ')' : '');
+        picker.appendChild(opt);
+      });
+      document.getElementById('savedGuestsSection').style.display = 'block';
+    });
+  }
+
+  /**
+   * Closes the guest list modal and resets it.
+   */
+  function closeGuestListModal() {
+    document.getElementById('guestListModal').style.display = 'none';
+    _guestListReservationId = null;
+    document.getElementById('guestListRows').innerHTML = '';
+  }
+
+  /**
+   * Masks an ID number for display: shows last 4 characters, rest as asterisks.
+   * Example: "AB12345678" → "******5678"
+   */
+  function maskIdNumber(id) {
+    if (!id || id.length <= 4) return id || '';
+    return id.slice(0, -4).replace(/./g, '*') + id.slice(-4);
+  }
+
+  /**
+   * Adds a saved guest from the picker as a new pre-filled row.
+   */
+  function addSavedGuest() {
+    var picker = document.getElementById('savedGuestPicker');
+    var idx = parseInt(picker.value, 10);
+    if (isNaN(idx) || !_savedGuestProfiles[idx]) return;
+    addGuestRow(_savedGuestProfiles[idx]);
+    picker.value = '';
+  }
+
+  /**
+   * Adds a guest input row to the modal.
+   * @param {Object|null} prefill  Optional saved guest profile to pre-populate.
+   */
+  function addGuestRow(prefill) {
+    var container = document.getElementById('guestListRows');
+    var rowDiv = document.createElement('div');
+    rowDiv.className = 'guest-row';
+    rowDiv.style.cssText = 'border:1px solid #e0e0e0; border-radius:6px; padding:12px; margin-bottom:10px; background:#fafafa; position:relative;';
+
+    // Row label + remove button
+    var rowHeader = document.createElement('div');
+    rowHeader.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;';
+    var rowLabel = document.createElement('span');
+    rowLabel.style.cssText = 'font-size:13px; font-weight:600; color:#555;';
+    var rowNum = container.querySelectorAll('.guest-row').length + 1;
+    rowLabel.textContent = 'Guest ' + rowNum;
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn btn-danger btn-small';
+    removeBtn.textContent = 'Remove';
+    removeBtn.style.fontSize = '12px';
+    removeBtn.onclick = (function(rd) { return function() {
+      if (document.querySelectorAll('.guest-row').length > 1) {
+        rd.parentNode.removeChild(rd);
+        // Renumber remaining rows
+        document.querySelectorAll('.guest-row').forEach(function(r, i) {
+          var lbl = r.querySelector('.guest-row-label');
+          if (lbl) lbl.textContent = 'Guest ' + (i + 1);
+        });
+      }
+    }; })(rowDiv);
+    rowLabel.className = 'guest-row-label';
+    rowHeader.appendChild(rowLabel);
+    rowHeader.appendChild(removeBtn);
+    rowDiv.appendChild(rowHeader);
+
+    // Name fields
+    var nameGrid = document.createElement('div');
+    nameGrid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;';
+
+    var firstInput = document.createElement('input');
+    firstInput.type = 'text'; firstInput.className = 'form-input';
+    firstInput.placeholder = 'First name *';
+    firstInput.setAttribute('data-field', 'first_name');
+    if (prefill) firstInput.value = prefill.first_name || '';
+
+    var lastInput = document.createElement('input');
+    lastInput.type = 'text'; lastInput.className = 'form-input';
+    lastInput.placeholder = 'Last name *';
+    lastInput.setAttribute('data-field', 'last_name');
+    if (prefill) lastInput.value = prefill.last_name || '';
+
+    nameGrid.appendChild(firstInput);
+    nameGrid.appendChild(lastInput);
+    rowDiv.appendChild(nameGrid);
+
+    // Age group + ID number
+    var detailGrid = document.createElement('div');
+    detailGrid.style.cssText = 'display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;';
+
+    var ageSelect = document.createElement('select');
+    ageSelect.className = 'form-input';
+    ageSelect.setAttribute('data-field', 'age_group');
+    [{v:'over_18', t:'Over 18'}, {v:'under_18', t:'Under 18'}].forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt.v; o.textContent = opt.t;
+      ageSelect.appendChild(o);
+    });
+    if (prefill && prefill.age_group) ageSelect.value = prefill.age_group;
+
+    var idInput = document.createElement('input');
+    idInput.type = 'text'; idInput.className = 'form-input';
+    idInput.placeholder = 'ID number (omang/passport) *';
+    idInput.setAttribute('data-field', 'id_number');
+    // Pre-populate full ID from profile; member can edit
+    if (prefill && prefill.id_number) idInput.value = prefill.id_number;
+
+    // Show/hide ID field based on age group
+    function updateIdRequired() {
+      var isOver18 = ageSelect.value === 'over_18';
+      idInput.placeholder = isOver18 ? 'ID number (omang/passport) *' : 'ID number (optional)';
+    }
+    ageSelect.onchange = updateIdRequired;
+    updateIdRequired();
+
+    detailGrid.appendChild(ageSelect);
+    detailGrid.appendChild(idInput);
+    rowDiv.appendChild(detailGrid);
+
+    // Save to profile checkbox
+    var saveRow = document.createElement('label');
+    saveRow.style.cssText = 'display:flex; align-items:center; gap:6px; font-size:13px; color:#555; cursor:pointer;';
+    var saveChk = document.createElement('input');
+    saveChk.type = 'checkbox';
+    saveChk.setAttribute('data-field', 'save_to_profile');
+    // If pre-filled from a saved profile, don't default-check (profile already exists)
+    var saveLabel = document.createTextNode(prefill ? 'Update saved profile for this guest' : 'Save this guest to my profile');
+    saveRow.appendChild(saveChk);
+    saveRow.appendChild(saveLabel);
+    rowDiv.appendChild(saveRow);
+
+    container.appendChild(rowDiv);
+  }
+
+  /**
+   * Collects guest rows and submits the guest list to the backend.
+   */
+  function submitGuestListForm() {
+    if (!_guestListReservationId) return;
+
+    var rows = document.querySelectorAll('.guest-row');
+    var guests = [];
+    var valid = true;
+
+    rows.forEach(function(row) {
+      var firstName = row.querySelector('[data-field="first_name"]').value.trim();
+      var lastName  = row.querySelector('[data-field="last_name"]').value.trim();
+      var ageGroup  = row.querySelector('[data-field="age_group"]').value;
+      var idNumber  = row.querySelector('[data-field="id_number"]').value.trim();
+      var saveChk   = row.querySelector('[data-field="save_to_profile"]');
+      var saveToProfile = saveChk ? saveChk.checked : false;
+
+      // Validation
+      var firstEl = row.querySelector('[data-field="first_name"]');
+      var lastEl  = row.querySelector('[data-field="last_name"]');
+      var idEl    = row.querySelector('[data-field="id_number"]');
+
+      firstEl.style.borderColor = '';
+      lastEl.style.borderColor  = '';
+      idEl.style.borderColor    = '';
+
+      if (!firstName) { valid = false; firstEl.style.borderColor = '#d32f2f'; }
+      if (!lastName)  { valid = false; lastEl.style.borderColor  = '#d32f2f'; }
+      if (ageGroup === 'over_18' && !idNumber) {
+        valid = false; idEl.style.borderColor = '#d32f2f';
+      }
+
+      guests.push({
+        first_name:     firstName,
+        last_name:      lastName,
+        age_group:      ageGroup,
+        id_number:      idNumber,
+        save_to_profile: saveToProfile
+      });
+    });
+
+    if (!valid) { showError('Please fill in all required fields. ID number is required for guests over 18.'); return; }
+
+    var btn = document.getElementById('submitGuestListBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    apiCall('submit_guest_list', {
+      reservation_id: _guestListReservationId,
+      guests: JSON.stringify(guests)
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Submit Guest List';
+
+      if (!res.success) {
+        showError('Failed to submit guest list: ' + res.message);
+        return;
+      }
+
+      closeGuestListModal();
+      if (res.data && res.data.lateSubmission) {
+        alert('Guest list submitted (after the deadline). The RSO has been notified.');
+      } else {
+        alert('Guest list submitted successfully!');
+      }
+      loadReservations();
+    });
+  }
+
+  // ---- END GUEST LIST MODAL ----
+
   // ============================================================ //
   // SECTION: PROFILE                                             //
   // ============================================================ //

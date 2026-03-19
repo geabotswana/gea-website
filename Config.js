@@ -64,6 +64,7 @@ var TAB_MEMBERSHIP_APPLICATIONS = "Membership Applications";  // NOTE: In MEMBER
 // GEA Reservations tabs
 var TAB_RESERVATIONS        = "Reservations";
 var TAB_GUEST_LISTS         = "Guest Lists";
+var TAB_GUEST_PROFILES      = "Guest Profiles";
 var TAB_USAGE_TRACKING      = "Usage Tracking";
 
 // GEA System Backend tabs
@@ -297,6 +298,13 @@ var STATUS_WAITLISTED   = "Waitlisted";   // On waitlist for a taken slot
 var FACILITY_TENNIS     = "Tennis Court";
 var FACILITY_LEOBO      = "Leobo";
 var FACILITY_WHOLE      = "Whole Facility";
+
+// All valid facility names (used for input validation)
+var ALL_FACILITIES = [
+  FACILITY_TENNIS,
+  FACILITY_LEOBO,
+  FACILITY_WHOLE
+];
 
 // Facilities that require board/MGT approval
 var FACILITIES_REQUIRING_APPROVAL = [
@@ -566,7 +574,15 @@ var AUDIT_PHOTO_APPROVED        = "PHOTO_APPROVED";
 var AUDIT_PHOTO_REJECTED        = "PHOTO_REJECTED";
 var AUDIT_LOGIN                 = "LOGIN";
 var AUDIT_LOGOUT                = "LOGOUT";
-var AUDIT_GUEST_LIST_SUBMITTED  = "GUEST_LIST_SUBMITTED";
+var AUDIT_GUEST_LIST_SUBMITTED      = "GUEST_LIST_SUBMITTED";
+var AUDIT_GUEST_LIST_DRAFT_SAVED    = "GUEST_LIST_DRAFT_SAVED";
+var AUDIT_GUEST_LIST_FINALIZED      = "GUEST_LIST_FINALIZED";
+var AUDIT_GUEST_PROFILE_SAVED       = "GUEST_PROFILE_SAVED";
+
+// Guest list submission status values (stored in Guest Lists sheet)
+var GUEST_LIST_STATUS_SUBMITTED     = "submitted";
+var GUEST_LIST_STATUS_IN_REVIEW     = "in_review";
+var GUEST_LIST_STATUS_FINALIZED     = "finalized";
 var AUDIT_APPLICATION_SUBMITTED = "APPLICATION_SUBMITTED";
 var AUDIT_APPLICATION_APPROVED  = "APPLICATION_APPROVED";
 var AUDIT_APPLICATION_DENIED    = "APPLICATION_DENIED";
@@ -592,6 +608,9 @@ var AUDIT_FILE_SUBMISSION_RSO_APPROVED    = "FILE_SUBMISSION_RSO_APPROVED";
 var AUDIT_FILE_SUBMISSION_RSO_REJECTED    = "FILE_SUBMISSION_RSO_REJECTED";
 var AUDIT_FILE_SUBMISSION_GEA_APPROVED    = "FILE_SUBMISSION_GEA_APPROVED";
 var AUDIT_FILE_SUBMISSION_GEA_REJECTED    = "FILE_SUBMISSION_GEA_REJECTED";
+
+// Contact form
+var AUDIT_CONTACT_MESSAGE_SENT            = "CONTACT_MESSAGE_SENT";
 
 // Email template system (Drive-based pipeline)
 var AUDIT_EMAIL_TEMPLATE_LOADED           = "EMAIL_TEMPLATE_LOADED";

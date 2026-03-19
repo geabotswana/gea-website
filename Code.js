@@ -188,11 +188,23 @@ function _routeAction(action, params) {
     case "request_employment": return _handleRequestEmploymentVerification(params);
     case "get_submission_history": return _handleGetSubmissionHistory(params);
     case "rso_approve": return _handleRsoApprovalLink(params);
+    case "send_contact_message":     return _handleSendContactMessage(params);
+    case "get_household_members":    return _handleGetHouseholdMembers(params);
+    case "add_household_member":     return _handleAddHouseholdMember(params);
+    case "remove_household_member":  return _handleRemoveHouseholdMember(params);
+    case "edit_household_member":    return _handleEditHouseholdMember(params);
+    case "submit_guest_list":        return _handleSubmitGuestList(params);
+    case "get_guest_list":           return _handleGetGuestList(params);
+    case "get_guest_profiles":       return _handleGetGuestProfiles(params);
 
     // ── BOARD / ADMIN ────────────────────────────────────────
     case "admin_pending": return _handleAdminPending(params);
     case "admin_approve": return _handleAdminApprove(params);
     case "admin_deny":    return _handleAdminDeny(params);
+    case "admin_guest_lists":              return _handleAdminGuestLists(params);
+    case "admin_save_guest_list_draft":    return _handleAdminSaveGuestListDraft(params);
+    case "admin_finalize_guest_list":      return _handleAdminFinalizeGuestList(params);
+    case "admin_guest_histories":          return _handleAdminGuestHistories(params);
     case "admin_members": return _handleAdminMembers(params);
     case "admin_photo":   return _handleAdminPhoto(params);
     case "admin_applications":       return _handleAdminApplications(params);
@@ -1735,6 +1747,314 @@ function _handleRsoApprovalLink(p) {
   }
 }
 
+// ============================================================
+// CONTACT FORM HANDLER
+// ============================================================
+
+/**
+ * HANDLER: _handleSendContactMessage
+ * PURPOSE: Send a contact form message from a portal user to the Treasurer.
+ *          Logs the action to the Audit Log.
+ *
+ * @param {Object} p  { token, subject, message, urgent }
+ * @returns {Object}  {}
+ */
+function _handleSendContactMessage(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var subject = sanitizeInput(String(p.subject || "").trim());
+    var message = sanitizeInput(String(p.message || "").trim());
+
+    if (!subject) return errorResponse("subject is required.", "INVALID_PARAM");
+    if (!message) return errorResponse("message is required.", "INVALID_PARAM");
+    if (message.length > 1000) {
+      return errorResponse("message must be 1000 characters or fewer.", "INVALID_PARAM");
+    }
+
+    var member = getMemberByEmail(auth.session.email);
+    var senderName  = member ? (member.first_name + " " + member.last_name).trim() : auth.session.email;
+    var senderEmail = member ? (member.email || auth.session.email) : auth.session.email;
+    var replyTo     = p.reply_email ? sanitizeInput(String(p.reply_email).trim()) : senderEmail;
+    var urgent      = p.urgent === true || p.urgent === "true";
+
+    var emailSubject = (urgent ? "[URGENT] " : "") + "GEA Portal: " + subject;
+    var emailBody    =
+      "Message from GEA Member Portal\n" +
+      "================================\n\n" +
+      "From: " + senderName + "\n" +
+      "Email: " + replyTo + "\n" +
+      "Subject: " + subject + "\n" +
+      (urgent ? "Urgent: Yes\n" : "") +
+      "\n" +
+      "Message:\n" +
+      message + "\n\n" +
+      "--------------------------------\n" +
+      "Sent via GEA Member Portal. Reply directly to this email to respond.";
+
+    MailApp.sendEmail({
+      to:       EMAIL_TREASURER,
+      subject:  emailSubject,
+      body:     emailBody,
+      replyTo:  replyTo
+    });
+
+    logAuditEntry(auth.session.email, AUDIT_CONTACT_MESSAGE_SENT, "ContactForm", "",
+                  "Subject: " + subject + (urgent ? " [URGENT]" : ""));
+
+    return successResponse({}, "Your message has been sent to the Treasurer.");
+  } catch (e) {
+    Logger.log("ERROR _handleSendContactMessage: " + e);
+    return errorResponse("Could not send message. Please try again.", "SERVER_ERROR");
+  }
+}
+
+
+// ============================================================
+// HOUSEHOLD MEMBER MANAGEMENT HANDLERS
+// ============================================================
+
+/**
+ * HANDLER: _handleGetHouseholdMembers
+ * PURPOSE: Return all members of the authenticated user's household,
+ *          along with per-member document submission status.
+ *
+ * @param {Object} p  { token }
+ * @returns {Object}  { household, members[], self_id }
+ */
+function _handleGetHouseholdMembers(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var hh = getHouseholdById(member.household_id);
+    if (!hh) return errorResponse("Household not found.", "NOT_FOUND");
+
+    var members = getHouseholdMembers(member.household_id);
+
+    var membersOut = members.map(function(m) {
+      var docStatus = getFileSubmissionStatus(m.individual_id) || {};
+      return {
+        individual_id:             m.individual_id,
+        first_name:                m.first_name || "",
+        last_name:                 m.last_name  || "",
+        email:                     m.email      || "",
+        relationship_to_primary:   m.relationship_to_primary || "",
+        date_of_birth:             m.date_of_birth ? formatDate(new Date(m.date_of_birth)) : "",
+        country_code_primary:      m.country_code_primary  || "",
+        phone_primary:             m.phone_primary         || "",
+        phone_primary_whatsapp:    m.phone_primary_whatsapp || false,
+        omang_number:              m.omang_number          || "",
+        employment_role:           m.employment_role       || "",
+        employment_start_date:     m.employment_start_date ? formatDate(new Date(m.employment_start_date)) : "",
+        employment_end_date:       m.employment_end_date   ? formatDate(new Date(m.employment_end_date))   : "",
+        doc_status: {
+          photo:    docStatus.photo      || null,
+          passport: docStatus.passport   || null,
+          omang:    docStatus.omang      || null
+        }
+      };
+    });
+
+    return successResponse({
+      household: _safePublicHousehold(hh),
+      members:   membersOut,
+      self_id:   member.individual_id
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleGetHouseholdMembers: " + e);
+    return errorResponse("Could not load household members.", "SERVER_ERROR");
+  }
+}
+
+
+/**
+ * HANDLER: _handleAddHouseholdMember
+ * PURPOSE: Add a new spouse, child, or staff member to the authenticated user's household.
+ *
+ * @param {Object} p  { token, relationship, first_name, last_name, ... }
+ * @returns {Object}  { individual_id }
+ */
+function _handleAddHouseholdMember(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var hh = getHouseholdById(member.household_id);
+    if (!hh) return errorResponse("Household not found.", "NOT_FOUND");
+
+    var rel = sanitizeInput(String(p.relationship || "").trim());
+    var validRels = [RELATIONSHIP_SPOUSE, RELATIONSHIP_CHILD, RELATIONSHIP_STAFF];
+    if (validRels.indexOf(rel) === -1) {
+      return errorResponse("relationship must be Spouse, Child, or Staff.", "INVALID_PARAM");
+    }
+
+    if (!p.first_name || !p.last_name) {
+      return errorResponse("first_name and last_name are required.", "INVALID_PARAM");
+    }
+
+    var existing = getHouseholdMembers(member.household_id);
+
+    if (rel === RELATIONSHIP_SPOUSE) {
+      if (hh.household_type !== HOUSEHOLD_FAMILY) {
+        return errorResponse("A spouse can only be added to a Family household.", "BUSINESS_RULE");
+      }
+      var spouseExists = false;
+      for (var i = 0; i < existing.length; i++) {
+        if (existing[i].relationship_to_primary === RELATIONSHIP_SPOUSE) { spouseExists = true; break; }
+      }
+      if (spouseExists) {
+        return errorResponse("This household already has an active spouse.", "BUSINESS_RULE");
+      }
+    }
+
+    if (rel === RELATIONSHIP_CHILD && !p.date_of_birth) {
+      return errorResponse("date_of_birth is required for a child.", "INVALID_PARAM");
+    }
+
+    if (rel === RELATIONSHIP_STAFF) {
+      var staffExists = false;
+      for (var j = 0; j < existing.length; j++) {
+        if (existing[j].relationship_to_primary === RELATIONSHIP_STAFF) { staffExists = true; break; }
+      }
+      if (staffExists) {
+        return errorResponse("This household already has an active staff member.", "BUSINESS_RULE");
+      }
+      if (!p.omang_number || !p.phone_primary || !p.employment_role) {
+        return errorResponse(
+          "omang_number, phone_primary, and employment_role are required for staff.", "INVALID_PARAM");
+      }
+    }
+
+    var data = {
+      first_name:              sanitizeInput(p.first_name),
+      last_name:               sanitizeInput(p.last_name),
+      relationship_to_primary: rel,
+      date_of_birth:           p.date_of_birth         || "",
+      email:                   p.email                 ? sanitizeInput(p.email)           : "",
+      country_code_primary:    p.country_code_primary  ? sanitizeInput(p.country_code_primary) : "",
+      phone_primary:           p.phone_primary         ? sanitizeInput(p.phone_primary)   : "",
+      phone_primary_whatsapp:  p.phone_primary_whatsapp === true || p.phone_primary_whatsapp === "true",
+      omang_number:            p.omang_number          ? sanitizeInput(p.omang_number)    : "",
+      employment_role:         p.employment_role       ? sanitizeInput(p.employment_role) : "",
+      employment_start_date:   p.employment_start_date || "",
+      employment_end_date:     p.employment_end_date   || ""
+    };
+
+    var newId = createMemberRecord(member.household_id, data, auth.session.email);
+    if (!newId) return errorResponse("Failed to create member record.", "SERVER_ERROR");
+
+    return successResponse({ individual_id: newId }, "Member added successfully.");
+  } catch (e) {
+    Logger.log("ERROR _handleAddHouseholdMember: " + e);
+    return errorResponse("Could not add household member.", "SERVER_ERROR");
+  }
+}
+
+
+/**
+ * HANDLER: _handleRemoveHouseholdMember
+ * PURPOSE: Deactivate a household member. Cannot remove Primary or self.
+ *
+ * @param {Object} p  { token, individual_id }
+ * @returns {Object}  {}
+ */
+function _handleRemoveHouseholdMember(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    if (!p.individual_id) return errorResponse("individual_id is required.", "INVALID_PARAM");
+
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    if (p.individual_id === member.individual_id) {
+      return errorResponse("You cannot remove yourself from the household.", "BUSINESS_RULE");
+    }
+
+    var target = getMemberById(p.individual_id);
+    if (!target || target.household_id !== member.household_id) {
+      return errorResponse("Member not found in your household.", "NOT_FOUND");
+    }
+
+    if (target.relationship_to_primary === RELATIONSHIP_PRIMARY) {
+      return errorResponse("The primary member cannot be removed.", "BUSINESS_RULE");
+    }
+
+    var result = deactivateMember(p.individual_id, auth.session.email);
+    if (!result.ok) return errorResponse(result.error, "SERVER_ERROR");
+
+    return successResponse({}, "Member removed from household.");
+  } catch (e) {
+    Logger.log("ERROR _handleRemoveHouseholdMember: " + e);
+    return errorResponse("Could not remove household member.", "SERVER_ERROR");
+  }
+}
+
+
+/**
+ * HANDLER: _handleEditHouseholdMember
+ * PURPOSE: Update editable fields for a member of the authenticated user's household.
+ *          Allowed fields vary by relationship type.
+ *
+ * @param {Object} p  { token, individual_id, ...fields }
+ * @returns {Object}  { updated_fields }
+ */
+function _handleEditHouseholdMember(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    if (!p.individual_id) return errorResponse("individual_id is required.", "INVALID_PARAM");
+
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var target = getMemberById(p.individual_id);
+    if (!target || target.household_id !== member.household_id) {
+      return errorResponse("Member not found in your household.", "NOT_FOUND");
+    }
+
+    var rel = target.relationship_to_primary;
+    var allowed = ["first_name", "last_name", "email",
+                   "country_code_primary", "phone_primary", "phone_primary_whatsapp"];
+    if (rel === RELATIONSHIP_CHILD) {
+      allowed.push("date_of_birth");
+    }
+    if (rel === RELATIONSHIP_STAFF) {
+      allowed = allowed.concat(["omang_number", "employment_role",
+                                "employment_start_date", "employment_end_date"]);
+    }
+
+    var updated = 0;
+    for (var i = 0; i < allowed.length; i++) {
+      var field = allowed[i];
+      if (p[field] !== undefined) {
+        var val = (field === "phone_primary_whatsapp")
+          ? (p[field] === true || p[field] === "true")
+          : sanitizeInput(String(p[field]));
+        updateMemberField(p.individual_id, field, val, auth.session.email);
+        updated++;
+      }
+    }
+
+    if (updated === 0) return errorResponse("No valid fields provided.", "INVALID_PARAM");
+    return successResponse({ updated_fields: updated }, "Member updated.");
+  } catch (e) {
+    Logger.log("ERROR _handleEditHouseholdMember: " + e);
+    return errorResponse("Could not edit household member.", "SERVER_ERROR");
+  }
+}
+
+
 /**
  * HANDLER: _handleAdminApplications
  * PURPOSE: Get list of applications for board view
@@ -2379,6 +2699,188 @@ function addPaymentTemplates() {
  *
  * Reference document: EMAIL_TEMPLATES_REFERENCE.md (in repo root)
  */
+// ============================================================
+// GUEST LIST HANDLERS
+// ============================================================
+
+/**
+ * HANDLER: _handleSubmitGuestList
+ * PURPOSE: Member submits their guest list for an approved reservation.
+ *
+ * REQUIRED PARAMS: token, reservation_id, guests (JSON string of [{first_name,last_name,age_group,id_number,save_to_profile}])
+ * RETURNS: { success, data: { guestListId, lateSubmission } }
+ */
+function _handleSubmitGuestList(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  if (!p.reservation_id) return errorResponse("reservation_id required.", "MISSING_PARAM");
+  if (!p.guests)         return errorResponse("guests required.", "MISSING_PARAM");
+
+  var guests;
+  try { guests = JSON.parse(p.guests); } catch (e) {
+    return errorResponse("guests must be a valid JSON array.", "INVALID_PARAM");
+  }
+  if (!Array.isArray(guests) || guests.length === 0) {
+    return errorResponse("At least one guest is required.", "INVALID_PARAM");
+  }
+
+  // Confirm reservation belongs to this member's household
+  var member = getMemberByEmail(auth.session.email);
+  var res    = getReservationById(p.reservation_id);
+  if (!res || !member || res.household_id !== member.household_id) {
+    return errorResponse(ERR_NOT_AUTHORIZED, "FORBIDDEN");
+  }
+
+  var result = submitGuestList(p.reservation_id, guests, auth.session.email);
+  if (!result.ok) return errorResponse(result.message, "SUBMIT_FAILED");
+
+  return successResponse({
+    guestListId:   result.guestListId,
+    lateSubmission: result.lateSubmission
+  }, result.message);
+}
+
+/**
+ * HANDLER: _handleGetGuestList
+ * PURPOSE: Returns the current guest list for one of the member's reservations.
+ *
+ * REQUIRED PARAMS: token, reservation_id
+ * RETURNS: { success, data: { guestList: {...} | null } }
+ */
+function _handleGetGuestList(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  if (!p.reservation_id) return errorResponse("reservation_id required.", "MISSING_PARAM");
+
+  var member = getMemberByEmail(auth.session.email);
+  var res    = getReservationById(p.reservation_id);
+  if (!res || !member || res.household_id !== member.household_id) {
+    return errorResponse(ERR_NOT_AUTHORIZED, "FORBIDDEN");
+  }
+
+  var gl = getGuestListForReservation(p.reservation_id);
+  return successResponse({ guestList: gl });
+}
+
+/**
+ * HANDLER: _handleGetGuestProfiles
+ * PURPOSE: Member retrieves their household's saved guest profiles.
+ *
+ * REQUIRED PARAMS: token
+ * RETURNS: { success, data: { profiles: [...] } }
+ */
+function _handleGetGuestProfiles(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  var member = getMemberByEmail(auth.session.email);
+  if (!member) return errorResponse(ERR_NOT_AUTHORIZED, "FORBIDDEN");
+
+  var profiles = getGuestProfiles(member.household_id);
+  return successResponse({ profiles: profiles });
+}
+
+/**
+ * HANDLER: _handleAdminGuestLists
+ * PURPOSE: RSO views guest lists awaiting review (submitted or in_review).
+ *
+ * OPTIONAL PARAMS: status
+ * RETURNS: { success, data: { guestLists: [...] } }
+ */
+function _handleAdminGuestLists(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  // Default: show both submitted and in_review
+  var status = p.status || null;
+  var guestLists;
+  if (status) {
+    guestLists = getGuestListsByStatus(status);
+  } else {
+    var submitted = getGuestListsByStatus(GUEST_LIST_STATUS_SUBMITTED);
+    var inReview  = getGuestListsByStatus(GUEST_LIST_STATUS_IN_REVIEW);
+    guestLists = submitted.concat(inReview);
+    guestLists.sort(function(a, b) { return new Date(a.event_date) - new Date(b.event_date); });
+  }
+  return successResponse({ guestLists: guestLists, count: guestLists.length });
+}
+
+/**
+ * HANDLER: _handleAdminSaveGuestListDraft
+ * PURPOSE: RSO saves interim per-guest decisions without finalizing.
+ *
+ * REQUIRED PARAMS: token, guest_list_id, decisions (JSON string)
+ */
+function _handleAdminSaveGuestListDraft(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  if (!p.guest_list_id) return errorResponse("guest_list_id required.", "MISSING_PARAM");
+  if (!p.decisions)     return errorResponse("decisions required.", "MISSING_PARAM");
+
+  var decisions;
+  try { decisions = JSON.parse(p.decisions); } catch (e) {
+    return errorResponse("decisions must be a valid JSON array.", "INVALID_PARAM");
+  }
+
+  var ok = saveGuestListDraft(p.guest_list_id, decisions, auth.session.email);
+  return ok
+    ? successResponse({}, "Draft decisions saved.")
+    : errorResponse("Could not save draft.", "FAILED");
+}
+
+/**
+ * HANDLER: _handleAdminFinalizeGuestList
+ * PURPOSE: RSO finalizes per-guest decisions. Sends RSO summary + board rejection notice if needed.
+ *
+ * REQUIRED PARAMS: token, guest_list_id, decisions (JSON string)
+ */
+function _handleAdminFinalizeGuestList(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  if (!p.guest_list_id) return errorResponse("guest_list_id required.", "MISSING_PARAM");
+  if (!p.decisions)     return errorResponse("decisions required.", "MISSING_PARAM");
+
+  var decisions;
+  try { decisions = JSON.parse(p.decisions); } catch (e) {
+    return errorResponse("decisions must be a valid JSON array.", "INVALID_PARAM");
+  }
+
+  var result = finalizeGuestListReview(p.guest_list_id, decisions, auth.session.email);
+  if (!result.ok) return errorResponse(result.message, "FINALIZE_FAILED");
+
+  return successResponse({
+    approvedCount: result.approvedCount,
+    rejectedCount: result.rejectedCount
+  }, result.message);
+}
+
+/**
+ * HANDLER: _handleAdminGuestHistories
+ * PURPOSE: RSO looks up approval/rejection history for multiple guests by ID number.
+ *
+ * REQUIRED PARAMS: token, id_numbers (JSON string array)
+ * RETURNS: { success, data: { histories: { id_number: [{...}] } } }
+ */
+function _handleAdminGuestHistories(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  if (!p.id_numbers) return errorResponse("id_numbers required.", "MISSING_PARAM");
+
+  var idNumbers;
+  try { idNumbers = JSON.parse(p.id_numbers); } catch (e) {
+    return errorResponse("id_numbers must be a valid JSON array.", "INVALID_PARAM");
+  }
+
+  var histories = getGuestHistoryByIdNumbers(idNumbers);
+  return successResponse({ histories: histories });
+}
+
+
 function setupEmailTemplates_Instructions() {
   Logger.log("Email templates standardization complete!");
   Logger.log("");

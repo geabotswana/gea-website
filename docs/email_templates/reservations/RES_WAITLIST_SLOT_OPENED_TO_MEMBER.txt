@@ -1,4 +1,4 @@
-Dear {{FIRST_NAME}},
+﻿Dear {{FIRST_NAME}},
 
 Good news! A reservation you were waitlisted for has become available.
 
@@ -21,3 +21,5 @@ board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. Feel free to reply if you have any questions or comments.
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

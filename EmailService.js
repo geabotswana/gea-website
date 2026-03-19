@@ -232,12 +232,12 @@ function getEmailTemplate(templateName) {
         var placeholderStr = String(row[4]).trim();    // E = placeholders (comma-separated)
         var displayName = String(row[1]).trim();       // B = display_name
 
-        // Parse placeholders from comma-separated string
+        // Parse placeholders — sheet may use commas or semicolons as delimiter
         var placeholders = [];
         if (placeholderStr) {
-          placeholders = placeholderStr.split(',').map(function(p) {
+          placeholders = placeholderStr.split(/[;,]/).map(function(p) {
             return p.trim();
-          });
+          }).filter(function(p) { return p.length > 0; });
         }
 
         // Load plain text body from Drive .txt file

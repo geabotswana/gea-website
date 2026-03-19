@@ -1,4 +1,4 @@
-Dear {{FIRST_NAME}},
+﻿Dear {{FIRST_NAME}},
 
 Thank you for your reservation request!
 
@@ -14,9 +14,9 @@ Your reservation is being reviewed. You will receive confirmation within 1-2 bus
 Monitor your member portal for status updates: {{PORTAL_URL}}
 
 Best regards,
-Gaborone Expatriate Association
+Gaborone Employee Association
 Email: board@geabotswana.org
 Website: www.geabotswana.org
 
 ---
-This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

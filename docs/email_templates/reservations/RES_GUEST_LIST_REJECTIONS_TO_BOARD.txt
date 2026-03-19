@@ -1,0 +1,27 @@
+﻿Dear GEA Board,
+
+Guest List Review — Flagged Guests
+
+The RSO has completed their review of a guest list for an upcoming event. One or more guests have been flagged. Please review the details below and communicate with the member as appropriate.
+
+Reservation: {{RESERVATION_ID}}
+Facility: {{FACILITY_NAME}}
+Event Date: {{RESERVATION_DATE}}
+Member Household: {{HOUSEHOLD_NAME}}
+Member Contact: {{MEMBER_EMAIL}}
+
+APPROVED GUESTS ({{APPROVED_COUNT}}):
+{{APPROVED_LIST}}
+
+FLAGGED GUESTS ({{REJECTED_COUNT}}):
+{{REJECTED_LIST}}
+
+This review was completed by the RSO on {{REVIEW_DATE}}. The event will proceed with the approved guests only. Please contact the member at your discretion to relay the RSO's concerns about the flagged guest(s).
+
+Best regards,
+Gaborone Employee Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

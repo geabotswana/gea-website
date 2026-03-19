@@ -265,6 +265,9 @@ function createReservation(params) {
   logAuditEntry(params.primaryEmail, AUDIT_RESERVATION_CREATED, "Reservation",
                 reservationId, params.facility + " on " + formatDate(params.eventDate));
 
+  // Create calendar event
+  createCalendarEvent(row, hh);
+
   // Send notifications
   _sendReservationNotifications(params, row, hh, limitCheck);
 
@@ -274,6 +277,119 @@ function createReservation(params) {
     status:        initialStatus,
     message:       "Reservation " + reservationId + " created with status: " + initialStatus
   };
+}
+
+
+// ============================================================
+// CALENDAR INTEGRATION
+// ============================================================
+
+/**
+ * Creates a Google Calendar event for a reservation.
+ * Event title format: "[FACILITY] — [HOUSEHOLD] [STATUS_TAG]"
+ * Status tags: [PENDING], [TENTATIVE], [CONFIRMED]
+ * Stores the resulting event ID back into the Reservations sheet.
+ *
+ * @param {Object} reservation  The full reservation row object (from createReservation)
+ * @param {Object} hh           The household object (for household_name)
+ * @returns {string|null}       Google Calendar event ID, or null on failure
+ */
+function createCalendarEvent(reservation, hh) {
+  try {
+    var statusTag = reservation.status === STATUS_CONFIRMED ? "[CONFIRMED]"
+                  : reservation.status === STATUS_TENTATIVE ? "[TENTATIVE]"
+                  : "[PENDING]";
+    var title = reservation.facility + " \u2014 " + (hh ? hh.household_name : reservation.household_id) + " " + statusTag;
+
+    var description =
+      "Reservation ID: " + reservation.reservation_id + "\n" +
+      "Household: "      + (hh ? hh.household_name : reservation.household_id) + "\n" +
+      "Contact: "        + reservation.primary_email + "\n" +
+      "Status: "         + reservation.status + "\n" +
+      (reservation.event_name ? "Event: " + reservation.event_name + "\n" : "") +
+      (reservation.has_guests ? "Guests: " + (reservation.guest_count || 0) + "\n" : "") +
+      (reservation.is_excess_reservation ? "** EXCESS BOOKING — subject to board approval **\n" : "");
+
+    var calendar = CalendarApp.getCalendarById(CALENDAR_ID);
+    if (!calendar) {
+      Logger.log("ERROR createCalendarEvent: calendar not found for ID " + CALENDAR_ID);
+      return null;
+    }
+
+    var event = calendar.createEvent(
+      title,
+      new Date(reservation.start_time),
+      new Date(reservation.end_time),
+      { description: description }
+    );
+
+    // Colour-code by status: red=pending, yellow=tentative, green=confirmed
+    if (reservation.status === STATUS_CONFIRMED) {
+      event.setColor(CalendarApp.EventColor.SAGE);
+    } else if (reservation.status === STATUS_TENTATIVE) {
+      event.setColor(CalendarApp.EventColor.BANANA);
+    } else {
+      event.setColor(CalendarApp.EventColor.TOMATO);
+    }
+
+    var eventId = event.getId();
+
+    // Write event ID back to the sheet
+    _updateReservationField(reservation.reservation_id, "calendar_event_id", eventId, "system");
+
+    Logger.log("Calendar event created: " + eventId + " for " + reservation.reservation_id);
+    return eventId;
+
+  } catch (e) {
+    Logger.log("ERROR createCalendarEvent(" + reservation.reservation_id + "): " + e);
+    return null;
+  }
+}
+
+/**
+ * Updates the title and colour of an existing calendar event to reflect
+ * a new reservation status. Called after approval, denial, or cancellation.
+ *
+ * @param {string} eventId    Google Calendar event ID (from calendar_event_id field)
+ * @param {string} newStatus  One of the STATUS_* constants
+ * @param {string} householdName
+ * @param {string} facility
+ * @returns {boolean}
+ */
+function updateCalendarEventStatus(eventId, newStatus, householdName, facility) {
+  if (!eventId) return false;
+  try {
+    var calendar = CalendarApp.getCalendarById(CALENDAR_ID);
+    if (!calendar) return false;
+
+    var event = calendar.getEventById(eventId);
+    if (!event) {
+      Logger.log("WARN updateCalendarEventStatus: event not found: " + eventId);
+      return false;
+    }
+
+    var statusTag = newStatus === STATUS_CONFIRMED ? "[CONFIRMED]"
+                  : newStatus === STATUS_TENTATIVE ? "[TENTATIVE]"
+                  : newStatus === STATUS_CANCELLED ? "[CANCELLED]"
+                  : "[PENDING]";
+
+    event.setTitle(facility + " \u2014 " + householdName + " " + statusTag);
+
+    if (newStatus === STATUS_CONFIRMED || newStatus === STATUS_APPROVED) {
+      event.setColor(CalendarApp.EventColor.SAGE);
+    } else if (newStatus === STATUS_TENTATIVE) {
+      event.setColor(CalendarApp.EventColor.BANANA);
+    } else if (newStatus === STATUS_CANCELLED) {
+      event.setColor(CalendarApp.EventColor.GRAPHITE);
+    } else {
+      event.setColor(CalendarApp.EventColor.TOMATO);
+    }
+
+    return true;
+  } catch (e) {
+    Logger.log("ERROR updateCalendarEventStatus(" + eventId + "): " + e);
+    return false;
+  }
 }
 
 
@@ -303,8 +419,14 @@ function approveReservation(reservationId, approvedBy, notes) {
   logAuditEntry(approvedBy, AUDIT_RESERVATION_APPROVED, "Reservation", reservationId,
                 "Approved → " + newStatus);
 
-  // Notify member
+  // Update calendar event colour/title
   var hh = getHouseholdById(res.household_id);
+  if (res.calendar_event_id) {
+    updateCalendarEventStatus(res.calendar_event_id, newStatus,
+                              hh ? hh.household_name : res.household_id, res.facility);
+  }
+
+  // Notify member
   if (hh) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
@@ -339,6 +461,13 @@ function denyReservation(reservationId, deniedBy, reason) {
 
   logAuditEntry(deniedBy, AUDIT_RESERVATION_DENIED, "Reservation", reservationId,
                 "Denied: " + reason);
+
+  // Update calendar event
+  if (res.calendar_event_id) {
+    var hhForDeny = getHouseholdById(res.household_id);
+    updateCalendarEventStatus(res.calendar_event_id, STATUS_CANCELLED,
+                              hhForDeny ? hhForDeny.household_name : res.household_id, res.facility);
+  }
 
   var hh = getHouseholdById(res.household_id);
   if (hh) {
@@ -377,6 +506,13 @@ function cancelReservation(reservationId, cancelledBy, reason) {
 
   logAuditEntry(cancelledBy, AUDIT_RESERVATION_CANCELLED, "Reservation", reservationId,
                 "Cancelled: " + (reason || "no reason given"));
+
+  // Update calendar event
+  if (res.calendar_event_id) {
+    var hhForCancel = getHouseholdById(res.household_id);
+    updateCalendarEventStatus(res.calendar_event_id, STATUS_CANCELLED,
+                              hhForCancel ? hhForCancel.household_name : res.household_id, res.facility);
+  }
 
   var hh = getHouseholdById(res.household_id);
   if (hh) {
@@ -431,6 +567,13 @@ function processBumpWindowExpirations() {
         logAuditEntry("system", AUDIT_RESERVATION_APPROVED, "Reservation", resId,
                       "Auto-confirmed: bump window passed");
         Logger.log("Auto-confirmed: " + resId);
+
+        // Update calendar event to CONFIRMED
+        var res = rowToObject(headers, data[i]);
+        if (res.calendar_event_id) {
+          updateCalendarEventStatus(res.calendar_event_id, STATUS_CONFIRMED,
+                                    res.household_name || res.household_id, res.facility);
+        }
       }
     }
   } catch (e) { Logger.log("ERROR processBumpWindowExpirations: " + e); }
@@ -555,19 +698,544 @@ function sendRsoDailySummary() {
       }).length;
     }
 
-    var noRes = todayReservations.length === 0 ? "true" : "";
-    sendEmailFromBoard("tpl_014", EMAIL_RSO, {
+    var noRes = todayReservations.length === 0
+      ? "No reservations are scheduled for today.\n\n"
+      : "";
+    sendEmailFromTemplate("ADM_DAILY_SUMMARY_TO_RSO", EMAIL_RSO, {
       TODAY_DATE:          formatDate(new Date()),
       IF_NO_RESERVATIONS:  noRes,
       RESERVATIONS_BLOCK:  block,
       TOTAL_RESERVATIONS:  todayReservations.length,
       TOTAL_MEMBERS:       totalMembers,
-      TOTAL_GUESTS:        totalGuests,
-      TOTAL_VENDORS:       0
+      TOTAL_GUESTS:        totalGuests
     });
 
     Logger.log("RSO summary sent: " + todayReservations.length + " reservation(s)");
   } catch (e) { Logger.log("ERROR sendRsoDailySummary: " + e); }
+}
+
+
+// ============================================================
+// GUEST LIST WORKFLOW
+// ============================================================
+
+/**
+ * Submits a guest list for a reservation.
+ * Writes a row to the Guest Lists sheet and marks the reservation
+ * as having a submitted guest list.
+ *
+ * Required columns in Guest Lists sheet (add if missing):
+ *   guest_list_id, reservation_id, household_id, household_name,
+ *   primary_email, facility, event_date, guests_json, guest_count,
+ *   submitted_date, submission_status, rso_reviewed_by,
+ *   rso_review_date, rejection_reason
+ *
+ * @param {string} reservationId
+ * @param {Array}  guests   Array of {name, relationship, nationality}
+ * @param {string} memberEmail
+ * @returns {Object} { ok: bool, guestListId: string, message: string }
+ */
+function submitGuestList(reservationId, guests, memberEmail) {
+  if (!reservationId || !guests || !guests.length) {
+    return { ok: false, message: "Reservation ID and at least one guest are required." };
+  }
+
+  // Validate each guest: first_name, last_name required; id_number required for over_18
+  for (var vi = 0; vi < guests.length; vi++) {
+    var g = guests[vi];
+    if (!g.first_name || !g.last_name) {
+      return { ok: false, message: "First name and last name are required for all guests." };
+    }
+    if (g.age_group === "over_18" && !g.id_number) {
+      return { ok: false, message: "ID number (omang or passport) is required for guests over 18." };
+    }
+  }
+
+  var res = getReservationById(reservationId);
+  if (!res) return { ok: false, message: "Reservation not found." };
+  if (res.status === STATUS_CANCELLED) {
+    return { ok: false, message: "Cannot submit guest list for a cancelled reservation." };
+  }
+
+  var late = !isGuestListDeadlineMet(new Date(res.event_date));
+
+  var guestListId = generateId("GL");
+  var now         = new Date();
+
+  // Handle save_to_profile requests
+  var profilesToSave = guests.filter(function(g) { return g.save_to_profile; });
+  profilesToSave.forEach(function(g) {
+    saveGuestProfile(res.household_id, g, memberEmail);
+  });
+
+  var row = {
+    guest_list_id:    guestListId,
+    reservation_id:   reservationId,
+    household_id:     res.household_id,
+    household_name:   res.household_name,
+    primary_email:    memberEmail,
+    facility:         res.facility,
+    event_date:       res.event_date,
+    guests_json:      JSON.stringify(guests),
+    guest_count:      guests.length,
+    submitted_date:   now,
+    submission_status: GUEST_LIST_STATUS_SUBMITTED,
+    rso_reviewed_by:  "",
+    rso_review_date:  "",
+    rso_draft_json:   "",
+    last_modified_date: now
+  };
+
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    sheet.appendRow(headers.map(function(col) {
+      return row[col] !== undefined ? row[col] : "";
+    }));
+  } catch (e) {
+    Logger.log("ERROR submitGuestList (write): " + e);
+    return { ok: false, message: "Failed to save guest list. Please try again." };
+  }
+
+  // Mark reservation as having a submitted guest list
+  _updateReservationField(reservationId, "guest_list_submitted", true, memberEmail);
+
+  logAuditEntry(memberEmail, AUDIT_GUEST_LIST_SUBMITTED, "GuestList",
+                guestListId, "Submitted " + guests.length + " guest(s) for " + reservationId);
+
+  // Confirm to member
+  sendEmailFromTemplate("RES_GUEST_LIST_SUBMITTED_TO_MEMBER", memberEmail, {
+    FIRST_NAME:       _getPrimaryFirstName(res.household_id),
+    RESERVATION_ID:   reservationId,
+    FACILITY_NAME:    res.facility,
+    RESERVATION_DATE: formatDate(new Date(res.event_date)),
+    GUEST_COUNT:      guests.length,
+    DEADLINE:         formatDate(getGuestListDeadline(new Date(res.event_date))),
+    PORTAL_URL:       URL_MEMBER_PORTAL
+  });
+
+  var msg = late
+    ? "Guest list submitted (after deadline — RSO has been notified)."
+    : "Guest list submitted successfully.";
+  return { ok: true, guestListId: guestListId, lateSubmission: late, message: msg };
+}
+
+/**
+ * Returns the most recent guest list record for a given reservation,
+ * or null if none has been submitted.
+ *
+ * @param {string} reservationId
+ * @returns {Object|null}
+ */
+function getGuestListForReservation(reservationId) {
+  if (!reservationId) return null;
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var idCol   = headers.indexOf("reservation_id");
+    var dateCol = headers.indexOf("submitted_date");
+    var latest  = null;
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][idCol] !== reservationId) continue;
+      var candidate = rowToObject(headers, data[i]);
+      if (!latest || new Date(candidate.submitted_date) > new Date(latest.submitted_date)) {
+        latest = candidate;
+      }
+    }
+    return latest;
+  } catch (e) {
+    Logger.log("ERROR getGuestListForReservation(" + reservationId + "): " + e);
+    return null;
+  }
+}
+
+/**
+ * Returns all guest lists with a given submission status.
+ * Used by the admin interface to list pending RSO reviews.
+ *
+ * @param {string} status  One of the GUEST_LIST_STATUS_* constants (default: submitted)
+ * @returns {Array}
+ */
+function getGuestListsByStatus(status) {
+  status = status || GUEST_LIST_STATUS_SUBMITTED;
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var statCol = headers.indexOf("submission_status");
+    var results = [];
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][statCol] !== status) continue;
+      results.push(rowToObject(headers, data[i]));
+    }
+    results.sort(function(a, b) { return new Date(a.event_date) - new Date(b.event_date); });
+    return results;
+  } catch (e) {
+    Logger.log("ERROR getGuestListsByStatus(" + status + "): " + e);
+    return [];
+  }
+}
+
+// ============================================================
+// GUEST PROFILES
+// ============================================================
+
+/**
+ * Saves or updates a guest profile for the household.
+ * If a profile with the same id_number already exists for this household,
+ * updates it (name, age_group, last_used_date). Otherwise creates a new one.
+ *
+ * @param {string} householdId
+ * @param {Object} guestData  {first_name, last_name, id_number, age_group}
+ * @param {string} actorEmail
+ * @returns {string|null}  guest_profile_id or null on failure
+ */
+function saveGuestProfile(householdId, guestData, actorEmail) {
+  if (!householdId || !guestData || !guestData.first_name || !guestData.last_name) return null;
+  try {
+    var ss      = SpreadsheetApp.openById(RESERVATIONS_ID);
+    var sheet   = ss.getSheetByName(TAB_GUEST_PROFILES);
+    var now     = new Date();
+
+    if (!sheet) {
+      Logger.log("WARN saveGuestProfile: Guest Profiles tab not found");
+      return null;
+    }
+
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var hhCol   = headers.indexOf("household_id");
+    var idCol   = headers.indexOf("id_number");
+
+    // Check for existing profile matching household + id_number
+    if (guestData.id_number) {
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][hhCol] === householdId && data[i][idCol] === guestData.id_number) {
+          // Update existing profile
+          sheet.getRange(i + 1, headers.indexOf("first_name")    + 1).setValue(guestData.first_name);
+          sheet.getRange(i + 1, headers.indexOf("last_name")     + 1).setValue(guestData.last_name);
+          sheet.getRange(i + 1, headers.indexOf("age_group")     + 1).setValue(guestData.age_group || "");
+          sheet.getRange(i + 1, headers.indexOf("last_used_date") + 1).setValue(now);
+          logAuditEntry(actorEmail, AUDIT_GUEST_PROFILE_SAVED, "GuestProfile",
+                        data[i][headers.indexOf("guest_profile_id")],
+                        "Updated profile for " + guestData.first_name + " " + guestData.last_name);
+          return data[i][headers.indexOf("guest_profile_id")];
+        }
+      }
+    }
+
+    // Create new profile
+    var profileId = generateId("GP");
+    var row = {
+      guest_profile_id: profileId,
+      household_id:     householdId,
+      first_name:       guestData.first_name,
+      last_name:        guestData.last_name,
+      id_number:        guestData.id_number || "",
+      age_group:        guestData.age_group || "",
+      created_date:     now,
+      last_used_date:   now
+    };
+    sheet.appendRow(headers.map(function(col) {
+      return row[col] !== undefined ? row[col] : "";
+    }));
+
+    logAuditEntry(actorEmail, AUDIT_GUEST_PROFILE_SAVED, "GuestProfile",
+                  profileId, "Created profile for " + guestData.first_name + " " + guestData.last_name);
+    return profileId;
+  } catch (e) {
+    Logger.log("ERROR saveGuestProfile: " + e);
+    return null;
+  }
+}
+
+/**
+ * Returns all saved guest profiles for a household.
+ *
+ * @param {string} householdId
+ * @returns {Array}
+ */
+function getGuestProfiles(householdId) {
+  if (!householdId) return [];
+  try {
+    var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_PROFILES);
+    if (!sheet) return [];
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var hhCol   = headers.indexOf("household_id");
+    var results = [];
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][hhCol] === householdId) {
+        results.push(rowToObject(headers, data[i]));
+      }
+    }
+    results.sort(function(a, b) {
+      return (a.last_name + a.first_name).localeCompare(b.last_name + b.first_name);
+    });
+    return results;
+  } catch (e) {
+    Logger.log("ERROR getGuestProfiles(" + householdId + "): " + e);
+    return [];
+  }
+}
+
+/**
+ * Looks up guest history across all FINALIZED guest lists, matched by ID number.
+ * Returns a map: { id_number: [{event_date, facility, household_name, rso_status, rso_reason, reviewed_date}] }
+ *
+ * @param {Array<string>} idNumbers
+ * @returns {Object}
+ */
+function getGuestHistoryByIdNumbers(idNumbers) {
+  if (!idNumbers || !idNumbers.length) return {};
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var statCol = headers.indexOf("submission_status");
+    var result  = {};
+
+    idNumbers.forEach(function(id) { result[id] = []; });
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][statCol] !== GUEST_LIST_STATUS_FINALIZED) continue;
+      var gl = rowToObject(headers, data[i]);
+      var draftDecisions = [];
+      try { draftDecisions = JSON.parse(gl.rso_draft_json || "[]"); } catch (e) {}
+      var guests = [];
+      try { guests = JSON.parse(gl.guests_json || "[]"); } catch (e) {}
+
+      guests.forEach(function(g, idx) {
+        if (!g.id_number || !result.hasOwnProperty(g.id_number)) return;
+        var decision = draftDecisions.filter(function(d) { return d.index === idx; })[0] || {};
+        result[g.id_number].push({
+          event_date:     gl.event_date,
+          facility:       gl.facility,
+          household_name: gl.household_name,
+          rso_status:     decision.rso_status || "unknown",
+          rso_reason:     decision.rso_reason || "",
+          reviewed_date:  gl.rso_review_date
+        });
+      });
+    }
+
+    // Sort each list by event_date descending
+    idNumbers.forEach(function(id) {
+      result[id].sort(function(a, b) { return new Date(b.event_date) - new Date(a.event_date); });
+    });
+
+    return result;
+  } catch (e) {
+    Logger.log("ERROR getGuestHistoryByIdNumbers: " + e);
+    return {};
+  }
+}
+
+// ============================================================
+// RSO REVIEW — DRAFT & FINALIZE
+// ============================================================
+
+/**
+ * RSO saves draft per-guest decisions without finalizing.
+ * Sets status to "in_review" (idempotent), writes rso_draft_json.
+ *
+ * decisions: [{index: 0, rso_status: "approved"|"rejected", rso_reason: ""}]
+ *
+ * @param {string} guestListId
+ * @param {Array}  decisions
+ * @param {string} rsoEmail
+ * @returns {boolean}
+ */
+function saveGuestListDraft(guestListId, decisions, rsoEmail) {
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var idCol   = headers.indexOf("guest_list_id");
+    var now     = new Date();
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][idCol] !== guestListId) continue;
+
+      var statCol = headers.indexOf("submission_status");
+      var curStatus = data[i][statCol];
+      if (curStatus === GUEST_LIST_STATUS_FINALIZED) {
+        Logger.log("WARN saveGuestListDraft: already finalized: " + guestListId);
+        return false;
+      }
+
+      sheet.getRange(i + 1, statCol + 1).setValue(GUEST_LIST_STATUS_IN_REVIEW);
+      sheet.getRange(i + 1, headers.indexOf("rso_draft_json")    + 1).setValue(JSON.stringify(decisions));
+      sheet.getRange(i + 1, headers.indexOf("rso_reviewed_by")   + 1).setValue(rsoEmail);
+      sheet.getRange(i + 1, headers.indexOf("last_modified_date") + 1).setValue(now);
+
+      logAuditEntry(rsoEmail, AUDIT_GUEST_LIST_DRAFT_SAVED, "GuestList",
+                    guestListId, "Draft saved with " + decisions.length + " decision(s)");
+      return true;
+    }
+    Logger.log("WARN saveGuestListDraft: not found: " + guestListId);
+    return false;
+  } catch (e) {
+    Logger.log("ERROR saveGuestListDraft(" + guestListId + "): " + e);
+    return false;
+  }
+}
+
+/**
+ * RSO finalizes guest list review.
+ * All decisions must be set (approved or rejected) before finalizing.
+ * - Status → "finalized"
+ * - Approved guests → email summary to RSO
+ * - If any rejected → email board with rejected names + reasons
+ *
+ * @param {string} guestListId
+ * @param {Array}  decisions   Final [{index, rso_status, rso_reason}]
+ * @param {string} rsoEmail
+ * @returns {Object} {ok, approvedCount, rejectedCount, message}
+ */
+function finalizeGuestListReview(guestListId, decisions, rsoEmail) {
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var idCol   = headers.indexOf("guest_list_id");
+    var now     = new Date();
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][idCol] !== guestListId) continue;
+      var gl = rowToObject(headers, data[i]);
+
+      if (gl.submission_status === GUEST_LIST_STATUS_FINALIZED) {
+        return { ok: false, message: "Guest list has already been finalized." };
+      }
+
+      var guests = [];
+      try { guests = JSON.parse(gl.guests_json || "[]"); } catch (e) {}
+
+      // Validate all guests have a decision
+      if (decisions.length < guests.length) {
+        return { ok: false, message: "A decision (approve/reject) must be set for every guest before finalizing." };
+      }
+
+      var approved = decisions.filter(function(d) { return d.rso_status === "approved"; });
+      var rejected = decisions.filter(function(d) { return d.rso_status === "rejected"; });
+
+      // Write final state
+      var statCol = headers.indexOf("submission_status");
+      sheet.getRange(i + 1, statCol + 1).setValue(GUEST_LIST_STATUS_FINALIZED);
+      sheet.getRange(i + 1, headers.indexOf("rso_draft_json")    + 1).setValue(JSON.stringify(decisions));
+      sheet.getRange(i + 1, headers.indexOf("rso_reviewed_by")   + 1).setValue(rsoEmail);
+      sheet.getRange(i + 1, headers.indexOf("rso_review_date")   + 1).setValue(now);
+      sheet.getRange(i + 1, headers.indexOf("last_modified_date") + 1).setValue(now);
+
+      logAuditEntry(rsoEmail, AUDIT_GUEST_LIST_FINALIZED, "GuestList",
+                    guestListId, "Finalized: " + approved.length + " approved, " + rejected.length + " rejected");
+
+      // Send approved list to RSO
+      _sendApprovedGuestListToRso(gl, guests, decisions, rsoEmail, now);
+
+      // If any rejections, notify board
+      if (rejected.length > 0) {
+        _sendGuestListRejectionsToBoard(gl, guests, approved, rejected, rsoEmail, now);
+      }
+
+      return {
+        ok: true,
+        approvedCount: approved.length,
+        rejectedCount: rejected.length,
+        message: "Review finalized. " + approved.length + " approved, " + rejected.length + " rejected."
+      };
+    }
+    Logger.log("WARN finalizeGuestListReview: not found: " + guestListId);
+    return { ok: false, message: "Guest list not found." };
+  } catch (e) {
+    Logger.log("ERROR finalizeGuestListReview(" + guestListId + "): " + e);
+    return { ok: false, message: "An error occurred while finalizing. Please try again." };
+  }
+}
+
+/**
+ * Sends the approved-only guest list summary to the RSO for event day.
+ */
+function _sendApprovedGuestListToRso(gl, guests, decisions, rsoEmail, reviewDate) {
+  try {
+    var approvedDecisions = decisions.filter(function(d) { return d.rso_status === "approved"; });
+    var approvedGuests = approvedDecisions.map(function(d) {
+      var g = guests[d.index] || {};
+      return (g.first_name || "") + " " + (g.last_name || "") +
+             (g.id_number ? " | " + g.id_number : "") +
+             " | " + (g.age_group === "over_18" ? "Adult" : "Under 18");
+    });
+
+    var lines = approvedGuests.length
+      ? approvedGuests.map(function(line, idx) { return (idx + 1) + ". " + line; }).join("\n")
+      : "(No approved guests)";
+
+    var body =
+      "FINAL APPROVED GUEST LIST\n" +
+      "==========================\n\n" +
+      "Reservation:     " + gl.reservation_id + "\n" +
+      "Facility:        " + gl.facility + "\n" +
+      "Event Date:      " + formatDate(new Date(gl.event_date)) + "\n" +
+      "Household:       " + gl.household_name + "\n" +
+      "Contact:         " + gl.primary_email + "\n" +
+      "Approved Guests: " + approvedGuests.length + "\n\n" +
+      "GUEST DETAILS\n" +
+      "-------------\n" +
+      lines + "\n\n" +
+      "Approved guests must present a valid photo ID at the gate.\n" +
+      "Review completed: " + formatDate(reviewDate);
+
+    MailApp.sendEmail({
+      to:      rsoEmail,
+      subject: "Approved Guest List — " + gl.facility + " on " +
+               formatDate(new Date(gl.event_date)) + " [" + gl.reservation_id + "]",
+      body:    body
+    });
+  } catch (e) {
+    Logger.log("ERROR _sendApprovedGuestListToRso(" + gl.guest_list_id + "): " + e);
+  }
+}
+
+/**
+ * Sends a board notification with the flagged (rejected) guests and RSO reasons.
+ * The board decides how to relay this to the member.
+ */
+function _sendGuestListRejectionsToBoard(gl, guests, approvedDecisions, rejectedDecisions, rsoEmail, reviewDate) {
+  try {
+    var boardEmail = EMAIL_BOARD;
+
+    var approvedLines = approvedDecisions.map(function(d) {
+      var g = guests[d.index] || {};
+      return "  - " + (g.first_name || "") + " " + (g.last_name || "") +
+             (g.id_number ? " (" + g.id_number + ")" : "");
+    }).join("\n") || "  (none)";
+
+    var rejectedLines = rejectedDecisions.map(function(d) {
+      var g = guests[d.index] || {};
+      return "  - " + (g.first_name || "") + " " + (g.last_name || "") +
+             (g.id_number ? " (" + g.id_number + ")" : "") +
+             "\n    Reason: " + (d.rso_reason || "No reason provided");
+    }).join("\n");
+
+    sendEmailFromTemplate("RES_GUEST_LIST_REJECTIONS_TO_BOARD", boardEmail, {
+      RESERVATION_ID:   gl.reservation_id,
+      FACILITY_NAME:    gl.facility,
+      RESERVATION_DATE: formatDate(new Date(gl.event_date)),
+      HOUSEHOLD_NAME:   gl.household_name,
+      MEMBER_EMAIL:     gl.primary_email,
+      APPROVED_COUNT:   approvedDecisions.length,
+      APPROVED_LIST:    approvedLines,
+      REJECTED_COUNT:   rejectedDecisions.length,
+      REJECTED_LIST:    rejectedLines,
+      REVIEW_DATE:      formatDate(reviewDate)
+    });
+  } catch (e) {
+    Logger.log("ERROR _sendGuestListRejectionsToBoard(" + gl.guest_list_id + "): " + e);
+  }
 }
 
 
@@ -741,7 +1409,8 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
       FACILITY_NAME:    baseVars.FACILITY,
       RESERVATION_ID:   baseVars.RESERVATION_ID,
       RESERVATION_DATE: baseVars.RESERVATION_DATE,
-      REVIEW_DEADLINE:  formatDate(reviewDeadline)
+      REVIEW_DEADLINE:  formatDate(reviewDeadline),
+      PORTAL_URL:       URL_MEMBER_PORTAL
     });
 
     // Send approval request to board / MGT
@@ -784,19 +1453,21 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
 
     // Send limit-reached notice to member if excess
     if (limitCheck.isExcess) {
+      var excessNotice = "Your booking has been submitted as an excess request and will be reviewed by the board.";
       if (params.facility === FACILITY_TENNIS) {
-        sendEmail("tpl_028", params.primaryEmail, Object.assign({}, baseVars, {
-          WEEK_START: formatDate(getWeekStart(params.eventDate)),
-          WEEK_END:   formatDate(addDays(getWeekStart(params.eventDate), 6)),
-          TENNIS_BUMP_WINDOW_DAYS: TENNIS_BUMP_WINDOW_DAYS
-        }));
+        sendEmailFromTemplate("RES_TENNIS_LIMIT_REACHED_TO_MEMBER", params.primaryEmail, {
+          FIRST_NAME:           baseVars.FIRST_NAME,
+          CURRENT_RESERVATIONS: limitCheck.hoursUsed,
+          LIMIT:                TENNIS_WEEKLY_LIMIT_HOURS,
+          WAITLIST_INFO:        excessNotice
+        });
       } else {
-        sendEmail("tpl_029", params.primaryEmail, Object.assign({}, baseVars, {
-          CURRENT_MONTH:  new Date().toLocaleString("default", { month: "long" }),
-          LEOBO_USAGE:    limitCheck.countUsed,
-          LEOBO_MAX_HOURS: LEOBO_MAX_HOURS,
-          LEOBO_BUMP_WINDOW_DAYS: LEOBO_BUMP_WINDOW_DAYS
-        }));
+        sendEmailFromTemplate("RES_LEOBO_LIMIT_REACHED_TO_MEMBER", params.primaryEmail, {
+          FIRST_NAME:           baseVars.FIRST_NAME,
+          CURRENT_RESERVATIONS: limitCheck.countUsed,
+          LIMIT:                LEOBO_MONTHLY_LIMIT,
+          WAITLIST_INFO:        excessNotice
+        });
       }
     }
   }

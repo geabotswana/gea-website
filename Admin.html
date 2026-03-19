@@ -1233,6 +1233,11 @@
         <span class="nav-icon">📸</span>
         <span>Photo Review</span>
       </div>
+      <div class="nav-item" onclick="showPage('guest-lists', event)">
+        <span class="nav-icon">📋</span>
+        <span>Guest Lists</span>
+        <span id="guest-lists-badge" class="badge" style="display:none;">0</span>
+      </div>
       <div class="nav-item" onclick="showPage('payments', event)">
         <span class="nav-icon">💳</span>
         <span>Payments</span>
@@ -1335,6 +1340,65 @@
         </div>
       </div>
       
+      <!-- ========================================================== -->
+      <!-- PAGE: GUEST LISTS                                          -->
+      <!-- RSO reviews submitted guest lists before events            -->
+      <!-- ========================================================== -->
+      <div id="guest-lists" class="page">
+        <h1 class="page-title">Guest Lists</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review per-guest approvals for upcoming events. Save drafts at any time — decisions are preserved between sessions. Finalize when all guests have been reviewed.</p>
+
+        <div class="card">
+          <div class="table-container">
+            <table id="glTable">
+              <thead>
+                <tr>
+                  <th>Event Date</th>
+                  <th>Facility</th>
+                  <th>Household</th>
+                  <th>Guests</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="glTableBody"></tbody>
+            </table>
+          </div>
+          <div id="glEmpty" class="empty-state" style="display:none;">
+            <div class="empty-state-icon">&#10003;</div>
+            <div class="empty-state-text">No pending guest lists</div>
+            <div class="empty-state-subtext">All submitted guest lists have been reviewed</div>
+          </div>
+        </div>
+
+        <!-- Guest List Review Panel -->
+        <div id="glDetailPanel" style="display:none; margin-top:20px;">
+          <div class="card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h2 class="modal-title" id="glDetailTitle">Guest List Review</h2>
+              <button class="btn btn-secondary btn-small" onclick="closeGlDetail();">Close</button>
+            </div>
+            <div id="glDetailMeta" style="padding:12px 20px; background:#f8f9fa; border-bottom:1px solid #eee; font-size:13px; color:#555;"></div>
+            <div id="glGuestRows" style="padding:16px 20px;"></div>
+            <div style="padding:12px 20px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end;">
+              <button class="btn btn-secondary" id="glSaveDraftBtn" onclick="saveGlDraft();">Save Draft</button>
+              <button class="btn btn-primary" id="glFinalizeBtn" onclick="finalizeGlReview();">Finalize Review</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Guest History Modal -->
+      <div id="guestHistoryModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="guestHistoryTitle">
+        <div class="modal" style="max-width:520px; max-height:85vh; overflow-y:auto;">
+          <div class="modal-header">
+            <h2 class="modal-title" id="guestHistoryTitle">Guest History</h2>
+            <button class="modal-close" onclick="closeGuestHistoryModal();" aria-label="Close">&times;</button>
+          </div>
+          <div id="guestHistoryContent" style="padding:16px 20px;"></div>
+        </div>
+      </div>
+
       <!-- ========================================================== -->
       <!-- PAGE: MEMBERS                                              -->
       <!-- Searchable list of all member households                   -->
@@ -1683,6 +1747,8 @@
   
   // Currently selected reservation/payment ID for modal actions
   var selectedReservationId = null;
+  // Cache of pending reservation objects keyed by reservation_id
+  var _pendingReservations = {};
   var selectedPaymentId = null;
   var selectedPhotoIndividualId = null;
 
@@ -1891,6 +1957,9 @@
       case 'applications':
         loadApplications('');
         break;
+      case 'guest-lists':
+        loadGuestLists();
+        break;
     }
   }
   
@@ -2063,46 +2132,57 @@
       }
       
       var reservations = res.data.reservations || [];
-      
+
+      // Cache reservations for use in detail modal
+      _pendingReservations = {};
+      reservations.forEach(function(r) { _pendingReservations[r.reservation_id] = r; });
+
       if (reservations.length === 0) {
         // No pending reservations
         document.getElementById('resTable').style.display = 'none';
         document.getElementById('resEmpty').style.display = 'block';
         return;
       }
-      
+
       document.getElementById('resTable').style.display = 'table';
       document.getElementById('resEmpty').style.display = 'none';
-      
+
       // Clear table body and populate with reservations
       tbody.innerHTML = '';
-      
-      reservations.forEach(function(res) {
-        // Format the date (assuming ISO format from backend)
-        var date = new Date(res.date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        });
-        
+
+      reservations.forEach(function(reservation) {
+        var date = reservation.event_date
+          ? new Date(reservation.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '—';
+
         var row = document.createElement('tr');
 
-        // Build row safely using DOM methods to prevent XSS
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = date; return td; })());
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.facility || 'Unknown'; return td; })());
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.member_name || 'Unknown'; return td; })());
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.email || ''; return td; })());
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = res.guest_count || 0; return td; })());
+        var makeTd = function(text) {
+          var td = document.createElement('td');
+          td.textContent = text;
+          return td;
+        };
+
+        row.appendChild(makeTd(date));
+        row.appendChild(makeTd(reservation.facility || 'Unknown'));
+        row.appendChild(makeTd(reservation.household_name || 'Unknown'));
+        row.appendChild(makeTd(reservation.primary_email || ''));
+        row.appendChild(makeTd(reservation.guest_count || 0));
 
         var statusTd = document.createElement('td');
-        statusTd.innerHTML = '<span class="badge badge-pending">Pending</span>';
+        var badge = document.createElement('span');
+        badge.className = reservation.is_excess_reservation ? 'badge badge-pending' : 'badge badge-pending';
+        badge.textContent = reservation.is_excess_reservation ? 'Excess' : 'Pending';
+        statusTd.appendChild(badge);
         row.appendChild(statusTd);
 
         var actionTd = document.createElement('td');
         var btn = document.createElement('button');
         btn.className = 'btn btn-primary btn-small';
         btn.textContent = 'Review';
-        btn.onclick = function() { openReservationDetail(res.reservation_id); };
+        btn.onclick = (function(resId) {
+          return function() { openReservationDetail(resId); };
+        })(reservation.reservation_id);
         actionTd.appendChild(btn);
         row.appendChild(actionTd);
 
@@ -2121,43 +2201,60 @@
   function openReservationDetail(resId) {
     selectedReservationId = resId;
 
+    var res = _pendingReservations[resId];
     var container = document.getElementById('resDetailContent');
     container.innerHTML = '';
 
-    // Reservation ID row
-    var idRow = document.createElement('div');
-    idRow.className = 'detail-row';
-    var idLabel = document.createElement('div');
-    idLabel.className = 'detail-label';
-    idLabel.textContent = 'Reservation ID:';
-    idRow.appendChild(idLabel);
-    var idValue = document.createElement('div');
-    idValue.className = 'detail-value';
-    idValue.textContent = resId;
-    idRow.appendChild(idValue);
-    container.appendChild(idRow);
-
-    // Static detail rows (placeholder data)
-    var details = [
-      { label: 'Member:', value: 'John Smith' },
-      { label: 'Facility:', value: 'Tennis Courts' },
-      { label: 'Date & Time:', value: 'Friday, Feb 14 from 2:00 PM - 4:00 PM' },
-      { label: 'Guests:', value: '2 guests' }
-    ];
-
-    details.forEach(function(detail) {
+    /**
+     * Appends a label/value detail row to the container.
+     * @param {string} label
+     * @param {string} value
+     */
+    function addRow(label, value) {
       var row = document.createElement('div');
       row.className = 'detail-row';
-      var label = document.createElement('div');
-      label.className = 'detail-label';
-      label.textContent = detail.label;
-      row.appendChild(label);
-      var value = document.createElement('div');
-      value.className = 'detail-value';
-      value.textContent = detail.value;
-      row.appendChild(value);
+      var labelEl = document.createElement('div');
+      labelEl.className = 'detail-label';
+      labelEl.textContent = label;
+      var valueEl = document.createElement('div');
+      valueEl.className = 'detail-value';
+      valueEl.textContent = value || '—';
+      row.appendChild(labelEl);
+      row.appendChild(valueEl);
       container.appendChild(row);
-    });
+    }
+
+    if (!res) {
+      addRow('Reservation ID:', resId);
+      addRow('Note:', 'Full details unavailable. Refresh the page to reload.');
+    } else {
+      // Format date/time display
+      var dateStr = res.event_date
+        ? new Date(res.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+        : '—';
+      var startStr = res.start_time
+        ? new Date(res.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+      var endStr = res.end_time
+        ? new Date(res.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+      var timeStr = startStr && endStr ? startStr + ' – ' + endStr : (startStr || '—');
+
+      addRow('Reservation ID:', res.reservation_id);
+      addRow('Household:', res.household_name);
+      addRow('Contact:', res.primary_email);
+      addRow('Facility:', res.facility);
+      addRow('Event Name:', res.event_name);
+      addRow('Date:', dateStr);
+      addRow('Time:', timeStr);
+      addRow('Duration:', res.duration_hours ? res.duration_hours + ' hour(s)' : '—');
+      addRow('Guests:', res.has_guests ? (res.guest_count || 0) + ' guest(s)' : 'None');
+      addRow('Excess Booking:', res.is_excess_reservation ? 'Yes — exceeds household limit' : 'No');
+      if (res.bump_window_deadline) {
+        addRow('Bump Deadline:', new Date(res.bump_window_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+      }
+      if (res.no_fundraising_confirmed) {
+        addRow('No Fundraising:', 'Confirmed');
+      }
+    }
 
     document.getElementById('resActionNotes').value = '';
     document.getElementById('resDetailModal').classList.add('show');
@@ -2220,6 +2317,424 @@
     });
   }
   
+  // ============================================================
+  // GUEST LISTS
+  // ============================================================
+
+  /** Currently selected guest list ID for detail panel actions. */
+  var _selectedGuestListId = null;
+  /** Cached guest list objects keyed by guest_list_id. */
+  var _guestListCache = {};
+  /** Per-guest decision state keyed by index, for the open review panel. */
+  var _glCurrentDecisions = {};
+  /** Guest count for the open review panel. */
+  var _glCurrentGuestCount = 0;
+
+  /**
+   * Masks an ID number for display: shows last 4 characters, rest as asterisks.
+   */
+  function maskIdAdmin(id) {
+    if (!id || id.length <= 4) return id || '—';
+    return id.slice(0, -4).replace(/./g, '*') + id.slice(-4);
+  }
+
+  /**
+   * Loads all submitted/in_review guest lists and renders the table.
+   */
+  function loadGuestLists() {
+    var tbody = document.getElementById('glTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;">Loading...</td></tr>';
+    document.getElementById('glDetailPanel').style.display = 'none';
+
+    apiCall('admin_guest_lists', {}).then(function(res) {
+      if (!res.success) { showError('Failed to load guest lists: ' + res.message); return; }
+
+      var lists = res.data.guestLists || [];
+      _guestListCache = {};
+      lists.forEach(function(gl) { _guestListCache[gl.guest_list_id] = gl; });
+
+      var badge = document.getElementById('guest-lists-badge');
+      if (lists.length > 0) { badge.textContent = lists.length; badge.style.display = 'inline-block'; }
+      else { badge.style.display = 'none'; }
+
+      if (lists.length === 0) {
+        document.getElementById('glTable').style.display = 'none';
+        document.getElementById('glEmpty').style.display = 'block';
+        return;
+      }
+      document.getElementById('glTable').style.display = 'table';
+      document.getElementById('glEmpty').style.display = 'none';
+
+      tbody.innerHTML = '';
+      lists.forEach(function(gl) {
+        var eventDate = gl.event_date
+          ? new Date(gl.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+        var row = document.createElement('tr');
+        var make = function(text) { var td = document.createElement('td'); td.textContent = text; return td; };
+
+        row.appendChild(make(eventDate));
+        row.appendChild(make(gl.facility || '—'));
+        row.appendChild(make(gl.household_name || '—'));
+        row.appendChild(make(gl.guest_count || 0));
+
+        var statusTd = document.createElement('td');
+        var statusBadge = document.createElement('span');
+        statusBadge.style.cssText = 'font-size:11px; padding:2px 8px; border-radius:12px; font-weight:600;';
+        if (gl.submission_status === 'in_review') {
+          statusBadge.style.background = '#fff3e0'; statusBadge.style.color = '#e65100';
+          statusBadge.textContent = 'In Review';
+        } else {
+          statusBadge.style.background = '#e3f2fd'; statusBadge.style.color = '#1565c0';
+          statusBadge.textContent = 'New';
+        }
+        statusTd.appendChild(statusBadge);
+        row.appendChild(statusTd);
+
+        var actionTd = document.createElement('td');
+        var reviewBtn = document.createElement('button');
+        reviewBtn.className = 'btn btn-primary btn-small';
+        reviewBtn.textContent = gl.submission_status === 'in_review' ? 'Continue Review' : 'Review';
+        reviewBtn.onclick = (function(glId) {
+          return function() { openGlDetail(glId); };
+        })(gl.guest_list_id);
+        actionTd.appendChild(reviewBtn);
+        row.appendChild(actionTd);
+
+        tbody.appendChild(row);
+      });
+    });
+  }
+
+  /**
+   * Opens the per-guest review panel for a guest list.
+   * Pre-populates any saved draft decisions.
+   * Also triggers a batch history lookup for all guests with ID numbers.
+   */
+  function openGlDetail(glId) {
+    _selectedGuestListId = glId;
+    var gl = _guestListCache[glId];
+    var panel = document.getElementById('glDetailPanel');
+    if (!gl) { return; }
+
+    // Meta header
+    var eventDate = gl.event_date
+      ? new Date(gl.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+      : '—';
+    var meta = document.getElementById('glDetailMeta');
+    meta.innerHTML = '';
+    var metaText = document.createElement('span');
+    metaText.textContent = gl.facility + ' — ' + gl.household_name + ' | Event: ' + eventDate +
+      ' | Contact: ' + gl.primary_email + ' | ID: ' + gl.reservation_id;
+    meta.appendChild(metaText);
+
+    document.getElementById('glDetailTitle').textContent = 'Guest List Review — ' + (gl.guest_count || 0) + ' Guest(s)';
+
+    var guests = [];
+    try { guests = JSON.parse(gl.guests_json || '[]'); } catch (e) {}
+    _glCurrentGuestCount = guests.length;
+
+    // Load saved draft decisions
+    _glCurrentDecisions = {};
+    var draftDecisions = [];
+    try { draftDecisions = JSON.parse(gl.rso_draft_json || '[]'); } catch (e) {}
+    draftDecisions.forEach(function(d) { _glCurrentDecisions[d.index] = d; });
+
+    // Collect ID numbers for batch history lookup
+    var idNumbers = guests
+      .map(function(g) { return g.id_number || ''; })
+      .filter(function(id) { return id.length > 0; });
+
+    // Render guest rows (without history initially)
+    renderGuestReviewRows(guests, {});
+
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Fetch history in background and refresh badges
+    if (idNumbers.length > 0) {
+      apiCall('admin_guest_histories', { id_numbers: JSON.stringify(idNumbers) }).then(function(res) {
+        if (res.success && res.data && res.data.histories) {
+          renderGuestReviewRows(guests, res.data.histories);
+        }
+      });
+    }
+  }
+
+  /**
+   * Renders per-guest radio rows in the review panel.
+   * @param {Array}  guests    Parsed guests_json array
+   * @param {Object} histories Map of {id_number: [{rso_status,...}]}
+   */
+  function renderGuestReviewRows(guests, histories) {
+    var container = document.getElementById('glGuestRows');
+    container.innerHTML = '';
+
+    guests.forEach(function(g, idx) {
+      var savedDecision = _glCurrentDecisions[idx] || {};
+      var ageLabel = g.age_group === 'under_18' ? 'Under 18' : 'Adult';
+      var history  = (g.id_number && histories[g.id_number]) ? histories[g.id_number] : [];
+      var prevApproved = history.filter(function(h) { return h.rso_status === 'approved'; }).length;
+      var prevRejected = history.filter(function(h) { return h.rso_status === 'rejected'; }).length;
+
+      var card = document.createElement('div');
+      card.style.cssText = 'border:1px solid #e0e0e0; border-radius:6px; padding:14px; margin-bottom:12px; background:#fff;';
+
+      // Guest name + history badge (clickable if has history)
+      var nameRow = document.createElement('div');
+      nameRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;';
+
+      var nameEl = document.createElement('strong');
+      nameEl.style.fontSize = '14px';
+      nameEl.textContent = (g.first_name || '') + ' ' + (g.last_name || '');
+      nameRow.appendChild(nameEl);
+
+      if (history.length > 0) {
+        var histBadge = document.createElement('button');
+        histBadge.type = 'button';
+        histBadge.style.cssText = 'font-size:11px; padding:3px 8px; border-radius:12px; border:none; cursor:pointer; background:#f3e5f5; color:#6a1b9a; font-weight:600;';
+        histBadge.textContent = 'prev: ' + prevApproved + ' approved / ' + prevRejected + ' rejected';
+        histBadge.onclick = (function(guestName, hist) {
+          return function() { openGuestHistoryModal(guestName, hist); };
+        })((g.first_name || '') + ' ' + (g.last_name || ''), history);
+        nameRow.appendChild(histBadge);
+      } else if (g.id_number) {
+        var noHistBadge = document.createElement('span');
+        noHistBadge.style.cssText = 'font-size:11px; color:#999;';
+        noHistBadge.textContent = 'No prior history';
+        nameRow.appendChild(noHistBadge);
+      }
+      card.appendChild(nameRow);
+
+      // Guest details (age, ID masked)
+      var detailEl = document.createElement('div');
+      detailEl.style.cssText = 'font-size:12px; color:#666; margin-bottom:10px;';
+      detailEl.textContent = ageLabel +
+        (g.id_number ? ' | ID: ' + maskIdAdmin(g.id_number) : ' | No ID provided');
+      card.appendChild(detailEl);
+
+      // Approve / Reject radio buttons
+      var radioRow = document.createElement('div');
+      radioRow.style.cssText = 'display:flex; gap:16px; align-items:center;';
+
+      var radioName = 'guest_decision_' + idx;
+
+      var approveLabel = document.createElement('label');
+      approveLabel.style.cssText = 'display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; color:#2e7d32; font-weight:600;';
+      var approveRadio = document.createElement('input');
+      approveRadio.type = 'radio'; approveRadio.name = radioName; approveRadio.value = 'approved';
+      if (savedDecision.rso_status === 'approved') approveRadio.checked = true;
+      approveLabel.appendChild(approveRadio);
+      approveLabel.appendChild(document.createTextNode('Approve'));
+      radioRow.appendChild(approveLabel);
+
+      var rejectLabel = document.createElement('label');
+      rejectLabel.style.cssText = 'display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; color:#c62828; font-weight:600;';
+      var rejectRadio = document.createElement('input');
+      rejectRadio.type = 'radio'; rejectRadio.name = radioName; rejectRadio.value = 'rejected';
+      if (savedDecision.rso_status === 'rejected') rejectRadio.checked = true;
+      rejectLabel.appendChild(rejectRadio);
+      rejectLabel.appendChild(document.createTextNode('Reject'));
+      radioRow.appendChild(rejectLabel);
+
+      card.appendChild(radioRow);
+
+      // Rejection reason textarea (shown when Reject is selected)
+      var reasonDiv = document.createElement('div');
+      reasonDiv.style.cssText = 'margin-top:8px;' + (savedDecision.rso_status === 'rejected' ? '' : 'display:none;');
+      var reasonInput = document.createElement('textarea');
+      reasonInput.className = 'form-input';
+      reasonInput.rows = 2;
+      reasonInput.placeholder = 'Reason for rejection (required)';
+      reasonInput.setAttribute('data-reason-for', idx);
+      if (savedDecision.rso_reason) reasonInput.value = savedDecision.rso_reason;
+      reasonDiv.appendChild(reasonInput);
+      card.appendChild(reasonDiv);
+
+      // Wire radio change events
+      approveRadio.onchange = (function(rd, ri, guestIdx) {
+        return function() {
+          if (approveRadio.checked) rd.style.display = 'none';
+          _glCurrentDecisions[guestIdx] = { index: guestIdx, rso_status: 'approved', rso_reason: '' };
+        };
+      })(reasonDiv, rejectRadio, idx);
+
+      rejectRadio.onchange = (function(rd, guestIdx) {
+        return function() {
+          if (rejectRadio.checked) rd.style.display = '';
+          if (_glCurrentDecisions[guestIdx]) _glCurrentDecisions[guestIdx].rso_status = 'rejected';
+          else _glCurrentDecisions[guestIdx] = { index: guestIdx, rso_status: 'rejected', rso_reason: '' };
+        };
+      })(reasonDiv, idx);
+
+      reasonInput.oninput = (function(guestIdx) {
+        return function() {
+          if (!_glCurrentDecisions[guestIdx]) _glCurrentDecisions[guestIdx] = { index: guestIdx, rso_status: 'rejected', rso_reason: '' };
+          _glCurrentDecisions[guestIdx].rso_reason = reasonInput.value;
+        };
+      })(idx);
+
+      container.appendChild(card);
+    });
+  }
+
+  /**
+   * Collects current decisions from the review panel state.
+   */
+  function _collectDecisions() {
+    // Sync reason textarea values into _glCurrentDecisions
+    document.querySelectorAll('[data-reason-for]').forEach(function(textarea) {
+      var idx = parseInt(textarea.getAttribute('data-reason-for'), 10);
+      if (_glCurrentDecisions[idx]) {
+        _glCurrentDecisions[idx].rso_reason = textarea.value.trim();
+      }
+    });
+    return Object.keys(_glCurrentDecisions).map(function(k) { return _glCurrentDecisions[k]; });
+  }
+
+  /**
+   * Closes the guest list detail panel.
+   */
+  function closeGlDetail() {
+    document.getElementById('glDetailPanel').style.display = 'none';
+    _selectedGuestListId = null;
+    _glCurrentDecisions = {};
+  }
+
+  /**
+   * Saves draft decisions without finalizing.
+   */
+  function saveGlDraft() {
+    if (!_selectedGuestListId) return;
+    var decisions = _collectDecisions();
+    var btn = document.getElementById('glSaveDraftBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    apiCall('admin_save_guest_list_draft', {
+      guest_list_id: _selectedGuestListId,
+      decisions: JSON.stringify(decisions)
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Save Draft';
+      if (!res.success) { showError('Failed to save draft: ' + res.message); return; }
+      showNotification('Draft saved. You can continue reviewing later.');
+      // Update cache status
+      if (_guestListCache[_selectedGuestListId]) {
+        _guestListCache[_selectedGuestListId].submission_status = 'in_review';
+        _guestListCache[_selectedGuestListId].rso_draft_json = JSON.stringify(decisions);
+      }
+    });
+  }
+
+  /**
+   * Finalizes the review. All guests must have a decision.
+   */
+  function finalizeGlReview() {
+    if (!_selectedGuestListId) return;
+    var decisions = _collectDecisions();
+
+    // Check all guests have a decision
+    if (decisions.length < _glCurrentGuestCount) {
+      showError('Please set a decision (Approve or Reject) for every guest before finalizing.');
+      return;
+    }
+    for (var i = 0; i < decisions.length; i++) {
+      if (decisions[i].rso_status === 'rejected' && !decisions[i].rso_reason) {
+        showError('Please enter a rejection reason for every rejected guest.');
+        return;
+      }
+    }
+
+    var rejectedCount = decisions.filter(function(d) { return d.rso_status === 'rejected'; }).length;
+    var confirmMsg = rejectedCount > 0
+      ? 'Finalize review? ' + rejectedCount + ' guest(s) will be flagged. The board will be notified. This cannot be undone.'
+      : 'Finalize review? All guests approved. This cannot be undone.';
+
+    if (!confirm(confirmMsg)) return;
+
+    var btn = document.getElementById('glFinalizeBtn');
+    btn.disabled = true;
+    btn.textContent = 'Finalizing...';
+
+    apiCall('admin_finalize_guest_list', {
+      guest_list_id: _selectedGuestListId,
+      decisions: JSON.stringify(decisions)
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Finalize Review';
+      if (!res.success) { showError('Failed: ' + res.message); return; }
+      closeGlDetail();
+      loadGuestLists();
+      var msg = 'Review finalized. ' + (res.data.approvedCount || 0) + ' approved, ' + (res.data.rejectedCount || 0) + ' rejected.';
+      if (res.data.rejectedCount > 0) msg += ' Board has been notified.';
+      showNotification(msg);
+    });
+  }
+
+  /**
+   * Opens the guest history modal for a specific guest.
+   */
+  function openGuestHistoryModal(guestName, history) {
+    document.getElementById('guestHistoryTitle').textContent = 'History: ' + guestName;
+    var content = document.getElementById('guestHistoryContent');
+    content.innerHTML = '';
+
+    if (!history || history.length === 0) {
+      var empty = document.createElement('p');
+      empty.style.cssText = 'color:#666; font-size:13px; text-align:center; padding:16px 0;';
+      empty.textContent = 'No history found for this guest.';
+      content.appendChild(empty);
+    } else {
+      history.forEach(function(entry) {
+        var card = document.createElement('div');
+        card.style.cssText = 'border-left:4px solid ' +
+          (entry.rso_status === 'approved' ? '#2e7d32' : '#c62828') +
+          '; padding:10px 12px; margin-bottom:10px; background:#fafafa; border-radius:0 4px 4px 0;';
+
+        var eventDate = entry.event_date
+          ? new Date(entry.event_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+
+        var line1 = document.createElement('div');
+        line1.style.cssText = 'font-weight:600; font-size:13px; margin-bottom:4px;';
+        line1.textContent = eventDate + ' — ' + (entry.facility || '—');
+        card.appendChild(line1);
+
+        var line2 = document.createElement('div');
+        line2.style.cssText = 'font-size:12px; color:#555; margin-bottom:2px;';
+        line2.textContent = 'Household: ' + (entry.household_name || '—');
+        card.appendChild(line2);
+
+        var statusEl = document.createElement('div');
+        statusEl.style.cssText = 'font-size:12px; font-weight:700; color:' +
+          (entry.rso_status === 'approved' ? '#2e7d32' : '#c62828') + '; margin-top:4px;';
+        statusEl.textContent = entry.rso_status === 'approved' ? 'APPROVED' : 'REJECTED';
+        if (entry.rso_reason) {
+          var reasonEl = document.createElement('span');
+          reasonEl.style.cssText = 'font-weight:400; color:#555; margin-left:6px;';
+          reasonEl.textContent = '— ' + entry.rso_reason;
+          statusEl.appendChild(reasonEl);
+        }
+        card.appendChild(statusEl);
+
+        content.appendChild(card);
+      });
+    }
+
+    document.getElementById('guestHistoryModal').style.display = 'flex';
+  }
+
+  /**
+   * Closes the guest history modal.
+   */
+  function closeGuestHistoryModal() {
+    document.getElementById('guestHistoryModal').style.display = 'none';
+  }
+
+  // ============================================================
+  // END GUEST LISTS
+  // ============================================================
+
   /**
    * Sets up search/filter functionality for the reservations table.
    * Hides/shows rows based on search input.

@@ -1,15 +1,15 @@
-Dear {{FIRST_NAME}},
+﻿Dear {{FIRST_NAME}},
 
 Happy Birthday, {{FIRST_NAME}}!
 
-Today is your special day! The Gaborone Expatriate Association wishes you a wonderful birthday and a fantastic year ahead.
+Today is your special day! The Gaborone Employee Association wishes you a wonderful birthday and a fantastic year ahead.
 
 We appreciate your membership and your participation in our community!
 
 Best regards,
-Gaborone Expatriate Association
+Gaborone Employee Association
 Email: board@geabotswana.org
 Website: www.geabotswana.org
 
 ---
-This is an automated message from the GEA Management System. Please do not reply to this email. For assistance, contact board@geabotswana.org.
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

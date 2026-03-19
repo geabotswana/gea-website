@@ -2,7 +2,7 @@
 
 **Current Date:** March 19, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 19, 2026 — NMP.6-8 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE (limits, excess, calendar events, notifications, admin UI). RES.3 ✅ COMPLETE (guest list submit, RSO review, final summary email). ⚠️ Manual step: add Guest Lists sheet columns + add 2 new email templates to Drive/sheet (see RES.3 notes).
+**Status:** Mar 19-20, 2026 — NMP.6-8 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE — per-guest RSO review redesign: draft save, history lookup, Guest Profiles sheet, board rejection notice. All 62 email template footers updated (org name corrected, reply-friendly footer). ⚠️ Manual step remaining: add RES_GUEST_LIST_REJECTIONS_TO_BOARD row to Email Templates sheet (Drive file exists on G:, needs file ID).
 
 ---
 
@@ -1124,7 +1124,7 @@ submitted
 - Check deadline, set final-call reminder
 - Send confirmation email to member (tpl_031)
 
-**Status:** ✅ COMPLETE (Mar 19, 2026) — `submitGuestList()` in ReservationService.js writes to Guest Lists sheet, marks reservation, sends confirmation email. Portal.html shows "Submit Guest List" button for approved reservations with guests; dynamic guest-row modal (name/relationship/nationality). ⚠️ Manual: Guest Lists sheet needs columns: guest_list_id, reservation_id, household_id, household_name, primary_email, facility, event_date, guests_json, guest_count, submitted_date, submission_status, rso_reviewed_by, rso_review_date, rejection_reason. Also add `RES_GUEST_LIST_SUBMITTED_TO_MEMBER` to Drive/sheet.
+**Status:** ✅ COMPLETE (Mar 19-20, 2026) — `submitGuestList()` in ReservationService.js. Guest fields redesigned: first_name, last_name, age_group (over_18/under_18), id_number (required for over_18), save_to_profile. Validates all fields. Handles profile saves on submission. Portal.html shows "Submit Guest List" button for approved reservations with guests; modal has new fields, saved-guest picker ("Add from Saved Guests"), ID masking in picker. Guest Lists sheet columns: guest_list_id, reservation_id, household_id, household_name, primary_email, facility, event_date, guests_json, guest_count, submitted_date, submission_status, rso_reviewed_by, rso_review_date, rso_draft_json, last_modified_date. Guest Profiles sheet (new tab): guest_profile_id, household_id, first_name, last_name, id_number, age_group, created_date, last_used_date. Both sheets set up manually. RES_GUEST_LIST_SUBMITTED_TO_MEMBER on G: drive; ⚠️ needs Email Templates sheet row.
 
 **Prerequisite:** RES.2 (bookings approved), RES-PREP.3 (templates)
 
@@ -1162,7 +1162,7 @@ submitted
 - Send member notification emails (tpl_033 for rejections)
 - Update Guest Lists sheet with RSO decision
 
-**Status:** ✅ COMPLETE (Mar 19, 2026) — `acknowledgeGuestList()` and `rejectGuestList()` in ReservationService.js. Rejection resets `guest_list_submitted` so member can resubmit. Admin.html has "Guest Lists" nav + table + detail panel with Acknowledge/Reject actions. ⚠️ Manual: add `RES_GUEST_LIST_RSO_REJECTED_TO_MEMBER` to Drive/sheet.
+**Status:** ✅ COMPLETE (Mar 19-20, 2026) — Full redesign. Old whole-list acknowledge/reject replaced with per-guest review. Key functions: `saveGuestListDraft()` (saves partial decisions, sets status=in_review), `finalizeGuestListReview()` (validates all decisions, sets finalized, triggers emails). `saveGuestProfile()` upserts by (household_id, id_number). `getGuestHistoryByIdNumbers()` batch-lookups history across all finalized lists. Admin.html: per-guest radio cards (Approve/Reject), reject reveals reason textarea, history badge with clickthrough modal, Save Draft + Finalize Review buttons, status column (New/In Review). ID masking: last 4 digits visible in UI, full ID server-side only. Rejections go to board (not member) via RES_GUEST_LIST_REJECTIONS_TO_BOARD. RES_GUEST_LIST_RSO_REJECTED_TO_MEMBER on G: drive; ⚠️ needs Email Templates sheet rows for all 3 new guest list templates.
 
 **Prerequisite:** RES.3.1 (submission form)
 
@@ -1193,7 +1193,7 @@ submitted
 - Format nicely (table, clear layout)
 - Store PDF reference for audit trail
 
-**Status:** ✅ COMPLETE (Mar 19, 2026) — Implemented as `_sendFinalGuestListSummary()` called from `acknowledgeGuestList()`. Sends a formatted plain-text email to EMAIL_RSO with full guest details (name/relationship/nationality), event info, and ID verification reminder. PDF generation deferred (GAS has no native PDF-from-text; would require a Docs template — not warranted at current volume).
+**Status:** ✅ COMPLETE (Mar 19-20, 2026) — Implemented as `_sendApprovedGuestListToRso()` called from `finalizeGuestListReview()`. Sends approved-only guest list (name, masked ID, age group) to RSO as plain-text email. If any guests rejected, `_sendGuestListRejectionsToBoard()` sends board notification via RES_GUEST_LIST_REJECTIONS_TO_BOARD template with full approved/rejected lists and RSO reasons. PDF generation deferred.
 
 **Prerequisite:** RES.3.2 (RSO approval)
 

@@ -2,7 +2,7 @@
 
 **Current Date:** March 20, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE. RES.4 ✅ COMPLETE. RES.5.1 ✅ COMPLETE. RES.5.3 ✅ COMPLETE. SUP.1-4 ✅ COMPLETE. All 63 email templates verified in both Email Templates sheet and CSV. FACILITY_WHOLE removed. Schema fully aligned. xlsx snapshots removed from repo (source of truth is Google Sheets). Guest list RSO-to-member notification intentionally manual (board uses diplomatic discretion).
+**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE. RES.4 ✅ COMPLETE. RES.5.1-5.4 ✅ COMPLETE. SUP.1-4 ✅ COMPLETE. All 63 email templates verified. Schema fully aligned. xlsx snapshots removed from repo.
 
 ---
 
@@ -1360,7 +1360,7 @@ submitted
 - If multiple stages (mgmt then board): show progress ("Awaiting Management Approval → Then Board")
 - [View Details] link for each
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — Enhanced status cell in `loadReservations()` in Portal.html. Leobo pending bookings now show a two-step MGT→Board progress indicator: MGT step turns green with ✓ once `mgt_approved_by` is populated, Board step shown in amber until approved. Tooltip note updates accordingly ("Awaiting management approval" vs "MGT approved — awaiting final board approval"). Tennis pending shows simple "Awaiting board review".
 
 **Prerequisite:** RES.5.1
 
@@ -1408,7 +1408,7 @@ submitted
 - [Deny] button (to remove from waitlist)
 - [View Details] link
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — New "Waitlist" page in Admin.html (⏳ nav item). Backend: `admin_waitlist_list` route → `_handleAdminWaitlistList()` returns all STATUS_WAITLISTED reservations sorted by facility/date/submission order. Table shows: position badge (orange circle), facility, event date, household + email, event name, guest count, days until event (highlighted if ≤7), auto-expire countdown (red if ≤48h). Promote → `admin_approve_bump`; Remove → `admin_deny`. Badge count shown in sidebar nav and refreshed on dashboard load.
 
 **Prerequisite:** RES.4.1-4.3 (waitlist backend)
 

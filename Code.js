@@ -219,6 +219,8 @@ function _routeAction(action, params) {
     case "admin_reject_payment": return _handleAdminRejectPayment(params);
     case "admin_clarify_payment": return _handleAdminClarifyPayment(params);
     case "admin_payment_report": return _handleAdminPaymentReport(params);
+    case "admin_reservations_report": return _handleAdminReservationsReport(params);
+    case "admin_resend_email":        return _handleAdminResendEmail(params);
 
     // ── DIAGNOSTICS ──────────────────────────────────────────
     case "image_diagnostic":  return _handleImageDiagnostic(params);
@@ -2944,6 +2946,53 @@ function _handleAdminGuestHistories(p) {
 
   var histories = getGuestHistoryByIdNumbers(idNumbers);
   return successResponse({ histories: histories });
+}
+
+
+// ============================================================
+// HANDLER: _handleAdminReservationsReport (SUP.3)
+// ============================================================
+/**
+ * Returns aggregated reservation statistics for a given month.
+ * Used by the Reports page in Admin.html.
+ * Query param: month (ISO date string for any day in desired month; defaults to today)
+ */
+function _handleAdminReservationsReport(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  try {
+    var refDate = p.month ? new Date(p.month) : new Date();
+    var stats = _buildReservationsReportStats_(refDate);
+    return successResponse({
+      month:         formatDate(getMonthStart(refDate)),
+      total:         stats.total,
+      excessCount:   stats.excessCount,
+      waitlistCount: stats.waitlistCount,
+      byFacility:    stats.byFacility,
+      byStatus:      stats.byStatus
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminReservationsReport: " + e);
+    return errorResponse("Could not generate reservations report.", "SERVER_ERROR");
+  }
+}
+
+
+// ============================================================
+// HANDLER: _handleAdminResendEmail (SUP.4)
+// ============================================================
+/**
+ * Re-sends the member booking confirmation or waitlist email for a reservation.
+ * Only works for Approved / Confirmed / Tentative / Waitlisted reservations.
+ */
+function _handleAdminResendEmail(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  if (!p.reservation_id) return errorResponse("reservation_id required", "INVALID_PARAM");
+  var result = resendReservationEmail(p.reservation_id, auth.session.email);
+  return result.ok
+    ? successResponse({ message: "Email resent." })
+    : errorResponse(result.error, result.code);
 }
 
 

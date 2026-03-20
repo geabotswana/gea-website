@@ -1838,3 +1838,74 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
     }
   }
 }
+
+
+// ============================================================
+// SUP.4 — EMAIL RESEND
+// ============================================================
+
+/**
+ * SUP.4 — Re-sends the member-facing booking confirmation or waitlist email
+ * for an existing reservation.  Only valid for bookings in an active status
+ * (Approved / Confirmed / Tentative / Waitlisted).
+ *
+ * @param {string} reservationId
+ * @param {string} senderEmail   Board member triggering the resend (for audit)
+ * @returns {Object} { ok, error?, code? }
+ */
+function resendReservationEmail(reservationId, senderEmail) {
+  try {
+    var res = getReservationById(reservationId);
+    if (!res) return { ok: false, error: "Reservation not found", code: "NOT_FOUND" };
+
+    var sendable = [STATUS_APPROVED, STATUS_CONFIRMED, STATUS_TENTATIVE, STATUS_WAITLISTED];
+    if (sendable.indexOf(res.status) === -1) {
+      return { ok: false,
+               error: "Email resend not applicable for status: " + res.status,
+               code: "INVALID_STATUS" };
+    }
+
+    var hh = getHouseholdById(res.household_id);
+    if (!hh) return { ok: false, error: "Household not found", code: "NOT_FOUND" };
+
+    var primaryEmail = _getPrimaryEmail(hh.household_id);
+    if (!primaryEmail) return { ok: false, error: "No email on file for household", code: "NOT_FOUND" };
+
+    var firstName = _getPrimaryFirstName(hh.household_id);
+    var dateStr   = res.reservation_date ? formatDate(new Date(res.reservation_date)) : "";
+    var timeStr   = (res.start_time && res.end_time)
+                  ? formatTime(new Date(res.start_time)) + " \u2013 " + formatTime(new Date(res.end_time))
+                  : "";
+
+    if (res.status === STATUS_WAITLISTED) {
+      var pos = _countWaitlistedForFacility(res.facility, new Date(res.reservation_date));
+      sendEmailFromTemplate("RES_BOOKING_WAITLISTED_TO_MEMBER", primaryEmail, {
+        FIRST_NAME:        firstName,
+        FACILITY_NAME:     res.facility,
+        RESERVATION_DATE:  dateStr,
+        RESERVATION_TIME:  timeStr,
+        RESERVATION_ID:    reservationId,
+        WAITLIST_POSITION: pos,
+        PORTAL_URL:        URL_MEMBER_PORTAL
+      });
+    } else {
+      sendEmailFromTemplate("RES_BOOKING_APPROVED_TO_MEMBER", primaryEmail, {
+        FIRST_NAME:       firstName,
+        RESERVATION_ID:   reservationId,
+        FACILITY_NAME:    res.facility,
+        RESERVATION_DATE: dateStr,
+        RESERVATION_TIME: timeStr,
+        GUEST_LIMIT:      res.guest_count || "",
+        PORTAL_URL:       URL_MEMBER_PORTAL
+      });
+    }
+
+    logAuditEntry(senderEmail, "RESERVATION_EMAIL_RESENT", "Reservation", reservationId,
+                  "Confirmation email re-sent (status: " + res.status + ")");
+    return { ok: true };
+
+  } catch (e) {
+    Logger.log("ERROR resendReservationEmail: " + e);
+    return { ok: false, error: String(e), code: "SERVER_ERROR" };
+  }
+}

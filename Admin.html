@@ -1242,6 +1242,10 @@
         <span class="nav-icon">💳</span>
         <span>Payments</span>
       </div>
+      <div class="nav-item" onclick="showPage('reports', event)">
+        <span class="nav-icon">📈</span>
+        <span>Reports</span>
+      </div>
     </aside>
     
     <!-- ============================================================ -->
@@ -1627,6 +1631,25 @@
   </div>
 </div>
 
+      <!-- ========================================================== -->
+      <!-- PAGE: REPORTS (SUP.3)                                      -->
+      <!-- Monthly reservations analytics, on-demand                  -->
+      <!-- ========================================================== -->
+      <div id="reports" class="page">
+        <h1 class="page-title">Reservations Report</h1>
+        <p style="color:#666; margin-bottom:20px;">Select a month to view facility usage and approval statistics. Monthly reports are also emailed to the board automatically on the last Monday of each month.</p>
+
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+          <label class="form-label" style="margin:0; white-space:nowrap;">Report Month:</label>
+          <input type="month" id="reportMonthInput" style="padding:8px 10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+          <button class="btn btn-primary" onclick="loadReservationsReport();">Run Report</button>
+        </div>
+
+        <div id="reservationsReportContent">
+          <p style="color:#aaa;">Select a month above and click Run Report.</p>
+        </div>
+      </div>
+
 <!-- ============================================================ -->
 <!-- MODALS                                                       -->
 <!-- Overlay dialogs for actions and detailed views              -->
@@ -1651,7 +1674,8 @@
       <button class="btn btn-danger"    id="resDenyBtn"     onclick="denyReservation();">Deny</button>
       <button class="btn btn-secondary" id="resWaitlistBtn" onclick="waitlistReservation();">Waitlist</button>
       <button class="btn btn-primary"   id="resApproveBtn"  onclick="approveReservation();">Approve</button>
-      <button class="btn btn-primary"   id="resBumpBtn"     onclick="approveBumpReservation();" style="display:none;">Approve Bump</button>
+      <button class="btn btn-primary"   id="resBumpBtn"      onclick="approveBumpReservation();" style="display:none;">Approve Bump</button>
+      <button class="btn btn-secondary" id="resResendBtn"    onclick="resendBookingEmail();"     style="display:none;">Resend Email</button>
     </div>
   </div>
 </div>
@@ -1961,6 +1985,9 @@
         break;
       case 'guest-lists':
         loadGuestLists();
+        break;
+      case 'reports':
+        // Don't auto-load — let board choose the month first
         break;
     }
   }
@@ -2290,10 +2317,12 @@
 
     // Show/hide action buttons based on current status
     var isWaitlisted = res && res.status === 'Waitlisted';
+    var canResend = res && ['Approved','Confirmed','Tentative','Waitlisted'].indexOf(res.status) !== -1;
     document.getElementById('resDenyBtn').style.display     = isWaitlisted ? 'none'  : '';
     document.getElementById('resApproveBtn').style.display  = isWaitlisted ? 'none'  : '';
     document.getElementById('resWaitlistBtn').style.display = isWaitlisted ? 'none'  : '';
     document.getElementById('resBumpBtn').style.display     = isWaitlisted ? ''      : 'none';
+    document.getElementById('resResendBtn').style.display   = canResend    ? ''      : 'none';
 
     document.getElementById('resActionNotes').value = '';
     document.getElementById('resDetailModal').classList.add('show');
@@ -2413,6 +2442,148 @@
       loadReservations();
     });
   }
+
+  // ============================================================
+  // SUP.4 — EMAIL RESEND
+  // ============================================================
+
+  /**
+   * Re-sends the booking confirmation or waitlist email to the member
+   * for the currently selected reservation.
+   */
+  function resendBookingEmail() {
+    if (!selectedReservationId) return;
+    var btn = document.getElementById('resResendBtn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    apiCall('admin_resend_email', { reservation_id: selectedReservationId })
+      .then(function(res) {
+        btn.disabled = false;
+        btn.textContent = 'Resend Email';
+        if (!res.success) {
+          showError('Failed to resend email: ' + res.message);
+          return;
+        }
+        closeModal('resDetailModal');
+      });
+  }
+
+
+  // ============================================================
+  // SUP.3 — RESERVATIONS REPORT
+  // ============================================================
+
+  /**
+   * Fetches and renders the reservations analytics report for the selected month.
+   */
+  function loadReservationsReport() {
+    var monthInput = document.getElementById('reportMonthInput');
+    var monthParam = monthInput && monthInput.value ? monthInput.value + '-01' : '';
+    var content = document.getElementById('reservationsReportContent');
+    content.textContent = 'Loading...';
+
+    apiCall('admin_reservations_report', { month: monthParam }).then(function(res) {
+      if (!res.success) {
+        content.textContent = 'Error: ' + res.message;
+        return;
+      }
+      var d = res.data;
+      var totalApproved = (d.byStatus['Approved']   || 0)
+                        + (d.byStatus['Confirmed']  || 0)
+                        + (d.byStatus['Tentative']  || 0);
+      var totalDenied   = (d.byStatus['Cancelled']  || 0)
+                        + (d.byStatus['Denied']     || 0);
+      var approvalRate  = d.total > 0 ? Math.round(totalApproved / d.total * 100) : 0;
+
+      var container = document.createElement('div');
+
+      // ── Summary cards ────────────────────────────────────
+      var monthHeading = document.createElement('h3');
+      monthHeading.style.cssText = 'font-size:15px; color:#555; font-weight:normal; margin:0 0 16px;';
+      monthHeading.textContent = 'Report for: ' + d.month;
+      container.appendChild(monthHeading);
+
+      var summaryDiv = document.createElement('div');
+      summaryDiv.style.cssText = 'display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px;';
+
+      function makeStatCard(label, value, color) {
+        var card = document.createElement('div');
+        card.style.cssText = 'background:#fff; border:1px solid #e8e8e8; border-radius:8px;'
+          + ' padding:14px 18px; min-width:100px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.05);';
+        var vEl = document.createElement('div');
+        vEl.style.cssText = 'font-size:26px; font-weight:bold; color:' + (color || '#333') + ';';
+        vEl.textContent = value;
+        var lEl = document.createElement('div');
+        lEl.style.cssText = 'font-size:11px; color:#888; margin-top:4px; text-transform:uppercase; letter-spacing:.5px;';
+        lEl.textContent = label;
+        card.appendChild(vEl);
+        card.appendChild(lEl);
+        return card;
+      }
+
+      summaryDiv.appendChild(makeStatCard('Total', d.total, '#333'));
+      summaryDiv.appendChild(makeStatCard('Approved', totalApproved, '#4CAF50'));
+      summaryDiv.appendChild(makeStatCard('Denied/Cancelled', totalDenied, '#f44336'));
+      summaryDiv.appendChild(makeStatCard('Waitlisted', d.waitlistCount, '#FF9800'));
+      summaryDiv.appendChild(makeStatCard('Excess', d.excessCount, '#9C27B0'));
+      summaryDiv.appendChild(makeStatCard('Approval Rate', approvalRate + '%', '#2196F3'));
+      container.appendChild(summaryDiv);
+
+      // ── By-facility table ────────────────────────────────
+      var h3 = document.createElement('h3');
+      h3.textContent = 'By Facility';
+      h3.style.cssText = 'font-size:15px; margin:0 0 12px;';
+      container.appendChild(h3);
+
+      var table = document.createElement('table');
+      table.style.cssText = 'width:100%; border-collapse:collapse; background:#fff;'
+        + ' border-radius:8px; overflow:hidden; font-size:13px;'
+        + ' box-shadow:0 1px 3px rgba(0,0,0,.05);';
+
+      var thead = document.createElement('thead');
+      var headerRow = document.createElement('tr');
+      ['Facility','Bookings','Hours','Approved','Denied','Cancelled','Pending','Waitlisted']
+        .forEach(function(col) {
+          var th = document.createElement('th');
+          th.style.cssText = 'padding:10px 14px; text-align:left;'
+            + ' background:#f7f7f7; border-bottom:2px solid #eee; font-weight:600;';
+          th.textContent = col;
+          headerRow.appendChild(th);
+        });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      var facilities = Object.keys(d.byFacility).sort();
+      facilities.forEach(function(fac, idx) {
+        var f = d.byFacility[fac];
+        var tr = document.createElement('tr');
+        if (idx % 2 === 1) tr.style.background = '#fafafa';
+        [fac,
+         f.count,
+         Math.round(f.hours * 10) / 10,
+         f.approved,
+         f.denied,
+         f.cancelled,
+         f.pending,
+         f.waitlisted
+        ].forEach(function(val) {
+          var td = document.createElement('td');
+          td.style.cssText = 'padding:10px 14px; border-bottom:1px solid #f0f0f0;';
+          td.textContent = (val !== undefined && val !== null) ? val : 0;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      // Render
+      while (content.firstChild) content.removeChild(content.firstChild);
+      content.appendChild(container);
+    });
+  }
+
 
   // ============================================================
   // GUEST LISTS

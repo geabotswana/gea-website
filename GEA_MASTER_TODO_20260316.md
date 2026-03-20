@@ -1,8 +1,8 @@
 # GEA Management System — Master To-Do List
 
-**Current Date:** March 19, 2026
+**Current Date:** March 20, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. SUP.2 ✅ COMPLETE. SUP.3 ✅ COMPLETE. SUP.4 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE — per-guest RSO review redesign: draft save, history lookup, Guest Profiles sheet, board rejection notice. RES.4 ✅ COMPLETE — waitlist backend: addToWaitlist(), approveBump(), promoteFromWaitlist(), expireWaitlistPositions() nightly task. RES.5.1 ✅ COMPLETE — member portal reservations view (field name fixes, waitlist status badge, cancel for waitlisted). RES.5.3 ✅ COMPLETE — admin portal pending approvals (field name fixes, waitlist UI, Waitlist/Approve Bump buttons, MGT stage indicator). Schema alignment complete (reservation_date, submitted_by_email, board_approved_by, etc.). FACILITY_WHOLE removed — only Tennis Court and Leobo are valid facilities. All email template footers updated. All Email Templates sheet rows complete including RES_GUEST_LIST_REJECTIONS_TO_BOARD and RES_BOOKING_WAITLISTED_TO_MEMBER.
+**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE. RES.4 ✅ COMPLETE. RES.5.1 ✅ COMPLETE. RES.5.3 ✅ COMPLETE. SUP.1-4 ✅ COMPLETE. All 63 email templates verified in both Email Templates sheet and CSV. FACILITY_WHOLE removed. Schema fully aligned. xlsx snapshots removed from repo (source of truth is Google Sheets). Guest list RSO-to-member notification intentionally manual (board uses diplomatic discretion).
 
 ---
 
@@ -1124,7 +1124,7 @@ submitted
 - Check deadline, set final-call reminder
 - Send confirmation email to member (tpl_031)
 
-**Status:** ✅ COMPLETE (Mar 19-20, 2026) — `submitGuestList()` in ReservationService.js. Guest fields redesigned: first_name, last_name, age_group (over_18/under_18), id_number (required for over_18), save_to_profile. Validates all fields. Handles profile saves on submission. Portal.html shows "Submit Guest List" button for approved reservations with guests; modal has new fields, saved-guest picker ("Add from Saved Guests"), ID masking in picker. Guest Lists sheet columns: guest_list_id, reservation_id, household_id, household_name, primary_email, facility, event_date, guests_json, guest_count, submitted_date, submission_status, rso_reviewed_by, rso_review_date, rso_draft_json, last_modified_date. Guest Profiles sheet (new tab): guest_profile_id, household_id, first_name, last_name, id_number, age_group, created_date, last_used_date. Both sheets set up manually. RES_GUEST_LIST_SUBMITTED_TO_MEMBER on G: drive; ⚠️ needs Email Templates sheet row.
+**Status:** ✅ COMPLETE (Mar 20, 2026) — `submitGuestList()` in ReservationService.js. Guest fields redesigned: first_name, last_name, age_group (over_18/under_18), id_number (required for over_18), save_to_profile. Validates all fields. Handles profile saves on submission. Portal.html shows "Submit Guest List" button for approved reservations with guests; modal has new fields, saved-guest picker ("Add from Saved Guests"), ID masking in picker. RES_GUEST_LIST_SUBMITTED_TO_MEMBER confirmed in Email Templates sheet.
 
 **Prerequisite:** RES.2 (bookings approved), RES-PREP.3 (templates)
 
@@ -1162,7 +1162,7 @@ submitted
 - Send member notification emails (tpl_033 for rejections)
 - Update Guest Lists sheet with RSO decision
 
-**Status:** ✅ COMPLETE (Mar 19-20, 2026) — Full redesign. Old whole-list acknowledge/reject replaced with per-guest review. Key functions: `saveGuestListDraft()` (saves partial decisions, sets status=in_review), `finalizeGuestListReview()` (validates all decisions, sets finalized, triggers emails). `saveGuestProfile()` upserts by (household_id, id_number). `getGuestHistoryByIdNumbers()` batch-lookups history across all finalized lists. Admin.html: per-guest radio cards (Approve/Reject), reject reveals reason textarea, history badge with clickthrough modal, Save Draft + Finalize Review buttons, status column (New/In Review). ID masking: last 4 digits visible in UI, full ID server-side only. Rejections go to board (not member) via RES_GUEST_LIST_REJECTIONS_TO_BOARD. RES_GUEST_LIST_RSO_REJECTED_TO_MEMBER on G: drive; ⚠️ needs Email Templates sheet rows for all 3 new guest list templates.
+**Status:** ✅ COMPLETE (Mar 20, 2026) — Full redesign. Old whole-list acknowledge/reject replaced with per-guest review. Key functions: `saveGuestListDraft()` (saves partial decisions, sets status=in_review), `finalizeGuestListReview()` (validates all decisions, sets finalized, triggers emails). `saveGuestProfile()` upserts by (household_id, id_number). `getGuestHistoryByIdNumbers()` batch-lookups history across all finalized lists. Admin.html: per-guest radio cards (Approve/Reject), reject reveals reason textarea, history badge with clickthrough modal, Save Draft + Finalize Review buttons, status column (New/In Review). ID masking: last 4 digits visible in UI, full ID server-side only. Rejections go to board only via RES_GUEST_LIST_REJECTIONS_TO_BOARD — member notification is intentionally manual (board uses diplomatic discretion). All 3 guest list templates confirmed in Email Templates sheet.
 
 **Prerequisite:** RES.3.1 (submission form)
 

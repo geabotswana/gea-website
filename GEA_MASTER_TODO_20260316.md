@@ -2,7 +2,7 @@
 
 **Current Date:** March 19, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 19-20, 2026 — NMP.6-8 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE — per-guest RSO review redesign: draft save, history lookup, Guest Profiles sheet, board rejection notice. All 62 email template footers updated (org name corrected, reply-friendly footer). ⚠️ Manual step remaining: add RES_GUEST_LIST_REJECTIONS_TO_BOARD row to Email Templates sheet (Drive file exists on G:, needs file ID).
+**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE — per-guest RSO review redesign: draft save, history lookup, Guest Profiles sheet, board rejection notice. RES.4 ✅ COMPLETE — waitlist backend: addToWaitlist(), approveBump(), promoteFromWaitlist(), expireWaitlistPositions() nightly task. RES.5.1 ✅ COMPLETE — member portal reservations view (field name fixes, waitlist status badge, cancel for waitlisted). RES.5.3 ✅ COMPLETE — admin portal pending approvals (field name fixes, waitlist UI, Waitlist/Approve Bump buttons, MGT stage indicator). Schema alignment complete (reservation_date, submitted_by_email, board_approved_by, etc.). FACILITY_WHOLE removed — only Tennis Court and Leobo are valid facilities. All email template footers updated. All Email Templates sheet rows complete including RES_GUEST_LIST_REJECTIONS_TO_BOARD and RES_BOOKING_WAITLISTED_TO_MEMBER.
 
 ---
 
@@ -964,7 +964,7 @@ Each Q&A is collapsible (click to expand)
 - Route approval notifications accordingly
 - Update status based on approvers' responses
 
-**Status:** 🟡 PARTIAL (Mar 19, 2026) — Routing logic exists in `_sendReservationNotifications()`: Tennis→board, Leobo/Whole→MGT, excess Tennis→board. Two-stage MGT→Board approval tracking (status progression from pending_mgmt to pending_board) not yet implemented. Deferred to RES.4.
+**Status:** ✅ COMPLETE (Mar 20, 2026) — Two-stage MGT→Board approval implemented in `approveReservation()`. Stage 1: MGT approves → records `mgt_approved_by`/`mgt_approved_date`, keeps STATUS_PENDING, notifies board via RES_LEOBO_MGT_APPROVED_TO_BOARD. Stage 2: Board gives final approval → CONFIRMED or TENTATIVE, notifies member. Sentinel: `mgt_approved_by` empty + `approverRole === "mgt"` triggers Stage 1; board can bypass MGT stage if needed.
 
 **Prerequisite:** RES-PREP.4 (distros confirmed), RES.2.3 (calendar events)
 
@@ -1228,7 +1228,7 @@ submitted
 - Create function: `addToWaitlist(householdId, facility, preferredDate)` → waitlist_id
 - Send member notification email (tpl_034: Waitlist Added)
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — `addToWaitlist(reservationId, placedBy, notes)` implemented. Sets STATUS_WAITLISTED, calculates position via `_countWaitlistedForFacility()` (per-week for Tennis, per-month for Leobo), records `board_approved_by`/`board_approval_timestamp`, sends RES_BOOKING_WAITLISTED_TO_MEMBER. Board routes it via `admin_waitlist` action; `_handleAdminPending` returns both PENDING and WAITLISTED reservations.
 
 **Prerequisite:** RES.2.2 (excess booking detection)
 
@@ -1267,7 +1267,7 @@ submitted
 - Create function: `notifyBump(householdId, originalDate, bumpReason)` → void (send email)
 - Update calendar events to reflect bump/waitlist change
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — `approveBump(reservationId, approvedBy, notes)` implemented. Promotes STATUS_WAITLISTED → CONFIRMED or TENTATIVE, updates calendar event, sends RES_BOOKING_APPROVED_TO_MEMBER. Board routes via `admin_approve_bump` action. `cancelReservation()` automatically calls `promoteFromWaitlist()` when a CONFIRMED/TENTATIVE booking is cancelled.
 
 **Prerequisite:** RES.2.2 (excess marking), RES.4.1 (waitlist)
 
@@ -1300,7 +1300,7 @@ submitted
   - Send promotion email
   - Create calendar event
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — `promoteFromWaitlist(facility, reservationDate)` finds earliest STATUS_WAITLISTED for same facility in same week (Tennis) or month (Leobo), promotes to CONFIRMED/TENTATIVE, sends RES_WAITLIST_SLOT_OPENED_TO_MEMBER. `expireWaitlistPositions()` cancels waitlisted reservations within WAITLIST_HOLD_HOURS (24h) of event; called in `runNightlyTasks()` step 10.
 
 **Prerequisite:** RES.4.1 (waitlist), RES.4.2 (bumping)
 
@@ -1340,7 +1340,7 @@ submitted
 - [Mark as Final] button (if guests not yet submitted)
 - Link to view full reservation details
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — `loadReservations()` in Portal.html fixed: corrected field names (`reservation_date`, `guest_count`), added Waitlisted badge, sub-notes for Pending/Waitlisted status, guest list deadline display, cancel enabled for Waitlisted. Guest list button shows deadline date.
 
 **Prerequisite:** RES.2-4 (backend complete)
 
@@ -1386,7 +1386,7 @@ submitted
 - Show limits for this facility
 - Highlight if household is already near limit (context for decision)
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — Admin.html reservations table fixed: corrected field names, Waitlisted badge (badge-warning), MGT stage indicator for Leobo, Waitlist/Approve Bump buttons in detail modal (shown/hidden by status), `waitlistReservation()` and `approveBumpReservation()` JS functions wired to `admin_waitlist` and `admin_approve_bump` routes.
 
 **Prerequisite:** RES.2.6 (basic approval interface), RES.5.2
 

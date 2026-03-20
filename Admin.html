@@ -1220,6 +1220,11 @@
         <span class="nav-icon">🗓️</span>
         <span>Pending Reservations</span>
       </div>
+      <div class="nav-item" onclick="showPage('waitlist', event)">
+        <span class="nav-icon">⏳</span>
+        <span>Waitlist</span>
+        <span id="waitlist-badge" class="badge" style="display:none;">0</span>
+      </div>
       <div class="nav-item" onclick="showPage('members', event)">
         <span class="nav-icon">👥</span>
         <span>Members</span>
@@ -1344,6 +1349,26 @@
         </div>
       </div>
       
+      <!-- ========================================================== -->
+      <!-- PAGE: WAITLIST (RES.5.4)                                   -->
+      <!-- Board view of all waitlisted reservations                  -->
+      <!-- ========================================================== -->
+      <div id="waitlist" class="page">
+        <h1 class="page-title">Waitlist</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">
+          Members waitlisted here will be automatically promoted when a confirmed booking cancels.
+          Use <strong>Promote</strong> to manually move a member to confirmed, or
+          <strong>Remove</strong> to cancel their waitlist position.
+          Positions within 24 hours of the event are automatically expired nightly.
+        </p>
+        <div id="waitlistContent">
+          <div class="empty-state">
+            <div class="empty-state-icon">⏳</div>
+            <div class="empty-state-text">Loading waitlist...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- ========================================================== -->
       <!-- PAGE: GUEST LISTS                                          -->
       <!-- RSO reviews submitted guest lists before events            -->
@@ -1971,6 +1996,9 @@
       case 'reservations':
         loadReservations();
         break;
+      case 'waitlist':
+        loadWaitlist();
+        break;
       case 'members':
         loadMembers();
         break;
@@ -2120,6 +2148,18 @@
       if (res.success && res.data) {
         var pending = res.data.reservations || [];
         document.getElementById('dashPendingCount').textContent = pending.length;
+      }
+    });
+
+    // Load waitlist badge count
+    apiCall('admin_waitlist_list', {}).then(function(res) {
+      if (res.success && res.data) {
+        var badge = document.getElementById('waitlist-badge');
+        var count = res.data.count || 0;
+        if (badge) {
+          badge.textContent = count;
+          badge.style.display = count > 0 ? '' : 'none';
+        }
       }
     });
     
@@ -2442,6 +2482,205 @@
       loadReservations();
     });
   }
+
+  // ============================================================
+  // RES.5.4 — WAITLIST MANAGEMENT PAGE
+  // ============================================================
+
+  /**
+   * Loads all waitlisted reservations and renders the waitlist management table.
+   */
+  function loadWaitlist() {
+    var content = document.getElementById('waitlistContent');
+    content.textContent = 'Loading...';
+
+    apiCall('admin_waitlist_list', {}).then(function(res) {
+      if (!res.success) {
+        content.textContent = 'Error: ' + res.message;
+        return;
+      }
+
+      var items = res.data.waitlisted || [];
+      var badge = document.getElementById('waitlist-badge');
+      if (badge) {
+        badge.textContent = items.length;
+        badge.style.display = items.length > 0 ? '' : 'none';
+      }
+
+      while (content.firstChild) content.removeChild(content.firstChild);
+
+      if (items.length === 0) {
+        var empty = document.createElement('div');
+        empty.className = 'empty-state';
+        var icon = document.createElement('div');
+        icon.className = 'empty-state-icon';
+        icon.textContent = '✅';
+        var txt = document.createElement('div');
+        txt.className = 'empty-state-text';
+        txt.textContent = 'No members on the waitlist';
+        empty.appendChild(icon);
+        empty.appendChild(txt);
+        content.appendChild(empty);
+        return;
+      }
+
+      var now = new Date();
+
+      var table = document.createElement('table');
+      table.style.cssText = 'width:100%; border-collapse:collapse; background:#fff;'
+        + ' border-radius:8px; overflow:hidden; font-size:13px;'
+        + ' box-shadow:0 1px 3px rgba(0,0,0,.05);';
+
+      var thead = document.createElement('thead');
+      var hRow = document.createElement('tr');
+      ['#', 'Facility', 'Event Date', 'Household', 'Event Name', 'Guests', 'Days Until', 'Auto-Expire', 'Actions']
+        .forEach(function(col) {
+          var th = document.createElement('th');
+          th.style.cssText = 'padding:10px 12px; text-align:left; background:#f7f7f7;'
+            + ' border-bottom:2px solid #eee; font-weight:600; white-space:nowrap;';
+          th.textContent = col;
+          hRow.appendChild(th);
+        });
+      thead.appendChild(hRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+
+      // Group by facility for position numbering
+      var positions = {};
+      items.forEach(function(item) {
+        var key = item.facility + '||' + item.reservation_date;
+        positions[key] = (positions[key] || 0) + 1;
+      });
+      var posCounters = {};
+
+      items.forEach(function(item, idx) {
+        var key = item.facility + '||' + item.reservation_date;
+        posCounters[key] = (posCounters[key] || 0) + 1;
+        var pos = posCounters[key];
+
+        var evDate = item.reservation_date ? new Date(item.reservation_date) : null;
+        var daysUntil = evDate ? Math.ceil((evDate - now) / (1000 * 60 * 60 * 24)) : '—';
+        var dateStr   = evDate ? evDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+        // Auto-expire: within WAITLIST_HOLD_HOURS (24h) of event
+        var expireStr = '—';
+        var expireWarn = false;
+        if (evDate) {
+          var holdMs  = 24 * 60 * 60 * 1000;
+          var expTime = new Date(evDate.getTime() - holdMs);
+          var hoursToExpire = Math.ceil((expTime - now) / (1000 * 60 * 60));
+          if (hoursToExpire <= 0) {
+            expireStr = 'Expires tonight';
+            expireWarn = true;
+          } else if (hoursToExpire <= 48) {
+            expireStr = 'In ' + hoursToExpire + 'h';
+            expireWarn = true;
+          } else {
+            var expDays = Math.ceil(hoursToExpire / 24);
+            expireStr = 'In ' + expDays + ' day' + (expDays !== 1 ? 's' : '');
+          }
+        }
+
+        var tr = document.createElement('tr');
+        if (idx % 2 === 1) tr.style.background = '#fafafa';
+
+        function addCell(content, style) {
+          var td = document.createElement('td');
+          td.style.cssText = 'padding:10px 12px; border-bottom:1px solid #f0f0f0;' + (style || '');
+          if (typeof content === 'string' || typeof content === 'number') {
+            td.textContent = content;
+          } else {
+            td.appendChild(content);
+          }
+          tr.appendChild(td);
+          return td;
+        }
+
+        // Position badge
+        var posBadge = document.createElement('span');
+        posBadge.style.cssText = 'display:inline-block; background:#FF9800; color:#fff;'
+          + ' border-radius:50%; width:22px; height:22px; text-align:center;'
+          + ' line-height:22px; font-size:12px; font-weight:bold;';
+        posBadge.textContent = pos;
+        addCell(posBadge);
+
+        addCell(item.facility || '—');
+        addCell(dateStr);
+
+        var householdCell = document.createElement('div');
+        var hhName = document.createElement('div');
+        hhName.textContent = item.household_id || '—';
+        householdCell.appendChild(hhName);
+        if (item.submitted_by_email) {
+          var email = document.createElement('div');
+          email.style.cssText = 'font-size:11px; color:#888;';
+          email.textContent = item.submitted_by_email;
+          householdCell.appendChild(email);
+        }
+        addCell(householdCell);
+
+        addCell(item.event_name || '—');
+        addCell(Number(item.guest_count) > 0 ? item.guest_count : 'None');
+        addCell(typeof daysUntil === 'number' ? daysUntil + ' day' + (daysUntil !== 1 ? 's' : '') : '—',
+          daysUntil <= 7 ? 'color:#e67e22; font-weight:600;' : '');
+        addCell(expireStr, expireWarn ? 'color:#e53935; font-weight:600;' : 'color:#888;');
+
+        // Actions cell
+        var actionsTd = document.createElement('td');
+        actionsTd.style.cssText = 'padding:8px 12px; border-bottom:1px solid #f0f0f0; white-space:nowrap;';
+
+        var promoteBtn = document.createElement('button');
+        promoteBtn.className = 'btn btn-primary btn-small';
+        promoteBtn.textContent = 'Promote';
+        promoteBtn.style.marginRight = '6px';
+        promoteBtn.onclick = (function(resId) {
+          return function() { _promoteWaitlisted(resId); };
+        })(item.reservation_id);
+
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'btn btn-danger btn-small';
+        removeBtn.textContent = 'Remove';
+        removeBtn.onclick = (function(resId) {
+          return function() { _removeFromWaitlist(resId); };
+        })(item.reservation_id);
+
+        actionsTd.appendChild(promoteBtn);
+        actionsTd.appendChild(removeBtn);
+        tr.appendChild(actionsTd);
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      content.appendChild(table);
+    });
+  }
+
+  /**
+   * Promotes a waitlisted reservation to confirmed (manual bump).
+   */
+  function _promoteWaitlisted(reservationId) {
+    if (!confirm('Promote this member from the waitlist to confirmed?')) return;
+    apiCall('admin_approve_bump', { reservation_id: reservationId, notes: 'Manual promotion by board' })
+      .then(function(res) {
+        if (!res.success) { showError('Failed to promote: ' + res.message); return; }
+        loadWaitlist();
+      });
+  }
+
+  /**
+   * Removes a waitlisted reservation (cancels the waitlist position).
+   */
+  function _removeFromWaitlist(reservationId) {
+    if (!confirm('Remove this member from the waitlist? This will cancel their position.')) return;
+    apiCall('admin_deny', { reservation_id: reservationId, reason: 'Removed from waitlist by board' })
+      .then(function(res) {
+        if (!res.success) { showError('Failed to remove: ' + res.message); return; }
+        loadWaitlist();
+      });
+  }
+
 
   // ============================================================
   // SUP.4 — EMAIL RESEND

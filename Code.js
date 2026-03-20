@@ -201,8 +201,9 @@ function _routeAction(action, params) {
     case "admin_pending":      return _handleAdminPending(params);
     case "admin_approve":      return _handleAdminApprove(params);
     case "admin_deny":         return _handleAdminDeny(params);
-    case "admin_waitlist":     return _handleAdminWaitlist(params);
-    case "admin_approve_bump": return _handleAdminApproveBump(params);
+    case "admin_waitlist":      return _handleAdminWaitlist(params);
+    case "admin_approve_bump":  return _handleAdminApproveBump(params);
+    case "admin_waitlist_list": return _handleAdminWaitlistList(params);
     case "admin_guest_lists":              return _handleAdminGuestLists(params);
     case "admin_save_guest_list_draft":    return _handleAdminSaveGuestListDraft(params);
     case "admin_finalize_guest_list":      return _handleAdminFinalizeGuestList(params);
@@ -919,6 +920,51 @@ function _handleAdminApproveBump(p) {
   if (!ok) return errorResponse("Could not approve bump.", "BUMP_FAILED");
 
   return successResponse({}, "Waitlisted reservation promoted.");
+}
+
+
+/**
+ * ============================================================
+ * HANDLER: _handleAdminWaitlistList (RES.5.4)
+ * ============================================================
+ * PURPOSE:
+ * Returns all STATUS_WAITLISTED reservations sorted by facility
+ * then by submission_timestamp (earliest = position 1).
+ * Used by the Waitlist management page in Admin.html.
+ *
+ * AUTHENTICATION: Requires board role.
+ */
+function _handleAdminWaitlistList(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var waitlisted = [];
+
+    for (var i = 1; i < data.length; i++) {
+      var res = rowToObject(headers, data[i]);
+      if (res.status === STATUS_WAITLISTED && res.reservation_id) {
+        waitlisted.push(res);
+      }
+    }
+
+    // Sort: facility asc, then reservation_date asc, then submission_timestamp asc
+    waitlisted.sort(function(a, b) {
+      if (a.facility < b.facility) return -1;
+      if (a.facility > b.facility) return  1;
+      var da = new Date(a.reservation_date), db = new Date(b.reservation_date);
+      if (da - db !== 0) return da - db;
+      return new Date(a.submission_timestamp) - new Date(b.submission_timestamp);
+    });
+
+    return successResponse({ waitlisted: waitlisted, count: waitlisted.length });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminWaitlistList: " + e);
+    return errorResponse("Could not load waitlist.", "SERVER_ERROR");
+  }
 }
 
 

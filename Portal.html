@@ -6369,12 +6369,58 @@ function submitLogin(event) {
           statusSpan.className = 'badge badge-' + (statusClass[res.status] || 'pending');
           statusSpan.textContent = res.status || 'Pending';
           statusTd.appendChild(statusSpan);
+
           if (res.status === 'Pending') {
-            var pendingNote = document.createElement('div');
-            pendingNote.style.cssText = 'font-size:11px;color:#888;margin-top:2px;';
-            pendingNote.textContent = 'Awaiting board review';
-            statusTd.appendChild(pendingNote);
+            var isLeobo = res.facility === 'Leobo';
+            var mgtDone = res.mgt_approved_by && String(res.mgt_approved_by).length > 0;
+            var stageDiv = document.createElement('div');
+            stageDiv.style.cssText = 'margin-top:5px;';
+
+            if (isLeobo) {
+              // Two-step progress bar
+              var progressWrap = document.createElement('div');
+              progressWrap.style.cssText = 'display:flex; gap:4px; align-items:center; font-size:11px;';
+
+              function makeStep(label, done) {
+                var step = document.createElement('div');
+                step.style.cssText = 'display:flex; align-items:center; gap:3px;'
+                  + (done ? 'color:#4CAF50; font-weight:600;' : 'color:#e67e22;');
+                var dot = document.createElement('span');
+                dot.textContent = done ? '✓' : '●';
+                dot.style.fontSize = '10px';
+                var lbl = document.createElement('span');
+                lbl.textContent = label;
+                step.appendChild(dot);
+                step.appendChild(lbl);
+                return step;
+              }
+              function makeArrow() {
+                var a = document.createElement('span');
+                a.textContent = '→';
+                a.style.cssText = 'color:#bbb; font-size:10px;';
+                return a;
+              }
+
+              progressWrap.appendChild(makeStep('MGT', mgtDone));
+              progressWrap.appendChild(makeArrow());
+              progressWrap.appendChild(makeStep('Board', false));
+              stageDiv.appendChild(progressWrap);
+
+              var stageNote = document.createElement('div');
+              stageNote.style.cssText = 'font-size:11px; color:#888; margin-top:2px;';
+              stageNote.textContent = mgtDone
+                ? 'MGT approved — awaiting final board approval'
+                : 'Awaiting management approval';
+              stageDiv.appendChild(stageNote);
+            } else {
+              var pendingNote = document.createElement('div');
+              pendingNote.style.cssText = 'font-size:11px; color:#888;';
+              pendingNote.textContent = 'Awaiting board review';
+              stageDiv.appendChild(pendingNote);
+            }
+            statusTd.appendChild(stageDiv);
           }
+
           if (res.status === 'Waitlisted') {
             var wlNote = document.createElement('div');
             wlNote.style.cssText = 'font-size:11px;color:#888;margin-top:2px;';

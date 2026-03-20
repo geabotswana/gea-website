@@ -554,7 +554,6 @@ function cancelReservation(reservationId, cancelledBy, reason) {
   if (hh) {
     var primaryEmail = _getPrimaryEmail(hh.household_id);
     if (primaryEmail) {
-      var boardCancelled = cancelledBy !== primaryEmail;
       sendEmailFromTemplate("RES_BOOKING_CANCELLED_TO_MEMBER", primaryEmail, {
         FIRST_NAME:          _getPrimaryFirstName(hh.household_id),
         FACILITY_NAME:       res.facility,
@@ -564,7 +563,278 @@ function cancelReservation(reservationId, cancelledBy, reason) {
       });
     }
   }
+
+  // If a confirmed/tentative slot just opened, promote the earliest waitlisted reservation
+  if (res.status === STATUS_CONFIRMED || res.status === STATUS_TENTATIVE) {
+    promoteFromWaitlist(res.facility, new Date(res.reservation_date));
+  }
+
   return true;
+}
+
+
+// ============================================================
+// WAITLIST
+// ============================================================
+
+/**
+ * Board action: places a STATUS_PENDING reservation onto the waitlist
+ * instead of approving or denying it outright.
+ *
+ * @param {string} reservationId
+ * @param {string} placedBy       Board member email
+ * @param {string} notes          Optional notes
+ * @returns {boolean}
+ */
+function addToWaitlist(reservationId, placedBy, notes) {
+  var res = getReservationById(reservationId);
+  if (!res) return false;
+  if (res.status !== STATUS_PENDING) {
+    Logger.log("addToWaitlist: reservation " + reservationId + " is not PENDING");
+    return false;
+  }
+
+  // Calculate waitlist position (1-based: how many waitlisted ahead of this one)
+  var position = _countWaitlistedForFacility(res.facility, new Date(res.reservation_date)) + 1;
+
+  _updateReservationField(reservationId, "status",                  STATUS_WAITLISTED, placedBy);
+  _updateReservationField(reservationId, "board_approved_by",       placedBy,          placedBy);
+  _updateReservationField(reservationId, "board_approval_timestamp", new Date(),        placedBy);
+  if (notes) _updateReservationField(reservationId, "notes", notes, placedBy);
+
+  logAuditEntry(placedBy, AUDIT_RESERVATION_APPROVED, "Reservation", reservationId,
+                "Waitlisted (position " + position + ")");
+
+  var hh = getHouseholdById(res.household_id);
+  if (hh) {
+    var primaryEmail = _getPrimaryEmail(hh.household_id);
+    if (primaryEmail) {
+      sendEmailFromTemplate("RES_BOOKING_WAITLISTED_TO_MEMBER", primaryEmail, {
+        FIRST_NAME:        _getPrimaryFirstName(hh.household_id),
+        FACILITY_NAME:     res.facility,
+        RESERVATION_ID:    reservationId,
+        RESERVATION_DATE:  formatDate(new Date(res.reservation_date)),
+        RESERVATION_TIME:  formatTime(new Date(res.start_time)) + " \u2013 " + formatTime(new Date(res.end_time)),
+        WAITLIST_POSITION: position,
+        PORTAL_URL:        URL_MEMBER_PORTAL
+      });
+    }
+  }
+  return true;
+}
+
+/**
+ * Board action: manually promotes a STATUS_WAITLISTED reservation
+ * to confirmed (or tentative if it's an excess booking).
+ *
+ * @param {string} reservationId
+ * @param {string} approvedBy
+ * @param {string} notes
+ * @returns {boolean}
+ */
+function approveBump(reservationId, approvedBy, notes) {
+  var res = getReservationById(reservationId);
+  if (!res) return false;
+  if (res.status !== STATUS_WAITLISTED) {
+    Logger.log("approveBump: reservation " + reservationId + " is not WAITLISTED");
+    return false;
+  }
+
+  var newStatus = res.is_excess_reservation ? STATUS_TENTATIVE : STATUS_CONFIRMED;
+  _updateReservationField(reservationId, "status",                   newStatus,  approvedBy);
+  _updateReservationField(reservationId, "board_approved_by",        approvedBy, approvedBy);
+  _updateReservationField(reservationId, "board_approval_timestamp", new Date(), approvedBy);
+  if (notes) _updateReservationField(reservationId, "notes", notes, approvedBy);
+
+  logAuditEntry(approvedBy, AUDIT_RESERVATION_APPROVED, "Reservation", reservationId,
+                "Bump approved → " + newStatus);
+
+  var hh = getHouseholdById(res.household_id);
+  if (res.calendar_event_id) {
+    updateCalendarEventStatus(res.calendar_event_id, newStatus,
+                              hh ? hh.household_name : res.household_id, res.facility);
+  }
+
+  if (hh) {
+    var primaryEmail = _getPrimaryEmail(hh.household_id);
+    if (primaryEmail) {
+      sendEmailFromTemplate("RES_BOOKING_APPROVED_TO_MEMBER", primaryEmail, {
+        FIRST_NAME:       _getPrimaryFirstName(hh.household_id),
+        RESERVATION_ID:   reservationId,
+        FACILITY_NAME:    res.facility,
+        RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
+        RESERVATION_TIME: formatTime(new Date(res.start_time)) + " \u2013 " + formatTime(new Date(res.end_time)),
+        GUEST_LIMIT:      res.guest_count || "",
+        PORTAL_URL:       URL_MEMBER_PORTAL
+      });
+    }
+  }
+  return true;
+}
+
+/**
+ * Automatically promotes the earliest waitlisted reservation for a facility
+ * when a confirmed or tentative reservation at that facility is cancelled.
+ * For Tennis: checks same week. For Leobo/Whole: checks same month.
+ *
+ * @param {string} facility
+ * @param {Date}   reservationDate   Date of the cancelled reservation
+ * @returns {string|null}            Promoted reservation_id, or null if none found
+ */
+function promoteFromWaitlist(facility, reservationDate) {
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var isTennis = (facility === FACILITY_TENNIS);
+    var rangeStart, rangeEnd;
+    if (isTennis) {
+      rangeStart = getWeekStart(reservationDate);
+      rangeEnd   = addDays(rangeStart, 7);
+    } else {
+      rangeStart = getMonthStart(reservationDate);
+      rangeEnd   = new Date(rangeStart);
+      rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+    }
+
+    var candidates = [];
+    for (var i = 1; i < data.length; i++) {
+      var r = rowToObject(headers, data[i]);
+      if (r.status !== STATUS_WAITLISTED) continue;
+      if (r.facility !== facility) continue;
+      var d = new Date(r.reservation_date);
+      if (d < rangeStart || d >= rangeEnd) continue;
+      candidates.push(r);
+    }
+
+    if (candidates.length === 0) return null;
+
+    // Promote the earliest-submitted waitlisted reservation
+    candidates.sort(function(a, b) {
+      return new Date(a.submission_timestamp) - new Date(b.submission_timestamp);
+    });
+    var winner = candidates[0];
+    var newStatus = winner.is_excess_reservation ? STATUS_TENTATIVE : STATUS_CONFIRMED;
+
+    _updateReservationField(winner.reservation_id, "status",                   newStatus, "system");
+    _updateReservationField(winner.reservation_id, "board_approved_by",        "system",  "system");
+    _updateReservationField(winner.reservation_id, "board_approval_timestamp", new Date(), "system");
+
+    logAuditEntry("system", AUDIT_RESERVATION_APPROVED, "Reservation", winner.reservation_id,
+                  "Auto-promoted from waitlist → " + newStatus);
+
+    var hh = getHouseholdById(winner.household_id);
+    if (winner.calendar_event_id) {
+      updateCalendarEventStatus(winner.calendar_event_id, newStatus,
+                                hh ? hh.household_name : winner.household_id, winner.facility);
+    }
+
+    var primaryEmail = _getPrimaryEmail(winner.household_id);
+    if (primaryEmail) {
+      sendEmailFromTemplate("RES_WAITLIST_SLOT_OPENED_TO_MEMBER", primaryEmail, {
+        FIRST_NAME:         _getPrimaryFirstName(winner.household_id),
+        FACILITY:           winner.facility,
+        RESERVATION_DATE:   formatDate(new Date(winner.reservation_date)),
+        START_TIME:         formatTime(new Date(winner.start_time)),
+        END_TIME:           formatTime(new Date(winner.end_time)),
+        WAITLIST_HOLD_HOURS: WAITLIST_HOLD_HOURS,
+        PORTAL_URL:         URL_MEMBER_PORTAL
+      });
+    }
+
+    Logger.log("Promoted from waitlist: " + winner.reservation_id + " → " + newStatus);
+    return winner.reservation_id;
+
+  } catch (e) {
+    Logger.log("ERROR promoteFromWaitlist: " + e);
+    return null;
+  }
+}
+
+/**
+ * Nightly task: auto-cancel waitlisted reservations that are within
+ * WAITLIST_HOLD_HOURS hours of their event with no slot having opened.
+ */
+function expireWaitlistPositions() {
+  Logger.log("Waitlist expiry check starting...");
+  var cutoff = new Date();
+  cutoff.setTime(cutoff.getTime() + WAITLIST_HOLD_HOURS * 60 * 60 * 1000);
+
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    for (var i = 1; i < data.length; i++) {
+      var res = rowToObject(headers, data[i]);
+      if (res.status !== STATUS_WAITLISTED) continue;
+      if (!res.reservation_date) continue;
+
+      var eventDate = new Date(res.reservation_date);
+      if (eventDate > cutoff) continue; // Still enough time ahead
+
+      // Cancel — no slot opened in time
+      _updateReservationField(res.reservation_id, "status",               STATUS_CANCELLED, "system");
+      _updateReservationField(res.reservation_id, "cancellation_reason",  "No slot became available before event date.", "system");
+      _updateReservationField(res.reservation_id, "cancelled_by",         "system", "system");
+      _updateReservationField(res.reservation_id, "cancellation_timestamp", new Date(), "system");
+
+      logAuditEntry("system", AUDIT_RESERVATION_CANCELLED, "Reservation", res.reservation_id,
+                    "Waitlist expired — no slot opened");
+
+      if (res.calendar_event_id) {
+        updateCalendarEventStatus(res.calendar_event_id, STATUS_CANCELLED,
+                                  res.household_name || res.household_id, res.facility);
+      }
+
+      var primaryEmail = _getPrimaryEmail(res.household_id);
+      if (primaryEmail) {
+        sendEmailFromTemplate("RES_BOOKING_CANCELLED_TO_MEMBER", primaryEmail, {
+          FIRST_NAME:          _getPrimaryFirstName(res.household_id),
+          FACILITY_NAME:       res.facility,
+          RESERVATION_ID:      res.reservation_id,
+          ORIGINAL_DATE:       formatDate(eventDate),
+          CANCELLATION_REASON: "No slot became available before the event date. Your waitlist position has expired."
+        });
+      }
+      Logger.log("Waitlist expired: " + res.reservation_id);
+    }
+  } catch (e) { Logger.log("ERROR expireWaitlistPositions: " + e); }
+}
+
+/**
+ * Counts ALL STATUS_WAITLISTED reservations for a given facility
+ * in the same week (Tennis) or month (Leobo/Whole) as the given date.
+ * Used to calculate a new entrant's waitlist position.
+ */
+function _countWaitlistedForFacility(facility, reservationDate) {
+  var isTennis = (facility === FACILITY_TENNIS);
+  var rangeStart, rangeEnd;
+  if (isTennis) {
+    rangeStart = getWeekStart(reservationDate);
+    rangeEnd   = addDays(rangeStart, 7);
+  } else {
+    rangeStart = getMonthStart(reservationDate);
+    rangeEnd   = new Date(rangeStart);
+    rangeEnd.setMonth(rangeEnd.getMonth() + 1);
+  }
+  var count = 0;
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var facCol  = headers.indexOf("facility");
+    var dateCol = headers.indexOf("reservation_date");
+    var statCol = headers.indexOf("status");
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][statCol] !== STATUS_WAITLISTED) continue;
+      if (data[i][facCol]  !== facility)           continue;
+      var d = new Date(data[i][dateCol]);
+      if (d >= rangeStart && d < rangeEnd) count++;
+    }
+  } catch (e) { Logger.log("ERROR _countWaitlistedForFacility: " + e); }
+  return count;
 }
 
 

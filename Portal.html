@@ -6330,13 +6330,17 @@ function submitLogin(event) {
         // Body
         var tbody = document.createElement('tbody');
         reservations.forEach(function(res) {
-          var canCancel = res.status === 'Pending' || res.status === 'Confirmed' || res.status === 'Tentative';
+          var isActive   = res.status === 'Pending' || res.status === 'Confirmed' ||
+                           res.status === 'Tentative' || res.status === 'Waitlisted';
+          var canCancel  = isActive;
+          var hasGuests  = Number(res.guest_count) > 0;
 
           var row = document.createElement('tr');
 
           // Date
           var dateTd = document.createElement('td');
-          var dateStr = res.event_date ? new Date(res.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+          var resDate = res.reservation_date || res.event_date;
+          var dateStr = resDate ? new Date(resDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
           dateTd.textContent = dateStr;
           row.appendChild(dateTd);
 
@@ -6350,21 +6354,40 @@ function submitLogin(event) {
           facilityTd.textContent = facilityText;
           row.appendChild(facilityTd);
 
-          // Status
+          // Status (+ waitlist note)
           var statusTd = document.createElement('td');
           var statusSpan = document.createElement('span');
-          var statusClass = { 'Pending': 'pending', 'Confirmed': 'confirmed', 'Tentative': 'confirmed',
-                              'Approved': 'approved', 'Cancelled': 'cancelled', 'Completed': 'cancelled' };
+          var statusClass = {
+            'Pending':    'pending',
+            'Confirmed':  'confirmed',
+            'Tentative':  'confirmed',
+            'Approved':   'approved',
+            'Waitlisted': 'pending',
+            'Cancelled':  'cancelled',
+            'Completed':  'cancelled'
+          };
           statusSpan.className = 'badge badge-' + (statusClass[res.status] || 'pending');
           statusSpan.textContent = res.status || 'Pending';
           statusTd.appendChild(statusSpan);
+          if (res.status === 'Pending') {
+            var pendingNote = document.createElement('div');
+            pendingNote.style.cssText = 'font-size:11px;color:#888;margin-top:2px;';
+            pendingNote.textContent = 'Awaiting board review';
+            statusTd.appendChild(pendingNote);
+          }
+          if (res.status === 'Waitlisted') {
+            var wlNote = document.createElement('div');
+            wlNote.style.cssText = 'font-size:11px;color:#888;margin-top:2px;';
+            wlNote.textContent = 'You will be notified if a slot opens';
+            statusTd.appendChild(wlNote);
+          }
           row.appendChild(statusTd);
 
           // Action
           var actionTd = document.createElement('td');
-          var needsGuestList = res.has_guests && !res.guest_list_submitted &&
-                               (res.status === 'Confirmed' || res.status === 'Tentative' || res.status === 'Approved');
-          var guestListDone  = res.has_guests && res.guest_list_submitted;
+          var needsGuestList = hasGuests && !res.guest_list_submitted &&
+                               (res.status === 'Confirmed' || res.status === 'Tentative');
+          var guestListDone  = hasGuests && res.guest_list_submitted;
 
           if (needsGuestList) {
             var glBtn = document.createElement('button');
@@ -6373,9 +6396,14 @@ function submitLogin(event) {
             glBtn.style.marginBottom = '4px';
             glBtn.onclick = (function(resId, facility, eventDate) {
               return function() { openGuestListModal(resId, facility, eventDate); };
-            })(res.reservation_id, res.facility, res.event_date);
+            })(res.reservation_id, res.facility, resDate);
             actionTd.appendChild(glBtn);
-            actionTd.appendChild(document.createElement('br'));
+            if (res.guest_list_deadline) {
+              var dlNote = document.createElement('div');
+              dlNote.style.cssText = 'font-size:11px;color:#e67e22;margin-bottom:4px;';
+              dlNote.textContent = 'Due: ' + new Date(res.guest_list_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              actionTd.appendChild(dlNote);
+            }
           }
           if (guestListDone) {
             var glBadge = document.createElement('span');

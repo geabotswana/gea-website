@@ -1648,8 +1648,10 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('resDetailModal');">Cancel</button>
-      <button class="btn btn-danger" id="resDenyBtn" onclick="denyReservation();">Deny</button>
-      <button class="btn btn-primary" id="resApproveBtn" onclick="approveReservation();">Approve</button>
+      <button class="btn btn-danger"    id="resDenyBtn"     onclick="denyReservation();">Deny</button>
+      <button class="btn btn-secondary" id="resWaitlistBtn" onclick="waitlistReservation();">Waitlist</button>
+      <button class="btn btn-primary"   id="resApproveBtn"  onclick="approveReservation();">Approve</button>
+      <button class="btn btn-primary"   id="resBumpBtn"     onclick="approveBumpReservation();" style="display:none;">Approve Bump</button>
     </div>
   </div>
 </div>
@@ -2151,8 +2153,9 @@
       tbody.innerHTML = '';
 
       reservations.forEach(function(reservation) {
-        var date = reservation.event_date
-          ? new Date(reservation.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        var resDate = reservation.reservation_date || reservation.event_date;
+        var date = resDate
+          ? new Date(resDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
           : '—';
 
         var row = document.createElement('tr');
@@ -2165,15 +2168,33 @@
 
         row.appendChild(makeTd(date));
         row.appendChild(makeTd(reservation.facility || 'Unknown'));
-        row.appendChild(makeTd(reservation.household_name || 'Unknown'));
-        row.appendChild(makeTd(reservation.primary_email || ''));
+        row.appendChild(makeTd(reservation.household_name || reservation.household_id || 'Unknown'));
+        row.appendChild(makeTd(reservation.submitted_by_email || reservation.primary_email || ''));
         row.appendChild(makeTd(reservation.guest_count || 0));
 
         var statusTd = document.createElement('td');
         var badge = document.createElement('span');
-        badge.className = reservation.is_excess_reservation ? 'badge badge-pending' : 'badge badge-pending';
-        badge.textContent = reservation.is_excess_reservation ? 'Excess' : 'Pending';
-        statusTd.appendChild(badge);
+        var isWaitlisted = reservation.status === 'Waitlisted';
+        if (isWaitlisted) {
+          badge.className = 'badge badge-warning';
+          badge.textContent = 'Waitlisted';
+        } else if (reservation.is_excess_reservation) {
+          badge.className = 'badge badge-pending';
+          badge.textContent = 'Excess';
+        } else {
+          badge.className = 'badge badge-pending';
+          badge.textContent = 'Pending';
+        }
+        // MGT stage indicator for Leobo
+        if (!isWaitlisted && reservation.facility && (reservation.facility === 'Leobo' || reservation.facility === 'Whole Facility') && !reservation.mgt_approved_by) {
+          var stageNote = document.createElement('div');
+          stageNote.style.cssText = 'font-size:11px;color:#888;margin-top:2px;';
+          stageNote.textContent = 'Awaiting MGT';
+          statusTd.appendChild(badge);
+          statusTd.appendChild(stageNote);
+        } else {
+          statusTd.appendChild(badge);
+        }
         row.appendChild(statusTd);
 
         var actionTd = document.createElement('td');
@@ -2228,33 +2249,51 @@
       addRow('Reservation ID:', resId);
       addRow('Note:', 'Full details unavailable. Refresh the page to reload.');
     } else {
-      // Format date/time display
-      var dateStr = res.event_date
-        ? new Date(res.event_date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+      var resDate = res.reservation_date || res.event_date;
+      var dateStr = resDate
+        ? new Date(resDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
         : '—';
-      var startStr = res.start_time
-        ? new Date(res.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
-      var endStr = res.end_time
-        ? new Date(res.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
-      var timeStr = startStr && endStr ? startStr + ' – ' + endStr : (startStr || '—');
+      var startStr = res.start_time ? new Date(res.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+      var endStr   = res.end_time   ? new Date(res.end_time).toLocaleTimeString('en-US',   { hour: 'numeric', minute: '2-digit' }) : '';
+      var timeStr  = startStr && endStr ? startStr + ' – ' + endStr : (startStr || '—');
 
       addRow('Reservation ID:', res.reservation_id);
-      addRow('Household:', res.household_name);
-      addRow('Contact:', res.primary_email);
+      addRow('Status:', res.status || '—');
+      addRow('Household:', res.household_name || res.household_id || '—');
+      addRow('Contact:', res.submitted_by_email || res.primary_email || '—');
       addRow('Facility:', res.facility);
       addRow('Event Name:', res.event_name);
       addRow('Date:', dateStr);
       addRow('Time:', timeStr);
       addRow('Duration:', res.duration_hours ? res.duration_hours + ' hour(s)' : '—');
-      addRow('Guests:', res.has_guests ? (res.guest_count || 0) + ' guest(s)' : 'None');
+      addRow('Guests:', Number(res.guest_count) > 0 ? res.guest_count + ' guest(s)' : 'None');
       addRow('Excess Booking:', res.is_excess_reservation ? 'Yes — exceeds household limit' : 'No');
+
+      // Leobo approval stage
+      var isMgtFacility = res.facility === 'Leobo' || res.facility === 'Whole Facility';
+      if (isMgtFacility) {
+        if (res.mgt_approved_by) {
+          addRow('MGT Approval:', 'Approved by ' + res.mgt_approved_by);
+          addRow('Approval Stage:', 'Board final approval needed');
+        } else {
+          addRow('Approval Stage:', 'Awaiting MGT approval');
+        }
+      }
+
       if (res.bump_window_deadline) {
         addRow('Bump Deadline:', new Date(res.bump_window_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
       }
-      if (res.no_fundraising_confirmed) {
-        addRow('No Fundraising:', 'Confirmed');
+      if (res.notes) {
+        addRow('Notes:', res.notes);
       }
     }
+
+    // Show/hide action buttons based on current status
+    var isWaitlisted = res && res.status === 'Waitlisted';
+    document.getElementById('resDenyBtn').style.display     = isWaitlisted ? 'none'  : '';
+    document.getElementById('resApproveBtn').style.display  = isWaitlisted ? 'none'  : '';
+    document.getElementById('resWaitlistBtn').style.display = isWaitlisted ? 'none'  : '';
+    document.getElementById('resBumpBtn').style.display     = isWaitlisted ? ''      : 'none';
 
     document.getElementById('resActionNotes').value = '';
     document.getElementById('resDetailModal').classList.add('show');
@@ -2316,7 +2355,65 @@
       loadReservations();
     });
   }
-  
+
+  /**
+   * Places the selected pending reservation on the waitlist.
+   */
+  function waitlistReservation() {
+    if (!selectedReservationId) return;
+
+    var btn = document.getElementById('resWaitlistBtn');
+    btn.disabled = true;
+    btn.textContent = 'Waitlisting...';
+
+    var notes = document.getElementById('resActionNotes').value.trim();
+
+    apiCall('admin_waitlist', {
+      reservation_id: selectedReservationId,
+      notes: notes
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Waitlist';
+
+      if (!res.success) {
+        showError('Failed to waitlist reservation: ' + res.message);
+        return;
+      }
+
+      closeModal('resDetailModal');
+      loadReservations();
+    });
+  }
+
+  /**
+   * Manually promotes the selected waitlisted reservation.
+   */
+  function approveBumpReservation() {
+    if (!selectedReservationId) return;
+
+    var btn = document.getElementById('resBumpBtn');
+    btn.disabled = true;
+    btn.textContent = 'Promoting...';
+
+    var notes = document.getElementById('resActionNotes').value.trim();
+
+    apiCall('admin_approve_bump', {
+      reservation_id: selectedReservationId,
+      notes: notes
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Approve Bump';
+
+      if (!res.success) {
+        showError('Failed to approve bump: ' + res.message);
+        return;
+      }
+
+      closeModal('resDetailModal');
+      loadReservations();
+    });
+  }
+
   // ============================================================
   // GUEST LISTS
   // ============================================================

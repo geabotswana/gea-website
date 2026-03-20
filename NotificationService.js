@@ -63,6 +63,9 @@ function runNightlyTasks() {
   // 9. Reservation approval reminders: email board any still-pending bookings
   sendReservationApprovalReminders();
 
+  // 10. Expire waitlist positions whose event is within WAITLIST_HOLD_HOURS
+  expireWaitlistPositions();
+
   Logger.log("=== Nightly tasks complete ===");
 }
 

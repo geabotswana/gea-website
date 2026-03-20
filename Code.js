@@ -198,9 +198,11 @@ function _routeAction(action, params) {
     case "get_guest_profiles":       return _handleGetGuestProfiles(params);
 
     // ── BOARD / ADMIN ────────────────────────────────────────
-    case "admin_pending": return _handleAdminPending(params);
-    case "admin_approve": return _handleAdminApprove(params);
-    case "admin_deny":    return _handleAdminDeny(params);
+    case "admin_pending":      return _handleAdminPending(params);
+    case "admin_approve":      return _handleAdminApprove(params);
+    case "admin_deny":         return _handleAdminDeny(params);
+    case "admin_waitlist":     return _handleAdminWaitlist(params);
+    case "admin_approve_bump": return _handleAdminApproveBump(params);
     case "admin_guest_lists":              return _handleAdminGuestLists(params);
     case "admin_save_guest_list_draft":    return _handleAdminSaveGuestListDraft(params);
     case "admin_finalize_guest_list":      return _handleAdminFinalizeGuestList(params);
@@ -742,15 +744,19 @@ function _handleAdminPending(p) {
     var headers = data[0];
     var pending = [];
 
-    // Step 3: Filter for STATUS_PENDING only
+    // Step 3: Filter for STATUS_PENDING and STATUS_WAITLISTED
     for (var i = 1; i < data.length; i++) {
       var res = rowToObject(headers, data[i]);
-      if (res.status === STATUS_PENDING) {
+      if (res.status === STATUS_PENDING || res.status === STATUS_WAITLISTED) {
         pending.push(res);
       }
     }
 
-    // Step 4: Return the filtered list
+    // Step 4: Sort by reservation_date ascending
+    pending.sort(function(a, b) {
+      return new Date(a.reservation_date) - new Date(b.reservation_date);
+    });
+
     return successResponse({
       reservations: pending,
       count: pending.length
@@ -851,6 +857,66 @@ function _handleAdminDeny(p) {
   }
 
   return successResponse({}, "Reservation denied.");
+}
+
+
+/**
+ * ============================================================
+ * HANDLER: _handleAdminWaitlist
+ * ============================================================
+ * PURPOSE:
+ * Board action: places a PENDING reservation onto the waitlist
+ * instead of approving or denying outright.
+ *
+ * AUTHENTICATION:
+ * Requires board role.
+ *
+ * PARAMETERS REQUIRED:
+ *   token: session token
+ *   reservation_id: the reservation to waitlist
+ *   notes: (optional)
+ * ============================================================
+ */
+function _handleAdminWaitlist(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  if (!p.reservation_id) return errorResponse("reservation_id is required.", "MISSING_PARAM");
+
+  var ok = addToWaitlist(p.reservation_id, auth.session.email, p.notes || "");
+  if (!ok) return errorResponse("Could not waitlist reservation.", "WAITLIST_FAILED");
+
+  return successResponse({}, "Reservation placed on waitlist.");
+}
+
+
+/**
+ * ============================================================
+ * HANDLER: _handleAdminApproveBump
+ * ============================================================
+ * PURPOSE:
+ * Board action: manually promotes a WAITLISTED reservation
+ * to confirmed (or tentative if excess).
+ *
+ * AUTHENTICATION:
+ * Requires board role.
+ *
+ * PARAMETERS REQUIRED:
+ *   token: session token
+ *   reservation_id: the waitlisted reservation to promote
+ *   notes: (optional)
+ * ============================================================
+ */
+function _handleAdminApproveBump(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  if (!p.reservation_id) return errorResponse("reservation_id is required.", "MISSING_PARAM");
+
+  var ok = approveBump(p.reservation_id, auth.session.email, p.notes || "");
+  if (!ok) return errorResponse("Could not approve bump.", "BUMP_FAILED");
+
+  return successResponse({}, "Waitlisted reservation promoted.");
 }
 
 

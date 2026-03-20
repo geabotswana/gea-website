@@ -801,7 +801,7 @@ function _handleAdminApprove(p) {
 
   // Step 4: Call ReservationService to approve the reservation
   // This handles all the business logic: status update, email, audit log
-  var ok = approveReservation(p.reservation_id, auth.session.email, p.notes || "");
+  var ok = approveReservation(p.reservation_id, auth.session.email, p.notes || "", auth.session.role);
 
   if (!ok) {
     return errorResponse("Could not approve reservation.", "APPROVE_FAILED");

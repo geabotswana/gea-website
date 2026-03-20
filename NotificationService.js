@@ -60,6 +60,9 @@ function runNightlyTasks() {
   // 8. Update exchange rate from API
   fetchAndUpdateExchangeRate();
 
+  // 9. Reservation approval reminders: email board any still-pending bookings
+  sendReservationApprovalReminders();
+
   Logger.log("=== Nightly tasks complete ===");
 }
 

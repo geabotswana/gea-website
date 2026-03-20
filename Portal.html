@@ -5036,9 +5036,79 @@ function submitLogin(event) {
       : 'Payment submission opens after your application is approved.';
     card.appendChild(text);
 
+    // ── Dues summary grid (NMP.4) ─────────────────────────────
+    if (app.dues_info) {
+      var d = app.dues_info;
+      var duesGrid = document.createElement('div');
+      duesGrid.className = 'dues-grid';
+      duesGrid.style.marginBottom = '16px';
+
+      var duesRows = [
+        { label: 'Membership Category',    value: d.membership_category },
+        { label: 'Annual Dues',            value: '$' + d.annual_dues_usd.toFixed(2) + ' USD' },
+        { label: 'Current Quarter',        value: d.current_quarter + ' (' + d.quarter_percentage + '%)' },
+        { label: 'Pro-rated Amount (USD)', value: '$' + d.prorated_usd.toFixed(2) },
+        { label: 'Exchange Rate',          value: '1 USD = ' + d.exchange_rate.toFixed(4) + ' BWP' },
+        { label: 'Pro-rated Amount (BWP)', value: 'P' + d.prorated_bwp.toFixed(2) }
+      ];
+
+      duesRows.forEach(function(item) {
+        var row = document.createElement('div');
+        row.className = 'dues-row';
+
+        var lbl = document.createElement('div');
+        lbl.className = 'dues-label';
+        lbl.textContent = item.label;
+        row.appendChild(lbl);
+
+        var val = document.createElement('div');
+        val.className = 'dues-value';
+        val.textContent = item.value;
+        row.appendChild(val);
+
+        duesGrid.appendChild(row);
+      });
+
+      card.appendChild(duesGrid);
+    }
+
+    // ── Payment status display ────────────────────────────────
+    if (app.payment_status) {
+      var statusBox = document.createElement('div');
+      statusBox.style.marginBottom = '12px';
+      statusBox.style.padding = '10px 12px';
+      statusBox.style.borderRadius = '6px';
+      statusBox.style.fontSize = '14px';
+
+      var statusMap = {
+        submitted:               { bg: '#fff3cd', color: '#856404', icon: '⏳', label: 'Payment submitted — awaiting Treasurer review.' },
+        verified:                { bg: '#d4edda', color: '#155724', icon: '✅', label: 'Payment verified. Your membership will be activated shortly.' },
+        rejected:                { bg: '#f8d7da', color: '#721c24', icon: '❌', label: 'Payment not found. Please resubmit with correct details.' },
+        clarification_requested: { bg: '#d1ecf1', color: '#0c5460', icon: '💬', label: 'Treasurer has requested clarification — check your email.' }
+      };
+      var s = statusMap[app.payment_status] || { bg: '#f5f5f5', color: '#333', icon: 'ℹ️', label: 'Payment status: ' + app.payment_status };
+
+      statusBox.style.backgroundColor = s.bg;
+      statusBox.style.color = s.color;
+      statusBox.textContent = s.icon + ' ' + s.label;
+      card.appendChild(statusBox);
+    }
+
+    // ── Payment methods list ──────────────────────────────────
+    var methodsTitle = document.createElement('p');
+    methodsTitle.style.fontWeight = '600';
+    methodsTitle.style.marginBottom = '4px';
+    methodsTitle.textContent = 'Accepted Payment Methods:';
+    card.appendChild(methodsTitle);
+
     var methods = document.createElement('ul');
     methods.style.margin = '0 0 12px 20px';
-    ['PayPal (USD)', 'SDFCU Member2Member (USD)', 'Zelle (USD)', 'Absa (BWP)'].forEach(function(m) {
+    [
+      'PayPal (USD) — geaboard@gmail.com',
+      'SDFCU Member2Member (USD) — code GEA2025',
+      'Zelle (USD) — geaboard@gmail.com',
+      'Absa (BWP) — account 1005193, branch 290267'
+    ].forEach(function(m) {
       var li = document.createElement('li');
       li.textContent = m;
       methods.appendChild(li);

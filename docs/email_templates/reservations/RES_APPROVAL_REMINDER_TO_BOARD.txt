@@ -1,0 +1,18 @@
+GEA Board,
+
+This is your daily reminder that {{PENDING_COUNT}} reservation(s) are currently awaiting your approval.
+
+PENDING RESERVATIONS:
+{{PENDING_LIST}}
+
+Please log in to the Board Admin Portal to review and act on these requests:
+{{ADMIN_PORTAL_URL}}
+
+Reservations remain pending until explicitly approved or denied. Members are waiting to hear back — please review at your earliest convenience.
+
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -230,9 +230,9 @@ function createReservation(params) {
     reservation_id:           reservationId,
     household_id:             params.householdId,
     household_name:           hh.household_name,
-    primary_email:            params.primaryEmail,
+    submitted_by_email:       params.primaryEmail,
     facility:                 params.facility,
-    event_date:               params.eventDate,
+    reservation_date:         params.eventDate,
     start_time:               params.startTime,
     end_time:                 params.endTime,
     duration_hours:           params.durationHours,
@@ -247,8 +247,9 @@ function createReservation(params) {
     bumped_by_household_id:   "",
     bumped_date:              "",
     no_fundraising_confirmed: params.noFundraisingConfirmed || false,
-    created_date:             now,
-    last_modified_date:       now
+    mgt_approved_by:          "",
+    mgt_approved_date:        "",
+    submission_timestamp:     now
   };
 
   try {
@@ -304,7 +305,7 @@ function createCalendarEvent(reservation, hh) {
     var description =
       "Reservation ID: " + reservation.reservation_id + "\n" +
       "Household: "      + (hh ? hh.household_name : reservation.household_id) + "\n" +
-      "Contact: "        + reservation.primary_email + "\n" +
+      "Contact: "        + reservation.submitted_by_email + "\n" +
       "Status: "         + reservation.status + "\n" +
       (reservation.event_name ? "Event: " + reservation.event_name + "\n" : "") +
       (reservation.has_guests ? "Guests: " + (reservation.guest_count || 0) + "\n" : "") +
@@ -398,23 +399,58 @@ function updateCalendarEventStatus(eventId, newStatus, householdName, facility) 
 // ============================================================
 
 /**
- * Approves a reservation. For excess reservations, sets status
- * to TENTATIVE; for standard, sets to CONFIRMED.
+ * Approves a reservation. Implements a two-stage workflow for Leobo/Whole Facility:
+ *   Stage 1 (MGT): records mgt_approved_by/date, keeps STATUS_PENDING, notifies board.
+ *   Stage 2 (Board): full approval → CONFIRMED or TENTATIVE, notifies member.
+ * Tennis and other facilities skip Stage 1 and go directly to Stage 2.
  *
  * @param {string} reservationId
- * @param {string} approvedBy      Board/MGT email
+ * @param {string} approvedBy      Email of the approving user
  * @param {string} notes           Optional notes
+ * @param {string} approverRole    Role of the approving user ("mgt" or "board")
  * @returns {boolean}
  */
-function approveReservation(reservationId, approvedBy, notes) {
+function approveReservation(reservationId, approvedBy, notes, approverRole) {
   var res = getReservationById(reservationId);
   if (!res) return false;
 
+  var isMgtFacility = (res.facility === FACILITY_LEOBO || res.facility === FACILITY_WHOLE);
+
+  // ── Stage 1: MGT approves a Leobo/Whole reservation for the first time ────
+  if (isMgtFacility && !res.mgt_approved_by && approverRole === "mgt") {
+    _updateReservationField(reservationId, "mgt_approved_by",   approvedBy,   approvedBy);
+    _updateReservationField(reservationId, "mgt_approved_date", new Date(),   approvedBy);
+    if (notes) _updateReservationField(reservationId, "notes", notes, approvedBy);
+
+    logAuditEntry(approvedBy, AUDIT_RESERVATION_APPROVED, "Reservation", reservationId,
+                  "MGT approved (Stage 1) — awaiting board final approval");
+
+    // Notify board that MGT has signed off and board's final approval is needed
+    var hh = getHouseholdById(res.household_id);
+    sendEmailFromTemplate("RES_LEOBO_MGT_APPROVED_TO_BOARD", EMAIL_BOARD, {
+      MEMBER_NAME:      hh ? hh.household_name : res.household_id,
+      MEMBER_EMAIL:     res.submitted_by_email,
+      MEMBER_PHONE:     hh ? (hh.primary_phone || "") : "",
+      FACILITY:         res.facility,
+      RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
+      START_TIME:       formatTime(new Date(res.start_time)),
+      END_TIME:         formatTime(new Date(res.end_time)),
+      EVENT_NAME:       res.event_name || "",
+      GUEST_COUNT:      res.guest_count || 0,
+      RESERVATION_ID:   reservationId,
+      MGT_APPROVED_BY:  approvedBy,
+      APPROVE_LINK:     URL_ADMIN_PORTAL + "?action=approve&id=" + reservationId,
+      DENY_LINK:        URL_ADMIN_PORTAL + "?action=deny&id="    + reservationId
+    });
+    return true;
+  }
+
+  // ── Stage 2: Board final approval (or Tennis/other bypassing Stage 1) ─────
   var newStatus = res.is_excess_reservation ? STATUS_TENTATIVE : STATUS_CONFIRMED;
-  _updateReservationField(reservationId, "status",      newStatus,    approvedBy);
-  _updateReservationField(reservationId, "approved_by", approvedBy,   approvedBy);
-  _updateReservationField(reservationId, "approved_date", new Date(), approvedBy);
-  if (notes) _updateReservationField(reservationId, "approval_notes", notes, approvedBy);
+  _updateReservationField(reservationId, "status",                newStatus,  approvedBy);
+  _updateReservationField(reservationId, "board_approved_by",     approvedBy, approvedBy);
+  _updateReservationField(reservationId, "board_approval_timestamp", new Date(), approvedBy);
+  if (notes) _updateReservationField(reservationId, "notes", notes, approvedBy);
 
   logAuditEntry(approvedBy, AUDIT_RESERVATION_APPROVED, "Reservation", reservationId,
                 "Approved → " + newStatus);
@@ -434,7 +470,7 @@ function approveReservation(reservationId, approvedBy, notes) {
         FIRST_NAME:       _getPrimaryFirstName(hh.household_id),
         RESERVATION_ID:   reservationId,
         FACILITY_NAME:    res.facility,
-        RESERVATION_DATE: formatDate(new Date(res.event_date)),
+        RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
         RESERVATION_TIME: formatTime(new Date(res.start_time)) + " – " + formatTime(new Date(res.end_time)),
         GUEST_LIMIT:      res.guest_count || "",
         PORTAL_URL:       URL_MEMBER_PORTAL
@@ -456,8 +492,8 @@ function denyReservation(reservationId, deniedBy, reason) {
   var res = getReservationById(reservationId);
   if (!res) return false;
 
-  _updateReservationField(reservationId, "status",        STATUS_CANCELLED, deniedBy);
-  _updateReservationField(reservationId, "denial_reason", reason || "",     deniedBy);
+  _updateReservationField(reservationId, "status",              STATUS_CANCELLED, deniedBy);
+  _updateReservationField(reservationId, "board_denial_reason", reason || "",     deniedBy);
 
   logAuditEntry(deniedBy, AUDIT_RESERVATION_DENIED, "Reservation", reservationId,
                 "Denied: " + reason);
@@ -477,7 +513,7 @@ function denyReservation(reservationId, deniedBy, reason) {
         FIRST_NAME:       _getPrimaryFirstName(hh.household_id),
         FACILITY_NAME:    res.facility,
         RESERVATION_ID:   reservationId,
-        REQUESTED_DATE:   formatDate(new Date(res.event_date)),
+        REQUESTED_DATE:   formatDate(new Date(res.reservation_date)),
         DENIAL_REASON:    reason || "No reason provided",
         CONTACT_EMAIL:    EMAIL_BOARD
       });
@@ -500,9 +536,9 @@ function cancelReservation(reservationId, cancelledBy, reason) {
   if (!res) return false;
 
   _updateReservationField(reservationId, "status",               STATUS_CANCELLED, cancelledBy);
-  _updateReservationField(reservationId, "cancellation_reason",  reason || "",     cancelledBy);
-  _updateReservationField(reservationId, "cancelled_by",         cancelledBy,      cancelledBy);
-  _updateReservationField(reservationId, "cancellation_date",    new Date(),       cancelledBy);
+  _updateReservationField(reservationId, "cancellation_reason",    reason || "",     cancelledBy);
+  _updateReservationField(reservationId, "cancelled_by",           cancelledBy,      cancelledBy);
+  _updateReservationField(reservationId, "cancellation_timestamp", new Date(),       cancelledBy);
 
   logAuditEntry(cancelledBy, AUDIT_RESERVATION_CANCELLED, "Reservation", reservationId,
                 "Cancelled: " + (reason || "no reason given"));
@@ -523,7 +559,7 @@ function cancelReservation(reservationId, cancelledBy, reason) {
         FIRST_NAME:          _getPrimaryFirstName(hh.household_id),
         FACILITY_NAME:       res.facility,
         RESERVATION_ID:      res.reservation_id,
-        ORIGINAL_DATE:       formatDate(new Date(res.event_date)),
+        ORIGINAL_DATE:       formatDate(new Date(res.reservation_date)),
         CANCELLATION_REASON: reason || ""
       });
     }
@@ -563,7 +599,6 @@ function processBumpWindowExpirations() {
       if (today > bwDeadline) {
         var resId = data[i][idCol];
         sheet.getRange(i + 1, stCol + 1).setValue(STATUS_CONFIRMED);
-        sheet.getRange(i + 1, headers.indexOf("last_modified_date") + 1).setValue(new Date());
         logAuditEntry("system", AUDIT_RESERVATION_APPROVED, "Reservation", resId,
                       "Auto-confirmed: bump window passed");
         Logger.log("Auto-confirmed: " + resId);
@@ -600,7 +635,7 @@ function sendGuestListReminders() {
 
     for (var i = 1; i < data.length; i++) {
       var res = rowToObject(headers, data[i]);
-      if (!res.has_guests || res.guest_list_submitted) continue;
+      if (!(Number(res.guest_count) > 0) || res.guest_list_submitted) continue;
       if (res.status === STATUS_CANCELLED) continue;
       if (!res.guest_list_deadline) continue;
 
@@ -609,7 +644,7 @@ function sendGuestListReminders() {
       if (deadline.getTime() !== tomorrow.getTime()) continue;
 
       // Deadline is tomorrow — send reminder
-      var primaryEmail = res.primary_email;
+      var primaryEmail = res.submitted_by_email;
       if (!primaryEmail) continue;
 
       var hh = getHouseholdById(res.household_id);
@@ -617,13 +652,74 @@ function sendGuestListReminders() {
         FIRST_NAME:       _getPrimaryFirstName(res.household_id),
         RESERVATION_ID:   res.reservation_id,
         FACILITY_NAME:    res.facility,
-        RESERVATION_DATE: formatDate(new Date(res.event_date)),
+        RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
         DEADLINE:         formatDate(deadline),
         PORTAL_URL:       URL_MEMBER_PORTAL
       });
       Logger.log("Guest list reminder sent: " + primaryEmail + " for " + res.reservation_id);
     }
   } catch (e) { Logger.log("ERROR sendGuestListReminders: " + e); }
+}
+
+
+// ============================================================
+// APPROVAL REMINDERS
+// ============================================================
+
+/**
+ * FUNCTION: sendReservationApprovalReminders
+ * PURPOSE: Email the board a daily digest of all reservations still awaiting
+ *          approval (STATUS_PENDING). Called from runNightlyTasks().
+ *
+ * Sends template RES_APPROVAL_REMINDER_TO_BOARD with:
+ *   PENDING_COUNT  — number of pending reservations
+ *   PENDING_LIST   — plain-text block, one reservation per line
+ *   ADMIN_PORTAL_URL — link to admin portal
+ *
+ * @returns {void}
+ */
+function sendReservationApprovalReminders() {
+  Logger.log("Approval reminder check starting...");
+  try {
+    var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var pending = [];
+    for (var i = 1; i < data.length; i++) {
+      var res = rowToObject(headers, data[i]);
+      if (res.status === STATUS_PENDING) {
+        pending.push(res);
+      }
+    }
+
+    if (pending.length === 0) {
+      Logger.log("No pending reservations — approval reminder skipped.");
+      return;
+    }
+
+    // Sort by reservation_date ascending so board sees soonest-due items first
+    pending.sort(function(a, b) {
+      return new Date(a.reservation_date) - new Date(b.reservation_date);
+    });
+
+    var lines = pending.map(function(res) {
+      var dateStr = res.reservation_date ? formatDate(new Date(res.reservation_date)) : "Unknown date";
+      var excess  = res.is_excess_reservation ? " [EXCESS]" : "";
+      return "• " + (res.facility || "?") + " — " + (res.household_name || res.household_id) +
+             " — " + dateStr + excess;
+    });
+
+    sendEmailFromTemplate("RES_APPROVAL_REMINDER_TO_BOARD", EMAIL_BOARD, {
+      PENDING_COUNT:    pending.length,
+      PENDING_LIST:     lines.join("\n"),
+      ADMIN_PORTAL_URL: URL_ADMIN_PORTAL
+    });
+
+    Logger.log("Approval reminder sent: " + pending.length + " pending reservation(s).");
+  } catch (e) {
+    Logger.log("ERROR sendReservationApprovalReminders: " + e);
+  }
 }
 
 
@@ -648,8 +744,8 @@ function sendRsoDailySummary() {
     var todayReservations = [];
     for (var i = 1; i < data.length; i++) {
       var res = rowToObject(headers, data[i]);
-      if (!res.event_date) continue;
-      if (formatDate(new Date(res.event_date), true) !== todayStr) continue;
+      if (!res.reservation_date) continue;
+      if (formatDate(new Date(res.reservation_date), true) !== todayStr) continue;
       if (res.status === STATUS_CANCELLED) continue;
       todayReservations.push(res);
     }
@@ -676,7 +772,7 @@ function sendRsoDailySummary() {
                " - " + formatTime(new Date(r.end_time)) + "\n";
       if (r.event_name) block += "Event: " + r.event_name + "\n";
       block += "Reserved By: " + (hh ? hh.household_name : r.household_id) + "\n";
-      block += "Contact: " + r.primary_email + "\n";
+      block += "Contact: " + r.submitted_by_email + "\n";
       block += "Membership: " + (hh ? hh.membership_type + " - " + hh.household_type : "") + "\n";
       block += "Household Attending: " +
                members.filter(function(m) {
@@ -686,9 +782,9 @@ function sendRsoDailySummary() {
                         (m.date_of_birth ? " (age " + calculateAge(m.date_of_birth) + ")" : "");
                }).join(", ") + "\n";
 
-      if (r.has_guests) {
-        block += "Guests: " + (r.guest_count || 0) + " guests\n";
-        totalGuests += (r.guest_count || 0);
+      if (Number(r.guest_count) > 0) {
+        block += "Guests: " + r.guest_count + " guests\n";
+        totalGuests += Number(r.guest_count);
       } else {
         block += "Guests: None\n";
       }
@@ -757,7 +853,7 @@ function submitGuestList(reservationId, guests, memberEmail) {
     return { ok: false, message: "Cannot submit guest list for a cancelled reservation." };
   }
 
-  var late = !isGuestListDeadlineMet(new Date(res.event_date));
+  var late = !isGuestListDeadlineMet(new Date(res.reservation_date));
 
   var guestListId = generateId("GL");
   var now         = new Date();
@@ -775,7 +871,7 @@ function submitGuestList(reservationId, guests, memberEmail) {
     household_name:   res.household_name,
     primary_email:    memberEmail,
     facility:         res.facility,
-    event_date:       res.event_date,
+    event_date:       res.reservation_date,
     guests_json:      JSON.stringify(guests),
     guest_count:      guests.length,
     submitted_date:   now,
@@ -808,9 +904,9 @@ function submitGuestList(reservationId, guests, memberEmail) {
     FIRST_NAME:       _getPrimaryFirstName(res.household_id),
     RESERVATION_ID:   reservationId,
     FACILITY_NAME:    res.facility,
-    RESERVATION_DATE: formatDate(new Date(res.event_date)),
+    RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
     GUEST_COUNT:      guests.length,
-    DEADLINE:         formatDate(getGuestListDeadline(new Date(res.event_date))),
+    DEADLINE:         formatDate(getGuestListDeadline(new Date(res.reservation_date))),
     PORTAL_URL:       URL_MEMBER_PORTAL
   });
 
@@ -1323,7 +1419,7 @@ function _sumReservationHours(householdId, facility, fromDate, toDate, statuses)
     var headers = data[0];
     var hhCol   = headers.indexOf("household_id");
     var facCol  = headers.indexOf("facility");
-    var dateCol = headers.indexOf("event_date");
+    var dateCol = headers.indexOf("reservation_date");
     var durCol  = headers.indexOf("duration_hours");
     var statCol = headers.indexOf("status");
 
@@ -1350,7 +1446,7 @@ function _countReservations(householdId, facilities, fromDate, toDate, statuses)
     var headers = data[0];
     var hhCol   = headers.indexOf("household_id");
     var facCol  = headers.indexOf("facility");
-    var dateCol = headers.indexOf("event_date");
+    var dateCol = headers.indexOf("reservation_date");
     var statCol = headers.indexOf("status");
 
     for (var i = 1; i < data.length; i++) {

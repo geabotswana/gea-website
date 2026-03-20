@@ -346,6 +346,27 @@ function getApplicationForApplicant(email) {
       documents[indId] = _getFileSubmissionsForIndividual(indId);
     }
 
+    // Build dues info for payment display (NMP.4)
+    var duesInfo = null;
+    if (household.membership_level_id) {
+      var level = getMembershipLevel(household.membership_level_id);
+      if (level && level.annual_dues_usd) {
+        var annualDuesUsd = Number(level.annual_dues_usd) || 0;
+        var qInfo = _getCurrentQuarterInfo_();
+        var proratedUsd = Math.round(annualDuesUsd * (qInfo.percentage / 100) * 100) / 100;
+        var exchangeRate = getExchangeRate();
+        duesInfo = {
+          membership_category: application.membership_category || household.membership_type || "",
+          annual_dues_usd:    annualDuesUsd,
+          current_quarter:    qInfo.name,
+          quarter_percentage: qInfo.percentage,
+          prorated_usd:       proratedUsd,
+          exchange_rate:      exchangeRate,
+          prorated_bwp:       Math.round(proratedUsd * exchangeRate * 100) / 100
+        };
+      }
+    }
+
     return {
       success: true,
       application_id: application.application_id,
@@ -357,7 +378,8 @@ function getApplicationForApplicant(email) {
       documents: documents,
       payment_status: application.payment_status,
       payment_id: application.payment_id,
-      approved_date: application.approved_date
+      approved_date: application.approved_date,
+      dues_info: duesInfo
     };
 
   } catch (e) {
@@ -1083,11 +1105,18 @@ function _getMembershipLevelId(category, householdType) {
   }
 }
 
-function _calculateDuesAmount(category, householdType) {
-  // This would look up in Membership Levels sheet
-  // For now, returning a default value
-  // Actual implementation would query the sheet
-  return 200;  // Placeholder
+/**
+ * HELPER: Returns the current GEA membership quarter name and percentage.
+ * GEA membership year: Aug 1 – Jul 31.
+ * Q1 Aug–Oct 100%, Q2 Nov–Jan 75%, Q3 Feb–Apr 50%, Q4 May–Jul 25%.
+ * @returns {{ name: string, percentage: number }}
+ */
+function _getCurrentQuarterInfo_() {
+  var month = new Date().getMonth(); // 0=Jan … 11=Dec
+  if (month >= 7 && month <= 9)                    return { name: "Q1 (Aug–Oct)", percentage: 100 };
+  if (month === 10 || month === 11 || month === 0) return { name: "Q2 (Nov–Jan)", percentage: 75 };
+  if (month >= 1 && month <= 3)                    return { name: "Q3 (Feb–Apr)", percentage: 50 };
+  return { name: "Q4 (May–Jul)", percentage: 25 };
 }
 
 function _calculateMembershipExpiration() {

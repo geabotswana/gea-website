@@ -834,7 +834,7 @@ Each Q&A is collapsible (click to expand)
 
 **Action:** Verify these email addresses are correct and active, document in Config.gs
 
-**Status:** 🟡 TODO (needs board confirmation)
+**Status:** ✅ COMPLETE (Mar 20, 2026) — All three distros confirmed active: board@geabotswana.org, mgt-notify@geabotswana.org, rso-notify@geabotswana.org. Already set correctly in Config.js (EMAIL_BOARD, EMAIL_MGT, EMAIL_RSO). No code change needed.
 
 **Prerequisite:** D.0 (Discovery)
 

@@ -2,7 +2,7 @@
 
 **Current Date:** March 19, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE — per-guest RSO review redesign: draft save, history lookup, Guest Profiles sheet, board rejection notice. RES.4 ✅ COMPLETE — waitlist backend: addToWaitlist(), approveBump(), promoteFromWaitlist(), expireWaitlistPositions() nightly task. RES.5.1 ✅ COMPLETE — member portal reservations view (field name fixes, waitlist status badge, cancel for waitlisted). RES.5.3 ✅ COMPLETE — admin portal pending approvals (field name fixes, waitlist UI, Waitlist/Approve Bump buttons, MGT stage indicator). Schema alignment complete (reservation_date, submitted_by_email, board_approved_by, etc.). FACILITY_WHOLE removed — only Tennis Court and Leobo are valid facilities. All email template footers updated. All Email Templates sheet rows complete including RES_GUEST_LIST_REJECTIONS_TO_BOARD and RES_BOOKING_WAITLISTED_TO_MEMBER.
+**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. SUP.2 ✅ COMPLETE. SUP.3 ✅ COMPLETE. SUP.4 ✅ COMPLETE. Email template system fully migrated. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE — per-guest RSO review redesign: draft save, history lookup, Guest Profiles sheet, board rejection notice. RES.4 ✅ COMPLETE — waitlist backend: addToWaitlist(), approveBump(), promoteFromWaitlist(), expireWaitlistPositions() nightly task. RES.5.1 ✅ COMPLETE — member portal reservations view (field name fixes, waitlist status badge, cancel for waitlisted). RES.5.3 ✅ COMPLETE — admin portal pending approvals (field name fixes, waitlist UI, Waitlist/Approve Bump buttons, MGT stage indicator). Schema alignment complete (reservation_date, submitted_by_email, board_approved_by, etc.). FACILITY_WHOLE removed — only Tennis Court and Leobo are valid facilities. All email template footers updated. All Email Templates sheet rows complete including RES_GUEST_LIST_REJECTIONS_TO_BOARD and RES_BOOKING_WAITLISTED_TO_MEMBER.
 
 ---
 
@@ -1551,7 +1551,7 @@ submitted
 - Generate summary + detailed table
 - Email to board@geabotswana.org
 
-**Status:** 🟡 PARTIAL — payment report capabilities exist in admin/payment module; scheduled monthly board-ready collections report still to finalize
+**Status:** ✅ COMPLETE (Mar 20, 2026) — `sendMonthlyCollectionsReport()` in NotificationService.js. Runs automatically on last Monday of each month (`_isLastMondayOfMonth_()` check in `runNightlyTasks()`). Reports: active household count, new activations this month (`created_date` on Households), verified payments by method with USD+BWP totals, pending-verification count, outstanding dues list (active households with no verified payment for current membership year per `_getCurrentMembershipYear_()`). Plain-text email to EMAIL_BOARD.
 
 **Prerequisite:** Payment Verification Module, non-member portal
 
@@ -1575,7 +1575,7 @@ submitted
 - Generate charts/graphs
 - Store reports in Financial Records folder
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — `sendMonthlyReservationsReport()` in NotificationService.js. Runs same nightly trigger as SUP.2. Shared `_buildReservationsReportStats_(refDate)` helper also powers on-demand `admin_reservations_report` API. Admin portal "Reports" page added to Admin.html with month picker, summary stat cards, and per-facility breakdown table. Charts/PDF deferred as future enhancement.
 
 **Prerequisite:** RES.2-5 (reservation data)
 
@@ -1599,7 +1599,7 @@ submitted
 - Log all admin overrides to Audit Log
 - Confirmation dialogs for destructive actions
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 20, 2026) — Most functions existed already: approval (approveReservation), bump promotion (approveBump), cancellation, guest list review. New: `resendReservationEmail()` backend + `admin_resend_email` route + "Resend Email" button in reservation detail modal (visible for Approved/Confirmed/Tentative/Waitlisted). Household limit overrides are handled operationally by approving excess bookings. MFA deferred (not architecturally supported).
 
 **Prerequisite:** RES.2-5
 

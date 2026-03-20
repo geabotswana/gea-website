@@ -273,7 +273,7 @@ var TENNIS_SESSION_MAX_HOURS    = 2;      // Max hours per single session
 var TENNIS_WALKIN_AVAILABLE     = true;   // Allow walk-up use when not reserved
 var TENNIS_BUMP_WINDOW_DAYS     = 1;      // Calendar days before event: can be bumped
 
-// Leobo (and Whole Facility)
+// Leobo
 var LEOBO_MONTHLY_LIMIT         = 1;      // Max reservations per household per month
 var LEOBO_MAX_HOURS             = 6;      // Max hours per leobo reservation
 var LEOBO_BUMP_WINDOW_DAYS      = 5;      // Business days before event: can be bumped
@@ -297,19 +297,16 @@ var STATUS_WAITLISTED   = "Waitlisted";   // On waitlist for a taken slot
 // Facilities (must match facility column in Reservations tab)
 var FACILITY_TENNIS     = "Tennis Court";
 var FACILITY_LEOBO      = "Leobo";
-var FACILITY_WHOLE      = "Whole Facility";
 
 // All valid facility names (used for input validation)
 var ALL_FACILITIES = [
   FACILITY_TENNIS,
-  FACILITY_LEOBO,
-  FACILITY_WHOLE
+  FACILITY_LEOBO
 ];
 
 // Facilities that require board/MGT approval
 var FACILITIES_REQUIRING_APPROVAL = [
-  FACILITY_LEOBO,
-  FACILITY_WHOLE
+  FACILITY_LEOBO
 ];
 
 
@@ -798,7 +795,7 @@ var SYSTEM_BUILD_DATE       = "2026-02-22";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "Sequential membership eligibility flow with sponsor requirements and monthly exchange rate mechanism";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-20 13:26:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var DEPLOYMENT_TIMESTAMP    = "2026-03-20 13:37:03";  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // TEST MODE: Set to TRUE to prefix all generated IDs with "TEST-" for easy cleanup before production

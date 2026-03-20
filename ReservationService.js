@@ -44,7 +44,7 @@ function getLeoboReservationsThisMonth(householdId, forDate) {
   monthEnd.setDate(1); monthEnd.setMonth(monthEnd.getMonth()); // actually 1st of next month
 
   return _countReservations(householdId,
-    [FACILITY_LEOBO, FACILITY_WHOLE], monthStart, monthEnd,
+    [FACILITY_LEOBO], monthStart, monthEnd,
     [STATUS_APPROVED, STATUS_TENTATIVE, STATUS_CONFIRMED]);
 }
 
@@ -61,7 +61,7 @@ function getLeoboHoursThisMonth(householdId, forDate) {
   var monthEnd   = new Date(monthStart);
   monthEnd.setMonth(monthEnd.getMonth() + 1);
   return _sumReservationHours(householdId,
-    [FACILITY_LEOBO, FACILITY_WHOLE], monthStart, monthEnd,
+    [FACILITY_LEOBO], monthStart, monthEnd,
     [STATUS_APPROVED, STATUS_TENTATIVE, STATUS_CONFIRMED]);
 }
 
@@ -101,8 +101,8 @@ function checkReservationLimits(householdId, facility, eventDate, durationHours)
     return { allowed: true, isExcess: false, reason: "", hoursUsed: hoursUsed, hoursLimit: hoursLimit };
   }
 
-  // Leobo / whole facility
-  if (facility === FACILITY_LEOBO || facility === FACILITY_WHOLE) {
+  // Leobo
+  if (facility === FACILITY_LEOBO) {
     var countUsed  = getLeoboReservationsThisMonth(householdId, eventDate);
     var hoursUsed  = getLeoboHoursThisMonth(householdId, eventDate);
     var countLimit = LEOBO_MONTHLY_LIMIT;
@@ -399,7 +399,7 @@ function updateCalendarEventStatus(eventId, newStatus, householdName, facility) 
 // ============================================================
 
 /**
- * Approves a reservation. Implements a two-stage workflow for Leobo/Whole Facility:
+ * Approves a reservation. Implements a two-stage workflow for Leobo:
  *   Stage 1 (MGT): records mgt_approved_by/date, keeps STATUS_PENDING, notifies board.
  *   Stage 2 (Board): full approval → CONFIRMED or TENTATIVE, notifies member.
  * Tennis and other facilities skip Stage 1 and go directly to Stage 2.
@@ -414,9 +414,9 @@ function approveReservation(reservationId, approvedBy, notes, approverRole) {
   var res = getReservationById(reservationId);
   if (!res) return false;
 
-  var isMgtFacility = (res.facility === FACILITY_LEOBO || res.facility === FACILITY_WHOLE);
+  var isMgtFacility = (res.facility === FACILITY_LEOBO);
 
-  // ── Stage 1: MGT approves a Leobo/Whole reservation for the first time ────
+  // ── Stage 1: MGT approves a Leobo reservation for the first time ────
   if (isMgtFacility && !res.mgt_approved_by && approverRole === "mgt") {
     _updateReservationField(reservationId, "mgt_approved_by",   approvedBy,   approvedBy);
     _updateReservationField(reservationId, "mgt_approved_date", new Date(),   approvedBy);
@@ -1807,7 +1807,7 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
 
     if (limitCheck.isExcess && params.facility === FACILITY_TENNIS) {
       sendEmailFromTemplate("RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_BOARD", EMAIL_BOARD, approvalVars);
-    } else if (params.facility === FACILITY_LEOBO || params.facility === FACILITY_WHOLE) {
+    } else if (params.facility === FACILITY_LEOBO) {
       if (limitCheck.isExcess) {
         sendEmailFromTemplate("RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MGT", EMAIL_MGT, approvalVars);
       } else {

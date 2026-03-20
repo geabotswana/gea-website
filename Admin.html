@@ -2186,7 +2186,7 @@
           badge.textContent = 'Pending';
         }
         // MGT stage indicator for Leobo
-        if (!isWaitlisted && reservation.facility && (reservation.facility === 'Leobo' || reservation.facility === 'Whole Facility') && !reservation.mgt_approved_by) {
+        if (!isWaitlisted && reservation.facility === 'Leobo' && !reservation.mgt_approved_by) {
           var stageNote = document.createElement('div');
           stageNote.style.cssText = 'font-size:11px;color:#888;margin-top:2px;';
           stageNote.textContent = 'Awaiting MGT';
@@ -2270,7 +2270,7 @@
       addRow('Excess Booking:', res.is_excess_reservation ? 'Yes — exceeds household limit' : 'No');
 
       // Leobo approval stage
-      var isMgtFacility = res.facility === 'Leobo' || res.facility === 'Whole Facility';
+      var isMgtFacility = res.facility === 'Leobo';
       if (isMgtFacility) {
         if (res.mgt_approved_by) {
           addRow('MGT Approval:', 'Approved by ' + res.mgt_approved_by);

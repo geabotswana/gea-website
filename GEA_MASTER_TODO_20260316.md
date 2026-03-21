@@ -2,7 +2,7 @@
 
 **Current Date:** March 20, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 20, 2026 — NMP.6-8 ✅ COMPLETE. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE. RES.4 ✅ COMPLETE. RES.5.1-5.4 ✅ COMPLETE. SUP.1-4 ✅ COMPLETE. All 63 email templates verified. Schema fully aligned. xlsx snapshots removed from repo.
+**Status:** Mar 20, 2026 — NMP.4 ✅ COMPLETE. NMP.6-8 ✅ COMPLETE. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE. RES.4 ✅ COMPLETE. RES.5.1-5.4 ✅ COMPLETE. SUP.1-4 ✅ COMPLETE. All 63 email templates verified. Comprehensive test suite updated (63 semantic names, reservation workflow, waitlist, guest list, monthly reports, email resend, admin handler tests). Schema fully aligned. xlsx snapshots removed from repo.
 
 ---
 
@@ -256,7 +256,7 @@ Info-only (no form) IF applicant not yet approved
 - Dues fetched from Membership Pricing sheet (not hard-coded)
 - All form validation before submission
 
-**Status:** 🟡 PARTIAL (Mar 16, 2026) — non-member payment page now includes structured method/date/notes/proof submission UI wired to `submit_payment_proof`; dues/proration/exchange-rate display is still pending full spec parity
+**Status:** 🟢 COMPLETE (Mar 20, 2026) — `get_dues_info` backend route added; dues breakdown card (category, annual, quarter, %, pro-rated USD + BWP); live exchange rate via `getExchangeRate()`; SDFCU method added; real available-year dropdown from Membership Pricing; rejection reason + clarification note shown in status; all DOM manipulation uses textContent (XSS-safe)
 
 **Prerequisite:** NMP.2 (dashboard), Payment Verification Module exists
 

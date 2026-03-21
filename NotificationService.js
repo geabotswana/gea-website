@@ -83,7 +83,7 @@ function runNightlyTasks() {
 
 /**
  * RSO DAILY SUMMARY — attach to a daily trigger at 6:00 AM.
- * Sends tpl_014 to EMAIL_RSO with all reservations for today.
+ * Sends tpl_014 to EMAIL_RSO_NOTIFY with all reservations for today.
  * Defined in ReservationService.gs; exposed here as a trigger wrapper.
  */
 function triggerRsoDailySummary() {
@@ -479,8 +479,8 @@ function _isLastMondayOfMonth_(date) {
  * GEA year runs Aug 1 – Jul 31; e.g., Mar 2026 → "2025-26".
  * @returns {string}
  */
-function _getCurrentMembershipYear_() {
-  var now = new Date();
+function _getCurrentMembershipYear_(refDate) {
+  var now = refDate || new Date();
   var y = now.getFullYear();
   return now.getMonth() >= 7
     ? y + "-" + String(y + 1).slice(2)   // Aug+ → "2026-27"

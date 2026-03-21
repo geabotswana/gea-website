@@ -150,7 +150,7 @@ function generateRsoApprovalLink(submission_id) {
     var baseUrl = ScriptApp.getService().getUrl();
     var linkUrl = baseUrl + "?action=rso_approve&token=" + encodeURIComponent(token);
 
-    sendEmailFromBoard("tpl_058", EMAIL_RSO, {
+    sendEmailFromBoard("tpl_058", EMAIL_RSO_APPROVE, {
       SUBMISSION_ID: submission_id,
       APPROVAL_LINK: linkUrl,
       EXPIRES_AT: formatDate(expiresAt, false)
@@ -182,13 +182,13 @@ function handleRsoApprovalLink(token, action, rejection_reason) {
     var approve = String(action || "approve").toLowerCase() === "approve";
     _setSubmissionFields_(found, {
       status: approve ? "gea_pending" : "rso_rejected",
-      rso_reviewed_by: EMAIL_RSO,
+      rso_reviewed_by: EMAIL_RSO_APPROVE,
       rso_review_date: now,
       member_facing_rejection_reason: approve ? "" : (rejection_reason || "Rejected by RSO"),
       rso_approval_link_used_at: now
     });
 
-    logAuditEntry(EMAIL_RSO, approve ? AUDIT_FILE_SUBMISSION_RSO_APPROVED : AUDIT_FILE_SUBMISSION_RSO_REJECTED,
+    logAuditEntry(EMAIL_RSO_APPROVE, approve ? AUDIT_FILE_SUBMISSION_RSO_APPROVED : AUDIT_FILE_SUBMISSION_RSO_REJECTED,
       "FileSubmission", found.obj.submission_id, approve ? "Approved via one-time link" : "Rejected via one-time link");
 
     return { ok: true, submission_id: found.obj.submission_id, status: approve ? "gea_pending" : "rso_rejected" };

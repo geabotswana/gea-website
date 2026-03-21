@@ -427,7 +427,7 @@ function confirmDocumentsUploaded(applicationId, email) {
       APPLICATION_ID:  applicationId,
       DOCUMENT_TYPES:  "Passport / Omang / Photo",
       SUBMISSION_DATE: formatDate(new Date()),
-      RSO_CONTACT:     getConfigValue("RSO_EMAIL") || "rso@geabotswana.org"
+      RSO_CONTACT:     EMAIL_RSO_APPROVE
     });
 
     return { success: true, message: "Documents confirmed for review." };
@@ -551,8 +551,8 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       logAuditEntry(boardEmail, AUDIT_APPLICATION_BOARD_INITIAL, "Application", applicationId, "Approved for RSO review");
 
       // Notify RSO and applicant
-      var rsoEmail = getConfigValue("RSO_EMAIL") || "rso@geabotswana.org";
-      sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO", rsoEmail, {
+      var rsoEmail = EMAIL_RSO_APPROVE;
+      sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", rsoEmail, {
         FIRST_NAME:       "RSO Team",
         APPLICANT_NAME:   application.first_name + " " + application.last_name,
         APPLICATION_ID:   applicationId,

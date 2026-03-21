@@ -174,6 +174,7 @@ function _routeAction(action, params) {
     case "card":         return _handleCard(params);
     case "submit_payment_verification": return _handleSubmitPaymentVerification(params);
     case "get_payment_status": return _handleGetPaymentStatus(params);
+    case "get_dues_info":      return _handleGetDuesInfo(params);
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
 
     // Applicant routes (pending membership)
@@ -467,7 +468,7 @@ function _handleDashboard(p) {
       leobo:  { count_used: leoboCount, count_limit: LEOBO_MONTHLY_LIMIT,
                 hours_used: leoboHours, hours_limit: LEOBO_MAX_HOURS }
     },
-    exchange_rate: EXCHANGE_RATE_USD_TO_BWP
+    exchange_rate: getExchangeRate() || EXCHANGE_RATE_DEFAULT
   });
 }
 
@@ -2609,6 +2610,70 @@ function _handleGetPaymentStatus(p) {
     return successResponse(result);
   } catch (e) {
     return errorResponse("Error retrieving payment status: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleGetDuesInfo
+ * PURPOSE: Returns dues amount, proration, exchange rate, and available years for current member
+ */
+function _handleGetDuesInfo(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.ok) return auth.response;
+
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var hh = getHouseholdById(member.household_id);
+    if (!hh) return errorResponse("Household not found", "NOT_FOUND");
+
+    // Fetch annual dues and available years from Membership Pricing sheet
+    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+      .getSheetByName(TAB_MEMBERSHIP_PRICING);
+    var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
+    var pricingHeaders = pricingData.length ? pricingData[0] : [];
+
+    var annualDuesUsd = 0;
+    var membershipCategory = hh.membership_type || "";
+    var availableYears = [];
+
+    for (var i = 1; i < pricingData.length; i++) {
+      var row = rowToObject(pricingHeaders, pricingData[i]);
+      if (row.membership_level_id === hh.membership_level_id) {
+        if (annualDuesUsd === 0) annualDuesUsd = row.annual_dues_usd || 0;
+        if (row.active_for_payment === true || row.active_for_payment === "TRUE") {
+          availableYears.push(row.membership_year);
+        }
+      }
+    }
+
+    // Determine current quarter
+    var month = new Date().getMonth(); // 0=Jan
+    var quarter, quarterPct;
+    if (month >= 7 && month <= 9)                          { quarter = "Q1"; quarterPct = QUARTER_PERCENTAGES["Q1"]; }
+    else if (month === 10 || month === 11 || month === 0)  { quarter = "Q2"; quarterPct = QUARTER_PERCENTAGES["Q2"]; }
+    else if (month >= 1 && month <= 3)                     { quarter = "Q3"; quarterPct = QUARTER_PERCENTAGES["Q3"]; }
+    else                                                   { quarter = "Q4"; quarterPct = QUARTER_PERCENTAGES["Q4"]; }
+
+    var proratedUsd = Math.round(annualDuesUsd * (quarterPct / 100) * 100) / 100;
+    var exchangeRate = getExchangeRate() || EXCHANGE_RATE_DEFAULT;
+    var proratedBwp = Math.round(proratedUsd * exchangeRate * 100) / 100;
+
+    return successResponse({
+      membership_category: membershipCategory,
+      annual_dues_usd:     annualDuesUsd,
+      current_quarter:     quarter,
+      quarter_percentage:  quarterPct,
+      prorated_usd:        proratedUsd,
+      exchange_rate:       exchangeRate,
+      prorated_bwp:        proratedBwp,
+      available_years:     availableYears,
+      household_name:      hh.household_name || "",
+      household_id:        hh.household_id
+    });
+  } catch (e) {
+    return errorResponse("Error retrieving dues info: " + e.toString(), "SERVER_ERROR");
   }
 }
 

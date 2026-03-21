@@ -1067,7 +1067,7 @@ function sendRsoDailySummary() {
     var noRes = todayReservations.length === 0
       ? "No reservations are scheduled for today.\n\n"
       : "";
-    sendEmailFromTemplate("ADM_DAILY_SUMMARY_TO_RSO", EMAIL_RSO, {
+    sendEmailFromTemplate("ADM_DAILY_SUMMARY_TO_RSO_NOTIFY", EMAIL_RSO_NOTIFY, {
       TODAY_DATE:          formatDate(new Date()),
       IF_NO_RESERVATIONS:  noRes,
       RESERVATIONS_BLOCK:  block,
@@ -1556,7 +1556,7 @@ function _sendApprovedGuestListToRso(gl, guests, decisions, rsoEmail, reviewDate
       "Review completed: " + formatDate(reviewDate);
 
     MailApp.sendEmail({
-      to:      rsoEmail,
+      to:      EMAIL_RSO_NOTIFY,
       subject: "Approved Guest List — " + gl.facility + " on " +
                formatDate(new Date(gl.event_date)) + " [" + gl.reservation_id + "]",
       body:    body

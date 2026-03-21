@@ -439,6 +439,32 @@ function getConfigValue(key) {
   return null;
 }
 
+/**
+ * Writes a value to the Configuration sheet (column B) for the given key.
+ * If the key exists it is updated in place; if not, a new row is appended.
+ * Also invalidates the in-process cache so getConfigValue() returns the new value immediately.
+ * @param {string} key    - config_key (column A)
+ * @param {*}      value  - New value (column B)
+ */
+function setConfigValue(key, value) {
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_CONFIGURATION);
+    var data  = sheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === key) {
+        sheet.getRange(i + 1, 2).setValue(value);
+        _configCache[key] = value; // keep cache consistent
+        return;
+      }
+    }
+    // Key not found — append a new row
+    sheet.appendRow([key, value]);
+    _configCache[key] = value;
+  } catch (e) {
+    Logger.log("ERROR setConfigValue('" + key + "'): " + e);
+  }
+}
+
 
 // ============================================================
 // AUDIT LOGGING

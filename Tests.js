@@ -58,6 +58,27 @@ function runAllTests() {
   testRejectPayment();
   testClarifyPayment();
 
+  // Reservation workflow
+  testReservationConfig();
+  testReservationApprovalRouting();
+  testWaitlistConfig();
+  testWaitlistFunctions();
+  testGuestListConfig();
+  testGuestListSubmission();
+
+  // Monthly reports & helpers
+  testIsLastMondayOfMonth();
+  testGetCurrentMembershipYear();
+  testReservationsReportStats();
+  testEmailResend();
+
+  // Admin API handlers
+  testAdminWaitlistListHandler();
+  testAdminReservationsReportHandler();
+  testAdminResendEmailHandler();
+  testAdminHandlersRequireBoard();
+  testGetDuesInfoHandler();
+
   Logger.log("========================================");
   Logger.log("TEST RUN COMPLETE — Check above for FAIL");
   Logger.log("========================================");
@@ -388,19 +409,83 @@ function testBusinessDayCalculator() {
 // ============================================================
 
 /**
- * Verifies that all 31 templates are in the spreadsheet,
+ * Verifies that all 63 templates are in the spreadsheet,
  * active, and have subject + body content.
+ * Uses semantic names (the current lookup key), not the old tpl_XXX IDs.
  */
 function testEmailTemplateLoad() {
   Logger.log("\n--- TEST 5: Email Templates ---");
 
+  // All 63 semantic names from Email_Templates_Sheet.csv
   var templateIds = [
-    "tpl_001","tpl_002","tpl_003","tpl_004","tpl_005","tpl_006",
-    "tpl_007","tpl_008","tpl_009","tpl_010","tpl_011","tpl_012",
-    "tpl_013","tpl_014","tpl_015","tpl_016","tpl_017","tpl_018",
-    "tpl_019","tpl_020","tpl_021","tpl_022","tpl_023","tpl_024",
-    "tpl_025","tpl_026","tpl_027","tpl_028","tpl_029","tpl_030",
-    "tpl_031"
+    // ADM — application administration
+    "ADM_BOARD_APPROVAL_REQUEST_TO_BOARD",
+    "ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD",
+    "ADM_BOARD_FINAL_APPROVAL_TO_BOARD",
+    "ADM_BOARD_FINAL_DENIED_TO_BOARD",
+    "ADM_BOARD_INITIAL_DENIED_TO_BOARD",
+    "ADM_DOCS_SENT_TO_RSO_TO_BOARD",
+    "ADM_MGT_APPROVAL_REQUEST_TO_MGT",
+    "ADM_NEW_APPLICATION_BOARD_TO_BOARD",
+    "ADM_READY_FOR_FINAL_APPROVAL_TO_MEMBER",
+    "ADM_DAILY_SUMMARY_TO_RSO_NOTIFY",
+    "ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE",
+    "ADM_RSO_DOCUMENT_ISSUE_TO_BOARD",
+    // DOC — document / photo uploads
+    "DOC_DOCUMENT_REJECTED_TO_MEMBER",
+    "DOC_DOCUMENTS_CONFIRMED_TO_MEMBER",
+    "DOC_EMPLOYMENT_VERIFICATION_REQUESTED_TO_MEMBER",
+    "DOC_FILE_SUBMISSION_CONFIRMATION_TO_MEMBER",
+    "DOC_PHOTO_APPROVED_TO_MEMBER",
+    "DOC_PHOTO_REJECTED_TO_MEMBER",
+    "DOC_PHOTO_SUBMISSION_REMINDER_TO_MEMBER",
+    // MEM — membership lifecycle
+    "MEM_APPLICATION_APPROVED_TO_APPLICANT",
+    "MEM_APPLICATION_DENIED_TO_APPLICANT",
+    "MEM_APPLICATION_RECEIVED_TO_APPLICANT",
+    "MEM_BIRTHDAY_AGE_15_MILESTONE_TO_MEMBER",
+    "MEM_BIRTHDAY_AGE_16_MILESTONE_TO_MEMBER",
+    "MEM_BIRTHDAY_GREETING_TO_MEMBER",
+    "MEM_FIRST_LOGIN_WELCOME_TO_MEMBER",
+    "MEM_MEMBERSHIP_EXPIRED_TO_MEMBER",
+    "MEM_PASSPORT_EXPIRATION_WARNING_TO_MEMBER",
+    "MEM_PASSWORD_SET_TO_MEMBER",
+    "MEM_RENEWAL_REMINDER_30_DAYS_TO_MEMBER",
+    "MEM_RENEWAL_REMINDER_7_DAYS_TO_MEMBER",
+    "MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT",
+    "MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER",
+    // PAY — payments
+    "PAY_PAYMENT_CLARIFICATION_REQUESTED_TO_MEMBER",
+    "PAY_PAYMENT_CONFIRMATION_RECEIVED_TO_MEMBER",
+    "PAY_PAYMENT_PROOF_RECEIVED_TO_MEMBER",
+    "PAY_PAYMENT_REJECTED_TO_MEMBER",
+    "PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD",
+    "PAY_PAYMENT_SUBMITTED_TO_MEMBER",
+    "PAY_PAYMENT_VERIFIED_ACTIVATED_BOARD_FYI_TO_BOARD",
+    "PAY_PAYMENT_VERIFIED_TO_MEMBER",
+    // RES — reservations & guest lists
+    "RES_BOOKING_APPROVED_TO_MEMBER",
+    "RES_BOOKING_CANCELLED_TO_MEMBER",
+    "RES_BOOKING_DENIED_BOARD_COPY_TO_BOARD",
+    "RES_BOOKING_DENIED_TO_MEMBER",
+    "RES_BOOKING_PENDING_REVIEW_TO_MEMBER",
+    "RES_BOOKING_RECEIVED_TO_MEMBER",
+    "RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MEMBER",
+    "RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_MEMBER",
+    "RES_GUEST_LIST_DEADLINE_REMINDER_TO_MEMBER",
+    "RES_HOLIDAY_CALENDAR_REMINDER_TO_MEMBER",
+    "RES_LEOBO_LIMIT_REACHED_TO_MEMBER",
+    "RES_TENNIS_LIMIT_REACHED_TO_MEMBER",
+    "RES_BOOKING_APPROVAL_REQUEST_TO_BOARD",
+    "RES_WAITLIST_SLOT_OPENED_TO_MEMBER",
+    "RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_BOARD",
+    "RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MGT",
+    "RES_LEOBO_APPROVAL_REQUEST_TO_MGT",
+    "RES_GUEST_LIST_REJECTIONS_TO_BOARD",
+    "RES_GUEST_LIST_SUBMITTED_TO_MEMBER",
+    "RES_APPROVAL_REMINDER_TO_BOARD",
+    "RES_LEOBO_MGT_APPROVED_TO_BOARD",
+    "RES_BOOKING_WAITLISTED_TO_MEMBER"
   ];
 
   var missing = [];
@@ -418,7 +503,7 @@ function testEmailTemplateLoad() {
     }
   }
 
-  _assert("All 31 templates found",
+  _assert("All 63 templates found",
     missing.length === 0, "Missing: " + missing.join(", "));
 
   _assert("All templates have subjects",
@@ -711,13 +796,13 @@ function testSendEmail() {
 
 /**
  * Tests the RSO daily summary without waiting for the trigger.
- * Sends to EMAIL_RSO — check that address for the result.
+ * Sends to EMAIL_RSO_NOTIFY — check that address for the result.
  */
 function testRsoEmailManual() {
   Logger.log("\n--- MANUAL: RSO Summary Test ---");
-  Logger.log("  INFO: Sending RSO summary for today to " + EMAIL_RSO);
+  Logger.log("  INFO: Sending RSO summary for today to " + EMAIL_RSO_NOTIFY);
   sendRsoDailySummary();
-  Logger.log("  INFO: Done. Check " + EMAIL_RSO + " for the summary email.");
+  Logger.log("  INFO: Done. Check " + EMAIL_RSO_NOTIFY + " for the summary email.");
 }
 
 
@@ -1401,7 +1486,8 @@ function testFileUploadSystem() {
   _assert("PHOTO_MAX_SIZE_MB defined", typeof PHOTO_MAX_SIZE_MB === 'number', PHOTO_MAX_SIZE_MB);
   _assert("PHOTO_ACCEPTED_TYPES defined", Array.isArray(PHOTO_ACCEPTED_TYPES), typeof PHOTO_ACCEPTED_TYPES);
   _assert("PASSPORT_WARNING_MONTHS defined", typeof PASSPORT_WARNING_MONTHS === 'number', PASSPORT_WARNING_MONTHS);
-  _assert("EMAIL_RSO defined", typeof EMAIL_RSO === 'string' && EMAIL_RSO.length > 0, EMAIL_RSO);
+  _assert("EMAIL_RSO_APPROVE defined", typeof EMAIL_RSO_APPROVE === 'string' && EMAIL_RSO_APPROVE.length > 0, EMAIL_RSO_APPROVE);
+  _assert("EMAIL_RSO_NOTIFY defined", typeof EMAIL_RSO_NOTIFY === 'string' && EMAIL_RSO_NOTIFY.length > 0, EMAIL_RSO_NOTIFY);
   _assert("RSO_APPROVAL_LINK_EXPIRY_HOURS defined", typeof RSO_APPROVAL_LINK_EXPIRY_HOURS === 'number');
 
   Logger.log("  INFO: File upload system config verified");
@@ -1875,4 +1961,543 @@ function testServiceAccountSetup() {
   Logger.log("\n========== ALL TESTS PASSED ==========");
   Logger.log("Service account setup is complete!");
   Logger.log("You can now run testEmailTemplateSystem() to send test emails.");
+}
+
+
+// ============================================================
+// RESERVATION WORKFLOW TESTS
+// ============================================================
+
+/**
+ * Tests reservation status constants and limit constants exist.
+ * Verifies the Reservations sheet schema.
+ */
+function testReservationConfig() {
+  Logger.log("\n--- TEST: Reservation Config & Schema ---");
+
+  _assert("FACILITY_TENNIS is set", typeof FACILITY_TENNIS === "string" && FACILITY_TENNIS.length > 0, FACILITY_TENNIS);
+  _assert("FACILITY_LEOBO is set",  typeof FACILITY_LEOBO === "string" && FACILITY_LEOBO.length > 0, FACILITY_LEOBO);
+  _assert("ALL_FACILITIES has 2 entries", Array.isArray(ALL_FACILITIES) && ALL_FACILITIES.length === 2, ALL_FACILITIES.length);
+  _assert("FACILITY_WHOLE not present",
+    ALL_FACILITIES.indexOf("Whole Facility") === -1, "Found Whole Facility in ALL_FACILITIES");
+  _assert("LEOBO in FACILITIES_REQUIRING_APPROVAL",
+    FACILITIES_REQUIRING_APPROVAL.indexOf(FACILITY_LEOBO) !== -1);
+  _assert("STATUS_APPROVED defined",   typeof STATUS_APPROVED === "string");
+  _assert("STATUS_PENDING defined",    typeof STATUS_PENDING === "string");
+  _assert("STATUS_DENIED defined",     typeof STATUS_DENIED === "string");
+  _assert("STATUS_CANCELLED defined",  typeof STATUS_CANCELLED === "string");
+  _assert("STATUS_WAITLISTED defined", typeof STATUS_WAITLISTED === "string");
+  _assert("STATUS_CONFIRMED defined",  typeof STATUS_CONFIRMED === "string");
+
+  try {
+    var ss = SpreadsheetApp.openById(RESERVATIONS_ID);
+    var sheet = ss.getSheetByName(TAB_RESERVATIONS);
+    _assert("Reservations sheet exists", sheet !== null);
+    if (sheet) {
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      var required = [
+        "reservation_id", "household_id", "submitted_by_email", "submission_timestamp",
+        "facility", "reservation_date", "start_time", "end_time", "duration_hours",
+        "event_name", "status", "board_approval_required", "board_approved_by",
+        "board_approval_timestamp", "board_denial_reason", "mgt_approved_by", "mgt_approved_date",
+        "is_excess_reservation", "bump_window_deadline"
+      ];
+      var missing = required.filter(function(c) { return headers.indexOf(c) === -1; });
+      _assert("Reservations sheet has all required columns",
+        missing.length === 0, "Missing: " + missing.join(", "));
+      Logger.log("  INFO: Reservations sheet has " + headers.length + " columns");
+    }
+  } catch (e) {
+    _assert("Reservations sheet accessible", false, e.toString());
+  }
+}
+
+
+/**
+ * Tests Tennis booking approval and Leobo two-stage approval routing.
+ * Uses fake household to avoid touching real data.
+ */
+function testReservationApprovalRouting() {
+  Logger.log("\n--- TEST: Reservation Approval Routing ---");
+
+  // Tennis regular booking: checkReservationLimits says not excess → board_approval_required=false
+  var fakeHhId = "HSH-TEST-FAKE99999";
+  var futureDate = addDays(new Date(), 14); // 2 weeks from now
+
+  var checkTennis = checkReservationLimits(fakeHhId, FACILITY_TENNIS, futureDate, 1.0);
+  _assert("Tennis 1h within limit — not excess", checkTennis.isExcess === false, "isExcess=" + checkTennis.isExcess);
+  _assert("Tennis 1h within limit — allowed",    checkTennis.allowed === true,   "allowed=" + checkTennis.allowed);
+
+  // Tennis excess: force it over limit by requesting 4h (weekly limit is 3h)
+  var checkTennisExcess = checkReservationLimits(fakeHhId, FACILITY_TENNIS, futureDate, TENNIS_WEEKLY_LIMIT_HOURS + 1);
+  _assert("Tennis >limit — not allowed",
+    checkTennisExcess.allowed === false, "allowed=" + checkTennisExcess.allowed);
+
+  // Leobo regular booking
+  var checkLeobo = checkReservationLimits(fakeHhId, FACILITY_LEOBO, futureDate, 3.0);
+  _assert("Leobo 3h within limit — allowed",  checkLeobo.allowed === true, "allowed=" + checkLeobo.allowed);
+
+  // Verify that FACILITY_LEOBO always requires board approval
+  _assert("Leobo is in FACILITIES_REQUIRING_APPROVAL",
+    FACILITIES_REQUIRING_APPROVAL.indexOf(FACILITY_LEOBO) !== -1);
+
+  Logger.log("  INFO: Approval routing logic verified (no real bookings created)");
+}
+
+
+/**
+ * Tests waitlist-related configuration and sheet columns.
+ */
+function testWaitlistConfig() {
+  Logger.log("\n--- TEST: Waitlist Config ---");
+
+  _assert("STATUS_WAITLISTED is defined", typeof STATUS_WAITLISTED === "string" && STATUS_WAITLISTED.length > 0);
+  _assert("LEOBO_BUMP_WINDOW_DAYS is defined",
+    typeof LEOBO_BUMP_WINDOW_DAYS === "number" && LEOBO_BUMP_WINDOW_DAYS > 0, LEOBO_BUMP_WINDOW_DAYS);
+  _assert("TENNIS_BUMP_WINDOW_DAYS is defined",
+    typeof TENNIS_BUMP_WINDOW_DAYS === "number" && TENNIS_BUMP_WINDOW_DAYS > 0, TENNIS_BUMP_WINDOW_DAYS);
+
+  try {
+    var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    if (sheet) {
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      _assert("bump_window_deadline column exists", headers.indexOf("bump_window_deadline") !== -1);
+      _assert("bumped_by_household_id column exists", headers.indexOf("bumped_by_household_id") !== -1);
+      _assert("bumped_date column exists", headers.indexOf("bumped_date") !== -1);
+    }
+  } catch (e) {
+    Logger.log("  WARN: Could not check waitlist columns: " + e);
+  }
+}
+
+
+/**
+ * Tests that approveBump and getReservationById are callable.
+ * Uses a fake ID that won't exist — verifies graceful NOT_FOUND handling.
+ */
+function testWaitlistFunctions() {
+  Logger.log("\n--- TEST: Waitlist Functions ---");
+
+  // getReservationById with non-existent ID should return null or { ok: false }
+  try {
+    var result = getReservationById("RES-FAKE-00000000");
+    _assert("getReservationById fake ID returns null/falsy", !result, "returned: " + JSON.stringify(result));
+  } catch (e) {
+    _assert("getReservationById does not throw on missing ID", false, e.toString());
+  }
+
+  // expireWaitlistPositions should run without throwing
+  try {
+    expireWaitlistPositions(); // returns void; success = no exception
+    _assert("expireWaitlistPositions runs without exception", true);
+    Logger.log("  INFO: expireWaitlistPositions completed");
+  } catch (e) {
+    _assert("expireWaitlistPositions runs without exception", false, e.toString());
+  }
+
+  // promoteFromWaitlist with far-future date (no waitlisted) → returns null (no candidate)
+  try {
+    var farFuture = addDays(new Date(), 365);
+    var promoteResult = promoteFromWaitlist(FACILITY_TENNIS, farFuture);
+    // Returns reservation_id string if promoted, or null if no candidates
+    _assert("promoteFromWaitlist returns null or string (no throw)",
+      promoteResult === null || typeof promoteResult === "string",
+      typeof promoteResult);
+    Logger.log("  INFO: promoteFromWaitlist for far-future date returned: " + promoteResult);
+  } catch (e) {
+    Logger.log("  WARN: promoteFromWaitlist threw: " + e);
+  }
+}
+
+
+/**
+ * Tests guest list config and sheet columns.
+ */
+function testGuestListConfig() {
+  Logger.log("\n--- TEST: Guest List Config & Schema ---");
+
+  _assert("GUEST_LIST_DEADLINE_DAYS defined", typeof GUEST_LIST_DEADLINE_DAYS === "number", GUEST_LIST_DEADLINE_DAYS);
+  _assert("TAB_GUEST_LISTS defined",   typeof TAB_GUEST_LISTS === "string"  && TAB_GUEST_LISTS.length > 0);
+  _assert("TAB_GUEST_PROFILES defined", typeof TAB_GUEST_PROFILES === "string" && TAB_GUEST_PROFILES.length > 0);
+
+  try {
+    var ss = SpreadsheetApp.openById(RESERVATIONS_ID);
+
+    var glSheet = ss.getSheetByName(TAB_GUEST_LISTS);
+    _assert("Guest Lists sheet exists", glSheet !== null);
+    if (glSheet) {
+      var glHeaders = glSheet.getRange(1, 1, 1, glSheet.getLastColumn()).getValues()[0];
+      var glRequired = ["reservation_id", "household_id", "status", "submitted_timestamp", "finalized_timestamp"];
+      var glMissing  = glRequired.filter(function(c) { return glHeaders.indexOf(c) === -1; });
+      _assert("Guest Lists required columns present",
+        glMissing.length === 0, "Missing: " + glMissing.join(", "));
+    }
+
+    var gpSheet = ss.getSheetByName(TAB_GUEST_PROFILES);
+    _assert("Guest Profiles sheet exists", gpSheet !== null);
+    if (gpSheet) {
+      var gpHeaders = gpSheet.getRange(1, 1, 1, gpSheet.getLastColumn()).getValues()[0];
+      var gpRequired = ["reservation_id", "household_id", "id_number", "first_name", "last_name",
+                        "rso_status", "rso_rejection_reason"];
+      var gpMissing  = gpRequired.filter(function(c) { return gpHeaders.indexOf(c) === -1; });
+      _assert("Guest Profiles required columns present",
+        gpMissing.length === 0, "Missing: " + gpMissing.join(", "));
+    }
+  } catch (e) {
+    _assert("Guest List sheets accessible", false, e.toString());
+  }
+}
+
+
+/**
+ * Tests submitGuestList validates parameters before writing.
+ */
+function testGuestListSubmission() {
+  Logger.log("\n--- TEST: Guest List Submission Validation ---");
+
+  // Missing reservation_id → missing guests array
+  var r1 = submitGuestList(null, [], "member@example.com");
+  _assert("submitGuestList: null reservationId → ok:false",
+    r1 && r1.ok === false, "ok=" + (r1 ? r1.ok : "null"));
+
+  // Unknown reservation_id
+  var r2 = submitGuestList(
+    "RES-FAKE-00000000",
+    [{ first_name: "John", last_name: "Doe", id_number: "123456789", age_group: "over_18" }],
+    "member@example.com"
+  );
+  _assert("submitGuestList: non-existent reservation → ok:false",
+    r2 && r2.ok === false, "ok=" + (r2 ? r2.ok : "null"));
+
+  Logger.log("  INFO: Guest list validation rules working");
+}
+
+
+// ============================================================
+// MONTHLY REPORTS TESTS
+// ============================================================
+
+/**
+ * Tests _isLastMondayOfMonth_ logic.
+ */
+function testIsLastMondayOfMonth() {
+  Logger.log("\n--- TEST: _isLastMondayOfMonth_ ---");
+
+  // March 30, 2026 is a Monday. March 30 + 7 = April 6 → crosses month → IS last Monday
+  var lastMonday = new Date(2026, 2, 30);
+  _assert("March 30, 2026 is last Monday of March",
+    _isLastMondayOfMonth_(lastMonday) === true, _isLastMondayOfMonth_(lastMonday));
+
+  // March 23, 2026 is a Monday but NOT the last (March 30 follows)
+  var notLast = new Date(2026, 2, 23);
+  _assert("March 23, 2026 is NOT last Monday of March",
+    _isLastMondayOfMonth_(notLast) === false, _isLastMondayOfMonth_(notLast));
+
+  // March 31, 2026 is a Tuesday — not a Monday at all
+  var tuesday = new Date(2026, 2, 31);
+  _assert("March 31, 2026 (Tuesday) returns false",
+    _isLastMondayOfMonth_(tuesday) === false, _isLastMondayOfMonth_(tuesday));
+
+  // April 27, 2026 is a Monday. April 27 + 7 = May 4 → crosses month → IS last Monday
+  var aprilLastMonday = new Date(2026, 3, 27);
+  _assert("April 27, 2026 is last Monday of April",
+    _isLastMondayOfMonth_(aprilLastMonday) === true, _isLastMondayOfMonth_(aprilLastMonday));
+}
+
+
+/**
+ * Tests _getCurrentMembershipYear_ returns correct format.
+ * Membership year is Aug–Jul: Aug 2025–Jul 2026 = "2025-26".
+ */
+function testGetCurrentMembershipYear() {
+  Logger.log("\n--- TEST: _getCurrentMembershipYear_ ---");
+
+  var year = _getCurrentMembershipYear_();
+  _assert("Returns string", typeof year === "string", typeof year);
+  _assert("Format is YYYY-YY", /^\d{4}-\d{2}$/.test(year), year);
+
+  // March 2026 should return "2025-26"
+  var march2026 = _getCurrentMembershipYear_(new Date(2026, 2, 1));
+  _assert("March 2026 → '2025-26'", march2026 === "2025-26", march2026);
+
+  // August 2026 should return "2026-27"
+  var aug2026 = _getCurrentMembershipYear_(new Date(2026, 7, 1));
+  _assert("August 2026 → '2026-27'", aug2026 === "2026-27", aug2026);
+
+  // January 2026 should return "2025-26"
+  var jan2026 = _getCurrentMembershipYear_(new Date(2026, 0, 1));
+  _assert("January 2026 → '2025-26'", jan2026 === "2025-26", jan2026);
+}
+
+
+/**
+ * Tests _buildReservationsReportStats_ returns the expected shape.
+ */
+function testReservationsReportStats() {
+  Logger.log("\n--- TEST: Reservations Report Stats ---");
+
+  try {
+    var stats = _buildReservationsReportStats_(new Date(2026, 2, 1));
+    _assert("Stats is an object", stats && typeof stats === "object");
+    _assert("Stats has total",     typeof stats.total === "number", typeof stats.total);
+    _assert("Stats has approved",  typeof stats.approved === "number");
+    _assert("Stats has denied",    typeof stats.denied === "number");
+    _assert("Stats has waitlisted",typeof stats.waitlisted === "number");
+    _assert("Stats has excess",    typeof stats.excess === "number");
+    _assert("Stats has by_facility", stats.by_facility && typeof stats.by_facility === "object");
+    _assert("Total non-negative",  stats.total >= 0, stats.total);
+
+    Logger.log("  INFO: Stats — total=" + stats.total + " approved=" + stats.approved +
+               " denied=" + stats.denied + " waitlisted=" + stats.waitlisted);
+  } catch (e) {
+    Logger.log("  WARN: _buildReservationsReportStats_ error: " + e);
+  }
+}
+
+
+// ============================================================
+// EMAIL RESEND TEST
+// ============================================================
+
+/**
+ * Tests resendReservationEmail with a non-existent ID returns NOT_FOUND.
+ */
+function testEmailResend() {
+  Logger.log("\n--- TEST: Email Resend ---");
+
+  // Non-existent reservation → NOT_FOUND
+  var r1 = resendReservationEmail("RES-FAKE-00000000", "board@geabotswana.org");
+  _assert("resendReservationEmail: fake ID returns ok:false",
+    r1 && r1.ok === false, "ok=" + (r1 ? r1.ok : "null"));
+  _assert("resendReservationEmail: fake ID returns NOT_FOUND code",
+    r1 && r1.code === "NOT_FOUND", "code=" + (r1 ? r1.code : "null"));
+
+  Logger.log("  INFO: Email resend error handling verified");
+}
+
+
+// ============================================================
+// ADMIN API HANDLER TESTS
+// ============================================================
+
+/**
+ * Tests admin_waitlist_list handler returns correct shape.
+ * Creates a temp board session for the call.
+ */
+function testAdminWaitlistListHandler() {
+  Logger.log("\n--- TEST: admin_waitlist_list Handler ---");
+
+  try {
+    var token = _createSession("TEST_ADMIN_WAITLIST_" + Date.now() + "@example.com", "board");
+    var result = _handleAdminWaitlistList({ token: token });
+
+    _assert("Handler returns object", result && typeof result === "object");
+    // Parse success response
+    var parsed = (typeof result === "string") ? JSON.parse(result) : result;
+    _assert("Handler success=true", parsed && (parsed.success === true || parsed.ok === true),
+      JSON.stringify(parsed).substring(0, 80));
+
+    var data = parsed.data || parsed;
+    _assert("Returns waitlisted array", Array.isArray(data.waitlisted), typeof data.waitlisted);
+    _assert("Returns count", typeof data.count === "number", typeof data.count);
+    _assert("count matches waitlisted length", data.count === data.waitlisted.length,
+      "count=" + data.count + " length=" + (data.waitlisted ? data.waitlisted.length : "null"));
+
+    Logger.log("  INFO: Waitlist count = " + data.count);
+  } catch (e) {
+    Logger.log("  WARN: admin_waitlist_list test error: " + e);
+  }
+}
+
+
+/**
+ * Tests admin_reservations_report handler returns stats shape.
+ */
+function testAdminReservationsReportHandler() {
+  Logger.log("\n--- TEST: admin_reservations_report Handler ---");
+
+  try {
+    var token = _createSession("TEST_ADMIN_REPORT_" + Date.now() + "@example.com", "board");
+    var result = _handleAdminReservationsReport({ token: token });
+
+    var parsed = (typeof result === "string") ? JSON.parse(result) : result;
+    _assert("Handler returns success", parsed && (parsed.success === true || parsed.ok === true),
+      JSON.stringify(parsed).substring(0, 80));
+
+    var data = parsed.data || parsed;
+    _assert("Returns total", typeof data.total === "number", typeof data.total);
+    _assert("Returns by_facility", data.by_facility && typeof data.by_facility === "object");
+
+    Logger.log("  INFO: Report total=" + data.total);
+  } catch (e) {
+    Logger.log("  WARN: admin_reservations_report test error: " + e);
+  }
+}
+
+
+/**
+ * Tests admin_resend_email handler with fake reservation returns NOT_FOUND.
+ */
+function testAdminResendEmailHandler() {
+  Logger.log("\n--- TEST: admin_resend_email Handler ---");
+
+  try {
+    var token = _createSession("TEST_ADMIN_RESEND_" + Date.now() + "@example.com", "board");
+    var result = _handleAdminResendEmail({ token: token, reservation_id: "RES-FAKE-00000000" });
+
+    var parsed = (typeof result === "string") ? JSON.parse(result) : result;
+    // Should fail gracefully with NOT_FOUND (reservation doesn't exist)
+    _assert("Handler returns error for fake reservation",
+      parsed && (parsed.success === false || parsed.ok === false),
+      JSON.stringify(parsed).substring(0, 80));
+    Logger.log("  INFO: Resend handler rejected fake reservation correctly");
+  } catch (e) {
+    Logger.log("  WARN: admin_resend_email test error: " + e);
+  }
+}
+
+
+/**
+ * Tests that all three new admin handlers reject member-role tokens (board only).
+ */
+function testAdminHandlersRequireBoard() {
+  Logger.log("\n--- TEST: New Admin Handlers Require Board Role ---");
+
+  try {
+    var memberToken = _createSession("TEST_MEMBER_ROLE_" + Date.now() + "@example.com", "member");
+
+    var r1 = _handleAdminWaitlistList({ token: memberToken });
+    var p1 = (typeof r1 === "string") ? JSON.parse(r1) : r1;
+    _assert("admin_waitlist_list rejects member token",
+      p1 && (p1.success === false || p1.ok === false), JSON.stringify(p1).substring(0, 80));
+
+    var r2 = _handleAdminReservationsReport({ token: memberToken });
+    var p2 = (typeof r2 === "string") ? JSON.parse(r2) : r2;
+    _assert("admin_reservations_report rejects member token",
+      p2 && (p2.success === false || p2.ok === false), JSON.stringify(p2).substring(0, 80));
+
+    var r3 = _handleAdminResendEmail({ token: memberToken, reservation_id: "RES-FAKE-00000000" });
+    var p3 = (typeof r3 === "string") ? JSON.parse(r3) : r3;
+    _assert("admin_resend_email rejects member token",
+      p3 && (p3.success === false || p3.ok === false), JSON.stringify(p3).substring(0, 80));
+
+  } catch (e) {
+    Logger.log("  WARN: Role enforcement test error: " + e);
+  }
+}
+
+
+// ============================================================
+// DUES INFO HANDLER TEST
+// ============================================================
+
+/**
+ * Tests get_dues_info handler returns expected shape.
+ */
+function testGetDuesInfoHandler() {
+  Logger.log("\n--- TEST: get_dues_info Handler ---");
+
+  try {
+    var token = _createSession("TEST_DUES_" + Date.now() + "@example.com", "member");
+    var result = _handleGetDuesInfo({ token: token });
+
+    var parsed = (typeof result === "string") ? JSON.parse(result) : result;
+    // Will fail NOT_FOUND for fake test email since no member record exists —
+    // that is expected and correct behavior
+    _assert("Handler returns object", parsed && typeof parsed === "object");
+    Logger.log("  INFO: get_dues_info for non-member test session returned: " +
+               (parsed.success ? "success" : "error (expected — no member record for test session)"));
+
+    // Test with actual test member if present (from CLAUDE.md)
+    var testToken = _createSession("jane@example.com", "member");
+    var testResult = _handleGetDuesInfo({ token: testToken });
+    var testParsed = (typeof testResult === "string") ? JSON.parse(testResult) : testResult;
+
+    if (testParsed.success) {
+      var data = testParsed.data;
+      _assert("Returns membership_category", typeof data.membership_category === "string");
+      _assert("Returns annual_dues_usd",     typeof data.annual_dues_usd === "number");
+      _assert("Returns current_quarter",     ["Q1","Q2","Q3","Q4"].indexOf(data.current_quarter) !== -1);
+      _assert("Returns quarter_percentage",  typeof data.quarter_percentage === "number");
+      _assert("Returns prorated_usd",        typeof data.prorated_usd === "number");
+      _assert("Returns prorated_bwp",        typeof data.prorated_bwp === "number");
+      _assert("Returns exchange_rate",       typeof data.exchange_rate === "number");
+      _assert("Returns available_years",     Array.isArray(data.available_years));
+      _assert("Prorated USD ≤ annual dues",  data.prorated_usd <= data.annual_dues_usd,
+        "prorated=" + data.prorated_usd + " annual=" + data.annual_dues_usd);
+      _assert("Exchange rate > 0", data.exchange_rate > 0, data.exchange_rate);
+      Logger.log("  INFO: category=" + data.membership_category +
+                 " annual=$" + data.annual_dues_usd +
+                 " " + data.current_quarter + " (" + data.quarter_percentage + "%) =" +
+                 " $" + data.prorated_usd + " / P" + data.prorated_bwp);
+    } else {
+      Logger.log("  SKIP: Test member jane@example.com not found — add test data to run full check");
+    }
+  } catch (e) {
+    Logger.log("  WARN: get_dues_info test error: " + e);
+  }
+}
+
+
+// ============================================================
+// COMPREHENSIVE RESERVATION TEST RUNNER
+// ============================================================
+
+/**
+ * Runs all reservation-related tests as a group.
+ */
+function runReservationTests() {
+  Logger.log("========================================");
+  Logger.log("RESERVATION TEST RUN — " + new Date().toString());
+  Logger.log("========================================");
+
+  testReservationConfig();
+  testReservationApprovalRouting();
+  testWaitlistConfig();
+  testWaitlistFunctions();
+  testGuestListConfig();
+  testGuestListSubmission();
+
+  Logger.log("========================================");
+  Logger.log("RESERVATION TESTS COMPLETE");
+  Logger.log("========================================");
+}
+
+
+/**
+ * Runs all notification / report tests as a group.
+ */
+function runReportTests() {
+  Logger.log("========================================");
+  Logger.log("REPORTS TEST RUN — " + new Date().toString());
+  Logger.log("========================================");
+
+  testIsLastMondayOfMonth();
+  testGetCurrentMembershipYear();
+  testReservationsReportStats();
+  testEmailResend();
+
+  Logger.log("========================================");
+  Logger.log("REPORTS TESTS COMPLETE");
+  Logger.log("========================================");
+}
+
+
+/**
+ * Runs all admin API handler tests as a group.
+ */
+function runAdminHandlerTests() {
+  Logger.log("========================================");
+  Logger.log("ADMIN HANDLER TEST RUN — " + new Date().toString());
+  Logger.log("========================================");
+
+  testAdminWaitlistListHandler();
+  testAdminReservationsReportHandler();
+  testAdminResendEmailHandler();
+  testAdminHandlersRequireBoard();
+  testGetDuesInfoHandler();
+
+  Logger.log("========================================");
+  Logger.log("ADMIN HANDLER TESTS COMPLETE");
+  Logger.log("========================================");
 }

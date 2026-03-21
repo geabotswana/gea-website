@@ -505,9 +505,10 @@ function _getPaymentsForHousehold_(householdId) {
 
 /**
  * FUNCTION: fetchAndUpdateExchangeRate
- * PURPOSE: Fetch current USD to BWP exchange rate from API and save to Configuration sheet
- * Called nightly by runNightlyTasks() to keep exchange rate current
- * @returns {Object} - Result with new rate or error
+ * PURPOSE: Fetch current USD to BWP exchange rate from API, save to Configuration sheet,
+ *          and append a daily row to the Rates sheet.
+ * Called nightly by runNightlyTasks() to keep exchange rate current.
+ * @returns {Object} - { ok, rate } or { ok: false, error, using_default: true }
  */
 function fetchAndUpdateExchangeRate() {
   try {
@@ -530,8 +531,14 @@ function fetchAndUpdateExchangeRate() {
     }
 
     var newRate = json.rates.BWP;
+    var now = new Date();
+
+    // 1. Update Configuration sheet (current rate — read by getExchangeRate())
     setConfigValue("exchange_rate_usd_to_bwp", newRate);
-    setConfigValue("exchange_rate_last_updated", new Date());
+    setConfigValue("exchange_rate_last_updated", now);
+
+    // 2. Append daily row to Rates sheet
+    _appendRateRow_(formatDate(now, true), newRate, now.getDay() === 0, now, "open.er-api.com");
 
     logAuditEntry("system", "PAYMENT_CONFIG", "Exchange Rate", "updated",
       "Exchange rate updated: 1 USD = " + newRate + " BWP");
@@ -544,6 +551,210 @@ function fetchAndUpdateExchangeRate() {
       "Failed to fetch exchange rate: " + String(e));
     return { ok: false, error: String(e), using_default: true };
   }
+}
+
+/**
+ * FUNCTION: _appendRateRow_
+ * PURPOSE: Append one row to the Rates sheet. Skips silently if a row for that
+ *          date already exists (safe to call repeatedly / during backfill).
+ * @param {string}  rateDateStr  "YYYY-MM-DD"
+ * @param {number}  usdToBwp    Exchange rate
+ * @param {boolean} isSundayRate True if the rate_date is a Sunday
+ * @param {Date}    timestamp   When the rate was recorded
+ * @param {string}  source      e.g. "open.er-api.com" or "api.frankfurter.app (backfill)"
+ * @returns {boolean} true if written, false if skipped (date exists)
+ */
+function _appendRateRow_(rateDateStr, usdToBwp, isSundayRate, timestamp, source) {
+  try {
+    var sheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_RATES);
+    if (!sheet) {
+      Logger.log("WARNING: Rates sheet not found in Payment Tracking spreadsheet");
+      return false;
+    }
+
+    // Skip if a row for this date already exists
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var dateCol = headers.indexOf("rate_date");
+    for (var i = 1; i < data.length; i++) {
+      var existing = data[i][dateCol];
+      if (existing instanceof Date) existing = formatDate(existing, true);
+      else existing = String(existing).substring(0, 10);
+      if (existing === rateDateStr) return false; // already present
+    }
+
+    // Build row in header order
+    var row = [];
+    for (var j = 0; j < headers.length; j++) {
+      switch (headers[j]) {
+        case "rate_date":     row.push(rateDateStr);   break;
+        case "usd_to_bwp":   row.push(usdToBwp);      break;
+        case "is_sunday_rate": row.push(isSundayRate); break;
+        case "timestamp":    row.push(timestamp);      break;
+        case "source":       row.push(source);         break;
+        default:             row.push("");
+      }
+    }
+    sheet.appendRow(row);
+    return true;
+  } catch (e) {
+    Logger.log("ERROR _appendRateRow_(" + rateDateStr + "): " + e);
+    return false;
+  }
+}
+
+/**
+ * FUNCTION: backfillExchangeRates
+ * PURPOSE:  Populate the Rates sheet with historical USD→BWP data.
+ *
+ *           Uses the fawaz currency API (jsDelivr CDN, completely free, no key,
+ *           covers 150+ currencies including BWP, data back to 2024-01-01).
+ *           One HTTP call per calendar day; weekends get the rate from the most
+ *           recent weekday (markets closed). Already-present dates are skipped,
+ *           so it is safe to re-run.
+ *
+ *           GAS execution limit is 6 minutes (~300 s). At ~0.5 s/call this
+ *           handles up to ~200 days per run. For longer ranges call in chunks:
+ *             backfillExchangeRates("2025-08-01", "2025-11-30")  // chunk 1
+ *             backfillExchangeRates("2025-12-01", "2026-03-19")  // chunk 2
+ *
+ * HOW TO RUN:
+ *   Option A — use the default range (Aug 1 2025 → yesterday):
+ *     Select backfillExchangeRates in the Apps Script dropdown and click Run.
+ *
+ *   Option B — call with explicit dates from a one-off wrapper:
+ *     function runBackfill() { backfillExchangeRates("2025-08-01", "2026-03-19"); }
+ *
+ * @param {string} startDateStr  "YYYY-MM-DD" (default "2025-08-01")
+ * @param {string} endDateStr    "YYYY-MM-DD" (default: yesterday)
+ */
+function backfillExchangeRates(startDateStr, endDateStr) {
+  startDateStr = startDateStr || "2025-08-01";
+
+  var yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  endDateStr = endDateStr || formatDate(yesterday, true);
+
+  Logger.log("=== Exchange Rate Backfill ===");
+  Logger.log("Range: " + startDateStr + " → " + endDateStr);
+  Logger.log("Source: cdn.jsdelivr.net/@fawazahmed0/currency-api (USD/BWP per day)");
+
+  var cursor   = new Date(startDateStr + "T12:00:00");
+  var endDate  = new Date(endDateStr   + "T12:00:00");
+  var lastRate = null; // filled on first successful weekday fetch
+  var written  = 0;
+  var skipped  = 0;
+  var errors   = 0;
+
+  while (cursor <= endDate) {
+    var cursorStr = formatDate(cursor, true);
+    var dayOfWeek = cursor.getDay(); // 0=Sun, 6=Sat
+    var isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+    var isSunday  = (dayOfWeek === 0);
+
+    if (!isWeekend) {
+      // Fetch this weekday's rate from fawaz CDN
+      // Primary:  https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@DATE/v1/currencies/usd/bwp.json
+      // Fallback: https://DATE.currency-api.pages.dev/v1/currencies/usd/bwp.json
+      var rate = _fetchFawazRate_(cursorStr);
+      if (rate !== null) {
+        lastRate = rate;
+      } else {
+        errors++;
+        Logger.log("  WARN: No rate for " + cursorStr + " — using last known rate (" + lastRate + ")");
+      }
+    }
+    // Weekend: reuse lastRate (Friday's rate)
+
+    if (lastRate !== null) {
+      var ts       = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), 2, 0, 0);
+      var source   = isWeekend ? "fawaz/weekend-carry" : "fawaz/currency-api";
+      var didWrite = _appendRateRow_(cursorStr, lastRate, isSunday, ts, source);
+      if (didWrite) written++; else skipped++;
+    } else {
+      Logger.log("  SKIP: " + cursorStr + " — no rate available yet");
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  Logger.log("Backfill complete — written: " + written +
+             ", skipped (already existed): " + skipped +
+             ", fetch errors: " + errors);
+  return { ok: true, written: written, skipped: skipped, errors: errors };
+}
+
+/**
+ * HELPER: Fetch a single day's USD→BWP rate from the fawaz currency CDN.
+ * Tries jsDelivr first, falls back to Cloudflare Pages mirror.
+ * Returns the rate as a number, or null on failure.
+ * @param {string} dateStr "YYYY-MM-DD"
+ * @returns {number|null}
+ */
+function _fetchFawazRate_(dateStr) {
+  // /usd.json (all currencies) is the only path that exists in the npm package.
+  // /usd/bwp.json (single-currency) does not exist — confirmed by diagnostic.
+  var url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@" + dateStr + "/v1/currencies/usd.json";
+  try {
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() === 200) {
+      var json = JSON.parse(resp.getContentText());
+      // Response shape: { "date": "YYYY-MM-DD", "usd": { "bwp": 13.57, ... } }
+      if (json.usd && json.usd.bwp) {
+        return Number(json.usd.bwp);
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _fetchFawazRate_(" + dateStr + "): " + e);
+  }
+  return null;
+}
+
+/**
+ * DIAGNOSTIC: Run this first to find out exactly what the exchange rate APIs
+ * return from GAS servers. Logs HTTP status + first 300 chars of body for
+ * several candidate URLs.
+ *
+ * HOW TO RUN: select debugExchangeRateApis in the dropdown and click Run.
+ */
+function debugExchangeRateApis() {
+  var testDate = "2025-10-01"; // known weekday
+
+  var candidates = [
+    // fawaz — single-currency endpoint
+    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@" + testDate + "/v1/currencies/usd/bwp.json",
+    // fawaz — all-currencies endpoint (different file, same package)
+    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@" + testDate + "/v1/currencies/usd.json",
+    // fawaz — "latest" single-currency (no date, proves CDN reachability)
+    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd/bwp.json",
+    // fawaz — Cloudflare Pages fallback (date as subdomain)
+    "https://" + testDate + ".currency-api.pages.dev/v1/currencies/usd/bwp.json",
+    // fawaz — Cloudflare Pages "latest"
+    "https://latest.currency-api.pages.dev/v1/currencies/usd/bwp.json",
+    // existing working API — proves UrlFetchApp itself is fine
+    "https://open.er-api.com/v6/latest/USD"
+  ];
+
+  Logger.log("=== Exchange Rate API Diagnostics ===");
+  Logger.log("Test date: " + testDate);
+  Logger.log("");
+
+  for (var i = 0; i < candidates.length; i++) {
+    var url = candidates[i];
+    Logger.log("[" + (i + 1) + "] " + url);
+    try {
+      var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+      var code = resp.getResponseCode();
+      var body = resp.getContentText().substring(0, 300);
+      Logger.log("    HTTP " + code);
+      Logger.log("    Body: " + body);
+    } catch (e) {
+      Logger.log("    EXCEPTION: " + e);
+    }
+    Logger.log("");
+  }
+
+  Logger.log("=== Done ===");
 }
 
 /**

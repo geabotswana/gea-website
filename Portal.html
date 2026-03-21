@@ -1961,37 +1961,44 @@
           💰 Annual membership dues are due by July 31. Submit your payment below using your preferred method.
         </div>
 
+        <!-- Dues Amount Display -->
+        <div class="card" id="duesBreakdownCard">
+          <h2 class="card-title">Your Dues</h2>
+          <div id="duesBreakdownContent" style="color: #999; text-align: center; padding: 12px;">Loading...</div>
+        </div>
+
         <!-- Payment Methods Instructions -->
         <div class="card">
           <h2 class="card-title">Payment Methods</h2>
           <div style="margin-bottom: 20px;">
-            <p style="color: #666; margin-bottom: 15px;">Choose your preferred payment method and use the reference shown below:</p>
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
-              <strong>Payment Reference:</strong>
+            <p style="color: #666; margin-bottom: 15px;">Choose your preferred payment method and include the reference shown below in your payment notes:</p>
+            <div style="background: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+              <strong>Your Payment Reference:</strong>
               <div id="paymentReference" style="font-size: 16px; font-weight: 600; color: var(--color-primary); margin-top: 8px;">Loading...</div>
             </div>
 
-            <div style="margin-bottom: 20px;">
-              <h4 style="margin-bottom: 10px; color: var(--color-primary);">💳 PayPal (USD) - Preferred</h4>
-              <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Link: <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px;">https://www.paypal.com/ncp/payment/F7A4GEURTGA4L</code></p>
-              <p style="font-size: 13px; color: #666;">Include the reference above in payment notes.</p>
+            <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+              <h4 style="margin: 0 0 8px; color: var(--color-primary);">1. PayPal (USD)</h4>
+              <p style="font-size: 13px; color: #666; margin: 0 0 4px;">Link: <code style="background: #f5f5f5; padding: 3px 7px; border-radius: 3px;">https://www.paypal.com/ncp/payment/F7A4GEURTGA4L</code></p>
+              <p style="font-size: 13px; color: #666; margin: 0;">Include your reference in the payment notes.</p>
             </div>
 
-            <div style="margin-bottom: 20px;">
-              <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏦 Zelle (USD) - Preferred</h4>
-              <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Email: <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px;">geaboard@gmail.com</code></p>
-              <p style="font-size: 13px; color: #666;">Include the reference above. Typically 1-3 business days.</p>
+            <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+              <h4 style="margin: 0 0 8px; color: var(--color-primary);">2. SDFCU Member2Member (USD)</h4>
+              <p style="font-size: 13px; color: #666; margin: 0 0 4px;">State Department FCU — use code <strong>GEA2025</strong> in the memo.</p>
+              <p style="font-size: 13px; color: #666; margin: 0;">Include your reference in the payment notes.</p>
             </div>
 
-            <div style="margin-bottom: 20px;">
-              <h4 style="margin-bottom: 10px; color: var(--color-primary);">🏛️ Bank Transfer / Absa (BWP)</h4>
-              <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Account: U.S. Embassy – GEA<br/>Account #: 1005193 | Branch: 290267</p>
-              <p style="font-size: 13px; color: #666;">Include the reference above exactly.</p>
+            <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+              <h4 style="margin: 0 0 8px; color: var(--color-primary);">3. Zelle (USD)</h4>
+              <p style="font-size: 13px; color: #666; margin: 0 0 4px;">Send to: <code style="background: #f5f5f5; padding: 3px 7px; border-radius: 3px;">geaboard@gmail.com</code></p>
+              <p style="font-size: 13px; color: #666; margin: 0;">Include your reference. Typically 1–3 business days.</p>
             </div>
 
-            <div style="background: #fff3e0; padding: 12px; border-radius: 4px; border-left: 4px solid var(--color-warning);">
-              <strong>Amount Due:</strong>
-              <div id="amountDueDisplay" style="font-size: 16px; color: var(--color-primary); margin-top: 8px;">Loading...</div>
+            <div>
+              <h4 style="margin: 0 0 8px; color: var(--color-primary);">4. Absa Bank Transfer (BWP)</h4>
+              <p style="font-size: 13px; color: #666; margin: 0 0 4px;">Account name: U.S. Embassy – GEA &nbsp;|&nbsp; Account #: <strong>1005193</strong> &nbsp;|&nbsp; Branch: <strong>290267</strong></p>
+              <p style="font-size: 13px; color: #666; margin: 0;">Include your reference exactly as shown.</p>
             </div>
           </div>
         </div>
@@ -2008,6 +2015,11 @@
                 <option value="">-- Select membership year --</option>
               </select>
               <small style="color: #999;">Only available years are shown</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount Due</label>
+              <div id="amountDueDisplay" style="font-size: 15px; font-weight: 600; color: var(--color-primary); padding: 10px 0 4px;">Select a year above</div>
             </div>
 
             <div class="form-group">
@@ -7029,104 +7041,224 @@ function submitLogin(event) {
   /**
    * Load payment page with membership year options and current status.
    */
+  // Cached dues info loaded on page open (avoids repeated API calls on year change)
+  var _duesInfo = null;
+
   function loadPayments() {
     if (!currentUser) return;
 
-    // Initialize form
+    // Default transaction date to today
     var today = new Date();
-    document.getElementById('transactionDateInput').valueAsDate = today;
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth() + 1).padStart(2, '0');
+    var dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('transactionDateInput').value = yyyy + '-' + mm + '-' + dd;
 
-    // Load household info to get household name for payment reference
-    apiCall('dashboard', {}).then(function(res) {
-      if (!res.success || !res.data.household) return;
+    // Fetch dues info from backend (real amounts, real years, live exchange rate)
+    apiCall('get_dues_info', {}).then(function(res) {
+      if (!res.success) {
+        document.getElementById('duesBreakdownContent').textContent = 'Could not load dues information.';
+        return;
+      }
 
-      var household = res.data.household;
-      var householdName = household.household_name || 'Household';
+      _duesInfo = res.data;
+      _renderDuesBreakdown(_duesInfo);
 
-      // Populate membership year dropdown (placeholder - needs Membership Pricing lookup)
+      // Populate membership year dropdown with real available years
       var yearSelect = document.getElementById('membershipYearSelect');
-      // For Phase 1, we'll populate with current year
-      yearSelect.innerHTML = '<option value="2025-26">2025-26</option><option value="2026-27">2026-27</option>';
+      yearSelect.innerHTML = '<option value="">-- Select membership year --</option>';
+      var years = _duesInfo.available_years || [];
+      for (var i = 0; i < years.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = years[i];
+        opt.textContent = years[i];
+        yearSelect.appendChild(opt);
+      }
+      if (years.length === 1) {
+        yearSelect.value = years[0];
+        updatePaymentAmount();
+      }
 
-      // Update payment reference
-      document.getElementById('paymentReference').textContent = householdName + ' - (select year above)';
-
-      // Load payment status for current selection
-      updatePaymentStatus();
+      // Set payment reference using household name
+      document.getElementById('paymentReference').textContent =
+        (_duesInfo.household_name || 'Your Household') + ' — (select year above)';
     });
   }
 
   /**
-   * Update payment amount and display when membership year changes.
+   * Renders the dues breakdown card with category, annual dues, quarter, proration, BWP equivalent.
+   */
+  function _renderDuesBreakdown(info) {
+    var container = document.getElementById('duesBreakdownContent');
+    container.textContent = '';
+    container.style.textAlign = '';
+    container.style.color = '';
+    container.style.padding = '';
+
+    function row(label, value) {
+      var tr = document.createElement('tr');
+      var tdLabel = document.createElement('td');
+      tdLabel.style.padding = '6px 12px 6px 0';
+      tdLabel.style.color = '#666';
+      tdLabel.style.fontSize = '14px';
+      tdLabel.textContent = label;
+      var tdValue = document.createElement('td');
+      tdValue.style.padding = '6px 0';
+      tdValue.style.fontWeight = '500';
+      tdValue.style.fontSize = '14px';
+      tdValue.textContent = value;
+      tr.appendChild(tdLabel);
+      tr.appendChild(tdValue);
+      return tr;
+    }
+
+    var table = document.createElement('table');
+    table.style.borderCollapse = 'collapse';
+    table.style.width = '100%';
+
+    var quarterLabel = {
+      Q1: 'Q1 (Aug–Oct)',
+      Q2: 'Q2 (Nov–Jan)',
+      Q3: 'Q3 (Feb–Apr)',
+      Q4: 'Q4 (May–Jul)'
+    }[info.current_quarter] || info.current_quarter;
+
+    table.appendChild(row('Membership category', info.membership_category || '—'));
+    table.appendChild(row('Annual dues', '$' + (info.annual_dues_usd || 0).toFixed(2) + ' USD'));
+    table.appendChild(row('Current quarter', quarterLabel));
+    table.appendChild(row('Pro-ration', info.quarter_percentage + '% (joining this quarter)'));
+
+    var amountUsdRow = row('Pro-rated amount (USD)', '$' + (info.prorated_usd || 0).toFixed(2) + ' USD');
+    amountUsdRow.querySelector('td:last-child').style.color = 'var(--color-primary)';
+    amountUsdRow.querySelector('td:last-child').style.fontSize = '15px';
+    table.appendChild(amountUsdRow);
+
+    table.appendChild(row('Exchange rate', '1 USD = ' + (info.exchange_rate || 0).toFixed(4) + ' BWP'));
+
+    var amountBwpRow = row('Pro-rated amount (BWP)', 'P' + (info.prorated_bwp || 0).toFixed(2) + ' BWP');
+    amountBwpRow.querySelector('td:last-child').style.color = 'var(--color-primary)';
+    amountBwpRow.querySelector('td:last-child').style.fontSize = '15px';
+    table.appendChild(amountBwpRow);
+
+    container.appendChild(table);
+  }
+
+  /**
+   * Update payment reference and amount hint when membership year changes.
    */
   function updatePaymentAmount() {
     var year = document.getElementById('membershipYearSelect').value;
-    if (!year) return;
+    var refEl = document.getElementById('paymentReference');
+    var dueEl = document.getElementById('amountDueDisplay');
+    var hintEl = document.getElementById('suggestedAmountHint');
 
-    var household = currentUser.household_id;
-    var reference = document.querySelector('#paymentReference');
-    if (reference) {
-      reference.textContent = currentUser.household_name + ' - ' + year;
+    if (!year) {
+      if (refEl) refEl.textContent = (_duesInfo && _duesInfo.household_name ? _duesInfo.household_name : 'Your Household') + ' — (select year above)';
+      if (dueEl) dueEl.textContent = 'Select a year above';
+      if (hintEl) hintEl.textContent = '';
+      return;
     }
 
-    // For Phase 1, use a simple calculation. In Phase 2, fetch from Membership Pricing sheet
-    var baseAmount = 50; // Placeholder
-    var today = new Date();
-    var month = today.getMonth();
-    var quarterPercentage;
+    var hhName = (_duesInfo && _duesInfo.household_name) ? _duesInfo.household_name : (currentUser ? currentUser.household_name : 'Your Household');
+    if (refEl) refEl.textContent = hhName + ' — ' + year;
 
-    if (month >= 7 && month <= 9) quarterPercentage = 100;
-    else if (month >= 10 || month === 0 || month === 11) quarterPercentage = 75;
-    else if (month >= 1 && month <= 3) quarterPercentage = 50;
-    else quarterPercentage = 25;
-
-    var proratedUsd = Math.round(baseAmount * (quarterPercentage / 100) * 100) / 100;
-    var exchangeRate = 13.45; // Default from Config
-    var proratedBwp = Math.round(proratedUsd * exchangeRate * 100) / 100;
-
-    var display = document.getElementById('amountDueDisplay');
-    display.textContent = '$' + proratedUsd.toFixed(2) + ' USD (or P' + proratedBwp.toFixed(2) + ' BWP)';
-
-    var hint = document.getElementById('suggestedAmountHint');
-    hint.textContent = 'Suggested amount: $' + proratedUsd.toFixed(2) + ' USD or P' + proratedBwp.toFixed(2) + ' BWP';
+    if (_duesInfo) {
+      var usd = _duesInfo.prorated_usd || 0;
+      var bwp = _duesInfo.prorated_bwp || 0;
+      if (dueEl) dueEl.textContent = '$' + usd.toFixed(2) + ' USD  (or P' + bwp.toFixed(2) + ' BWP)';
+      if (hintEl) hintEl.textContent = 'Suggested: $' + usd.toFixed(2) + ' USD or P' + bwp.toFixed(2) + ' BWP';
+    }
 
     updatePaymentStatus();
   }
 
   /**
    * Update payment status display based on selected membership year.
+   * Uses safe DOM construction (no innerHTML with user data).
    */
   function updatePaymentStatus() {
     var year = document.getElementById('membershipYearSelect').value;
-    if (!year || !currentUser) return;
+    var display = document.getElementById('paymentStatusDisplay');
+    if (!display) return;
+
+    if (!year || !currentUser) {
+      display.textContent = '';
+      return;
+    }
 
     apiCall('get_payment_status', {
       household_id: currentUser.household_id,
       membership_year: year
     }).then(function(res) {
-      var display = document.getElementById('paymentStatusDisplay');
+      display.textContent = '';
       if (!res.success) {
-        display.innerHTML = '<p style="text-align: center; color: #999;">Could not load status</p>';
+        var msg = document.createElement('p');
+        msg.style.textAlign = 'center';
+        msg.style.color = '#999';
+        msg.textContent = 'Could not load payment status.';
+        display.appendChild(msg);
         return;
       }
 
+      var wrapper = document.createElement('div');
+      wrapper.style.padding = '16px 0';
+
       var status = res.data.status;
-      var html = '<div style="text-align: center; padding: 20px;">';
+      var iconEl = document.createElement('div');
+      iconEl.style.fontSize = '14px';
+      iconEl.style.marginBottom = '8px';
 
       if (status === 'none') {
-        html += '<div style="font-size: 14px; color: #999;">No payment submitted yet</div>';
+        iconEl.style.color = '#999';
+        iconEl.textContent = 'No payment submitted yet for this year.';
       } else if (status === 'submitted') {
-        html += '<div style="font-size: 14px; color: var(--color-warning);">⏳ Payment submitted - awaiting treasurer verification (3-5 business days)</div>';
+        iconEl.style.color = 'var(--color-warning)';
+        iconEl.textContent = 'Payment submitted — awaiting treasurer verification (3–5 business days).';
       } else if (status === 'verified') {
-        html += '<div style="font-size: 14px; color: var(--color-success);">✓ Payment verified - membership active!</div>';
-      } else if (status === 'not_verified') {
-        html += '<div style="font-size: 14px; color: var(--color-danger);">✗ Payment could not be verified - please resubmit</div>';
+        iconEl.style.color = 'var(--color-success)';
+        iconEl.textContent = 'Payment verified — membership active!';
+      } else if (status === 'rejected' || status === 'not_verified') {
+        iconEl.style.color = 'var(--color-danger)';
+        iconEl.textContent = 'Payment was not verified.';
+        // Show rejection reason if available
+        var history = res.data.history || [];
+        for (var i = history.length - 1; i >= 0; i--) {
+          if (history[i].rejection_reason) {
+            var reason = document.createElement('div');
+            reason.style.fontSize = '13px';
+            reason.style.color = '#555';
+            reason.style.marginTop = '6px';
+            reason.textContent = 'Reason: ' + history[i].rejection_reason;
+            wrapper.appendChild(reason);
+            var resubmit = document.createElement('div');
+            resubmit.style.fontSize = '13px';
+            resubmit.style.color = '#555';
+            resubmit.style.marginTop = '4px';
+            resubmit.textContent = 'Please correct and resubmit using the form below.';
+            wrapper.appendChild(resubmit);
+            break;
+          }
+        }
       } else if (status === 'clarification_requested') {
-        html += '<div style="font-size: 14px; color: var(--color-warning);">❓ Treasurer needs clarification on your payment</div>';
+        iconEl.style.color = 'var(--color-warning)';
+        iconEl.textContent = 'The treasurer has requested clarification about your payment.';
+        // Show clarification note if present
+        var history2 = res.data.history || [];
+        for (var j = history2.length - 1; j >= 0; j--) {
+          if (history2[j].notes) {
+            var note = document.createElement('div');
+            note.style.fontSize = '13px';
+            note.style.color = '#555';
+            note.style.marginTop = '6px';
+            note.textContent = 'Note: ' + history2[j].notes;
+            wrapper.appendChild(note);
+            break;
+          }
+        }
       }
 
-      html += '</div>';
-      display.innerHTML = html;
+      wrapper.insertBefore(iconEl, wrapper.firstChild);
+      display.appendChild(wrapper);
     });
   }
 

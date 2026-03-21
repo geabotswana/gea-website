@@ -484,7 +484,7 @@ function logAuditEntry(userEmail, actionType, targetType, targetId, details) {
     SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
       .getSheetByName(TAB_AUDIT_LOG)
       .appendRow([
-        generateId("LOG"),
+        "LOG-" + new Date().getFullYear() + "-" + Math.floor(Math.random() * 1000000000),
         new Date(),
         userEmail,
         actionType,

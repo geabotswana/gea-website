@@ -265,8 +265,8 @@ function generateId(prefix) {
   var counter = getConfigValue(counterKey) || 0;
   counter++;
 
-  // Update counter in Config (TODO: implement setConfigValue for persistent counters)
-  // setConfigValue(counterKey, counter);  // Function not yet implemented
+  // Persist incremented counter so next call gets the next number
+  setConfigValue(counterKey, counter);
 
   // Format: [TEST-]PREFIX-YEAR-00001
   var id = prefix + "-" + year + "-" + String(counter).padStart(5, '0');

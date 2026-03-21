@@ -19,7 +19,9 @@
 | **Applicant B** | test email (for Part B) | Non-Member Portal |
 | **Applicant C** | test email (for Part C) | Non-Member Portal |
 | **Applicant D** | test email (for Part D) | Non-Member Portal |
-| **Treasurer** | board@geabotswana.org | Admin Portal |
+| **Treasurer** | board@geabotswana.org | Admin Portal (email + password) |
+
+**Admin Portal login note:** Admin Portal now requires email + password. Treasurer credentials are in the Administrators tab of System Backend.
 
 **Note:** Parts A–D can each use the same applicant at different stages, or four separate applicants. Using separate applicants is cleaner but requires four approved applications. Using one applicant means running Parts in sequence.
 

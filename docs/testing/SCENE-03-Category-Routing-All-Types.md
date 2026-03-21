@@ -19,7 +19,9 @@
 | Role | Who | Access |
 |------|-----|--------|
 | **Applicant (×6)** | Six different test email addresses | Portal |
-| **Board Member** | board@geabotswana.org | Admin Portal (for record verification only) |
+| **Board Member** | board@geabotswana.org | Admin Portal (email + password; for record verification only) |
+
+**Admin Portal login note:** Admin Portal now requires email + password. Credentials are in the Administrators tab of System Backend.
 
 ---
 

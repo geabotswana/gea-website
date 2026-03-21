@@ -21,7 +21,9 @@
 | Role | Who | Access |
 |------|-----|--------|
 | **Applicant** | test email | Non-Member Portal |
-| **Board Member** | board@geabotswana.org | Admin Portal (for record verification) |
+| **Board Member** | board@geabotswana.org | Admin Portal (email + password; for record verification) |
+
+**Admin Portal login note:** Admin Portal now requires email + password. Credentials are in the Administrators tab of System Backend.
 
 **Suggested test data:**
 - Primary applicant: Kwame Asante, kwame.asante.test@[yourdomain]

@@ -11,10 +11,12 @@ This directory contains a structured test suite for the GEA membership applicati
 | Role | Description | Scenes |
 |------|-------------|--------|
 | **Applicant** | Submits applications, uploads documents, submits payment | All scenes |
-| **Board Member** | Reviews applications in Admin Portal, approves/denies | 01–07, 09 |
-| **RSO Approver** | Clicks one-time approval links from rso-approve@ inbox | 01, 02, 05, 07 |
-| **Treasurer** | Approves/rejects payments in Admin Portal | 01, 02, 06 |
-| **Tester** | Performs UI/UX and browser testing | 08 |
+| **Board Member** | Reviews applications in Admin Portal (email + password login) | 01–07, 09, 10 |
+| **RSO Approver** | Clicks one-time approval links from rso-approve@ inbox; also has Admin Portal login (rso role) | 01, 02, 05, 07, 08, 10 |
+| **Treasurer** | Approves/rejects payments in Admin Portal (email + password login) | 01, 02, 06 |
+| **Tester** | Performs UI/UX and browser testing | 08, 10 |
+
+**Important — Admin Portal login:** The Admin Portal now uses a separate login system from the Member Portal. All admin accounts (board, mgt, rso) log in with **email + password**. Credentials are stored in the Administrators tab of the System Backend spreadsheet. Run Scene 10 first if admin accounts are not yet set up.
 
 Multiple roles can be played by the same person with different browser profiles or incognito windows.
 
@@ -31,8 +33,9 @@ Multiple roles can be played by the same person with different browser profiles 
 | [SCENE-05](SCENE-05-RSO-Document-Rejection-and-Recovery.md) | RSO Rejection and Recovery | After 01 | RSO rejects, applicant resubmits, link edge cases |
 | [SCENE-06](SCENE-06-Payment-Edge-Cases.md) | Payment Edge Cases | After any approval | BWP wiggle room, clarification, rejection, SDFCU |
 | [SCENE-07](SCENE-07-Household-Management.md) | Household Management | Parallel with 06 | Add/edit/remove spouse, child, staff; voting eligibility |
-| [SCENE-08](SCENE-08-Portal-UI-All-Status-States.md) | Portal UI — All Status States | During 01–07 | All 8 statuses, responsive design, accessibility |
+| [SCENE-08](SCENE-08-Portal-UI-All-Status-States.md) | Portal UI — All Status States | During 01–07 | All 8 statuses, responsive design, accessibility, Admin Portal role nav |
 | [SCENE-09](SCENE-09-Post-Activation-Verification.md) | Post-Activation Verification | After 01 and 02 | Regular portal access, card, profile, records integrity |
+| [SCENE-10](SCENE-10-Admin-Account-Management.md) | Admin Account Management | Before or parallel with 01 | Admin login, role-based nav, add/deactivate/reset, security checks |
 
 ---
 
@@ -52,6 +55,10 @@ Multiple roles can be played by the same person with different browser profiles 
 - Non-member portal at every status state
 - Responsive design at 390px, 768px, 1200px
 - Record integrity across all four spreadsheets
+- Admin Portal login with email + password (separate from member portal)
+- Role-based Admin Portal nav (board / mgt / rso)
+- Admin account add, deactivate, reactivate, and password reset
+- Login security (generic error messages, session invalidation on deactivation/password reset)
 
 ---
 

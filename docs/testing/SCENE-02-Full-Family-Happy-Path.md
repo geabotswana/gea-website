@@ -20,9 +20,11 @@
 | Role | Who | Access |
 |------|-----|--------|
 | **Applicant** | Test person (different inbox from Scene 01) | Portal |
-| **Board Member** | board@geabotswana.org | Admin Portal |
-| **RSO Approver** | rso-approve@geabotswana.org | One-time email link |
-| **Treasurer** | board@geabotswana.org | Admin Portal |
+| **Board Member** | board@geabotswana.org | Admin Portal (email + password) |
+| **RSO Approver** | rso-approve@geabotswana.org | One-time email link; Admin Portal (rso role) |
+| **Treasurer** | board@geabotswana.org | Admin Portal (email + password) |
+
+**Admin Portal login note:** Admin credentials are in the Administrators tab of the System Backend. Both Board and Treasurer use email + password to log in — not just email.
 
 **Suggested test data:**
 - Primary applicant: Robert Osei, robert.osei.test@[yourdomain]

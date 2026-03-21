@@ -18,8 +18,10 @@
 |------|-----|--------|
 | **Applicant A** | test email for initial denial | Portal |
 | **Applicant B** | test email for final denial | Portal |
-| **Board Member** | board@geabotswana.org | Admin Portal |
-| **RSO Approver** | rso-approve@geabotswana.org | One-time email link (Part B only) |
+| **Board Member** | board@geabotswana.org | Admin Portal (email + password) |
+| **RSO Approver** | rso-approve@geabotswana.org | One-time email link (Part B only); Admin Portal (rso role) |
+
+**Admin Portal login note:** Admin Portal now requires email + password. Credentials are in the Administrators tab of System Backend.
 
 **Suggested test data:**
 - Applicant A: Nina Walsh, nina.walsh.test@[yourdomain] (will be denied at initial review)
@@ -62,8 +64,9 @@
 **Where:** Admin Portal → Applications
 
 **Action:**
-1. Open Nina Walsh's application
-2. Click **"Deny"** (initial review denial)
+1. Log in to Admin Portal with email + password (board@geabotswana.org)
+2. Open Nina Walsh's application
+3. Click **"Deny"** (initial review denial)
 3. Enter a reason: "Application does not meet eligibility requirements for the requested membership category."
 4. Confirm denial
 
@@ -131,8 +134,9 @@
 **Where:** Admin Portal → Applications
 
 **Action:**
-1. Open Owen Batho's application (status = board_final_review)
-2. Click **"Deny"** (final review denial)
+1. Log in to Admin Portal with email + password (if not already logged in)
+2. Open Owen Batho's application (status = board_final_review)
+3. Click **"Deny"** (final review denial)
 3. Enter reason: "After further review, the board has voted not to approve this application at this time."
 4. Confirm
 

@@ -20,9 +20,11 @@
 | Role | Who | Access |
 |------|-----|--------|
 | **Applicant** | Test person — use real email you can receive | Public website → Portal |
-| **Board Member** | board@geabotswana.org | Admin Portal |
-| **RSO Approver** | rso-approve@geabotswana.org | One-time email link |
-| **Treasurer** | board@geabotswana.org (or treasurer@) | Admin Portal |
+| **Board Member** | board@geabotswana.org | Admin Portal (email + password) |
+| **RSO Approver** | rso-approve@geabotswana.org | One-time email link; Admin Portal (rso role) |
+| **Treasurer** | board@geabotswana.org (or treasurer@) | Admin Portal (email + password) |
+
+**Admin Portal login note:** Admin credentials are stored in the Administrators tab of the System Backend workbook (not in the Individuals sheet). Each admin logs in with their email and password. Contact the board chair if you need credentials issued or reset.
 
 **Suggested test data:**
 - Applicant name: Alice Thornton
@@ -224,7 +226,7 @@
 **Where:** Admin Portal → Applications section
 
 **Action:**
-1. Log in to Admin Portal (board@geabotswana.org)
+1. Log in to Admin Portal with email and password (board@geabotswana.org). The Admin Portal login screen now has both an email and password field — this is different from the member portal.
 2. Navigate to Applications
 3. Find Alice Thornton's application (filter by "Board Review" status if needed)
 4. Click to open the application detail
@@ -360,7 +362,7 @@
 **Where:** Admin Portal → Payments → Pending Verification
 
 **Action:**
-1. Log in to Admin Portal
+1. Log in to Admin Portal with email and password (treasurer@ or board@geabotswana.org)
 2. Navigate to Payments → Pending Verification
 3. Confirm Alice Thornton's payment appears in the list
 4. Click to open payment detail

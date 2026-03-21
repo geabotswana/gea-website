@@ -21,8 +21,10 @@
 | Role | Who | Access |
 |------|-----|--------|
 | **Applicant** | test email | Portal |
-| **Board Member** | board@geabotswana.org | Admin Portal |
-| **RSO Approver** | rso-approve@geabotswana.org | One-time email links |
+| **Board Member** | board@geabotswana.org | Admin Portal (email + password) |
+| **RSO Approver** | rso-approve@geabotswana.org | One-time email links; Admin Portal (rso role) |
+
+**Admin Portal login note:** Admin Portal now requires email + password. Credentials are in the Administrators tab of System Backend. The RSO Approver can log in with their rso-role credentials to view applications and documents directly — but one-time links remain the primary mechanism for document approve/reject decisions in this workflow.
 
 **Suggested test data:**
 - Applicant: Priya Mehta, priya.mehta.test@[yourdomain]

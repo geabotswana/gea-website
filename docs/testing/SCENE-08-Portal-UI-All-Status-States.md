@@ -10,6 +10,7 @@
 - No horizontal scrolling at any breakpoint
 - All buttons are at least 44×44px on mobile
 - ARIA roles and keyboard navigation
+- **Admin Portal role-based navigation** — board, mgt, and rso roles each see the correct subset of nav items
 
 **Note:** This scene is primarily a UI/UX checklist. Most steps can be performed by one person testing different browser profiles or incognito windows logged in as applicants from prior scenes.
 
@@ -20,7 +21,9 @@
 | Role | Who | Access |
 |------|-----|--------|
 | **Tester** | Any team member comfortable with browser DevTools | Non-Member Portal (multiple accounts) |
-| **Board Member** | board@geabotswana.org | Needed to advance some applicants through stages |
+| **Board Member** | board@geabotswana.org | Admin Portal (email + password) — needed to advance some applicants through stages |
+| **MGT Account** | mgt@geabotswana.org (or equivalent) | Admin Portal (mgt role) — for role nav test |
+| **RSO Account** | rso-approve@geabotswana.org | Admin Portal (rso role) — for role nav test |
 
 ---
 
@@ -227,6 +230,107 @@ For each breakpoint, test using **Chrome DevTools** (F12 → device toolbar):
 
 ---
 
+---
+
+## Admin Portal: Role-Based Navigation
+
+The Admin Portal login now uses email + password and returns a role (board, mgt, or rso). Each role sees a different subset of the sidebar. Verify these with three separate logins.
+
+---
+
+### Admin Role: `board`
+**Who:** Board Member (board@geabotswana.org)
+**Where:** Admin Portal
+
+**Action:** Log in with board credentials.
+
+**Check — sidebar shows ALL of the following:**
+- [ ] Dashboard
+- [ ] Pending Reservations
+- [ ] Waitlist
+- [ ] Members
+- [ ] Applications
+- [ ] Photo Review
+- [ ] Guest Lists
+- [ ] Payments
+- [ ] Reports
+- [ ] Administrators
+
+**Check — Administrators page:**
+- [ ] Administrators page loads with list of admin accounts
+- [ ] "Add Admin Account" button visible
+- [ ] Each account row has Reset Password, Deactivate (or Reactivate) buttons
+
+**Fail if:** Any nav item missing, or Administrators page inaccessible for board role
+
+---
+
+### Admin Role: `mgt`
+**Who:** MGT account (mgt role)
+**Where:** Admin Portal
+
+**Pre-condition:** An mgt-role account exists in the Administrators tab (use the Administrators page as board to add one if needed).
+
+**Action:** Log in with mgt credentials.
+
+**Check — sidebar shows ONLY:**
+- [ ] Dashboard
+- [ ] Pending Reservations
+- [ ] Waitlist
+
+**Check — sidebar does NOT show:**
+- [ ] Members — hidden
+- [ ] Applications — hidden
+- [ ] Photo Review — hidden
+- [ ] Guest Lists — hidden
+- [ ] Payments — hidden
+- [ ] Reports — hidden
+- [ ] Administrators — hidden
+
+**Fail if:** mgt user can see Members, Payments, or Administrators
+
+---
+
+### Admin Role: `rso`
+**Who:** RSO account (rso-approve@geabotswana.org)
+**Where:** Admin Portal
+
+**Pre-condition:** An rso-role account exists in the Administrators tab.
+
+**Action:** Log in with rso credentials.
+
+**Check — sidebar shows ONLY:**
+- [ ] Dashboard
+- [ ] Applications
+- [ ] Photo Review
+- [ ] Guest Lists
+
+**Check — sidebar does NOT show:**
+- [ ] Pending Reservations — hidden
+- [ ] Waitlist — hidden
+- [ ] Members — hidden
+- [ ] Payments — hidden
+- [ ] Reports — hidden
+- [ ] Administrators — hidden
+
+**Fail if:** rso user can see Payments, Members, or Administrators
+
+---
+
+### Admin Login Screen
+**Who:** Tester
+**Where:** Admin Portal login page (before login)
+
+**Check:**
+- [ ] Login form has **two fields**: Email Address AND Password
+- [ ] Submitting with wrong password shows error: "Invalid email or password."
+- [ ] Submitting with correct credentials redirects to dashboard with role-appropriate nav
+- [ ] After logout, password field is cleared (not pre-filled)
+
+**Fail if:** Login accepts email only (no password field), or wrong credentials succeed
+
+---
+
 ## Completion Criteria
 
 Scene 08 is **PASS** when:
@@ -235,3 +339,6 @@ Scene 08 is **PASS** when:
 - Responsive design works at all three breakpoints
 - No horizontal scrolling at any width
 - Keyboard navigation functional
+- Admin Portal login requires email + password
+- Board sees all nav items; mgt sees only reservations/waitlist; rso sees only guest lists/applications/photos
+- Administrators page accessible to board role only

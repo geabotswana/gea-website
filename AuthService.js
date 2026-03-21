@@ -653,22 +653,13 @@ function invalidateAllSessionsForTokenHashMigration() {
 }
 
 /**
- * Determines the role for an email address.
- * Board emails get "board", MGT notification address gets "mgt",
- * everyone else gets "member".
+ * Determines the role for a member login email.
+ * Member portal logins always get "member" — admin roles are managed
+ * separately in the Administrators table and used only for admin_login.
  * @param {string} email
- * @returns {string}  "board" | "mgt" | "member"
+ * @returns {string}  Always "member"
  */
 function _getRoleForEmail(email) {
-  var normalized = email.toLowerCase().trim();
-  var boardEmails = [
-    EMAIL_BOARD.toLowerCase(),
-    EMAIL_TREASURER.toLowerCase(),
-    EMAIL_CHAIR.toLowerCase(),
-    EMAIL_SECRETARY.toLowerCase()
-  ];
-  if (boardEmails.indexOf(normalized) !== -1) return "board";
-  if (normalized === EMAIL_MGT.toLowerCase())  return "mgt";
   return "member";
 }
 
@@ -902,6 +893,356 @@ function getAuthHealthReport() {
   }
 
   return report;
+}
+
+// ============================================================
+// ADMIN ACCOUNT MANAGEMENT
+// ============================================================
+
+/**
+ * Authenticates an admin using the Administrators table.
+ * Called from the Admin Portal login screen (separate from member login).
+ * Roles: "board", "mgt", "rso" — determined by the Administrators table.
+ *
+ * @param {string} email
+ * @param {string} password
+ * @returns {Object}  { success, token, role, admin } or { success: false, message }
+ */
+function adminLogin(email, password) {
+  if (!email || !isValidEmail(email)) {
+    return { success: false, message: "Please enter a valid email address." };
+  }
+  if (!password || password.length < PASSWORD_MIN_LENGTH) {
+    return { success: false, message: "Invalid email or password." };
+  }
+
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx  = _adminColMap(headers);
+
+    var normalizedEmail = email.toLowerCase().trim();
+    var adminRow = null;
+    var rowIdx   = -1;
+
+    for (var i = 1; i < data.length; i++) {
+      if ((data[i][colIdx.email] || "").toLowerCase().trim() === normalizedEmail) {
+        adminRow = data[i];
+        rowIdx   = i + 1;  // 1-based for sheet operations
+        break;
+      }
+    }
+
+    // No email match — return generic error (don't reveal if email exists)
+    if (!adminRow) {
+      logAuditEntry(email, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", "-",
+                    "Failed admin login: email not found");
+      return { success: false, message: "Invalid email or password." };
+    }
+
+    // Check active flag
+    if (!adminRow[colIdx.active]) {
+      logAuditEntry(email, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", adminRow[colIdx.admin_id],
+                    "Failed admin login: account deactivated");
+      return { success: false, message: "This account has been deactivated. Contact the board to reinstate access." };
+    }
+
+    // Verify password
+    var providedHash = hashPassword(password);
+    var storedHash   = adminRow[colIdx.password_hash] || "";
+    if (!storedHash || !constantTimeCompare(providedHash, storedHash)) {
+      logAuditEntry(email, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", adminRow[colIdx.admin_id],
+                    "Failed admin login: incorrect password");
+      return { success: false, message: "Invalid email or password." };
+    }
+
+    // All checks passed
+    var role  = adminRow[colIdx.role];
+    var token = _createSession(email, role);
+
+    logAuditEntry(email, AUDIT_ADMIN_LOGIN, "Administrator", adminRow[colIdx.admin_id],
+                  "Admin login successful (role: " + role + ")");
+
+    return {
+      success:    true,
+      token:      token,
+      role:       role,
+      admin: {
+        admin_id:   adminRow[colIdx.admin_id],
+        email:      adminRow[colIdx.email],
+        first_name: adminRow[colIdx.first_name],
+        last_name:  adminRow[colIdx.last_name],
+        role:       role
+      }
+    };
+  } catch (e) {
+    Logger.log("ERROR adminLogin: " + e);
+    return { success: false, message: "An error occurred. Please try again." };
+  }
+}
+
+/**
+ * Returns all admin accounts (board-only).
+ * @param {string} callerEmail  For audit logging
+ * @returns {Array}  Array of admin objects (password_hash stripped)
+ */
+function listAdminAccounts(callerEmail) {
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx  = _adminColMap(headers);
+
+    var admins = [];
+    for (var i = 1; i < data.length; i++) {
+      admins.push({
+        admin_id:         data[i][colIdx.admin_id],
+        email:            data[i][colIdx.email],
+        first_name:       data[i][colIdx.first_name],
+        last_name:        data[i][colIdx.last_name],
+        role:             data[i][colIdx.role],
+        active:           data[i][colIdx.active] === true,
+        created_by:       data[i][colIdx.created_by],
+        created_date:     data[i][colIdx.created_date],
+        deactivated_by:   data[i][colIdx.deactivated_by],
+        deactivated_date: data[i][colIdx.deactivated_date],
+        has_password:     !!(data[i][colIdx.password_hash])
+      });
+    }
+    return admins;
+  } catch (e) {
+    Logger.log("ERROR listAdminAccounts: " + e);
+    return [];
+  }
+}
+
+/**
+ * Creates a new admin account (board-only).
+ * @param {Object} params  { email, first_name, last_name, role, password }
+ * @param {string} callerEmail  Email of the board member creating the account
+ * @returns {Object}  { success, admin_id, message }
+ */
+function createAdminAccount(params, callerEmail) {
+  var email      = (params.email || "").toLowerCase().trim();
+  var firstName  = (params.first_name || "").trim();
+  var lastName   = (params.last_name || "").trim();
+  var role       = (params.role || "").toLowerCase().trim();
+  var password   = params.password || "";
+
+  if (!isValidEmail(email))   return { success: false, message: "Invalid email address." };
+  if (!firstName)             return { success: false, message: "First name is required." };
+  if (!lastName)              return { success: false, message: "Last name is required." };
+  if (["board","mgt","rso"].indexOf(role) === -1) {
+    return { success: false, message: "Role must be board, mgt, or rso." };
+  }
+  if (!password || password.length < PASSWORD_MIN_LENGTH) {
+    return { success: false, message: "Password must be at least " + PASSWORD_MIN_LENGTH + " characters." };
+  }
+
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx  = _adminColMap(headers);
+
+    // Check for duplicate email
+    for (var i = 1; i < data.length; i++) {
+      if ((data[i][colIdx.email] || "").toLowerCase().trim() === email) {
+        return { success: false, message: "An admin account with this email already exists." };
+      }
+    }
+
+    var adminId      = generateId("ADM");
+    var passwordHash = hashPassword(password);
+    var now          = Utilities.formatDate(new Date(), "Africa/Johannesburg", "yyyy-MM-dd HH:mm:ss");
+
+    var row = {};
+    row[headers[colIdx.admin_id]]        = adminId;
+    row[headers[colIdx.email]]           = email;
+    row[headers[colIdx.first_name]]      = firstName;
+    row[headers[colIdx.last_name]]       = lastName;
+    row[headers[colIdx.role]]            = role;
+    row[headers[colIdx.active]]          = true;
+    row[headers[colIdx.password_hash]]   = passwordHash;
+    row[headers[colIdx.created_by]]      = callerEmail;
+    row[headers[colIdx.created_date]]    = now;
+    row[headers[colIdx.deactivated_by]]  = "";
+    row[headers[colIdx.deactivated_date]] = "";
+
+    sheet.appendRow(headers.map(function(h) { return row[h] !== undefined ? row[h] : ""; }));
+
+    logAuditEntry(callerEmail, AUDIT_ADMIN_CREATED, "Administrator", adminId,
+                  "Admin account created: " + email + " (role: " + role + ")");
+
+    return { success: true, admin_id: adminId, message: "Admin account created successfully." };
+  } catch (e) {
+    Logger.log("ERROR createAdminAccount: " + e);
+    return { success: false, message: "Failed to create admin account." };
+  }
+}
+
+/**
+ * Deactivates an admin account (board-only). Does not delete — preserves audit history.
+ * @param {string} adminId
+ * @param {string} callerEmail
+ * @returns {Object}  { success, message }
+ */
+function deactivateAdminAccount(adminId, callerEmail) {
+  return _setAdminActiveFlag(adminId, false, callerEmail);
+}
+
+/**
+ * Reactivates a previously deactivated admin account (board-only).
+ * @param {string} adminId
+ * @param {string} callerEmail
+ * @returns {Object}  { success, message }
+ */
+function reactivateAdminAccount(adminId, callerEmail) {
+  return _setAdminActiveFlag(adminId, true, callerEmail);
+}
+
+/**
+ * Resets the password for an admin account (board-only).
+ * @param {string} adminId
+ * @param {string} newPassword
+ * @param {string} callerEmail
+ * @returns {Object}  { success, message }
+ */
+function resetAdminPassword(adminId, newPassword, callerEmail) {
+  if (!newPassword || newPassword.length < PASSWORD_MIN_LENGTH) {
+    return { success: false, message: "Password must be at least " + PASSWORD_MIN_LENGTH + " characters." };
+  }
+
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx  = _adminColMap(headers);
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][colIdx.admin_id] === adminId) {
+        var newHash = hashPassword(newPassword);
+        sheet.getRange(i + 1, colIdx.password_hash + 1).setValue(newHash);
+
+        // Invalidate all active sessions for this admin
+        _invalidateSessionsForEmail(data[i][colIdx.email]);
+
+        logAuditEntry(callerEmail, AUDIT_ADMIN_PASSWORD_RESET, "Administrator", adminId,
+                      "Password reset by " + callerEmail);
+        return { success: true, message: "Password reset successfully. The admin must log in again." };
+      }
+    }
+    return { success: false, message: "Admin account not found." };
+  } catch (e) {
+    Logger.log("ERROR resetAdminPassword: " + e);
+    return { success: false, message: "Failed to reset password." };
+  }
+}
+
+/**
+ * One-time bootstrap function: seeds the initial board admin account.
+ * Run once from the Apps Script editor immediately after deploying Option C.
+ * After running, delete this function or protect it (it bypasses normal auth).
+ *
+ * USAGE: Edit the values below, then run bootstrapAdminAccounts() from the GAS editor.
+ */
+function bootstrapAdminAccounts() {
+  // ── EDIT THESE BEFORE RUNNING ────────────────────────────────────────────
+  var initialAdmins = [
+    { email: "board@geabotswana.org",  first_name: "GEA",    last_name: "Board",     role: "board", password: "ChangeMe123!" },
+    { email: "treasurer@geabotswana.org", first_name: "GEA", last_name: "Treasurer", role: "board", password: "ChangeMe123!" }
+  ];
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Logger.log("=== bootstrapAdminAccounts ===");
+  for (var i = 0; i < initialAdmins.length; i++) {
+    var result = createAdminAccount(initialAdmins[i], "bootstrap");
+    Logger.log(initialAdmins[i].email + ": " + JSON.stringify(result));
+  }
+  Logger.log("Done. Change passwords immediately after first login.");
+}
+
+// ── Private helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Maps column names to 0-based column indexes for the Administrators sheet.
+ * @param {Array} headers
+ * @returns {Object}
+ */
+function _adminColMap(headers) {
+  var map = {};
+  var cols = ["admin_id","email","first_name","last_name","role","active",
+              "password_hash","created_by","created_date","deactivated_by","deactivated_date"];
+  cols.forEach(function(col) { map[col] = headers.indexOf(col); });
+  return map;
+}
+
+/**
+ * Sets the active flag on an admin account and logs the action.
+ * @param {string} adminId
+ * @param {boolean} active
+ * @param {string} callerEmail
+ * @returns {Object}
+ */
+function _setAdminActiveFlag(adminId, active, callerEmail) {
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx  = _adminColMap(headers);
+    var now     = Utilities.formatDate(new Date(), "Africa/Johannesburg", "yyyy-MM-dd HH:mm:ss");
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][colIdx.admin_id] === adminId) {
+        sheet.getRange(i + 1, colIdx.active + 1).setValue(active);
+
+        if (!active) {
+          // Record deactivation details
+          sheet.getRange(i + 1, colIdx.deactivated_by + 1).setValue(callerEmail);
+          sheet.getRange(i + 1, colIdx.deactivated_date + 1).setValue(now);
+          // Invalidate all active sessions for this admin
+          _invalidateSessionsForEmail(data[i][colIdx.email]);
+          logAuditEntry(callerEmail, AUDIT_ADMIN_DEACTIVATED, "Administrator", adminId,
+                        "Admin account deactivated: " + data[i][colIdx.email]);
+        } else {
+          // Clear deactivation fields on reactivation
+          sheet.getRange(i + 1, colIdx.deactivated_by + 1).setValue("");
+          sheet.getRange(i + 1, colIdx.deactivated_date + 1).setValue("");
+          logAuditEntry(callerEmail, AUDIT_ADMIN_REACTIVATED, "Administrator", adminId,
+                        "Admin account reactivated: " + data[i][colIdx.email]);
+        }
+        return { success: true, message: active ? "Account reactivated." : "Account deactivated." };
+      }
+    }
+    return { success: false, message: "Admin account not found." };
+  } catch (e) {
+    Logger.log("ERROR _setAdminActiveFlag: " + e);
+    return { success: false, message: "Operation failed." };
+  }
+}
+
+/**
+ * Invalidates all active sessions for the given email.
+ * Used when deactivating an account or resetting a password.
+ * @param {string} email
+ */
+function _invalidateSessionsForEmail(email) {
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var emlCol  = headers.indexOf("email");
+    var actCol  = headers.indexOf("active");
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][emlCol] === email && data[i][actCol]) {
+        sheet.getRange(i + 1, actCol + 1).setValue(false);
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _invalidateSessionsForEmail: " + e);
+  }
 }
 
 /**

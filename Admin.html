@@ -1164,12 +1164,16 @@
         <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
       </div>
       <h1 class="login-title">GEA Admin Portal</h1>
-      <p class="login-subtitle">Sign in with your GEA email address</p>
+      <p class="login-subtitle">Sign in with your GEA admin credentials</p>
       <div class="login-error" id="loginError"></div>
       <form class="login-form" onsubmit="submitLogin(event)">
         <div class="form-group">
           <label class="form-label">Email Address</label>
-          <input type="email" id="loginEmail" class="form-input" placeholder="you@state.gov" required>
+          <input type="email" id="loginEmail" class="form-input" placeholder="you@geabotswana.org" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="Password" required>
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
       </form>
@@ -1212,44 +1216,48 @@
     <!-- Links to all admin pages with active state highlighting    -->
     <!-- ============================================================ -->
     <aside id="sidebar">
-      <div class="nav-item active" onclick="showPage('dashboard', event)">
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard', event)">
         <span class="nav-icon">📊</span>
         <span>Dashboard</span>
       </div>
-      <div class="nav-item" onclick="showPage('reservations', event)">
+      <div class="nav-item" data-page="reservations" onclick="showPage('reservations', event)">
         <span class="nav-icon">🗓️</span>
         <span>Pending Reservations</span>
       </div>
-      <div class="nav-item" onclick="showPage('waitlist', event)">
+      <div class="nav-item" data-page="waitlist" onclick="showPage('waitlist', event)">
         <span class="nav-icon">⏳</span>
         <span>Waitlist</span>
         <span id="waitlist-badge" class="badge" style="display:none;">0</span>
       </div>
-      <div class="nav-item" onclick="showPage('members', event)">
+      <div class="nav-item" data-page="members" onclick="showPage('members', event)">
         <span class="nav-icon">👥</span>
         <span>Members</span>
       </div>
-      <div class="nav-item" onclick="showPage('applications', event)">
+      <div class="nav-item" data-page="applications" onclick="showPage('applications', event)">
         <span class="nav-icon">📋</span>
         <span>Applications</span>
         <span id="applications-badge" class="badge">0</span>
       </div>
-      <div class="nav-item" onclick="showPage('photos', event)">
+      <div class="nav-item" data-page="photos" onclick="showPage('photos', event)">
         <span class="nav-icon">📸</span>
         <span>Photo Review</span>
       </div>
-      <div class="nav-item" onclick="showPage('guest-lists', event)">
+      <div class="nav-item" data-page="guest-lists" onclick="showPage('guest-lists', event)">
         <span class="nav-icon">📋</span>
         <span>Guest Lists</span>
         <span id="guest-lists-badge" class="badge" style="display:none;">0</span>
       </div>
-      <div class="nav-item" onclick="showPage('payments', event)">
+      <div class="nav-item" data-page="payments" onclick="showPage('payments', event)">
         <span class="nav-icon">💳</span>
         <span>Payments</span>
       </div>
-      <div class="nav-item" onclick="showPage('reports', event)">
+      <div class="nav-item" data-page="reports" onclick="showPage('reports', event)">
         <span class="nav-icon">📈</span>
         <span>Reports</span>
+      </div>
+      <div class="nav-item" data-page="administrators" onclick="showPage('administrators', event)">
+        <span class="nav-icon">🔑</span>
+        <span>Administrators</span>
       </div>
     </aside>
     
@@ -1675,6 +1683,63 @@
         </div>
       </div>
 
+      <!-- ========================================================== -->
+      <!-- PAGE: ADMINISTRATORS (board-only)                          -->
+      <!-- Add, deactivate, reactivate, and reset admin passwords     -->
+      <!-- ========================================================== -->
+      <div id="administrators" class="page">
+        <h1 class="page-title">Admin Accounts</h1>
+        <p style="color:#666; margin-bottom:20px;">
+          Manage who can log into this Admin Portal. Roles: <strong>board</strong> (full access),
+          <strong>mgt</strong> (Leobo reservations), <strong>rso</strong> (guest lists &amp; documents).
+        </p>
+
+        <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+          <button class="btn btn-primary" onclick="showAddAdminForm();">+ Add Admin Account</button>
+        </div>
+
+        <!-- Add Admin Form (hidden by default) -->
+        <div id="addAdminForm" style="display:none; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:8px; padding:20px; margin-bottom:24px;">
+          <h3 style="margin:0 0 16px 0; font-size:16px;">New Admin Account</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input type="text" id="newAdminFirstName" class="form-input" placeholder="First name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input type="text" id="newAdminLastName" class="form-input" placeholder="Last name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="newAdminEmail" class="form-input" placeholder="name@geabotswana.org">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <select id="newAdminRole" class="form-input">
+                <option value="board">Board (full access)</option>
+                <option value="mgt">Management Officer (Leobo only)</option>
+                <option value="rso">RSO (guest lists &amp; documents)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Initial Password</label>
+              <input type="password" id="newAdminPassword" class="form-input" placeholder="Temporary password (min 8 chars)">
+            </div>
+          </div>
+          <div id="addAdminError" style="color:#c0392b; margin-bottom:8px; display:none;"></div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="createAdmin();">Create Account</button>
+            <button class="btn btn-secondary" onclick="hideAddAdminForm();">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Admin Accounts Table -->
+        <div id="adminListContent">
+          <p style="color:#aaa;">Loading...</p>
+        </div>
+      </div>
+
 <!-- ============================================================ -->
 <!-- MODALS                                                       -->
 <!-- Overlay dialogs for actions and detailed views              -->
@@ -1763,6 +1828,28 @@
   </div>
 </div>
 
+<!-- Reset Admin Password Modal -->
+<div id="resetAdminPasswordModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Reset Password</h2>
+      <button class="modal-close" onclick="closeModal('resetAdminPasswordModal');">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="resetAdminPasswordTarget" style="color:#666; margin-bottom:12px;"></p>
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="password" id="resetAdminNewPassword" class="form-input" placeholder="New password (min 8 chars)">
+      </div>
+      <div id="resetAdminPasswordError" style="color:#c0392b; margin-top:8px; display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('resetAdminPasswordModal');">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmResetAdminPassword();">Reset Password</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ============================================================ //
   // SECTION: SECURITY UTILITIES                                  //
@@ -1837,38 +1924,36 @@
    */
   function submitLogin(event) {
     event.preventDefault();
-    
-    // Get the email address entered by the user
-    var email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    
+
+    var email    = document.getElementById('loginEmail').value.trim().toLowerCase();
+    var password = document.getElementById('loginPassword').value;
+
     // Clear any previous error messages
     var errorDiv = document.getElementById('loginError');
     errorDiv.textContent = '';
     errorDiv.classList.remove('show');
-    
+
     // Disable the submit button while the request is in progress
     var submitBtn = event.target.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Signing in...';
-    
-    // Call the backend login action
-    apiCall('login', { email: email }).then(function(res) {
+
+    // Call admin_login — checks Administrators table, not Individuals
+    apiCall('admin_login', { email: email, password: password }).then(function(res) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Sign In';
-      
+
       if (!res.success) {
-        // Login failed — show error message
-        errorDiv.textContent = res.message || 'Login failed. Please check your email address.';
+        errorDiv.textContent = res.message || 'Login failed. Please check your credentials.';
         errorDiv.classList.add('show');
         return;
       }
-      
+
       // Login successful — store the token and show the app
       currentToken = res.data.token;
-      currentUser = res.data;
+      currentUser  = res.data;
       sessionStorage.setItem('gea_token', currentToken);
-      
-      // Hide login and show the authenticated interface
+
       document.getElementById('loginScreen').classList.remove('show');
       showAuthenticatedUI();
       loadDashboard();
@@ -1888,17 +1973,68 @@
   function showAuthenticatedUI() {
     // Hide login screen
     document.getElementById('loginScreen').classList.remove('show');
-    
+
     // Show header, sidebar, and main content
     document.getElementById('header').style.display = 'flex';
     document.getElementById('mainContent').style.display = 'flex';
-    
+
     // Set the user's name in the header
-    if (currentUser && currentUser.email) {
-      document.getElementById('headerUserName').textContent = currentUser.email.split('@')[0];
+    if (currentUser) {
+      var displayName = currentUser.admin
+        ? (currentUser.admin.first_name + ' ' + currentUser.admin.last_name)
+        : (currentUser.email || '').split('@')[0];
+      document.getElementById('headerUserName').textContent = displayName;
     }
 
+    // Apply role-based nav filtering
+    _applyNavRoleFilter(currentUser ? currentUser.role : 'board');
+
     closeMobileSidebar();
+  }
+
+  /**
+   * Shows/hides sidebar nav items based on the logged-in admin's role.
+   *   board — sees everything
+   *   mgt   — Leobo reservations only (pending reservations, waitlist, dashboard, reports)
+   *   rso   — guest lists + document review only (guest-lists, applications, photos, dashboard)
+   */
+  function _applyNavRoleFilter(role) {
+    // Map nav page IDs to the roles that can see them (empty = all roles)
+    var navRoles = {
+      'dashboard':    [],                    // all roles
+      'reservations': ['board', 'mgt'],      // board + mgt
+      'waitlist':     ['board', 'mgt'],
+      'members':      ['board'],
+      'applications': ['board', 'rso'],
+      'photos':       ['board', 'rso'],
+      'guest-lists':  ['board', 'rso'],
+      'payments':     ['board'],
+      'reports':      ['board'],
+      'administrators': ['board']
+    };
+
+    var sidebarItems = document.querySelectorAll('#sidebar .nav-item');
+    sidebarItems.forEach(function(item) {
+      var page = item.getAttribute('data-page');
+      if (!page) return;
+      var allowed = navRoles[page];
+      if (!allowed || allowed.length === 0 || allowed.indexOf(role) !== -1) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+
+    // After filtering, redirect to the first visible page if current page is hidden
+    var activePage = document.querySelector('.page.active');
+    if (activePage) {
+      var activeSidebarItem = document.querySelector('#sidebar .nav-item[data-page="' + activePage.id + '"]');
+      if (activeSidebarItem && activeSidebarItem.style.display === 'none') {
+        // Find the first visible nav item
+        var firstVisible = document.querySelector('#sidebar .nav-item:not([style*="display: none"])');
+        if (firstVisible) firstVisible.click();
+      }
+    }
   }
   
   /**
@@ -1917,6 +2053,7 @@
     // Show and reset login screen
     document.getElementById('loginScreen').classList.add('show');
     document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
     document.getElementById('loginError').textContent = '';
     document.getElementById('loginError').classList.remove('show');
   }
@@ -2016,6 +2153,9 @@
         break;
       case 'reports':
         // Don't auto-load — let board choose the month first
+        break;
+      case 'administrators':
+        loadAdminAccounts();
         break;
     }
   }
@@ -3240,6 +3380,254 @@
 
   // ============================================================
   // END GUEST LISTS
+  // ============================================================
+
+  // ============================================================
+  // ADMIN ACCOUNT MANAGEMENT
+  // ============================================================
+
+  var _resetTargetAdminId = null;
+
+  /** Loads and renders the list of admin accounts. */
+  function loadAdminAccounts() {
+    var container = document.getElementById('adminListContent');
+    container.innerHTML = '';
+    var loading = document.createElement('p');
+    loading.style.color = '#aaa';
+    loading.textContent = 'Loading...';
+    container.appendChild(loading);
+
+    apiCall('admin_list_admins', {}).then(function(res) {
+      while (container.firstChild) container.removeChild(container.firstChild);
+
+      if (!res.success) {
+        var err = document.createElement('p');
+        err.style.color = '#c0392b';
+        err.textContent = 'Failed to load admin accounts: ' + (res.message || 'unknown error');
+        container.appendChild(err);
+        return;
+      }
+
+      var admins = res.data.admins || [];
+      if (admins.length === 0) {
+        var empty = document.createElement('p');
+        empty.style.color = '#666';
+        empty.textContent = 'No admin accounts found.';
+        container.appendChild(empty);
+        return;
+      }
+
+      var table = document.createElement('table');
+      table.style.cssText = 'width:100%; border-collapse:collapse; background:#fff;'
+        + ' border-radius:8px; overflow:hidden; font-size:13px;'
+        + ' box-shadow:0 1px 3px rgba(0,0,0,.05);';
+
+      var thead = document.createElement('thead');
+      var headerRow = document.createElement('tr');
+      ['Name','Email','Role','Status','Password','Actions'].forEach(function(col) {
+        var th = document.createElement('th');
+        th.style.cssText = 'padding:10px 14px; text-align:left;'
+          + ' background:#f7f7f7; border-bottom:2px solid #eee; font-weight:600;';
+        th.textContent = col;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      admins.forEach(function(admin, idx) {
+        var tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #f0f0f0';
+        if (idx % 2 === 1) tr.style.background = '#fafafa';
+
+        // Name
+        var tdName = document.createElement('td');
+        tdName.style.padding = '10px 14px';
+        tdName.textContent = admin.first_name + ' ' + admin.last_name;
+        tr.appendChild(tdName);
+
+        // Email
+        var tdEmail = document.createElement('td');
+        tdEmail.style.padding = '10px 14px';
+        tdEmail.textContent = admin.email;
+        tr.appendChild(tdEmail);
+
+        // Role
+        var tdRole = document.createElement('td');
+        tdRole.style.padding = '10px 14px';
+        var roleColors = { board: '#1a73e8', mgt: '#e67e22', rso: '#27ae60' };
+        var rolePill = document.createElement('span');
+        rolePill.style.cssText = 'display:inline-block; padding:2px 10px; border-radius:12px;'
+          + ' background:' + (roleColors[admin.role] || '#888') + '; color:#fff; font-size:11px; font-weight:600;';
+        rolePill.textContent = admin.role.toUpperCase();
+        tdRole.appendChild(rolePill);
+        tr.appendChild(tdRole);
+
+        // Status
+        var tdStatus = document.createElement('td');
+        tdStatus.style.padding = '10px 14px';
+        var statusPill = document.createElement('span');
+        statusPill.style.cssText = 'display:inline-block; padding:2px 10px; border-radius:12px;'
+          + ' background:' + (admin.active ? '#e8f5e9' : '#fce4e4') + ';'
+          + ' color:' + (admin.active ? '#2e7d32' : '#c62828') + '; font-size:11px;';
+        statusPill.textContent = admin.active ? 'Active' : 'Deactivated';
+        tdStatus.appendChild(statusPill);
+        tr.appendChild(tdStatus);
+
+        // Has password
+        var tdPwd = document.createElement('td');
+        tdPwd.style.padding = '10px 14px';
+        tdPwd.style.color = admin.has_password ? '#2e7d32' : '#c62828';
+        tdPwd.textContent = admin.has_password ? 'Set' : 'Not set';
+        tr.appendChild(tdPwd);
+
+        // Actions
+        var tdActions = document.createElement('td');
+        tdActions.style.padding = '10px 14px';
+
+        var resetBtn = document.createElement('button');
+        resetBtn.className = 'btn btn-secondary';
+        resetBtn.style.cssText = 'font-size:12px; padding:4px 10px; margin-right:6px;';
+        resetBtn.textContent = 'Reset Password';
+        (function(adminId, adminName) {
+          resetBtn.onclick = function() { openResetAdminPasswordModal(adminId, adminName); };
+        })(admin.admin_id, admin.first_name + ' ' + admin.last_name);
+        tdActions.appendChild(resetBtn);
+
+        if (admin.active) {
+          var deactivateBtn = document.createElement('button');
+          deactivateBtn.className = 'btn btn-danger';
+          deactivateBtn.style.cssText = 'font-size:12px; padding:4px 10px;';
+          deactivateBtn.textContent = 'Deactivate';
+          (function(adminId, adminName) {
+            deactivateBtn.onclick = function() { deactivateAdmin(adminId, adminName); };
+          })(admin.admin_id, admin.first_name + ' ' + admin.last_name);
+          tdActions.appendChild(deactivateBtn);
+        } else {
+          var reactivateBtn = document.createElement('button');
+          reactivateBtn.className = 'btn btn-primary';
+          reactivateBtn.style.cssText = 'font-size:12px; padding:4px 10px;';
+          reactivateBtn.textContent = 'Reactivate';
+          (function(adminId) {
+            reactivateBtn.onclick = function() { reactivateAdmin(adminId); };
+          })(admin.admin_id);
+          tdActions.appendChild(reactivateBtn);
+        }
+
+        tr.appendChild(tdActions);
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+    });
+  }
+
+  /** Shows the Add Admin form. */
+  function showAddAdminForm() {
+    document.getElementById('addAdminForm').style.display = 'block';
+    document.getElementById('newAdminFirstName').value = '';
+    document.getElementById('newAdminLastName').value = '';
+    document.getElementById('newAdminEmail').value = '';
+    document.getElementById('newAdminRole').value = 'board';
+    document.getElementById('newAdminPassword').value = '';
+    document.getElementById('addAdminError').style.display = 'none';
+  }
+
+  /** Hides the Add Admin form. */
+  function hideAddAdminForm() {
+    document.getElementById('addAdminForm').style.display = 'none';
+  }
+
+  /** Submits the new admin account form. */
+  function createAdmin() {
+    var errorDiv = document.getElementById('addAdminError');
+    errorDiv.style.display = 'none';
+
+    var params = {
+      first_name: document.getElementById('newAdminFirstName').value.trim(),
+      last_name:  document.getElementById('newAdminLastName').value.trim(),
+      email:      document.getElementById('newAdminEmail').value.trim().toLowerCase(),
+      role:       document.getElementById('newAdminRole').value,
+      password:   document.getElementById('newAdminPassword').value
+    };
+
+    if (!params.first_name || !params.last_name || !params.email || !params.password) {
+      errorDiv.textContent = 'All fields are required.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    apiCall('admin_create_admin', params).then(function(res) {
+      if (!res.success) {
+        errorDiv.textContent = res.message || 'Failed to create account.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      hideAddAdminForm();
+      showNotification('Admin account created for ' + params.email + '.');
+      loadAdminAccounts();
+    });
+  }
+
+  /** Deactivates an admin account after confirmation. */
+  function deactivateAdmin(adminId, adminName) {
+    if (!confirm('Deactivate ' + adminName + '? They will immediately lose access.')) return;
+    apiCall('admin_deactivate_admin', { admin_id: adminId }).then(function(res) {
+      if (!res.success) { showError(res.message || 'Failed to deactivate.'); return; }
+      showNotification(adminName + ' has been deactivated.');
+      loadAdminAccounts();
+    });
+  }
+
+  /** Reactivates a deactivated admin account. */
+  function reactivateAdmin(adminId) {
+    apiCall('admin_reactivate_admin', { admin_id: adminId }).then(function(res) {
+      if (!res.success) { showError(res.message || 'Failed to reactivate.'); return; }
+      showNotification('Account reactivated.');
+      loadAdminAccounts();
+    });
+  }
+
+  /** Opens the Reset Password modal for a specific admin. */
+  function openResetAdminPasswordModal(adminId, adminName) {
+    _resetTargetAdminId = adminId;
+    document.getElementById('resetAdminPasswordTarget').textContent =
+      'Set a new password for ' + adminName + '. They will need to log in again.';
+    document.getElementById('resetAdminNewPassword').value = '';
+    document.getElementById('resetAdminPasswordError').style.display = 'none';
+    document.getElementById('resetAdminPasswordModal').style.display = 'flex';
+  }
+
+  /** Submits the reset password action. */
+  function confirmResetAdminPassword() {
+    var errorDiv = document.getElementById('resetAdminPasswordError');
+    errorDiv.style.display = 'none';
+    var newPwd = document.getElementById('resetAdminNewPassword').value;
+
+    if (!newPwd || newPwd.length < 8) {
+      errorDiv.textContent = 'Password must be at least 8 characters.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    apiCall('admin_reset_admin_password', {
+      admin_id:     _resetTargetAdminId,
+      new_password: newPwd
+    }).then(function(res) {
+      if (!res.success) {
+        errorDiv.textContent = res.message || 'Failed to reset password.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      closeModal('resetAdminPasswordModal');
+      showNotification('Password reset successfully.');
+      loadAdminAccounts();
+    });
+  }
+
+  // ============================================================
+  // END ADMIN ACCOUNT MANAGEMENT
   // ============================================================
 
   /**

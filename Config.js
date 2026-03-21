@@ -73,6 +73,7 @@ var TAB_EMAIL_TEMPLATES     = "Email Templates";
 var TAB_AUDIT_LOG           = "Audit Log";
 var TAB_HOLIDAY_CALENDAR    = "Holiday Calendar";
 var TAB_SESSIONS            = "Sessions";
+var TAB_ADMINISTRATORS      = "Administrators";  // Admin account table (board/mgt/rso logins)
 
 // GEA Payment Tracking tabs
 var TAB_PAYMENTS            = "Payments";
@@ -610,6 +611,14 @@ var AUDIT_FILE_SUBMISSION_GEA_REJECTED    = "FILE_SUBMISSION_GEA_REJECTED";
 // Contact form
 var AUDIT_CONTACT_MESSAGE_SENT            = "CONTACT_MESSAGE_SENT";
 
+// Admin account management
+var AUDIT_ADMIN_CREATED       = "ADMIN_CREATED";
+var AUDIT_ADMIN_DEACTIVATED   = "ADMIN_DEACTIVATED";
+var AUDIT_ADMIN_REACTIVATED   = "ADMIN_REACTIVATED";
+var AUDIT_ADMIN_LOGIN         = "ADMIN_LOGIN";
+var AUDIT_ADMIN_LOGIN_FAILED  = "ADMIN_LOGIN_FAILED";
+var AUDIT_ADMIN_PASSWORD_RESET = "ADMIN_PASSWORD_RESET";
+
 // Email template system (Drive-based pipeline)
 var AUDIT_EMAIL_TEMPLATE_LOADED           = "EMAIL_TEMPLATE_LOADED";
 var AUDIT_EMAIL_TEMPLATE_NOT_FOUND        = "EMAIL_TEMPLATE_NOT_FOUND";
@@ -796,7 +805,7 @@ var SYSTEM_BUILD_DATE       = "2026-02-22";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "Sequential membership eligibility flow with sponsor requirements and monthly exchange rate mechanism";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-20 21:23:24";  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var DEPLOYMENT_TIMESTAMP    = "2026-03-21 13:53:15";  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // TEST MODE: Set to TRUE to prefix all generated IDs with "TEST-" for easy cleanup before production

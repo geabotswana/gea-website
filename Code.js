@@ -158,8 +158,9 @@ function _routeAction(action, params) {
   switch (action) {
 
     // ── PUBLIC ──────────────────────────────────────────────
-    case "login":  return _handleLogin(params);
-    case "logout": return _handleLogout(params);
+    case "login":       return _handleLogin(params);
+    case "admin_login": return _handleAdminLogin(params);
+    case "logout":      return _handleLogout(params);
     case "deployment_info": return _handleDeploymentInfo();
     case "get_config_value": return _handleGetConfigValue(params);
     case "submit_application": return _handleSubmitApplication(params);
@@ -223,6 +224,13 @@ function _routeAction(action, params) {
     case "admin_payment_report": return _handleAdminPaymentReport(params);
     case "admin_reservations_report": return _handleAdminReservationsReport(params);
     case "admin_resend_email":        return _handleAdminResendEmail(params);
+
+    // ── ADMIN ACCOUNT MANAGEMENT (board-only) ────────────────
+    case "admin_list_admins":           return _handleAdminListAdmins(params);
+    case "admin_create_admin":          return _handleAdminCreateAdmin(params);
+    case "admin_deactivate_admin":      return _handleAdminDeactivateAdmin(params);
+    case "admin_reactivate_admin":      return _handleAdminReactivateAdmin(params);
+    case "admin_reset_admin_password":  return _handleAdminResetAdminPassword(params);
 
     // ── DIAGNOSTICS ──────────────────────────────────────────
     case "image_diagnostic":  return _handleImageDiagnostic(params);
@@ -400,6 +408,77 @@ function _handleLogin(p) {
 function _handleLogout(p) {
   logout(p.token || "");
   return successResponse({}, "Logged out successfully.");
+}
+
+/**
+ * Admin Portal login — checks Administrators table, not Individuals.
+ * Returns role (board/mgt/rso) from the database, not from hardcoded email list.
+ */
+function _handleAdminLogin(p) {
+  if (!p.email)    return errorResponse("Email is required.", "MISSING_PARAM");
+  if (!p.password) return errorResponse("Password is required.", "MISSING_PARAM");
+
+  var result = adminLogin(p.email, p.password);
+  if (!result.success) return errorResponse(result.message, "AUTH_FAILED");
+
+  return successResponse({ token: result.token, role: result.role, admin: result.admin });
+}
+
+// ── Admin Account Management Handlers (board-only) ───────────────────────────
+
+function _handleAdminListAdmins(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  var admins = listAdminAccounts(auth.session.email);
+  return successResponse({ admins: admins });
+}
+
+function _handleAdminCreateAdmin(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  var result = createAdminAccount({
+    email:      p.email,
+    first_name: p.first_name,
+    last_name:  p.last_name,
+    role:       p.role,
+    password:   p.password
+  }, auth.session.email);
+
+  if (!result.success) return errorResponse(result.message, "INVALID_PARAM");
+  return successResponse({ admin_id: result.admin_id }, result.message);
+}
+
+function _handleAdminDeactivateAdmin(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  if (!p.admin_id) return errorResponse("admin_id is required.", "MISSING_PARAM");
+
+  var result = deactivateAdminAccount(p.admin_id, auth.session.email);
+  if (!result.success) return errorResponse(result.message, "NOT_FOUND");
+  return successResponse({}, result.message);
+}
+
+function _handleAdminReactivateAdmin(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  if (!p.admin_id) return errorResponse("admin_id is required.", "MISSING_PARAM");
+
+  var result = reactivateAdminAccount(p.admin_id, auth.session.email);
+  if (!result.success) return errorResponse(result.message, "NOT_FOUND");
+  return successResponse({}, result.message);
+}
+
+function _handleAdminResetAdminPassword(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  if (!p.admin_id)     return errorResponse("admin_id is required.", "MISSING_PARAM");
+  if (!p.new_password) return errorResponse("new_password is required.", "MISSING_PARAM");
+
+  var result = resetAdminPassword(p.admin_id, p.new_password, auth.session.email);
+  if (!result.success) return errorResponse(result.message, "INVALID_PARAM");
+  return successResponse({}, result.message);
 }
 
 /**

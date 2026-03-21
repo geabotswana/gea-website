@@ -1140,21 +1140,14 @@ function resetAdminPassword(adminId, newPassword, callerEmail) {
   }
 }
 
-/**
- * One-time bootstrap function: seeds the initial board admin account.
- * Run once from the Apps Script editor immediately after deploying Option C.
- * After running, delete this function or protect it (it bypasses normal auth).
+/* bootstrapAdminAccounts — COMMENTED OUT after initial seeding on 2026-03-21
+ * To re-enable: uncomment the function body, edit the accounts array, run once, re-comment.
  *
- * USAGE: Edit the values below, then run bootstrapAdminAccounts() from the GAS editor.
- */
 function bootstrapAdminAccounts() {
-  // ── EDIT THESE BEFORE RUNNING ────────────────────────────────────────────
   var initialAdmins = [
     { email: "board@geabotswana.org",  first_name: "GEA",    last_name: "Board",     role: "board", password: "ChangeMe123!" },
     { email: "treasurer@geabotswana.org", first_name: "GEA", last_name: "Treasurer", role: "board", password: "ChangeMe123!" }
   ];
-  // ─────────────────────────────────────────────────────────────────────────
-
   Logger.log("=== bootstrapAdminAccounts ===");
   for (var i = 0; i < initialAdmins.length; i++) {
     var result = createAdminAccount(initialAdmins[i], "bootstrap");
@@ -1162,6 +1155,7 @@ function bootstrapAdminAccounts() {
   }
   Logger.log("Done. Change passwords immediately after first login.");
 }
+*/
 
 // ── Private helpers ─────────────────────────────────────────────────────────
 

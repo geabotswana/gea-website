@@ -75,8 +75,11 @@ function doGet(e) {
   }
 
   // Serve the Admin interface
+  // Must use createTemplateFromFile (not createHtmlOutputFromFile) so that
+  // scriptlets like <?= ScriptApp.getService().getUrl() ?> are evaluated.
   if (action === "serve_admin") {
-    return HtmlService.createHtmlOutputFromFile("Admin")
+    return HtmlService.createTemplateFromFile("Admin")
+      .evaluate()
       .setTitle("GEA Admin Portal")
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }

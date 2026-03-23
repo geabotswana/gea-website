@@ -226,7 +226,7 @@ function getEmailTemplate(templateName) {
       var semanticName = String(row[0]).trim();  // A = semantic_name
       var active = row[5];                        // F = active
 
-      if (semanticName === templateName && active === true) {
+      if (semanticName === templateName && (active === true || String(active).toUpperCase() === "TRUE")) {
         var subject = String(row[2]).trim();           // C = subject
         var driveFileId = String(row[3]).trim();       // D = drive_file_id
         var placeholderStr = String(row[4]).trim();    // E = placeholders (comma-separated)
@@ -450,7 +450,7 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
 function testEmailTemplateSystem() {
   Logger.log("========== EMAIL TEMPLATE SYSTEM TEST ==========");
 
-  var testTemplateName = "MEM_APPLICATION_SUBMITTED_TO_APPLICANT";
+  var testTemplateName = "MEM_APPLICATION_RECEIVED_TO_APPLICANT";
   var testVariables = {
     FIRST_NAME: "Jane",
     APPLICATION_ID: "APP-2026-00001",

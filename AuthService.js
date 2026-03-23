@@ -99,14 +99,38 @@ function login(email, password) {
   }
 
   // Check if this is an applicant (in-progress application)
-  if (household.active !== true) {
-    var appStatus = household.application_status;
-    if (appStatus === "Denied" || appStatus === "Withdrawn") {
-      logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
-                    "Failed login attempt: application " + appStatus);
-      return { success: false, message: "Your application was not approved. Please contact board@geabotswana.org for details." };
+  // IMPORTANT:
+  // - Some sheet cells store booleans as strings ("TRUE"/"FALSE"), so normalize first.
+  // - Use Membership Applications status when available, since household.application_status
+  //   may be stale/missing during intermediate workflow stages.
+  var isHouseholdActive = (household.active === true || String(household.active).toLowerCase() === "true");
+  var householdStatusRaw = String(household.application_status || "").trim();
+  var householdStatus = householdStatusRaw.toLowerCase();
+
+  // Application status from Membership Applications (if a record exists)
+  var applicationStatusRaw = "";
+  var applicationStatus = "";
+  if (typeof _getApplicationByHouseholdId === "function") {
+    var application = _getApplicationByHouseholdId(household.household_id);
+    if (application && application.status) {
+      applicationStatusRaw = String(application.status).trim();
+      applicationStatus = applicationStatusRaw.toLowerCase();
     }
-    // This is an applicant in-progress application — allow login
+  }
+
+  // Denied/withdrawn applicants are blocked from login
+  if (householdStatus === "denied" || householdStatus === "withdrawn" ||
+      applicationStatus === "denied" || applicationStatus === "withdrawn") {
+    var deniedStatus = applicationStatusRaw || householdStatusRaw || "Denied";
+    logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
+                  "Failed login attempt: application " + deniedStatus);
+    return { success: false, message: "Your application was not approved. Please contact board@geabotswana.org for details." };
+  }
+
+  // Treat as applicant when:
+  // 1) household is not active, OR
+  // 2) there is an application record that is not yet activated
+  if (!isHouseholdActive || (applicationStatus && applicationStatus !== "activated")) {
     isApplicant = true;
   }
 
@@ -147,7 +171,7 @@ function login(email, password) {
 
   // Include application status for applicants
   if (isApplicant) {
-    response.application_status = household.application_status;
+    response.application_status = applicationStatusRaw || householdStatusRaw || "in_progress";
   }
 
   return response;

@@ -260,23 +260,26 @@ function createApplicationRecord(formData, createdBy) {
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
     Logger.log("[DEBUG] Sending emails - boardEmail: " + boardEmail);
 
-    // Email to applicant with credentials
-    Logger.log("[DEBUG] Sending tpl_040 to " + formData.email);
-    sendEmail("tpl_040", formData.email, {
-      "FIRST_NAME": formData.first_name,
-      "APPLICATION_ID": applicationId
+    // Email to applicant: application received confirmation
+    Logger.log("[DEBUG] Sending MEM_APPLICATION_RECEIVED_TO_APPLICANT to " + formData.email);
+    sendEmailFromTemplate("MEM_APPLICATION_RECEIVED_TO_APPLICANT", formData.email, {
+      "FIRST_NAME":     formData.first_name,
+      "APPLICATION_ID": applicationId,
+      "SUBMITTED_DATE": todayStr,
+      "PORTAL_URL":     "https://geabotswana.org/member.html"
     });
 
-    Logger.log("[DEBUG] Sending tpl_041 to " + formData.email);
-    sendEmail("tpl_041", formData.email, {
-      "FIRST_NAME": formData.first_name,
-      "EMAIL": formData.email,
+    // Email to applicant: temporary login credentials
+    Logger.log("[DEBUG] Sending MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT to " + formData.email);
+    sendEmailFromTemplate("MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT", formData.email, {
+      "FIRST_NAME":    formData.first_name,
+      "EMAIL":         formData.email,
       "TEMP_PASSWORD": tempPassword,
-      "LOGIN_URL": "https://geabotswana.org/member.html"
+      "LOGIN_URL":     "https://geabotswana.org/member.html"
     });
 
     // Email to board (sent FROM board@, so it arrives as incoming mail, not sent folder)
-    Logger.log("[DEBUG] Sending tpl_042 FROM board to " + boardEmail);
+    Logger.log("[DEBUG] Sending ADM_NEW_APPLICATION_BOARD_TO_BOARD FROM board to " + boardEmail);
     var boardEmailVars = {
       "APPLICANT_NAME": formData.first_name + " " + formData.last_name,
       "MEMBERSHIP_CATEGORY": formData.membership_category,

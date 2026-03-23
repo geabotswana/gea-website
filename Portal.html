@@ -4134,9 +4134,316 @@ function submitLogin(event) {
   }
   
   // ============================================================ //
+  // SECTION: APPLICANT PORTAL                                    //
+  // ============================================================ //
+
+  /**
+   * Loads the applicant portal view for pending membership applicants.
+   * Shows application status timeline, required documents, and payment info.
+   */
+  function loadApplicantPortal() {
+    // Activate the applicant page
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    var apPage = document.getElementById('applicant');
+    if (apPage) apPage.classList.add('active');
+
+    var container = document.getElementById('applicantContent');
+    while (container.firstChild) container.removeChild(container.firstChild);
+    var loading = document.createElement('p');
+    loading.style.cssText = 'text-align:center;color:#999;padding:40px';
+    loading.textContent = 'Loading application status...';
+    container.appendChild(loading);
+
+    apiCall('application_status', {}).then(function(res) {
+      while (container.firstChild) container.removeChild(container.firstChild);
+      if (!res.success) {
+        var err = document.createElement('p');
+        err.style.cssText = 'text-align:center;color:#c00;padding:40px';
+        err.textContent = res.message || 'Could not load application status.';
+        container.appendChild(err);
+        return;
+      }
+      var d = res.data;
+      var status = d.status || 'awaiting_docs';
+
+      // PAGE TITLE
+      var title = document.createElement('h1');
+      title.className = 'page-title';
+      title.textContent = 'Application Status';
+      container.appendChild(title);
+
+      // STATUS BANNER
+      var statusLabels = {
+        awaiting_docs: 'Awaiting Documents',
+        docs_confirmed: 'Documents Submitted',
+        board_initial_review: 'Under Board Review',
+        rso_review: 'Security Review',
+        board_final_review: 'Final Board Review',
+        approved_pending_payment: 'Approved — Payment Required',
+        payment_submitted: 'Payment Under Review',
+        activated: 'Activated'
+      };
+      var statusColors = {
+        awaiting_docs: '#e67e22',
+        docs_confirmed: '#2980b9',
+        board_initial_review: '#2980b9',
+        rso_review: '#8e44ad',
+        board_final_review: '#8e44ad',
+        approved_pending_payment: '#27ae60',
+        payment_submitted: '#27ae60',
+        activated: '#27ae60'
+      };
+      var bannerCard = document.createElement('div');
+      bannerCard.className = 'card';
+      bannerCard.style.marginBottom = '16px';
+      var bannerRow = document.createElement('div');
+      bannerRow.style.cssText = 'display:flex;align-items:center;gap:12px;flex-wrap:wrap';
+      var badge = document.createElement('span');
+      badge.style.cssText = 'display:inline-block;padding:4px 12px;border-radius:12px;font-weight:600;font-size:13px;color:#fff;background:' + (statusColors[status] || '#555');
+      badge.textContent = statusLabels[status] || status;
+      bannerRow.appendChild(badge);
+      if (d.submitted_date) {
+        var dateSpan = document.createElement('span');
+        dateSpan.style.cssText = 'color:#666;font-size:13px';
+        dateSpan.textContent = 'Submitted ' + new Date(d.submitted_date).toLocaleDateString();
+        bannerRow.appendChild(dateSpan);
+      }
+      bannerCard.appendChild(bannerRow);
+      container.appendChild(bannerCard);
+
+      // PROGRESS TIMELINE
+      var steps = ['Application Submitted', 'Documents Uploaded', 'Application Review', 'Payment', 'Activated'];
+      var stepIndex = {
+        awaiting_docs: 0, docs_confirmed: 1,
+        board_initial_review: 2, rso_review: 2, board_final_review: 2,
+        approved_pending_payment: 3, payment_submitted: 3, activated: 4
+      };
+      var currentStep = stepIndex[status] !== undefined ? stepIndex[status] : 0;
+      var timelineCard = document.createElement('div');
+      timelineCard.className = 'card';
+      timelineCard.style.marginBottom = '16px';
+      var tlHeader = document.createElement('div');
+      tlHeader.className = 'card-header';
+      var tlTitle = document.createElement('h2');
+      tlTitle.className = 'card-title';
+      tlTitle.textContent = 'Progress';
+      tlHeader.appendChild(tlTitle);
+      timelineCard.appendChild(tlHeader);
+      var tlBody = document.createElement('div');
+      tlBody.style.cssText = 'display:flex;align-items:flex-start;padding:16px 8px';
+      steps.forEach(function(step, i) {
+        var stepDiv = document.createElement('div');
+        stepDiv.style.cssText = 'flex:1;text-align:center;position:relative';
+        var isComplete = i < currentStep;
+        var isActive = i === currentStep;
+        var circle = document.createElement('div');
+        circle.style.cssText = 'width:28px;height:28px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;' +
+          (isComplete ? 'background:#27ae60;color:#fff' : isActive ? 'background:#0A3161;color:#fff' : 'background:#ddd;color:#999');
+        circle.textContent = isComplete ? '✓' : String(i + 1);
+        stepDiv.appendChild(circle);
+        if (i < steps.length - 1) {
+          var line = document.createElement('div');
+          line.style.cssText = 'position:absolute;top:14px;left:50%;width:100%;height:2px;z-index:-1;background:' + (i < currentStep ? '#27ae60' : '#ddd');
+          stepDiv.appendChild(line);
+        }
+        var label = document.createElement('div');
+        label.style.cssText = 'font-size:11px;' + (isActive ? 'color:#0A3161;font-weight:600' : isComplete ? 'color:#27ae60' : 'color:#999');
+        label.textContent = step;
+        stepDiv.appendChild(label);
+        tlBody.appendChild(stepDiv);
+      });
+      timelineCard.appendChild(tlBody);
+      container.appendChild(timelineCard);
+
+      // NEXT STEPS
+      var nextStepMessages = {
+        awaiting_docs: 'Please upload the required documents (passport, national ID/omang, and photo) for each household member below, then click "Confirm All Documents Uploaded".',
+        docs_confirmed: 'Your documents have been submitted for review. You will be notified by email when the board completes their review.',
+        board_initial_review: 'Your application is currently under initial board review. No action is required at this time.',
+        rso_review: 'Your documents are undergoing a security review. You will be notified when this is complete.',
+        board_final_review: 'Your application is in final board review. No action is required at this time.',
+        approved_pending_payment: 'Congratulations! Your application has been approved. Please submit your proof of payment below.',
+        payment_submitted: 'Your payment has been submitted and is awaiting verification by the Treasurer. You will be notified by email.',
+        activated: 'Your membership is now active.'
+      };
+      var nextMsg = nextStepMessages[status];
+      if (nextMsg) {
+        var nextCard = document.createElement('div');
+        nextCard.className = 'card';
+        nextCard.style.cssText = 'margin-bottom:16px;border-left:4px solid #0A3161';
+        var nextCardHeader = document.createElement('div');
+        nextCardHeader.className = 'card-header';
+        var nextCardTitle = document.createElement('h2');
+        nextCardTitle.className = 'card-title';
+        nextCardTitle.textContent = 'Next Steps';
+        nextCardHeader.appendChild(nextCardTitle);
+        nextCard.appendChild(nextCardHeader);
+        var nextBody = document.createElement('p');
+        nextBody.style.cssText = 'padding:12px 0;color:#444;line-height:1.5';
+        nextBody.textContent = nextMsg;
+        nextCard.appendChild(nextBody);
+        container.appendChild(nextCard);
+      }
+
+      // DOCUMENTS SECTION (only while docs are still being collected/reviewed)
+      var docStatuses = ['awaiting_docs', 'docs_confirmed'];
+      if (docStatuses.indexOf(status) !== -1) {
+        var docCard = document.createElement('div');
+        docCard.className = 'card';
+        docCard.style.marginBottom = '16px';
+        var docCardHeader = document.createElement('div');
+        docCardHeader.className = 'card-header';
+        var docCardTitle = document.createElement('h2');
+        docCardTitle.className = 'card-title';
+        docCardTitle.textContent = 'Required Documents';
+        docCardHeader.appendChild(docCardTitle);
+        docCard.appendChild(docCardHeader);
+        var docTypes = ['passport', 'omang', 'photo'];
+        var docTypeLabels = { passport: 'Passport', omang: 'National ID (Omang)', photo: 'Photo' };
+        if (d.individuals && d.individuals.length > 0) {
+          d.individuals.forEach(function(ind) {
+            var indSection = document.createElement('div');
+            indSection.style.cssText = 'margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #eee';
+            var indName = document.createElement('h4');
+            indName.style.cssText = 'margin:0 0 8px;color:#0A3161';
+            indName.textContent = (ind.first_name || '') + ' ' + (ind.last_name || '');
+            indSection.appendChild(indName);
+            var submissions = (d.documents && d.documents[ind.individual_id]) || [];
+            docTypes.forEach(function(docType) {
+              var latest = null;
+              submissions.forEach(function(sub) {
+                if (sub.document_type === docType) {
+                  if (!latest || new Date(sub.submitted_date) > new Date(latest.submitted_date)) {
+                    latest = sub;
+                  }
+                }
+              });
+              var row = document.createElement('div');
+              row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px';
+              var docLabel = document.createElement('span');
+              docLabel.textContent = docTypeLabels[docType];
+              row.appendChild(docLabel);
+              var statusSpan = document.createElement('span');
+              var latestStatus = latest ? latest.status : null;
+              if (!latest) {
+                statusSpan.style.color = '#e67e22';
+                statusSpan.textContent = 'Not uploaded';
+              } else if (latestStatus === 'verified' || latestStatus === 'approved' || latestStatus === 'rso_approved') {
+                statusSpan.style.color = '#27ae60';
+                statusSpan.textContent = 'Submitted ✓';
+              } else if (latestStatus === 'rso_rejected' || latestStatus === 'gea_rejected' || latestStatus === 'rejected') {
+                statusSpan.style.color = '#c0392b';
+                statusSpan.textContent = 'Rejected — please re-upload';
+              } else {
+                statusSpan.style.color = '#2980b9';
+                statusSpan.textContent = 'Under review';
+              }
+              row.appendChild(statusSpan);
+              indSection.appendChild(row);
+            });
+            docCard.appendChild(indSection);
+          });
+        }
+        if (status === 'awaiting_docs') {
+          var confirmBtn = document.createElement('button');
+          confirmBtn.className = 'btn btn-primary';
+          confirmBtn.textContent = 'Confirm All Documents Uploaded';
+          confirmBtn.onclick = (function(appId, btn) {
+            return function() {
+              btn.disabled = true;
+              btn.textContent = 'Submitting...';
+              apiCall('confirm_documents', { application_id: appId }).then(function(r) {
+                if (r.success) {
+                  loadApplicantPortal();
+                } else {
+                  btn.disabled = false;
+                  btn.textContent = 'Confirm All Documents Uploaded';
+                  alert(r.message || 'Error confirming documents. Please try again.');
+                }
+              }).catch(function() {
+                btn.disabled = false;
+                btn.textContent = 'Confirm All Documents Uploaded';
+                alert('Connection error. Please try again.');
+              });
+            };
+          })(d.application_id, confirmBtn);
+          docCard.appendChild(confirmBtn);
+        }
+        container.appendChild(docCard);
+      }
+
+      // PAYMENT SECTION
+      if (status === 'approved_pending_payment' && d.dues_info) {
+        var dues = d.dues_info;
+        var payCard = document.createElement('div');
+        payCard.className = 'card';
+        payCard.style.marginBottom = '16px';
+        var payCardHeader = document.createElement('div');
+        payCardHeader.className = 'card-header';
+        var payCardTitle = document.createElement('h2');
+        payCardTitle.className = 'card-title';
+        payCardTitle.textContent = 'Payment Required';
+        payCardHeader.appendChild(payCardTitle);
+        payCard.appendChild(payCardHeader);
+        var dueRows = [
+          ['Membership Category', dues.membership_category],
+          ['Annual Dues (USD)', '$' + dues.annual_dues_usd],
+          ['Current Quarter', dues.current_quarter + ' (' + dues.quarter_percentage + '%)'],
+          ['Amount Due (USD)', '$' + dues.prorated_usd],
+          ['Exchange Rate', '1 USD = ' + dues.exchange_rate + ' BWP'],
+          ['Amount Due (BWP)', 'P' + dues.prorated_bwp]
+        ];
+        dueRows.forEach(function(pair) {
+          var dueRow = document.createElement('div');
+          dueRow.style.cssText = 'display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:13px';
+          var lbl = document.createElement('span');
+          lbl.style.color = '#666';
+          lbl.textContent = pair[0];
+          var val = document.createElement('span');
+          val.style.fontWeight = '600';
+          val.textContent = pair[1];
+          dueRow.appendChild(lbl);
+          dueRow.appendChild(val);
+          payCard.appendChild(dueRow);
+        });
+        var payNote = document.createElement('p');
+        payNote.style.cssText = 'font-size:13px;color:#666;margin-top:16px';
+        payNote.textContent = 'Please make payment via PayPal, SDFCU, Zelle, or Absa, then email your proof of payment to board@geabotswana.org with your household name.';
+        payCard.appendChild(payNote);
+        container.appendChild(payCard);
+      }
+
+      if (status === 'payment_submitted') {
+        var payPendCard = document.createElement('div');
+        payPendCard.className = 'card';
+        payPendCard.style.marginBottom = '16px';
+        var payPendHeader = document.createElement('div');
+        payPendHeader.className = 'card-header';
+        var payPendTitle = document.createElement('h2');
+        payPendTitle.className = 'card-title';
+        payPendTitle.textContent = 'Payment Status';
+        payPendHeader.appendChild(payPendTitle);
+        payPendCard.appendChild(payPendHeader);
+        var payPendMsg = document.createElement('p');
+        payPendMsg.style.cssText = 'padding:12px 0;color:#444;line-height:1.5';
+        payPendMsg.textContent = 'Your payment has been received and is currently under review by the Treasurer. You will be notified by email once it is verified and your membership is activated.';
+        payPendCard.appendChild(payPendMsg);
+        container.appendChild(payPendCard);
+      }
+
+    }).catch(function() {
+      while (container.firstChild) container.removeChild(container.firstChild);
+      var errP = document.createElement('p');
+      errP.style.cssText = 'text-align:center;color:#c00;padding:40px';
+      errP.textContent = 'Connection error. Please try again.';
+      container.appendChild(errP);
+    });
+  }
+
+  // ============================================================ //
   // SECTION: DASHBOARD                                           //
   // ============================================================ //
-  
+
   /**
    * Loads the dashboard with membership status and household info.
    */

@@ -2484,6 +2484,93 @@ function runReportTests() {
 
 
 /**
+ * SETUP: Initialize missing application email templates (tpl_040, tpl_041).
+ *
+ * Run this once from the Apps Script editor if tpl_040 / tpl_041 are missing
+ * from the Email Templates sheet (symptom: "Template not found or inactive" in logs).
+ *
+ * Sheet columns expected by getEmailTemplateById():
+ *   A = template_id, B = name, C = subject, D = body, E = active (boolean)
+ *
+ * Safe to re-run: skips any template_id that already exists.
+ */
+function initializeApplicationEmailTemplates() {
+  var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_EMAIL_TEMPLATES);
+  var data  = sheet.getDataRange().getValues();
+
+  // Collect existing template IDs so we don't add duplicates
+  var existing = {};
+  for (var i = 1; i < data.length; i++) {
+    existing[String(data[i][0])] = true;
+  }
+
+  var templates = [
+    {
+      id:      "tpl_040",
+      name:    "Application Received – Applicant Confirmation",
+      subject: "Your GEA Membership Application Has Been Received",
+      body: [
+        "Dear {{FIRST_NAME}},",
+        "",
+        "Thank you for submitting your membership application to the Gaborone Employee Association.",
+        "",
+        "Application ID: {{APPLICATION_ID}}",
+        "",
+        "Our board will review your application within 3 business days. You will receive a separate",
+        "email shortly with your temporary portal login credentials so you can track your application status.",
+        "",
+        "If you have any questions, please contact us at board@geabotswana.org.",
+        "",
+        "Warm regards,",
+        "Gaborone Employee Association"
+      ].join("\n"),
+      active:  true
+    },
+    {
+      id:      "tpl_041",
+      name:    "Application Login Credentials",
+      subject: "Your GEA Member Portal Login Credentials",
+      body: [
+        "Dear {{FIRST_NAME}},",
+        "",
+        "Your GEA Member Portal account has been created. Use the credentials below to log in",
+        "and track the status of your membership application.",
+        "",
+        "  Email:             {{EMAIL}}",
+        "  Temporary Password: {{TEMP_PASSWORD}}",
+        "",
+        "Log in here: {{LOGIN_URL}}",
+        "",
+        "Please change your password after your first login.",
+        "",
+        "If you have any questions, please contact us at board@geabotswana.org.",
+        "",
+        "Warm regards,",
+        "Gaborone Employee Association"
+      ].join("\n"),
+      active:  true
+    }
+  ];
+
+  var added = [];
+  var skipped = [];
+  templates.forEach(function(tpl) {
+    if (existing[tpl.id]) {
+      skipped.push(tpl.id);
+      return;
+    }
+    sheet.appendRow([tpl.id, tpl.name, tpl.subject, tpl.body, tpl.active]);
+    added.push(tpl.id);
+    Logger.log("Added template: " + tpl.id + " — " + tpl.name);
+  });
+
+  Logger.log("initializeApplicationEmailTemplates complete.");
+  Logger.log("  Added:   " + (added.length   ? added.join(", ")   : "none"));
+  Logger.log("  Skipped: " + (skipped.length ? skipped.join(", ") : "none"));
+}
+
+
+/**
  * Runs all admin API handler tests as a group.
  */
 function runAdminHandlerTests() {

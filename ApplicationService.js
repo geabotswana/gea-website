@@ -42,8 +42,8 @@
  */
 function createApplicationRecord(formData, createdBy) {
   try {
-    Logger.log("[DEBUG] createApplicationRecord called with formData:", JSON.stringify(formData));
-    Logger.log("[DEBUG] createdBy:", createdBy);
+    Logger.log("[DEBUG] createApplicationRecord called with formData: " + JSON.stringify(formData));
+    Logger.log("[DEBUG] createdBy: " + createdBy);
 
     // Validate required fields
     var required = ["first_name", "last_name", "email", "country_code_primary", "phone_primary", "membership_category"];
@@ -284,7 +284,7 @@ function createApplicationRecord(formData, createdBy) {
       "APPLICATION_ID": applicationId,
       "SUBMITTED_DATE": formatDate(new Date(), true)
     };
-    Logger.log("[DEBUG] Board email variables:", JSON.stringify(boardEmailVars));
+    Logger.log("[DEBUG] Board email variables: " + JSON.stringify(boardEmailVars));
     sendEmailFromTemplate("ADM_NEW_APPLICATION_BOARD_TO_BOARD", boardEmail, {
       FIRST_NAME:            "Board",
       APPLICANT_NAME:        boardEmailVars["APPLICANT_NAME"],

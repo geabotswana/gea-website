@@ -401,11 +401,16 @@ function _handleLogin(p) {
   }
   
   // Return success with token and member data
-  return successResponse({ 
-    token: result.token, 
-    role: result.role, 
-    member: result.member 
-  });
+  var responseData = {
+    token: result.token,
+    role: result.role,
+    member: result.member,
+    is_applicant: result.is_applicant || false
+  };
+  if (result.application_status) {
+    responseData.application_status = result.application_status;
+  }
+  return successResponse(responseData);
 }
 
 function _handleLogout(p) {

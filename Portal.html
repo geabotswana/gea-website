@@ -2135,7 +2135,8 @@
     last_dashboard_success: null,
     last_dashboard_message: '',
     last_applicant_success: null,
-    last_applicant_message: ''
+    last_applicant_message: '',
+    deployment_info_error: ''
   };
 
   function getActivePageId() {
@@ -2766,18 +2767,32 @@ function submitLogin(event) {
       document.getElementById('headerHouseholdName').textContent = householdName;
     }
 
-    // Fetch and display deployment timestamp
-    google.script.run.handlePortalApi('deployment_info', {})
+    // Fetch and display deployment timestamp (via Promise wrapper).
+    // Anchor for reviewers: function showAuthenticatedUI -> deployment_info block.
+    // NOTE: google.script.run does not return a Promise directly.
+    apiCall('deployment_info', {})
       .then(function(response) {
-        if (response && response.result && response.result.timestamp) {
-          var deploymentDiv = document.getElementById('deploymentInfo');
-          if (deploymentDiv) {
-            deploymentDiv.textContent = 'Code: ' + response.result.timestamp + ' CAT';
-          }
+        // Support both legacy and normalized response shapes.
+        var timestamp = response && response.result && response.result.timestamp
+          ? response.result.timestamp
+          : (response && response.data && response.data.timestamp ? response.data.timestamp : '');
+
+        if (!timestamp) return;
+
+        var deploymentDiv = document.getElementById('deploymentInfo');
+        if (deploymentDiv) {
+          deploymentDiv.textContent = 'Code: ' + timestamp + ' CAT';
         }
+        updatePortalDebug({
+          deployment_info_error: ''
+        });
       })
       .catch(function(err) {
-        // Silently fail if deployment info unavailable
+        updatePortalDebug({
+          probe_message: 'deployment_info fetch failed',
+          deployment_info_error: (err && err.message) ? String(err.message) : 'Unknown deployment_info error'
+        });
+        console.warn('[showAuthenticatedUI/deployment_info] unavailable:', err);
       });
   }
   

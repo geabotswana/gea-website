@@ -184,6 +184,18 @@ var EMAIL_LEGACY          = "geaboard@gmail.com";
 // System sender name (appears in "From" field of automated emails)
 var EMAIL_SENDER_NAME     = "Gaborone Employee Association";
 
+// Board email service account settings (used by sendEmailFromBoard / sendEmailFromTemplate)
+// BOARD_EMAIL_TO_SEND_FROM: The "From" address for board-originated system emails
+var BOARD_EMAIL_TO_SEND_FROM      = "board@geabotswana.org";
+// BOARD_EMAIL_DISPLAY_NAME: The display name shown alongside BOARD_EMAIL_TO_SEND_FROM
+var BOARD_EMAIL_DISPLAY_NAME      = "Gaborone Employee Association";
+// BOARD_EMAIL_DELEGATED_USER: The Google Workspace user impersonated via domain-wide delegation
+// (must have "Send As" permission for board@ and be authorized in the service account)
+var BOARD_EMAIL_DELEGATED_USER    = "board@geabotswana.org";
+// BOARD_SERVICE_ACCOUNT_EMAIL: Fallback client_email if PropertiesService JSON lacks the field
+// Set the real value via initializeBoardServiceAccount() in EmailService.js
+var BOARD_SERVICE_ACCOUNT_EMAIL   = "";
+
 
 // ============================================================
 // SECTION 7: ASSOCIATION INFORMATION

@@ -266,8 +266,10 @@
   }
 
   function setActiveEnvButton(env) {
-    document.getElementById('envBtnDev').classList.toggle('active', env === 'dev');
-    document.getElementById('envBtnProd').classList.toggle('active', env === 'prod');
+    var devBtn = document.getElementById('envBtnDev');
+    var prodBtn = document.getElementById('envBtnProd');
+    if (devBtn) devBtn.classList.toggle('active', env === 'dev');
+    if (prodBtn) prodBtn.classList.toggle('active', env === 'prod');
   }
 
 
@@ -347,6 +349,7 @@
 
   function renderStatus(state) {
     var root = document.getElementById('deploymentStatus');
+    if (!root) return;
     var selectedPill = document.getElementById('selectedEnvPill');
     var reportedPill = document.getElementById('reportedEnvPill');
     var badge = document.getElementById('statusBadge');
@@ -356,19 +359,21 @@
     var warning = document.getElementById('statusWarning');
 
     root.className = 'deployment-status ' + state.statusClass;
-    selectedPill.textContent = (state.selectedEnv || 'unknown').toUpperCase();
-    reportedPill.textContent = (state.reportedEnv || 'unknown').toUpperCase();
-    badge.textContent = state.badgeText;
-    timestamp.textContent = 'Build: ' + (state.timestamp || '—');
-    version.textContent = 'Version: ' + (state.version || '—') + ' | ID: ' + (state.buildId || '—');
-    auth.textContent = state.authenticated ? 'Signed in' : 'Not signed in';
+    if (selectedPill) selectedPill.textContent = (state.selectedEnv || 'unknown').toUpperCase();
+    if (reportedPill) reportedPill.textContent = (state.reportedEnv || 'unknown').toUpperCase();
+    if (badge) badge.textContent = state.badgeText;
+    if (timestamp) timestamp.textContent = 'Build: ' + (state.timestamp || '—');
+    if (version) version.textContent = 'Version: ' + (state.version || '—') + ' | ID: ' + (state.buildId || '—');
+    if (auth) auth.textContent = state.authenticated ? 'Signed in' : 'Not signed in';
 
-    if (state.warning) {
-      warning.hidden = false;
-      warning.textContent = state.warning;
-    } else {
-      warning.hidden = true;
-      warning.textContent = '';
+    if (warning) {
+      if (state.warning) {
+        warning.hidden = false;
+        warning.textContent = state.warning;
+      } else {
+        warning.hidden = true;
+        warning.textContent = '';
+      }
     }
   }
 
@@ -488,36 +493,34 @@
     var prodBtn = document.getElementById('envBtnProd');
     console.log('Button refs:', { devBtn: !!devBtn, prodBtn: !!prodBtn });
 
-    if (!devBtn || !prodBtn) {
-      console.error('ERROR: Environment buttons not found. Check HTML for id="envBtnDev" and id="envBtnProd"');
-      return;
+    if (devBtn && prodBtn) {
+      devBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('DEV button clicked. Current env:', selectedEnv);
+        if (!devProdControlEnabled) { return; }
+        if (selectedEnv !== 'dev') {
+          console.log('Switching to DEV...');
+          loadPortal('dev');
+        } else {
+          console.log('Already in DEV, no action needed');
+        }
+      });
+
+      prodBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('PROD button clicked. Current env:', selectedEnv);
+        if (!devProdControlEnabled) { return; }
+        if (selectedEnv !== 'prod') {
+          console.log('Switching to PROD...');
+          loadPortal('prod');
+        } else {
+          console.log('Already in PROD, no action needed');
+        }
+      });
+
+      console.log('Environment buttons wired. Starting with:', selectedEnv);
     }
 
-    devBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('DEV button clicked. Current env:', selectedEnv);
-      if (!devProdControlEnabled) { return; }
-      if (selectedEnv !== 'dev') {
-        console.log('Switching to DEV...');
-        loadPortal('dev');
-      } else {
-        console.log('Already in DEV, no action needed');
-      }
-    });
-
-    prodBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('PROD button clicked. Current env:', selectedEnv);
-      if (!devProdControlEnabled) { return; }
-      if (selectedEnv !== 'prod') {
-        console.log('Switching to PROD...');
-        loadPortal('prod');
-      } else {
-        console.log('Already in PROD, no action needed');
-      }
-    });
-
-    console.log('Environment buttons wired. Starting with:', selectedEnv);
     initializeEnvironmentSelection();
   });
 </script>

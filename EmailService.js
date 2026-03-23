@@ -223,14 +223,14 @@ function getEmailTemplate(templateName) {
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
-      var semanticName = String(row[5]).trim();  // F = semantic_name
-      var active = row[4];                        // E = active
+      var semanticName = String(row[0]).trim();  // A = semantic_name
+      var active = row[5];                        // F = active
 
       if (semanticName === templateName && active === true) {
         var subject = String(row[2]).trim();           // C = subject
-        var driveFileId = String(row[7]).trim();       // H = drive_file_id
-        var placeholderStr = String(row[8]).trim();    // I = placeholders (comma-separated)
-        var displayName = String(row[6]).trim();       // G = display_name
+        var driveFileId = String(row[3]).trim();       // D = drive_file_id
+        var placeholderStr = String(row[4]).trim();    // E = placeholders (comma-separated)
+        var displayName = String(row[1]).trim();       // B = display_name
 
         // Parse placeholders — sheet may use commas or semicolons as delimiter
         var placeholders = [];

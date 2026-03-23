@@ -279,6 +279,9 @@
       background: var(--color-secondary-blue);
       cursor: not-allowed;
     }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     
     .btn-danger {
       background: var(--color-danger);
@@ -1613,7 +1616,7 @@
       <div id="applicationSubmitError" style="color: #C62828; font-size: 13px; margin-bottom: 16px; display: none;"></div>
       <div style="margin-top: 24px; display: flex; gap: 10px;">
         <button type="button" class="btn btn-secondary" onclick="prevApplicationStep(); return false;" style="flex: 1; padding: 12px;">← Back (Edit Information)</button>
-        <button type="button" class="btn btn-primary" onclick="submitApplication();" style="flex: 1; padding: 12px; background: #2E7D32;">Submit Application</button>
+        <button type="button" id="submitApplicationBtn" class="btn btn-primary" onclick="submitApplication();" style="flex: 1; padding: 12px; background: #2E7D32;">Submit Application</button>
       </div>
     </div>
 
@@ -3920,6 +3923,22 @@ function submitLogin(event) {
     // Ensure all form data is collected before submission
     saveApplicationStepData(5);
 
+    // Disable button and show spinner while processing
+    var btn = document.getElementById('submitApplicationBtn');
+    btn.disabled = true;
+    btn.textContent = '';
+    var spinner = document.createElement('span');
+    spinner.style.cssText = 'display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px;';
+    btn.appendChild(spinner);
+    var label = document.createElement('span');
+    label.textContent = 'Submitting...';
+    btn.appendChild(label);
+
+    function restoreBtn() {
+      btn.disabled = false;
+      btn.textContent = 'Submit Application';
+    }
+
     // Call backend API
     console.log('[DEBUG] Submitting application with data:', applicationFormData);
     apiCall('submit_application', applicationFormData)
@@ -3937,6 +3956,7 @@ function submitLogin(event) {
           console.log('[DEBUG] Submission failed:', errorMsg);
           document.getElementById('applicationSubmitError').textContent = errorMsg;
           document.getElementById('applicationSubmitError').style.display = 'block';
+          restoreBtn();
         }
       })
       .catch(function(error) {
@@ -3944,6 +3964,7 @@ function submitLogin(event) {
         var errorMsg = 'Error: ' + (error.message || error);
         document.getElementById('applicationSubmitError').textContent = errorMsg;
         document.getElementById('applicationSubmitError').style.display = 'block';
+        restoreBtn();
       });
   }
 

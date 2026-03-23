@@ -1653,9 +1653,7 @@ function _handleSubmitApplication(p) {
 function _handleApplicationStatus(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var result = getApplicationForApplicant(auth.session.email);
     if (result.success) {
@@ -1675,9 +1673,7 @@ function _handleApplicationStatus(p) {
 function _handleConfirmDocuments(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var result = confirmDocumentsUploaded(p.application_id, auth.session.email);
     if (result.success) {
@@ -1697,9 +1693,7 @@ function _handleConfirmDocuments(p) {
 function _handleUploadDocument(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     // Validate required fields
     if (!p.individual_id || !p.document_type || !p.file_data_base64 || !p.file_name) {
@@ -1764,9 +1758,7 @@ function _handleUploadDocument(p) {
 function _handleSubmitPaymentProof(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var proofFileId = p.proof_file_id || '';
 
@@ -1807,7 +1799,7 @@ function _handleSubmitPaymentProof(p) {
 function _handleFileUpload(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     if (!p.individual_id || !p.document_type || !p.file_data_base64 || !p.file_name) {
       return errorResponse("Missing required fields.", "INVALID_PARAM");
@@ -1843,7 +1835,7 @@ function _handleFileUpload(p) {
 function _handleGetFileStatus(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
     if (!p.individual_id) return errorResponse("individual_id is required.", "INVALID_PARAM");
 
     var result = getFileSubmissionStatus(p.individual_id);
@@ -1861,7 +1853,7 @@ function _handleGetFileStatus(p) {
 function _handleApproveFileSubmission(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
     if (!p.submission_id) return errorResponse("submission_id is required.", "INVALID_PARAM");
 
     var result = approveFileSubmission(p.submission_id, auth.session.email);
@@ -1879,7 +1871,7 @@ function _handleApproveFileSubmission(p) {
 function _handleRejectFileSubmission(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
     if (!p.submission_id || !p.rejection_reason) {
       return errorResponse("submission_id and rejection_reason are required.", "INVALID_PARAM");
     }
@@ -1899,7 +1891,7 @@ function _handleRejectFileSubmission(p) {
 function _handleRequestEmploymentVerification(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
     if (!p.household_id || !p.individual_ids) {
       return errorResponse("household_id and individual_ids are required.", "INVALID_PARAM");
     }
@@ -1924,7 +1916,7 @@ function _handleRequestEmploymentVerification(p) {
 function _handleGetSubmissionHistory(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
     if (!p.individual_id) return errorResponse("individual_id is required.", "INVALID_PARAM");
     var result = getSubmissionHistory(p.individual_id);
     if (!result.ok) return errorResponse(result.error || "History fetch failed", "HISTORY_FAILED");
@@ -2264,9 +2256,7 @@ function _handleEditHouseholdMember(p) {
 function _handleAdminApplications(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var applications = listApplicationsForBoard(p.status_filter);
     return successResponse({
@@ -2286,9 +2276,7 @@ function _handleAdminApplications(p) {
 function _handleAdminApplicationDetail(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var result = getApplicationDetail(p.application_id);
     if (result.success) {
@@ -2308,9 +2296,7 @@ function _handleAdminApplicationDetail(p) {
 function _handleAdminApproveApplication(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var result;
 
@@ -2351,9 +2337,7 @@ function _handleAdminApproveApplication(p) {
 function _handleAdminDenyApplication(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var result;
 
@@ -2402,9 +2386,7 @@ function _handleAdminDenyApplication(p) {
 function _handleAdminVerifyPayment(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) {
-      return auth;
-    }
+    if (!auth.ok) return auth.response;
 
     var result = verifyAndActivateMembership(p.application_id, auth.session.email);
     if (result.success) {
@@ -2652,7 +2634,7 @@ function _handleConfigValueJsonp(params) {
 function _handleSubmitPaymentVerification(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     if (!p.household_id || !p.membership_year || !p.payment_method || !p.amount_paid) {
       return errorResponse("Missing required fields.", "INVALID_PARAM");
@@ -2686,7 +2668,7 @@ function _handleSubmitPaymentVerification(p) {
 function _handleGetPaymentStatus(p) {
   try {
     var auth = requireAuth(p.token);
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     if (!p.household_id || !p.membership_year) {
       return errorResponse("household_id and membership_year are required.", "INVALID_PARAM");
@@ -2771,7 +2753,7 @@ function _handleGetDuesInfo(p) {
 function _handleAdminPendingPayments(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     var result = listPendingPaymentVerifications();
     if (!result.ok) return errorResponse(result.error || "Could not load payments", "FAILED");
@@ -2788,7 +2770,7 @@ function _handleAdminPendingPayments(p) {
 function _handleAdminApprovePayment(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     if (!p.payment_id) {
       return errorResponse("payment_id is required.", "INVALID_PARAM");
@@ -2814,7 +2796,7 @@ function _handleAdminApprovePayment(p) {
 function _handleAdminRejectPayment(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     if (!p.payment_id || !p.reason) {
       return errorResponse("payment_id and reason are required.", "INVALID_PARAM");
@@ -2835,7 +2817,7 @@ function _handleAdminRejectPayment(p) {
 function _handleAdminClarifyPayment(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     if (!p.payment_id || !p.clarification_request) {
       return errorResponse("payment_id and clarification_request are required.", "INVALID_PARAM");
@@ -2861,7 +2843,7 @@ function _handleAdminClarifyPayment(p) {
 function _handleAdminPaymentReport(p) {
   try {
     var auth = requireAuth(p.token, "board");
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     var filters = {
       membership_year: p.membership_year || null,

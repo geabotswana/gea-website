@@ -2117,19 +2117,102 @@
   // Current user's email and role
   var currentUser = null;
   
+  // Runtime debug state to help diagnose applicant/member routing mismatches.
+  var portalDebugState = {
+    login_timestamp: '',
+    login_email: '',
+    login_is_applicant_flag: null,
+    login_application_status: '',
+    resolved_is_applicant: null,
+    resolve_source: '',
+    probe_success: null,
+    probe_status: '',
+    probe_message: '',
+    session_flag: '',
+    token_present: false,
+    current_title: '',
+    active_page: '',
+    last_dashboard_success: null,
+    last_dashboard_message: '',
+    last_applicant_success: null,
+    last_applicant_message: ''
+  };
+
+  function getActivePageId() {
+    var active = document.querySelector('.page.active');
+    return active ? active.id : '';
+  }
+
+  function updatePortalDebug(patch) {
+    var k;
+    for (k in patch) {
+      if (Object.prototype.hasOwnProperty.call(patch, k)) {
+        portalDebugState[k] = patch[k];
+      }
+    }
+    portalDebugState.session_flag = sessionStorage.getItem('gea_is_applicant') || '';
+    portalDebugState.token_present = !!currentToken;
+    portalDebugState.current_title = (document.getElementById('headerTitle') || {}).textContent || '';
+    portalDebugState.active_page = getActivePageId();
+    renderPortalDebugPanel();
+  }
+
+  function renderPortalDebugPanel() {
+    var content = document.getElementById('content');
+    if (!content) return;
+
+    var panel = document.getElementById('portalDebugPanel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'portalDebugPanel';
+      panel.className = 'card';
+      panel.style.margin = '12px';
+      panel.style.padding = '12px';
+      panel.style.border = '2px dashed #1565C0';
+      panel.style.background = '#F4F8FF';
+      panel.innerHTML =
+        '<h3 class=\"card-title\" style=\"margin-top:0;\">Portal Debug (Temporary)</h3>' +
+        '<pre id=\"portalDebugPre\" style=\"white-space:pre-wrap;word-break:break-word;margin:0;font-size:12px;line-height:1.45;\"></pre>';
+      content.insertBefore(panel, content.firstChild);
+    }
+
+    var pre = document.getElementById('portalDebugPre');
+    if (!pre) return;
+    pre.textContent = JSON.stringify(portalDebugState, null, 2);
+  }
+  
   /**
    * Initialize the member portal when the page loads.
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
     if (currentToken) {
-      showAuthenticatedUI();
-      if (sessionStorage.getItem('gea_is_applicant') === '1') {
-        document.getElementById('headerTitle').textContent = 'Applicant Portal';
-        loadApplicantPortal();
-      } else {
-        loadDashboard();
-      }
+      // Re-resolve portal mode on refresh in case sessionStorage flag is stale.
+      resolveApplicantPortalMode().then(function(isApplicant) {
+        sessionStorage.setItem('gea_is_applicant', isApplicant ? '1' : '0');
+        if (!currentUser) currentUser = {};
+        currentUser.is_applicant = isApplicant;
+        showAuthenticatedUI();
+        updatePortalDebug({
+          login_timestamp: new Date().toISOString(),
+          login_email: '(session restore)',
+          resolved_is_applicant: isApplicant
+        });
+        if (isApplicant) loadApplicantPortal();
+        else loadDashboard();
+      }).catch(function() {
+        showAuthenticatedUI();
+        updatePortalDebug({
+          login_timestamp: new Date().toISOString(),
+          login_email: '(session restore)',
+          resolve_source: 'session_flag_fallback'
+        });
+        if (sessionStorage.getItem('gea_is_applicant') === '1') {
+          loadApplicantPortal();
+        } else {
+          loadDashboard();
+        }
+      });
     } else {
       document.getElementById('loginScreen').classList.add('show');
     }
@@ -2558,20 +2641,42 @@ function submitLogin(event) {
     currentToken = res.data.token;
     currentUser = res.data;
     sessionStorage.setItem('gea_token', currentToken);
-    sessionStorage.setItem('gea_is_applicant', res.data.is_applicant ? '1' : '0');
+    updatePortalDebug({
+      login_timestamp: new Date().toISOString(),
+      login_email: email,
+      login_is_applicant_flag: !!res.data.is_applicant,
+      login_application_status: res.data.application_status || ''
+    });
+    resolveApplicantPortalMode(res.data).then(function(isApplicant) {
+      sessionStorage.setItem('gea_is_applicant', isApplicant ? '1' : '0');
+      currentUser.is_applicant = isApplicant;
+      updatePortalDebug({
+        resolved_is_applicant: isApplicant
+      });
 
-    // Check if this is an applicant (pending membership)
-    if (res.data.is_applicant) {
-      // Hide login and show applicant view
+      // Hide login and show the authenticated interface
       document.getElementById('loginScreen').classList.remove('show');
       showAuthenticatedUI();
-      loadApplicantPortal();
-    } else {
-      // Regular member - show full portal
+
+      if (isApplicant) {
+        loadApplicantPortal();
+      } else {
+        loadDashboard();
+      }
+    }).catch(function() {
+      // Fallback to login payload if probing fails for any reason
+      var fallbackIsApplicant = !!res.data.is_applicant;
+      sessionStorage.setItem('gea_is_applicant', fallbackIsApplicant ? '1' : '0');
+      currentUser.is_applicant = fallbackIsApplicant;
+      updatePortalDebug({
+        resolved_is_applicant: fallbackIsApplicant,
+        resolve_source: 'login_flag_fallback'
+      });
       document.getElementById('loginScreen').classList.remove('show');
       showAuthenticatedUI();
-      loadDashboard();
-    }
+      if (fallbackIsApplicant) loadApplicantPortal();
+      else loadDashboard();
+    });
   }).catch(function(err) {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Sign In';
@@ -2580,6 +2685,55 @@ function submitLogin(event) {
     console.error('Login error:', err);
   });
 } 
+
+  /**
+   * Determines whether the current session should use the Applicant Portal UI.
+   * Uses login payload first, then falls back to probing application status.
+   * This protects against stale/misclassified login flags.
+   *
+   * @param {Object=} loginData Optional login response payload.
+   * @returns {Promise<boolean>}
+   */
+  function resolveApplicantPortalMode(loginData) {
+    if (loginData && loginData.is_applicant === true) {
+      updatePortalDebug({
+        resolve_source: 'login_payload',
+        probe_success: null,
+        probe_status: '',
+        probe_message: ''
+      });
+      return Promise.resolve(true);
+    }
+
+    // Probe applicant endpoint; success with non-activated status means applicant UI.
+    return apiCall('application_status', {}).then(function(res) {
+      if (!res || !res.success || !res.data) {
+        updatePortalDebug({
+          resolve_source: 'application_status_probe',
+          probe_success: !!(res && res.success),
+          probe_status: '',
+          probe_message: (res && res.message) ? String(res.message) : 'No applicant data returned'
+        });
+        return false;
+      }
+      var status = String(res.data.status || '').toLowerCase();
+      updatePortalDebug({
+        resolve_source: 'application_status_probe',
+        probe_success: true,
+        probe_status: status,
+        probe_message: res.message || ''
+      });
+      return status && status !== 'activated';
+    }).catch(function() {
+      updatePortalDebug({
+        resolve_source: 'application_status_probe_error',
+        probe_success: false,
+        probe_status: '',
+        probe_message: 'Probe request failed'
+      });
+      return false;
+    });
+  }
 
   /**
    * Shows the authenticated member interface (header, content).
@@ -2594,9 +2748,9 @@ function submitLogin(event) {
     document.getElementById('content').style.display = 'flex';
 
     // Set portal title based on user type
-    if (currentUser && currentUser.is_applicant) {
-      document.getElementById('headerTitle').textContent = 'Applicant Portal';
-    }
+    document.getElementById('headerTitle').textContent =
+      (currentUser && currentUser.is_applicant) ? 'Applicant Portal' : 'Member Portal';
+    updatePortalDebug({});
 
     // Set the member's name and household in the header from the login response data
     if (currentUser && currentUser.member) {
@@ -4815,6 +4969,10 @@ function submitLogin(event) {
    * Loads the non-member portal data and renders the active section.
    */
   function loadApplicantPortal() {
+    updatePortalDebug({
+      last_applicant_success: null,
+      last_applicant_message: 'Loading applicant portal...'
+    });
     // Activate the applicant page directly (do NOT call showPage to avoid infinite recursion)
     document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
     var apPage = document.getElementById('applicant');
@@ -4832,12 +4990,24 @@ function submitLogin(event) {
 
     apiCall('application_status', {}).then(function(res) {
       if (!res.success) {
+        updatePortalDebug({
+          last_applicant_success: false,
+          last_applicant_message: res.message || 'Unknown applicant portal error'
+        });
         showError('Failed to load application status: ' + res.message);
         return;
       }
+      updatePortalDebug({
+        last_applicant_success: true,
+        last_applicant_message: 'Applicant portal loaded'
+      });
       applicantPortalState.application = res.data;
       renderApplicantPortalSection(applicantPortalState.activeSection || 'dashboard');
     }).catch(function(err) {
+      updatePortalDebug({
+        last_applicant_success: false,
+        last_applicant_message: err.message || 'Applicant portal request failed'
+      });
       showError('Error loading application: ' + err.message);
     });
   }
@@ -6280,11 +6450,23 @@ function submitLogin(event) {
   }
 
   function loadDashboard() {
+    updatePortalDebug({
+      last_dashboard_success: null,
+      last_dashboard_message: 'Loading dashboard...'
+    });
     apiCall('dashboard', {}).then(function(res) {
       if (!res.success) {
+        updatePortalDebug({
+          last_dashboard_success: false,
+          last_dashboard_message: res.message || 'Unknown dashboard error'
+        });
         showError('Failed to load dashboard: ' + res.message);
         return;
       }
+      updatePortalDebug({
+        last_dashboard_success: true,
+        last_dashboard_message: 'Dashboard loaded'
+      });
 
       var data = res.data;
 

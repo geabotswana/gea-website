@@ -2124,7 +2124,11 @@
   window.addEventListener('load', function() {
     if (currentToken) {
       showAuthenticatedUI();
-      loadDashboard();
+      if (sessionStorage.getItem('gea_is_applicant') === '1') {
+        loadApplicantPortal();
+      } else {
+        loadDashboard();
+      }
     } else {
       document.getElementById('loginScreen').classList.add('show');
     }
@@ -2553,6 +2557,7 @@ function submitLogin(event) {
     currentToken = res.data.token;
     currentUser = res.data;
     sessionStorage.setItem('gea_token', currentToken);
+    sessionStorage.setItem('gea_is_applicant', res.data.is_applicant ? '1' : '0');
 
     // Check if this is an applicant (pending membership)
     if (res.data.is_applicant) {
@@ -2622,6 +2627,7 @@ function submitLogin(event) {
    */
   function logout() {
     sessionStorage.removeItem('gea_token');
+    sessionStorage.removeItem('gea_is_applicant');
     currentToken = null;
     currentUser = null;
     

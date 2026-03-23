@@ -322,8 +322,11 @@ function _updateField(spreadsheetId, tabName, idColName, recordId,
     var modCol  = headers.indexOf("last_modified_date");
 
     if (fldCol === -1) {
-      Logger.log("ERROR _updateField: column not found: " + fieldName + " in " + tabName);
-      return false;
+      // Auto-create the missing column so schema evolves gracefully
+      var nextCol = headers.length + 1;
+      sheet.getRange(1, nextCol).setValue(fieldName);
+      fldCol = headers.length;  // 0-based index of the new column
+      Logger.log("_updateField: created missing column '" + fieldName + "' in " + tabName + " at position " + nextCol);
     }
 
     for (var i = 1; i < data.length; i++) {

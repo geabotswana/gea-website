@@ -1655,7 +1655,7 @@
       <div class="header-logo">
         <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-80.png" alt="GEA Logo">
       </div>
-      <div class="header-title">Member Portal</div>
+      <div class="header-title" id="headerTitle">Member Portal</div>
     </div>
     <div class="header-right">
       <div class="header-user">
@@ -2124,7 +2124,12 @@
   window.addEventListener('load', function() {
     if (currentToken) {
       showAuthenticatedUI();
-      loadDashboard();
+      if (sessionStorage.getItem('gea_is_applicant') === '1') {
+        document.getElementById('headerTitle').textContent = 'Applicant Portal';
+        loadApplicantPortal();
+      } else {
+        loadDashboard();
+      }
     } else {
       document.getElementById('loginScreen').classList.add('show');
     }
@@ -2553,6 +2558,7 @@ function submitLogin(event) {
     currentToken = res.data.token;
     currentUser = res.data;
     sessionStorage.setItem('gea_token', currentToken);
+    sessionStorage.setItem('gea_is_applicant', res.data.is_applicant ? '1' : '0');
 
     // Check if this is an applicant (pending membership)
     if (res.data.is_applicant) {
@@ -2586,6 +2592,11 @@ function submitLogin(event) {
     // Show header and content
     document.getElementById('header').style.display = 'flex';
     document.getElementById('content').style.display = 'flex';
+
+    // Set portal title based on user type
+    if (currentUser && currentUser.is_applicant) {
+      document.getElementById('headerTitle').textContent = 'Applicant Portal';
+    }
 
     // Set the member's name and household in the header from the login response data
     if (currentUser && currentUser.member) {
@@ -2622,6 +2633,7 @@ function submitLogin(event) {
    */
   function logout() {
     sessionStorage.removeItem('gea_token');
+    sessionStorage.removeItem('gea_is_applicant');
     currentToken = null;
     currentUser = null;
     

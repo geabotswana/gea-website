@@ -226,7 +226,7 @@ function getEmailTemplate(templateName) {
       var semanticName = String(row[0]).trim();  // A = semantic_name
       var active = row[5];                        // F = active
 
-      if (semanticName === templateName && active === true) {
+      if (semanticName === templateName && (active === true || String(active).toUpperCase() === "TRUE")) {
         var subject = String(row[2]).trim();           // C = subject
         var driveFileId = String(row[3]).trim();       // D = drive_file_id
         var placeholderStr = String(row[4]).trim();    // E = placeholders (comma-separated)

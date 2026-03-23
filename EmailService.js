@@ -450,7 +450,7 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
 function testEmailTemplateSystem() {
   Logger.log("========== EMAIL TEMPLATE SYSTEM TEST ==========");
 
-  var testTemplateName = "MEM_APPLICATION_SUBMITTED_TO_APPLICANT";
+  var testTemplateName = "MEM_APPLICATION_RECEIVED_TO_APPLICANT";
   var testVariables = {
     FIRST_NAME: "Jane",
     APPLICATION_ID: "APP-2026-00001",

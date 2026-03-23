@@ -129,6 +129,8 @@ Represents a single person (adult or child) within a household.
 | `staff_rso_clearance_date` | Date | Date of RSO clearance |
 | `fitness_center_eligible` | Boolean | Can use fitness center (based on age) |
 | `office_eligible` | Boolean | Can hold board office (age 16+) |
+| `first_login_date` | Date | Timestamp of first portal login (triggers welcome email) |
+| `last_login_date` | Date | Timestamp of most recent portal login |
 | `password_hash` | Text | SHA256 hash of password for login |
 
 **Key Relationships:**

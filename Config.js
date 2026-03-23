@@ -191,7 +191,7 @@ var BOARD_EMAIL_TO_SEND_FROM      = "board@geabotswana.org";
 var BOARD_EMAIL_DISPLAY_NAME      = "Gaborone Employee Association";
 // BOARD_EMAIL_DELEGATED_USER: The Google Workspace user impersonated via domain-wide delegation
 // (must have "Send As" permission for board@ and be authorized in the service account)
-var BOARD_EMAIL_DELEGATED_USER    = "board@geabotswana.org";
+var BOARD_EMAIL_DELEGATED_USER    = "treasurer@geabotswana.org";
 // BOARD_SERVICE_ACCOUNT_EMAIL: Fallback client_email if PropertiesService JSON lacks the field
 // Set the real value via initializeBoardServiceAccount() in EmailService.js
 var BOARD_SERVICE_ACCOUNT_EMAIL   = "";

@@ -1240,41 +1240,30 @@ function approveApplicationByBoard(applicationId, boardEmail) {
 
 ### New Templates (Add to Email Templates sheet)
 
-**ADM_DOCUMENT_APPROVED_BY_RSO** (tpl_XYZ)
+**ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER** (tpl_XYZ)
 ```
-Subject: Document Approved - {{DOCUMENT_TYPE}}
+Recipient: Member
+Variables: FIRST_NAME, DOCUMENT_TYPE, APPROVAL_DATE
+
 Body:
-Good news! Your {{DOCUMENT_TYPE}} has been approved by our Regional Security Officer and is now being reviewed by our administration team. We'll notify you of the final outcome shortly.
+Dear {{FIRST_NAME}},
+
+Your document has been approved.
+
+Your submitted document has been reviewed and approved.
+
+Document Type: {{DOCUMENT_TYPE}}
+Approval Date: {{APPROVAL_DATE}}
+
+You may review the status of all your requests in the portal.
 
 Best regards,
 Gaborone Employee Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
 ```
 
-**ADM_DOCUMENT_REJECTED_BY_RSO** (tpl_XYZ)
-Subject: Document Rejected - Please Resubmit {{DOCUMENT_TYPE}}
-Body:
-Unfortunately, your {{DOCUMENT_TYPE}} has been rejected by our Regional Security Officer. Reason: {{REJECTION_REASON}}
-
-Please resubmit a new document as soon as possible. You can upload it directly from your application dashboard.
-
-Best regards,
-Gaborone Employee Association
-```
-
-**ADM_DOCUMENTS_SUBMITTED_FOR_RSO_REVIEW** (tpl_XYZ)
-```
-Subject: New Application {{APPLICATION_ID}} - Documents Ready for Review
-Body:
-A new membership application ({{APPLICATION_ID}}) has been approved by the board and is ready for security document review.
-
-Applicant: {{APPLICANT_NAME}}
-Deadline: {{DEADLINE}}
-
-Log in to the Admin Portal > Document Reviews to review the submitted documents.
-
-Best regards,
-Board
-```
+**Note:** Rejections route to Board (via existing ADM_RSO_DOCUMENT_ISSUE_TO_BOARD template) for diplomatic relay to members. Generic approval template covers passports, omangs, photos, and other document renewals — not specific to membership applications only.
 
 ### Updated Template
 
@@ -1293,62 +1282,92 @@ Next deadline: {{DEADLINE}}
 ## Implementation Checklist
 
 ### Phase 1: Backend Infrastructure
-- [ ] **CRITICAL:** Update Administrators table: Change existing "rso" role entries to either "rso_approve" or "rso_notify"
-- [ ] Update AuthService.js: Enhance `requireAuth()` to support role arrays (e.g., `["rso_approve", "rso_notify"]`)
-- [ ] Add 6 new handlers to Code.js:
-  - [ ] _handleAdminRsoPendingDocuments (rso_approve only)
-  - [ ] _handleAdminRsoApproveDocuments (rso_approve only)
-  - [ ] _handleAdminRsoPendingGuestLists (rso_approve only)
-  - [ ] _handleAdminRsoApproveGuestList (rso_approve only)
-  - [ ] _handleAdminRsoNotifyCalendar (rso_approve & rso_notify read-only)
-  - [ ] _handleAdminRsoNotifyGuestLists (rso_approve & rso_notify read-only)
-- [ ] Add helper functions to FileSubmissionService.js (getDocumentsForRsoReview, approveDocumentForRso)
-- [ ] Add helper functions to ReservationService.js (getGuestListsForRsoReview, processRsoGuestListDecisions, getApprovedCalendarEvents)
-- [ ] Update ApplicationService.js workflow to mark documents as rso_pending instead of generating links
-- [ ] Add 4 new email templates:
-  - [ ] ADM_DOCUMENT_APPROVED_BY_RSO
-  - [ ] ADM_DOCUMENT_REJECTED_BY_RSO
-  - [ ] ADM_DOCUMENTS_SUBMITTED_FOR_RSO_REVIEW
-  - [ ] ADM_RSO_NOTIFY_EVENT_REMINDER (for rso_notify members)
-- [ ] Update existing email template (ADM_BOARD_APPROVED_AWAITING_RSO) to remove link reference
-- [ ] Add nightly task: sendRsoNotifyEventReminders() to NotificationService.js (sends daily event reminders to rso_notify members)
-- [ ] Test all handlers with curl/Postman before UI implementation
+- [x] Administrators table: Roles include rso_approve and rso_notify (legacy rso alias supported)
+- [x] AuthService.js: requireAuth() supports role arrays (line 458) ✓
+- [x] Code.js handlers (4 implemented, consolidated from 6):
+  - [x] _handleAdminRsoPendingDocuments (line 3206, rso_approve only) ✓
+  - [x] _handleAdminRsoApproveDocument (line 3224, rso_approve only) ✓
+  - [x] _handleAdminRsoApprovedCalendar (line 3250, rso_approve & rso_notify read-only) ✓
+  - [x] _handleAdminRsoApprovedGuestLists (line 3268, rso_approve & rso_notify read-only) ✓
+  - ℹ️ _handleAdminRsoPendingGuestLists and _handleAdminRsoNotifyGuestLists consolidated into above handlers
+- [x] FileSubmissionService.js helper functions:
+  - [x] getDocumentsForRsoReview() (line 476) ✓
+  - [x] approveDocumentByRso() (line 526) ✓
+- [x] ReservationService.js helper functions:
+  - [x] getApprovedReservationsForCalendar() (line 1926) ✓
+  - [x] getApprovedGuestListsForRsoNotify() (line 1977) ✓
+- [x] ApplicationService.js workflow: Documents tracked with rso_approved/rso_rejected status ✓
+- [x] Add 1 new email template:
+  - [x] ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER (generic approval for all document types)
+- [x] Note: Rejections use existing ADM_RSO_DOCUMENT_ISSUE_TO_BOARD template (board relays diplomatically)
+- [x] Note: Document submission alerts use existing ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE template
+- ⚠️ Email template review needed:
+  - Check if applicants should receive notification when their documents are sent to RSO for review
+  - ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD and ADM_DOCS_SENT_TO_RSO_TO_BOARD exist for board notifications
+- [x] Handlers tested and working ✓
 
 ### Phase 2: Frontend (Admin.html)
-- [ ] Update login handler to detect RSO role (rso_approve or rso_notify) and store in sessionStorage
-- [ ] Update conditional sidebar to show role-appropriate sections
-  - [ ] rso_approve: Document Reviews, Guest List Reviews, Coordination (calendar + approved lists)
-  - [ ] rso_notify: Calendar Coordination only (calendar + approved lists read-only)
-  - [ ] Hide board-only sections from RSO roles
-- [ ] Create RSO Documents page (admin_rso_documents) — **rso_approve only**
-  - [ ] Filter by document type
-  - [ ] Display document list with applicant info
-  - [ ] Approve/Reject buttons with reason dialog
-  - [ ] Audit trail display
-- [ ] Create RSO Guest Lists page (admin_rso_guest_lists) — **rso_approve only**
-  - [ ] Display pending guest lists by reservation
-  - [ ] Table view of guests with individual approve/reject buttons
-  - [ ] Finalize review button
-  - [ ] Reason text input for rejections
-- [ ] Create RSO Calendar page (admin_rso_calendar) — **rso_approve & rso_notify read-only**
-  - [ ] Filter by facility and month
-  - [ ] Display approved reservations grouped by date
-  - [ ] Show household, contact, guest count, facility info
-  - [ ] Read-only view for rso_notify
-- [ ] Create RSO Approved Guest Lists page (admin_rso_approved_guest_lists) — **rso_approve & rso_notify read-only**
-  - [ ] Filter by facility and month
-  - [ ] Display approved guest lists with guest names
-  - [ ] Show approval date and RSO reviewer name
-  - [ ] Read-only reference for coordination
-- [ ] Add CSS styling for new pages (calendar grid, guest list cards, etc.)
-- [ ] Test RSO login flow and dashboard navigation (both roles)
-- [ ] Test role-based access control (rso_notify cannot access approval pages)
+- [x] Update login handler to detect RSO role (lines 2069-2077) ✓
+- [x] Conditional sidebar with role-appropriate sections (lines 2121-2164) ✓
+  - [x] rso_approve: Document Reviews (rso-documents), Calendar, Approved Guest Lists
+  - [x] rso_notify: Calendar & Approved Guest Lists (read-only)
+  - [x] Board-only sections hidden from RSO roles
+- [x] RSO Documents page (id="rso-documents", line 1762) ✓
+  - [x] Document list display with applicant info
+  - [x] Approve/Reject buttons (lines 4939-4955)
+  - [x] Rejection reason dialog
+  - [x] Audit trail tracking
+- [x] RSO Calendar page (id="rso-calendar", line 1784) ✓
+  - [x] Monthly event display
+  - [x] Household, contact, guest count, facility info shown
+  - [x] Read-only view for rso_notify
+  - [x] Function: loadRsoCalendar() (line 4972)
+- [x] RSO Approved Guest Lists page (id="rso-approved-guests", line 1808) ✓
+  - [x] Display approved guest lists with guest names
+  - [x] Approval date and RSO reviewer info shown
+  - [x] Read-only reference for coordination
+  - [x] Function: loadRsoApprovedGuestLists() (line 5015)
+- [x] CSS styling for RSO pages (Admin.html <style> block) ✓
+- [x] RSO login flow and navigation tested ✓
+- [x] RBAC enforcement verified ✓
+- ⚠️ **ISSUE FOUND:** Applications page sidebar shows for rso_approve but handler requires board-only (line 2274 in Code.js). This will cause FORBIDDEN errors for RSO users. See issue #KNOWN-001 below.
 
 ### Phase 3: Documentation Updates
 - [ ] Update CLAUDE_Membership_Implementation.md - STEP 7 (RSO portal login instead of links)
 - [ ] Update CLAUDE_Reservations_Implementation.md - STEP 6 (RSO portal login instead of links)
-- [ ] Add new section to CLAUDE.md explaining RSO portal access
+- [ ] Add new section to CLAUDE.md explaining RSO portal access and roles
 - [ ] Update architecture diagram in GEA_System_Architecture.md
+
+---
+
+## Known Issues & Remaining Work
+
+### ⚠️ ISSUE #KNOWN-001: Applications Page Authorization Mismatch
+
+**Location:** Admin.html + Code.js
+
+**Problem:**
+- Admin.html sidebar (line 2131) shows "Applications" to both `board` and `rso_approve` roles
+- But Code.js handler `_handleAdminApplications()` (line 2274) requires ONLY `board` role
+- Result: RSO Approve users see "Applications" nav item but get FORBIDDEN error when clicking
+
+**Impact:** Low (RSO users shouldn't need application access anyway, but UX is confusing)
+
+**Fix Options:**
+1. Remove "Applications" from RSO role visibility in sidebar (RECOMMENDED)
+2. Allow rso_approve to access read-only application list
+
+**Recommended Fix:** Edit Admin.html line 2131 navRoles to exclude rso_approve from applications page.
+
+### ℹ️ Email Templates
+
+**Current status:**
+- ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER (newly created for generic document approvals) ✓
+- ADM_RSO_DOCUMENT_ISSUE_TO_BOARD (for rejection notifications to board) ✓
+- ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD (board notified when application goes to RSO) ✓
+- ADM_DOCS_SENT_TO_RSO_TO_BOARD (board notified when documents forwarded to RSO) ✓
+
+**Potential gap:** No template notifies applicants that their documents have been sent to RSO for review. Currently applicants only learn this through the ADM_READY_FOR_FINAL_APPROVAL_TO_MEMBER template or by checking their portal.
 
 ### Phase 4: Testing & Deployment
 - [ ] Create test accounts in Administrators table:

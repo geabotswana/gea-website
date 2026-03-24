@@ -238,7 +238,7 @@ container.appendChild(div);
 - Two-tier document approval: RSO review → GEA admin review
 - One-tier photo approval: GEA admin only → Cloud Storage transfer
 - Functions: submitFile(), getSubmissionHistory(), approveSubmission(), rejectSubmission()
-- RSO approval links: One-time URLs with expiration (336-hour window)
+- RSO approval workflow: RSO logs in to Admin Portal with rso_approve role
 - Cloud Storage integration: Transfer approved photos to gs://gea-member-data/
 - Audit trail: Track all uploads, reviews, approvals, rejections with timestamps
 
@@ -405,9 +405,11 @@ container.appendChild(div);
 ```
 Member uploads passport/omang
   ↓ (status="submitted")
-RSO reviews via one-time approval link (handleRsoApproval)
+RSO logs in to Admin Portal (rso_approve role) → Document Reviews page
   ├─ Approves → status="rso_approved" (GEA admin can now review)
-  └─ Rejects → status="rso_rejected" (member notified with reason, can re-upload)
+  │  └─ Email: ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER (notification to member)
+  └─ Rejects → status="rso_rejected" (board notified for diplomatic relay)
+     └─ Email: ADM_RSO_DOCUMENT_ISSUE_TO_BOARD (to board for handling)
   ↓ (if rso_approved)
 GEA Admin reviews in portal (admin_photo action)
   ├─ Approves → status="verified" (document final, is_current=TRUE)
@@ -483,6 +485,53 @@ GEA Admin reviews & approves
 ---
 
 **For 11-step lifecycle details, category definitions, sponsorship verification, and error handling, see:** [CLAUDE_Membership_Implementation.md](docs/implementation/CLAUDE_Membership_Implementation.md)
+
+---
+
+## RSO Portal Access
+
+**What is RSO?** Regional Security Officer (RSO) is a team member who reviews documents (passports, omangs, photos) and guest lists before events. RSO accounts are created by the board with two role types:
+
+**RSO Roles:**
+- **rso_approve** (full approval authority): Can review and approve/reject documents and guest lists
+- **rso_notify** (read-only coordinator): Can view approved calendars and guest lists for event coordination only
+
+**How RSO Logs In:**
+1. RSO member has account in **Administrators sheet** (System Backend spreadsheet)
+   - Columns: `admin_id`, `email`, `first_name`, `last_name`, `role`, `password_hash`, `active`
+   - Roles: `rso_approve` or `rso_notify` (legacy `rso` alias supported for backward compatibility)
+2. RSO logs in to **Admin Portal** (https://geabotswana.org/member.html, then "Admin Login" button)
+3. Dashboard automatically routes based on role:
+   - **rso_approve**: Document Reviews, Guest List Reviews, Event Calendar, Approved Guest Lists
+   - **rso_notify**: Event Calendar (read-only), Approved Guest Lists (read-only)
+
+**Document Review Workflow (rso_approve):**
+- Admin Portal → Document Reviews page
+- List of all documents pending RSO review (passports, omangs, photos)
+- RSO clicks document to preview, then [Approve] or [Reject with reason]
+- Approval: Updates status to `rso_approved`, emails member via ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER template
+- Rejection: Updates status to `rso_rejected`, emails board via ADM_RSO_DOCUMENT_ISSUE_TO_BOARD template (board relays to member diplomatically)
+
+**Guest List Review Workflow (rso_approve):**
+- Admin Portal → Guest List Reviews page (for pending guest lists only)
+- RSO reviews household members, event details, guest names/relationships
+- RSO clicks [Approve] for each guest or [Reject] with reason
+- After final review, [Submit] to complete guest list validation
+- Approved: Event confirmed, guest list visible to RSO Notify members
+- Rejected: Board notified, household must resubmit revised list
+
+**Event Coordination (rso_approve & rso_notify):**
+- Admin Portal → Event Calendar page
+- View approved reservations by facility and month
+- See household contact info, guest count, special notes
+- rso_notify has read-only access (reference only, cannot approve)
+
+**Notification Workflow:**
+- Board notifies RSO team when documents/guest lists need review
+- Email templates: ADM_DOCS_SENT_TO_RSO_TO_MEMBER (applicant), ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE (RSO)
+- RSO logs in to portal instead of using external links (secure, centralized)
+
+**For complete RSO Portal implementation details, see:** [CLAUDE_RSO_Portal_Implementation.md](docs/implementation/CLAUDE_RSO_Portal_Implementation.md)
 
 ## Key Architectural Decisions
 

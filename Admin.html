@@ -2128,9 +2128,9 @@
       'reservations':        ['board', 'mgt'],
       'waitlist':            ['board', 'mgt'],
       'members':             ['board'],
-      'applications':        ['board', 'rso_approve'],
-      'photos':              ['board', 'rso_approve'],
-      'guest-lists':         ['board', 'rso_approve'],
+      'applications':        ['board'],                                // board-only (requires board auth)
+      'photos':              ['board'],                                // board-only (requires board auth)
+      'guest-lists':         ['board', 'rso_approve'],                 // rso_approve can review
       'payments':            ['board'],
       'reports':             ['board'],
       'administrators':      ['board'],

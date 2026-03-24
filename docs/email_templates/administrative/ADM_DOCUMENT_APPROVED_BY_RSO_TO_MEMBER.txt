@@ -1,0 +1,18 @@
+Dear {{FIRST_NAME}},
+
+Your document has been approved.
+
+Your submitted document has been reviewed and approved.
+
+Document Type: {{DOCUMENT_TYPE}}
+Approval Date: {{APPROVAL_DATE}}
+
+You may review the status of all your requests in the portal.
+
+Best regards,
+Gaborone Employee Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

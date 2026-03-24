@@ -1240,41 +1240,30 @@ function approveApplicationByBoard(applicationId, boardEmail) {
 
 ### New Templates (Add to Email Templates sheet)
 
-**ADM_DOCUMENT_APPROVED_BY_RSO** (tpl_XYZ)
+**ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER** (tpl_XYZ)
 ```
-Subject: Document Approved - {{DOCUMENT_TYPE}}
+Recipient: Member
+Variables: FIRST_NAME, DOCUMENT_TYPE, APPROVAL_DATE
+
 Body:
-Good news! Your {{DOCUMENT_TYPE}} has been approved by our Regional Security Officer and is now being reviewed by our administration team. We'll notify you of the final outcome shortly.
+Dear {{FIRST_NAME}},
+
+Your document has been approved.
+
+Your submitted document has been reviewed and approved.
+
+Document Type: {{DOCUMENT_TYPE}}
+Approval Date: {{APPROVAL_DATE}}
+
+You may review the status of all your requests in the portal.
 
 Best regards,
 Gaborone Employee Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
 ```
 
-**ADM_DOCUMENT_REJECTED_BY_RSO** (tpl_XYZ)
-Subject: Document Rejected - Please Resubmit {{DOCUMENT_TYPE}}
-Body:
-Unfortunately, your {{DOCUMENT_TYPE}} has been rejected by our Regional Security Officer. Reason: {{REJECTION_REASON}}
-
-Please resubmit a new document as soon as possible. You can upload it directly from your application dashboard.
-
-Best regards,
-Gaborone Employee Association
-```
-
-**ADM_DOCUMENTS_SUBMITTED_FOR_RSO_REVIEW** (tpl_XYZ)
-```
-Subject: New Application {{APPLICATION_ID}} - Documents Ready for Review
-Body:
-A new membership application ({{APPLICATION_ID}}) has been approved by the board and is ready for security document review.
-
-Applicant: {{APPLICANT_NAME}}
-Deadline: {{DEADLINE}}
-
-Log in to the Admin Portal > Document Reviews to review the submitted documents.
-
-Best regards,
-Board
-```
+**Note:** Rejections route to Board (via existing ADM_RSO_DOCUMENT_ISSUE_TO_BOARD template) for diplomatic relay to members. Generic approval template covers passports, omangs, photos, and other document renewals — not specific to membership applications only.
 
 ### Updated Template
 
@@ -1305,13 +1294,11 @@ Next deadline: {{DEADLINE}}
 - [ ] Add helper functions to FileSubmissionService.js (getDocumentsForRsoReview, approveDocumentForRso)
 - [ ] Add helper functions to ReservationService.js (getGuestListsForRsoReview, processRsoGuestListDecisions, getApprovedCalendarEvents)
 - [ ] Update ApplicationService.js workflow to mark documents as rso_pending instead of generating links
-- [ ] Add 4 new email templates:
-  - [ ] ADM_DOCUMENT_APPROVED_BY_RSO
-  - [ ] ADM_DOCUMENT_REJECTED_BY_RSO
-  - [ ] ADM_DOCUMENTS_SUBMITTED_FOR_RSO_REVIEW
-  - [ ] ADM_RSO_NOTIFY_EVENT_REMINDER (for rso_notify members)
+- [x] Add 1 new email template:
+  - [x] ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER (generic approval for all document types)
+- [x] Note: Rejections use existing ADM_RSO_DOCUMENT_ISSUE_TO_BOARD template (board relays diplomatically)
+- [x] Note: Document submission alerts use existing ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE template
 - [ ] Update existing email template (ADM_BOARD_APPROVED_AWAITING_RSO) to remove link reference
-- [ ] Add nightly task: sendRsoNotifyEventReminders() to NotificationService.js (sends daily event reminders to rso_notify members)
 - [ ] Test all handlers with curl/Postman before UI implementation
 
 ### Phase 2: Frontend (Admin.html)

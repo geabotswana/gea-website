@@ -261,26 +261,32 @@ REQUEST MORE INFO PATH:
 ### STEP 7: RSO Reviews & Approves Documents
 
 ```
-Email sent to rso-notify@geabotswana.org with document links
-  └─ RSO accesses File Submission portal (one-time approval link or portal access)
+Email sent to rso-approve@geabotswana.org with notification (no link)
+  └─ RSO logs in to Admin Portal with RSO account
+     ├─ Navigate to "Document Reviews" section
+     └─ Documents for all applications pending RSO review listed
 
-RSO reviews each document:
-  ├─ Passport: Valid? Expiration date OK? Matches application?
-  ├─ Omang: Valid? Current? Matches application?
-  ├─ Diplomatic Passport: Correct country/org? Valid?
-  ├─ Photo: Quality acceptable? Dimensions correct? Current?
-  ├─ Employment verification: Complete? Verifiable?
+RSO reviews each document via portal interface:
+  ├─ Applicant name, application ID, document type
+  ├─ Document preview (image or file download)
+  ├─ Validation checklist:
+  │  ├─ Passport: Valid? Expiration date OK? Matches application?
+  │  ├─ Omang: Valid? Current? Matches application?
+  │  ├─ Diplomatic Passport: Correct country/org? Valid?
+  │  ├─ Photo: Quality acceptable? Dimensions correct? Current?
+  │  └─ Employment verification: Complete? Verifiable?
   └─ Actions per document: [Approve] [Reject with reason]
 
 RSO DECISION (ALL DOCUMENTS APPROVED):
+  ├─ Click [Approve] on each document
   ├─ Update File Submissions: status = "rso_approved"
-  │  ├─ rso_approved_by = [RSO_NAME]
-  │  └─ rso_approval_timestamp = NOW
+  │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL] (captured from session)
+  │  └─ rso_review_date = NOW
   │
   ├─ Update Application:
-  │  ├─ rso_approval_status = "approved"
-  │  ├─ rso_approved_by = [RSO_NAME]
-  │  ├─ rso_approval_timestamp = NOW
+  │  ├─ rso_status = "approved"
+  │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL]
+  │  ├─ rso_review_date = NOW
   │  └─ status = "approved_pending_payment"
   │
   ├─ Email applicant:
@@ -291,32 +297,41 @@ RSO DECISION (ALL DOCUMENTS APPROVED):
   │     ├─ How to submit proof of payment
   │     └─ Link to application dashboard
   │
-  └─ Email treasurer:
-     └─ Email template: "New Member Ready for Payment Verification"
-        ├─ Applicant info
-        ├─ Membership type
-        ├─ Dues amount due
-        └─ Link to admin portal to verify payment
+  ├─ Email treasurer:
+  │  └─ Email template: "New Member Ready for Payment Verification"
+  │     ├─ Applicant info
+  │     ├─ Membership type
+  │     ├─ Dues amount due
+  │     └─ Link to admin portal to verify payment
+  │
+  └─ Audit log: Record which RSO member approved documents
 
 RSO DECISION (SOME DOCUMENTS REJECTED):
+  ├─ Click [Reject] on document(s), enter reason
   ├─ Update File Submissions: status = "rso_rejected"
-  │  └─ rso_rejection_reason = [REASON per document]
+  │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL]
+  │  ├─ rso_review_date = NOW
+  │  └─ rejection_reason = [REASON from RSO]
   │
   ├─ Update Application:
-  │  ├─ rso_approval_status = "rejected"
-  │  └─ rso_approval_timestamp = NOW
+  │  ├─ rso_status = "denied"
+  │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL]
+  │  └─ rso_review_date = NOW
   │
   ├─ Email applicant:
   │  └─ Email template: "Documents Rejected - Please Resubmit"
-  │     ├─ List of rejected documents with specific reasons
+  │     ├─ List of rejected documents with specific reasons from RSO
   │     ├─ Instructions for resubmission
   │     ├─ Deadline to resubmit (e.g., 10 business days)
   │     └─ Link to dashboard to upload replacements
   │
-  └─ Application status: "rejected_documents" (applicant can resubmit)
+  ├─ Application status: "rejected_documents" (applicant can resubmit)
+  └─ Audit log: Record which RSO member rejected documents
 
 Applicant resubmits rejected documents → Return to STEP 5
 ```
+
+**Important Note:** RSO members must have accounts in the Administrators table (System Backend sheet) with role="rso" and password set. See **CLAUDE_RSO_Portal_Implementation.md** for complete RSO portal implementation details.
 
 ### STEP 8: Applicant Submits Payment Proof
 

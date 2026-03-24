@@ -184,24 +184,57 @@ Member navigates to reservation detail page
 ### STEP 6: RSO Guest List Review (Management Officer)
 
 ```
-RSO receives email: "Guest List Submitted for Review"
-  ├─ RSO accesses one-time approval link (expires after use/72 hours)
-  ├─ RSO can:
-  │  ├─ Accept all guests → status="rso_approved", send confirmation
-  │  └─ Reject individual guests → status="rso_rejected", send reason
+Email sent to rso-approve@geabotswana.org with notification (no link)
+  └─ RSO logs in to Admin Portal with RSO account
+     ├─ Navigate to "Guest List Reviews" section
+     └─ Guest lists for all reservations pending RSO review listed
+
+RSO reviews guest list via portal interface:
+  ├─ Household name, facility, event date/time
+  ├─ Guest table: Name, Relationship, DOB for each guest
+  └─ Actions per guest: [Approve] [Reject with reason]
+
+RSO DECISION (ALL GUESTS APPROVED):
+  ├─ Click [Approve] on all guests (or [Submit Review] to confirm)
+  ├─ Update Guest Lists sheet:
+  │  ├─ status = "rso_approved"
+  │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL] (captured from session)
+  │  ├─ rso_review_date = NOW
+  │  └─ rso_draft_json = JSON of approvals
   │
-  ├─ If individual guests rejected:
-  │  ├─ Member notified (with RSO rejection reason)
-  │  ├─ Member can remove rejected guests OR
-  │  ├─ Member can re-submit with changes (within reasonable timeframe before event)
-  │  └─ Audit trail: rso_rejection_reason recorded per guest
+  ├─ Email household:
+  │  └─ "Guest List Approved - Event Confirmed"
+  │     ├─ All guests approved for event
+  │     ├─ Event date/time confirmation
+  │     └─ No action needed from household
   │
-  └─ If all guests approved:
-     ├─ Update Reservations: guest_list_submitted=TRUE
-     ├─ Update Guest Lists sheet:
-     │  └─ rso_status="approved", rso_reviewed_by=[RSO_NAME], rso_review_timestamp=NOW
-     └─ Reservation ready to proceed
+  ├─ Update Reservations calendar: event status finalized
+  └─ Audit log: Record which RSO member approved guest list
+
+RSO DECISION (SOME GUESTS REJECTED):
+  ├─ Click [Reject] on guest(s), enter reason
+  ├─ Update Guest Lists sheet:
+  │  ├─ status = "rso_rejected"
+  │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL]
+  │  ├─ rso_review_date = NOW
+  │  └─ rso_draft_json = JSON of decisions (approved + rejected)
+  │
+  ├─ Email household:
+  │  └─ "Guest List Rejected - Revisions Required"
+  │     ├─ List of rejected guests with RSO reasons
+  │     ├─ Option 1: Remove rejected guests and resubmit
+  │     ├─ Option 2: Contact board to discuss RSO decision
+  │     └─ Deadline to resubmit: [DATE/TIME before event]
+  │
+  ├─ Household can:
+  │  ├─ Remove rejected guests and resubmit guest list, OR
+  │  ├─ Appeal RSO decision (contact board)
+  │  └─ Deadline: Within reasonable timeframe before event
+  │
+  └─ Audit log: Record which RSO member rejected guests and reasons
 ```
+
+**Important Note:** RSO members must have accounts in the Administrators table (System Backend sheet) with role="rso" and password set. See **CLAUDE_RSO_Portal_Implementation.md** for complete RSO portal implementation details.
 
 ### STEP 7: Final Call Email (1 Business Day Before Deadline)
 

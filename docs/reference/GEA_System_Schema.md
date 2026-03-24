@@ -120,7 +120,7 @@ Represents a single person (adult or child) within a household.
 | `phone_emergency_whatsapp` | Boolean | Emergency contact has WhatsApp |
 | `emergency_contact_relationship` | Text | Relationship to member |
 | `emergency_contact_email` | Email | Emergency contact email |
-| `date_of_birth` | Date | Person's birthdate (YYYY-MM-DD, required for applicants & children, optional for spouses) |
+| `date_of_birth` | Date | Person's birthdate (YYYY-MM-DD, required for children only; extracted from ID documents for adults) |
 | `arrival_date` | Date | When person arrived in Botswana |
 | `departure_date` | Date | Expected or actual departure from Botswana |
 | `active` | Boolean | Record is current/active |
@@ -676,7 +676,7 @@ Audit Log
 
 ### Individuals
 - email: Must be valid email format
-- date_of_birth: Cannot be in future; required for applicants and minors, optional for spouses
+- date_of_birth: Cannot be in future; required for children only (extracted from ID documents for adults)
 - phone_primary, phone_secondary: Numbers only, 7-12 digits
 - document_expiration_date: Cannot be in past if document_type != None
 

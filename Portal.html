@@ -4016,13 +4016,8 @@ function submitLogin(event) {
     var phoneLabel = document.createElement('strong');
     phoneLabel.textContent = 'Phone:';
     applicantDiv.appendChild(phoneLabel);
-    var phoneText = formatPhoneNumber(applicationFormData.country_code_primary || 'US', applicationFormData.phone_primary);
+    var phoneText = formatPhoneWithWhatsApp(applicationFormData.country_code_primary || 'US', applicationFormData.phone_primary, applicationFormData.phone_primary_whatsapp);
     applicantDiv.appendChild(document.createTextNode(' ' + (phoneText || '—')));
-    if (applicationFormData.phone_primary_whatsapp) {
-      var whatsappNote = document.createElement('em');
-      whatsappNote.textContent = ' (WhatsApp available)';
-      applicantDiv.appendChild(whatsappNote);
-    }
     applicantDiv.appendChild(document.createElement('br'));
 
     addField(applicantDiv, 'Citizenship', applicationFormData.citizenship_country || '—');
@@ -7272,6 +7267,22 @@ function submitLogin(event) {
     var dialCode = getDialCode(countryCode);
     if (!dialCode || dialCode === countryCode) return ''; // Unknown country code
     return '+' + dialCode + ' ' + phoneNumber;
+  }
+
+  /**
+   * Format phone number with WhatsApp indicator appended as text
+   * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
+   * @param {string} phoneNumber - Phone number
+   * @param {boolean} hasWhatsApp - Whether this number is available on WhatsApp
+   * @returns {string} Formatted phone with WhatsApp indicator if applicable
+   */
+  function formatPhoneWithWhatsApp(countryCode, phoneNumber, hasWhatsApp) {
+    var formatted = formatPhoneNumber(countryCode, phoneNumber);
+    if (!formatted) return '';
+    if (hasWhatsApp) {
+      formatted += ' (WhatsApp)';
+    }
+    return formatted;
   }
 
   function loadProfile() {

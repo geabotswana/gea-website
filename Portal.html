@@ -4016,7 +4016,8 @@ function submitLogin(event) {
     var phoneLabel = document.createElement('strong');
     phoneLabel.textContent = 'Phone:';
     applicantDiv.appendChild(phoneLabel);
-    applicantDiv.appendChild(document.createTextNode(' ' + (applicationFormData.country_code_primary || 'US') + ' ' + (applicationFormData.phone_primary || '—')));
+    var appDialCode = getDialCode(applicationFormData.country_code_primary || 'US');
+    applicantDiv.appendChild(document.createTextNode(' +' + appDialCode + ' ' + (applicationFormData.phone_primary || '—')));
     if (applicationFormData.phone_primary_whatsapp) {
       var whatsappNote = document.createElement('em');
       whatsappNote.textContent = ' (WhatsApp available)';
@@ -4698,7 +4699,8 @@ function submitLogin(event) {
         var phoneDiv = document.createElement('div');
         phoneDiv.style.fontSize = '13px';
         phoneDiv.style.marginTop = '8px';
-        var phoneDisplay = (hh.country_code_primary ? hh.country_code_primary + ' ' : '') + hh.phone_primary;
+        var dialCode = hh.country_code_primary ? getDialCode(hh.country_code_primary) : '';
+        var phoneDisplay = (dialCode ? '+' + dialCode + ' ' : '') + hh.phone_primary;
         phoneDiv.textContent = phoneDisplay;
         if (hh.phone_primary_whatsapp) {
           var waSpan = document.createElement('span');
@@ -5933,7 +5935,8 @@ function submitLogin(event) {
     // Format phone number from household fields
     var phoneDisplay = '—';
     if (hh.phone_primary) {
-      phoneDisplay = (hh.country_code_primary ? '+' + hh.country_code_primary + ' ' : '') + hh.phone_primary;
+      var dialCode = hh.country_code_primary ? getDialCode(hh.country_code_primary) : '';
+      phoneDisplay = (dialCode ? '+' + dialCode + ' ' : '') + hh.phone_primary;
     }
 
     [

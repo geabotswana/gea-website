@@ -1,6 +1,6 @@
 # GEA Documentation Master Index
 
-**Last Updated:** March 13, 2026  
+**Last Updated:** March 24, 2026
 **Maintained by:** GEA Treasurer & Development Team
 
 ---
@@ -38,18 +38,20 @@ Implementation guides, workflows, and technical references.
 | [**CLAUDE_Reservations_Implementation.md**](implementation/CLAUDE_Reservations_Implementation.md) | Coding guide for booking system, limits, waitlisting | Developers | ✅ Complete (Phase 1) |
 | [**CLAUDE_Payments_Implementation.md**](implementation/CLAUDE_Payments_Implementation.md) | Coding guide for payment tracking & verification | Developers | 📋 60% Ready (Phase 3) |
 | [**CLAUDE_Authentication_RBAC.md**](implementation/CLAUDE_Authentication_RBAC.md) | Session management, role-based access control | Developers | ✅ Complete (Phase 1) |
+| [**CLAUDE_RSO_Portal_Implementation.md**](implementation/CLAUDE_RSO_Portal_Implementation.md) | RSO dual-role portal (rso_approve/rso_notify), authenticated access replacing one-time email links | Developers | ✅ Complete |
 | [**CLAUDE_Google_APIs_Integration.md**](implementation/CLAUDE_Google_APIs_Integration.md) | Sheets, Drive, Calendar, Storage APIs in Apps Script | Developers | 📋 60% Ready (Phase 3) |
 | [**CLAUDE_Deployment.md**](implementation/CLAUDE_Deployment.md) | clasp workflow, GitHub sync, testing, rollback | Developers | ✅ Complete (Phase 2) |
 | [**CLAUDE_Security.md**](implementation/CLAUDE_Security.md) | Secure coding, auth, encryption, data protection | Developers | ✅ Complete (Phase 2) |
 | [**CLAUDE_DisasterRecovery.md**](implementation/CLAUDE_DisasterRecovery.md) | Backup procedures, recovery testing, restoration | Developers | 📋 50% Ready (Phase 3) |
 | [**GEA_System_Architecture.md**](implementation/GEA_System_Architecture.md) | Design patterns, request/response flow, modules | Developers | ✅ Complete (Phase 2) |
+| [**development/REPO_ORGANIZATION.md**](development/REPO_ORGANIZATION.md) | Repository folder structure, naming conventions, where to place new docs, files, and scripts | Developers | ✅ Current |
 
 ### For New Members & Applicants
 Public-facing information about joining, reserving facilities, and using the portal.
 
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
-| **Membership Application Guide** | How to apply, eligibility, documents needed, timeline | Applicants | 📋 Planned |
+| [**Membership Application Guide**](guides/MEMBERSHIP_APPLICATION_GUIDE.md) | How to apply, eligibility, required documents by member type, payment instructions, FAQ | Applicants | ✅ Complete |
 | **Membership Categories FAQ** | Quick reference for member types & benefits | Members, applicants | 📋 Planned |
 | **Facility Reservation Guide** | How to book, rules, limits, cancellation | Members | 📋 Planned |
 | **Guest List Requirements** | Why required, deadlines, RSO process | Members | 📋 Planned |
@@ -63,15 +65,16 @@ These technical references support multiple audiences and are referenced through
 
 | Document | Purpose | Format | Status |
 |----------|---------|--------|--------|
-| **reference/GEA_System_Schema.md** | Complete database schema (households, individuals, membership levels, relationships) | Markdown | ✅ Exists |
-| **reference/MEMBERSHIP_ELIGIBILITY_FLOW.md** | Sequential 4-question decision tree; every applicant gets exactly ONE category | Markdown | ✅ Exists |
-| **reference/MEMBERSHIP_CATEGORIES_MATRIX.md** | Configuration table: six categories, regulatory basis, voting rights, guest invitation authority, facility access, active status | Markdown | ✅ Exists |
-| **reference/GEA_Reservations_Process_Spec.md** | Complete 10-step reservation lifecycle, approval routing, bumping logic, guest list workflow | Markdown | ✅ Exists |
+| [**reference/GEA_System_Schema.md**](reference/GEA_System_Schema.md) | Complete database schema (households, individuals, membership levels, relationships) | Markdown | ✅ Exists |
+| [**reference/MEMBERSHIP_ELIGIBILITY_FLOW.md**](reference/MEMBERSHIP_ELIGIBILITY_FLOW.md) | Sequential 4-question decision tree; every applicant gets exactly ONE category | Markdown | ✅ Exists |
+| [**reference/MEMBERSHIP_CATEGORIES_MATRIX.md**](reference/MEMBERSHIP_CATEGORIES_MATRIX.md) | Configuration table: six categories, regulatory basis, voting rights, guest invitation authority, facility access, active status | Markdown | ✅ Exists |
+| [**reference/GEA_Reservations_Process_Spec.md**](reference/GEA_Reservations_Process_Spec.md) | Complete 10-step reservation lifecycle, approval routing, bumping logic, guest list workflow | Markdown | ✅ Exists |
 | [**reference/EMAIL_TEMPLATES_REFERENCE.md**](reference/EMAIL_TEMPLATES_REFERENCE.md) | All templates with triggers, placeholders, and purposes | Markdown | ✅ Exists |
 | [**reference/FACILITY_RULES_QUICK_CARD.md**](reference/FACILITY_RULES_QUICK_CARD.md) | Hours, capacities, reservation limits, guest policies, usage tracking, closure info by facility (Tennis/Basketball, Leobo, Gym, Playground) | Markdown | ✅ Complete |
 | [**reference/ROLES_PERMISSIONS_MATRIX.md**](reference/ROLES_PERMISSIONS_MATRIX.md) | Who can do what (Member, Treasurer, Board, RSO, Applicant); approval authority; communication requirements | Markdown | ✅ Complete |
 | [**implementation/HOUSEHOLDS_COLUMNS_ANALYSIS.md**](implementation/HOUSEHOLDS_COLUMNS_ANALYSIS.md) | Data structure analysis for households table, column definitions, relationships | Markdown | ✅ Exists |
 | [**implementation/MEMBERSHIP_APPLICATIONS_SCHEMA_REDESIGN.md**](implementation/MEMBERSHIP_APPLICATIONS_SCHEMA_REDESIGN.md) | Application workflow schema redesign, field definitions, status progression | Markdown | ✅ Exists |
+| [**audit/DUES_REFERENCE_AUDIT_2026-03-24.md**](audit/DUES_REFERENCE_AUDIT_2026-03-24.md) | Codebase audit of membership dues calculations; identified missing `_calculateDuesAmount()` and payment recording gaps | Markdown | ✅ March 24, 2026 |
 | **ARCHITECTURE_DIAGRAMS.md** | System flows, module responsibilities, data flows, request/response patterns | Markdown | 📋 Planned |
 | **TOOLS_COMMANDS_REFERENCE.md** | clasp, git, Apps Script editor, testing, debugging commands | Markdown | 📋 Planned |
 | **VERSION_HISTORY.md** | Release notes, deployment dates, changes by version | Markdown | 📋 Planned |
@@ -181,6 +184,7 @@ GEA Audit & Compliance Policy (BOARD)
 
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
+| [**DEPLOYMENT_CHECKLIST.md**](operational/DEPLOYMENT_CHECKLIST.md) | Step-by-step checklist for deploying Apps Script changes: pre-deploy verification, clasp push, @HEAD testing, versioned deployment, and post-deploy validation | Developers, devops | ✅ Current |
 | [**BOARD_EMAIL_SECRET_RECOVERY.md**](operational/BOARD_EMAIL_SECRET_RECOVERY.md) | Restore board email signing capability after disaster, rebuild, or handoff. Includes prerequisites, exact steps, verification checklist, and troubleshooting. | System admin, treasurer, devops | ✅ Current |
 | [**TOKEN_HASH_MIGRATION_RUNBOOK.md**](operational/TOKEN_HASH_MIGRATION_RUNBOOK.md) | Safe deployment of session token hashing (plain-text → SHA256 hashes). Includes preflight checklist, step-by-step deployment, validation helpers, and rollback procedures. | Developers, devops | ✅ Current |
 
@@ -204,8 +208,8 @@ GEA Audit & Compliance Policy (BOARD)
 
 ## Document Maintenance
 
-**Last Reviewed:** March 3, 2026  
-**Next Review:** June 3, 2026 (quarterly)
+**Last Reviewed:** March 24, 2026
+**Next Review:** June 24, 2026 (quarterly)
 
 ### Adding New Documents
 1. Add entry to appropriate section above

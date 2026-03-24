@@ -3933,12 +3933,14 @@ function submitLogin(event) {
           var lastName = el.querySelector('.fam-last-name').value;
           var relationship = el.querySelector('input[type="radio"]:checked');
           var citizenship = el.querySelector('.fam-citizenship').value;
+          var dateOfBirth = el.querySelector('.fam-date-of-birth').value;
           if (firstName && lastName && relationship) {
             applicationFormData.family_members.push({
               first_name: capitalizeName(firstName),
               last_name: capitalizeName(lastName),
               relationship_to_primary: relationship.value,
-              citizenship_country: citizenship || ''
+              citizenship_country: citizenship || '',
+              date_of_birth: dateOfBirth || ''
             });
           }
         });
@@ -4063,8 +4065,15 @@ function submitLogin(event) {
           var li = document.createElement('li');
           var nameText = (member.first_name || '') + ' ' + (member.last_name || '') + ' (' + (member.relationship_to_primary || '') + ')';
           li.textContent = nameText;
+          var details = [];
           if (member.citizenship_country) {
-            li.appendChild(document.createTextNode(' — Citizenship: ' + member.citizenship_country));
+            details.push('Citizenship: ' + member.citizenship_country);
+          }
+          if (member.date_of_birth) {
+            details.push('DOB: ' + member.date_of_birth);
+          }
+          if (details.length > 0) {
+            li.appendChild(document.createTextNode(' — ' + details.join(', ')));
           }
           familyUl.appendChild(li);
         });
@@ -4234,6 +4243,21 @@ function submitLogin(event) {
     });
 
     memberDiv.appendChild(citizenshipSelect);
+
+    // Date of birth input
+    var dobLabel = document.createElement('label');
+    dobLabel.style.display = 'block';
+    dobLabel.style.fontSize = '12px';
+    dobLabel.style.color = '#666';
+    dobLabel.style.marginBottom = '4px';
+    dobLabel.textContent = 'Date of Birth (optional for spouses, required for children)';
+    memberDiv.appendChild(dobLabel);
+
+    var dobInput = document.createElement('input');
+    dobInput.type = 'date';
+    dobInput.className = 'form-input fam-date-of-birth';
+    dobInput.style.marginBottom = '8px';
+    memberDiv.appendChild(dobInput);
 
     // Remove button (safe event handler)
     var removeBtn = document.createElement('button');

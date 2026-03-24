@@ -719,7 +719,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
 
       // Generate payment reference and dues amount
       var paymentRef = _generatePaymentReference(application.last_name);
-      var duesAmount = _calculateDuesAmount(application.membership_category, application.household_type);
+      var duesAmount = _calculateDuesAmount(applicationId);
 
       // Notify applicant with payment instructions
       sendEmail("tpl_048", application.email, {
@@ -806,7 +806,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       payment_id: paymentId,
       household_id: application.household_id,
       payment_method: paymentMethod,
-      amount_paid: _calculateDuesAmount(application.membership_category, application.household_type),
+      amount_paid: _calculateDuesAmount(applicationId),
       payment_date: new Date(),
       submission_timestamp: new Date(),
       proof_file_id: proofFileId,
@@ -1131,6 +1131,49 @@ function _getCurrentQuarterInfo_() {
   if (month === 10 || month === 11 || month === 0) return { name: "Q2 (Nov–Jan)", percentage: 75 };
   if (month >= 1 && month <= 3)                    return { name: "Q3 (Feb–Apr)", percentage: 50 };
   return { name: "Q4 (May–Jul)", percentage: 25 };
+}
+
+/**
+ * HELPER: Calculate pro-rated dues amount for an application
+ * Looks up membership level by application ID, retrieves annual dues from Membership Pricing sheet,
+ * and applies pro-ration based on current quarter.
+ *
+ * @param {string} applicationId - Application ID (e.g., "APP-2026-00001")
+ * @returns {number} Pro-rated dues in USD, or 0 if not found
+ */
+function _calculateDuesAmount(applicationId) {
+  try {
+    var app = _getApplicationById(applicationId);
+    if (!app || !app.household_id) {
+      Logger.log("WARNING: Could not find application: " + applicationId);
+      return 0;
+    }
+
+    var household = getHouseholdById(app.household_id);
+    if (!household || !household.membership_level_id) {
+      Logger.log("WARNING: Could not find household for application: " + applicationId);
+      return 0;
+    }
+
+    var level = getMembershipLevel(household.membership_level_id);
+    if (!level || !level.annual_dues_usd) {
+      Logger.log("WARNING: Could not find membership level or annual_dues_usd for level: " + household.membership_level_id);
+      return 0;
+    }
+
+    var annualDuesUsd = Number(level.annual_dues_usd) || 0;
+    if (annualDuesUsd === 0) {
+      Logger.log("WARNING: Annual dues is 0 for membership level: " + household.membership_level_id);
+      return 0;
+    }
+
+    // Use existing pro-ration function from PaymentService
+    var proratedAmount = calculateProratedDues(annualDuesUsd);
+    return proratedAmount;
+  } catch (e) {
+    Logger.log("ERROR calculating dues for application " + applicationId + ": " + e);
+    return 0;
+  }
 }
 
 function _calculateMembershipExpiration() {

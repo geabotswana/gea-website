@@ -5074,10 +5074,18 @@ function submitLogin(event) {
     application: null
   };
 
+  // Generation counters: incremented each time a load is initiated.
+  // Callbacks check their captured generation against the current value;
+  // if they differ, the load was superseded (e.g. by a page reload) and
+  // the callback discards its result instead of touching the DOM.
+  var _applicantLoadGen = 0;
+  var _dashboardLoadGen = 0;
+
   /**
    * Loads the non-member portal data and renders the active section.
    */
   function loadApplicantPortal() {
+    var gen = ++_applicantLoadGen;
     updatePortalDebug({
       last_applicant_success: null,
       last_applicant_message: 'Loading applicant portal...'
@@ -5098,6 +5106,7 @@ function submitLogin(event) {
     }
 
     apiCall('application_status', {}).then(function(res) {
+      if (gen !== _applicantLoadGen) return; // superseded by a newer load — discard
       if (!res.success) {
         updatePortalDebug({
           last_applicant_success: false,
@@ -5113,6 +5122,7 @@ function submitLogin(event) {
       applicantPortalState.application = res.data;
       renderApplicantPortalSection(applicantPortalState.activeSection || 'dashboard');
     }).catch(function(err) {
+      if (gen !== _applicantLoadGen) return;
       updatePortalDebug({
         last_applicant_success: false,
         last_applicant_message: err.message || 'Applicant portal request failed'
@@ -6732,11 +6742,13 @@ function submitLogin(event) {
   }
 
   function loadDashboard() {
+    var gen = ++_dashboardLoadGen;
     updatePortalDebug({
       last_dashboard_success: null,
       last_dashboard_message: 'Loading dashboard...'
     });
     apiCall('dashboard', {}).then(function(res) {
+      if (gen !== _dashboardLoadGen) return; // superseded by a newer load — discard
       if (!res.success) {
         updatePortalDebug({
           last_dashboard_success: false,

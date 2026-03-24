@@ -13,18 +13,24 @@ Complete implementation for RSO (Regional Security Officer) portal access, repla
 - Audit trail shows "EMAIL_RSO_APPROVE" as generic placeholder, not individual RSO member
 
 ### Target State
-- RSO members log in via Admin Portal with **"rso" role** (already exists in Administrators table)
-- Dedicated RSO dashboard showing pending approvals categorized by type
+- Two RSO roles in Admin Portal (both in Administrators table):
+  1. **rso_approve** — Document & guest list approval authority
+  2. **rso_notify** — Read-only calendar coordination (no approval powers)
 - Clear identity capture: rso_reviewed_by = logged-in RSO member's email
-- Two workflows supported:
-  1. **Document Review** — Membership application documents (2-tier: RSO → GEA Admin)
-  2. **Guest List Review** — Reservation guest lists (RSO security check before event)
+- Two approval workflows:
+  1. **Document Review** (rso_approve only) — Membership application documents (2-tier: RSO → GEA Admin)
+  2. **Guest List Review** (rso_approve only) — Reservation guest lists (RSO security check before event)
+- One coordination workflow:
+  3. **Calendar & Approved Guest Lists** (rso_notify read-only) — View approved reservations and finalized guest lists
+- Proactive notifications: rso_notify members receive email alerts about upcoming events (no portal checking required)
 
 ### Benefits
+✅ Role-based separation: rso_approve makes decisions, rso_notify coordinates
 ✅ Clear audit trail (individual RSO member identity)
 ✅ No link expiration/consumption issues
 ✅ Consistent with system auth framework
 ✅ Supports multiple RSO members with shared responsibilities
+✅ rso_notify doesn't need to monitor portal (email notifications only)
 ✅ No custom UX for one-time links (reuses Admin Portal infrastructure)
 
 ---
@@ -34,12 +40,26 @@ Complete implementation for RSO (Regional Security Officer) portal access, repla
 ### Authentication & Authorization
 
 **Existing Infrastructure:**
-- Administrators table (System Backend sheet) with "rso" role
-- `adminLogin(email, password)` supports all roles: board, mgt, rso
+- Administrators table (System Backend sheet) with role column
+- `adminLogin(email, password)` supports all roles: board, mgt, rso_approve, rso_notify
 - `requireAuth(token, role)` enforces role-based access control
 - Session management: token stored in sessionStorage (browser), validated via _validateSession()
 
-**No changes needed to auth layer** — auth infrastructure already supports RSO role.
+**Role Definitions:**
+
+| Role | Portal Access | Permissions | Email Notifications |
+|------|---|---|---|
+| **rso_approve** | ✅ Full | Document review/approval, Guest list review/approval, View calendar | ✓ Event notifications (optional) |
+| **rso_notify** | ✅ Limited | View approved guest lists, View approved calendar, Read-only | ✓ Upcoming event reminders |
+| **board** | ✅ Full | Everything (existing functionality) | — |
+| **mgt** | ✅ Limited | Specific Leobo approval (existing) | — |
+
+**Required Changes to Auth Layer:**
+- Update Administrators table: Change existing "rso" role entries to either "rso_approve" or "rso_notify"
+- Update `requireAuth()` to support granular permission checks:
+  - `requireAuth(token, "rso_approve")` — Only rso_approve members
+  - `requireAuth(token, ["rso_approve", "rso_notify"])` — Either role (for read-only calendar)
+- Keep backward compatibility: If old "rso" role exists, treat as "rso_approve"
 
 ### New RSO Action Handlers
 
@@ -213,6 +233,139 @@ All handlers require: `requireAuth(p.token, "rso")` before proceeding.
 - Update Reservations calendar if guest list rejected (may need resubmission)
 - Audit log: Record RSO guest list review
 
+#### 5. admin_rso_notify_approved_guest_lists
+**Purpose:** (rso_notify only) List approved guest lists for calendar coordination
+
+**Input:**
+```javascript
+{
+  token: "...",
+  filters: {                  // Optional
+    facility: "tennis|leobo",
+    date_range: {
+      start: "2026-04-01",
+      end: "2026-04-30"
+    }
+  }
+}
+```
+
+**Output:**
+```javascript
+{
+  success: true,
+  count: 5,
+  guest_lists: [
+    {
+      guest_list_id: "GL-2026-0401-001",
+      reservation_id: "RES-2026-0401-001",
+      household_id: "HSH-2026-0324-001",
+      household_name: "Johnson Family",
+      facility: "Leobo",
+      event_date: "2026-04-15",
+      event_time: "18:00-22:00",
+      rso_approval_status: "approved",
+      rso_approved_by: "rso@example.com",
+      rso_approval_date: "2026-03-25",
+      guest_count: 8,
+      guests: [
+        { guest_name: "John Smith", relationship: "Friend" },
+        // ...
+      ]
+    }
+  ]
+}
+```
+
+**Implementation:**
+- Query Guest Lists sheet for status="rso_approved" only
+- Filter by date range and facility (if provided)
+- Return guest list summary with approved guest names (no sensitive contact info beyond names)
+- Requires: `requireAuth(p.token, ["rso_approve", "rso_notify"])`
+
+#### 6. admin_rso_notify_approved_calendar
+**Purpose:** (rso_notify only) Get approved reservations for calendar view
+
+**Input:**
+```javascript
+{
+  token: "...",
+  month: "2026-04",  // YYYY-MM format, optional
+  facility: "all|tennis|leobo"
+}
+```
+
+**Output:**
+```javascript
+{
+  success: true,
+  count: 12,
+  events: [
+    {
+      reservation_id: "RES-2026-0401-001",
+      household_id: "HSH-2026-0324-001",
+      household_name: "Johnson Family",
+      facility: "Leobo",
+      event_date: "2026-04-15",
+      event_time: "18:00-22:00",
+      approval_status: "approved",
+      guest_list_status: "approved",
+      guest_count: 8,
+      primary_contact: "Jane Johnson"
+    }
+  ]
+}
+```
+
+**Implementation:**
+- Query Reservations sheet for approval_status="approved" only
+- Join to Guest Lists to get guest_list_status
+- Filter by facility and date range
+- Return event summary (no member contact details beyond name)
+- Requires: `requireAuth(p.token, ["rso_approve", "rso_notify"])`
+
+---
+
+## Email Notifications for rso_notify
+
+New notification scheduled task: `sendRsoNotifyEventReminders()`
+
+**Timing:** Run daily at 6:00 AM GMT+2 (same as triggerRsoDailySummary)
+
+**Logic:**
+```
+For each approved event in next 7 days:
+  ├─ Get all rso_notify members from Administrators table
+  ├─ Send email to each rso_notify member:
+  │  ├─ Facility name, date, time
+  │  ├─ Household name, primary contact
+  │  ├─ Guest count
+  │  └─ Link to read-only calendar view (if portal access)
+  └─ Email template: "Upcoming Facility Reservation - [FACILITY] [DATE]"
+
+For rso_notify members on vacation/off-duty:
+  └─ (Future enhancement: Skip emails if member marked as unavailable)
+```
+
+**Email Template:** ADM_RSO_NOTIFY_EVENT_REMINDER (new)
+```
+Subject: Upcoming Facility Reservation - {{FACILITY}} {{EVENT_DATE}}
+
+Body:
+A facility reservation is scheduled for {{EVENT_DATE}} at {{EVENT_TIME}}.
+
+Facility: {{FACILITY}}
+Household: {{HOUSEHOLD_NAME}}
+Primary Contact: {{PRIMARY_CONTACT}}
+Guest Count: {{GUEST_COUNT}}
+Guest List Status: Approved by Security Team
+
+Event details are available on the approved calendar (read-only view).
+
+Best regards,
+GEA Security Coordination
+```
+
 ---
 
 ## Frontend Updates: Admin.html
@@ -228,15 +381,20 @@ submitAdminLogin() {
   google.script.run.withSuccessHandler(function(response) {
     if (response.success) {
       sessionStorage.setItem("admin_token", response.token);
-      sessionStorage.setItem("admin_role", response.role);  // "board", "mgt", or "rso"
+      sessionStorage.setItem("admin_role", response.role);  // "board", "mgt", "rso_approve", or "rso_notify"
       sessionStorage.setItem("admin_email", response.admin.email);
 
       // Conditional navigation based on role
-      if (response.role === "rso") {
-        showPage("rso_documents");  // Default RSO landing page
+      if (response.role === "rso_approve") {
+        showPage("rso_documents");  // Default rso_approve landing page
+      } else if (response.role === "rso_notify") {
+        showPage("rso_calendar");   // Default rso_notify landing page
       } else {
         showPage("dashboard");      // Default board landing page
       }
+
+      // Update sidebar for role
+      setupSidebarForRole(response.role);
     }
   }).adminLogin(email, password);
 }
@@ -247,7 +405,7 @@ submitAdminLogin() {
 ```html
 <!-- In Admin.html sidebar -->
 <nav id="sidebarNav" class="sidebar">
-  <!-- BOARD-ONLY SECTIONS -->
+  <!-- BOARD SECTIONS -->
   <div id="boardSidebar" style="display: none;">
     <a href="#" onclick="showPage('dashboard')">Dashboard</a>
     <a href="#" onclick="showPage('reservations')">Reservations</a>
@@ -258,27 +416,47 @@ submitAdminLogin() {
     <a href="#" onclick="showPage('admin_accounts')">Admin Accounts</a>
   </div>
 
-  <!-- RSO-ONLY SECTIONS -->
-  <div id="rsoSidebar" style="display: none;">
-    <a href="#" onclick="showPage('rso_documents')">Document Reviews</a>
-    <a href="#" onclick="showPage('rso_guest_lists')">Guest List Reviews</a>
+  <!-- RSO_APPROVE SECTIONS -->
+  <div id="rsoApproveSidebar" style="display: none;">
+    <h4>Document Review</h4>
+    <a href="#" onclick="showPage('rso_documents')">Pending Documents</a>
+    <hr>
+    <h4>Guest List Review</h4>
+    <a href="#" onclick="showPage('rso_guest_lists')">Pending Guest Lists</a>
+    <hr>
+    <h4>Coordination</h4>
+    <a href="#" onclick="showPage('rso_calendar')">Approved Calendar</a>
+    <a href="#" onclick="showPage('rso_approved_guest_lists')">Approved Guest Lists</a>
   </div>
 
-  <!-- COMMON SECTIONS (both roles) -->
+  <!-- RSO_NOTIFY SECTIONS (READ-ONLY) -->
+  <div id="rsoNotifySidebar" style="display: none;">
+    <h4>Calendar Coordination</h4>
+    <a href="#" onclick="showPage('rso_calendar')">Approved Reservations</a>
+    <a href="#" onclick="showPage('rso_approved_guest_lists')">Guest Lists (View Only)</a>
+    <p style="font-size: 12px; color: #999; margin-top: 20px;">
+      ℹ️ You receive email notifications about upcoming events. No action needed.
+    </p>
+  </div>
+
+  <!-- COMMON SECTIONS (all roles) -->
   <hr>
   <a href="#" onclick="adminLogout()">Logout</a>
 </nav>
 
 <script>
   // On page load, detect role and show appropriate sidebar
-  function setupSidebarForRole() {
-    const role = sessionStorage.getItem("admin_role");
-    if (role === "rso") {
-      document.getElementById("boardSidebar").style.display = "none";
-      document.getElementById("rsoSidebar").style.display = "block";
-    } else {
+  function setupSidebarForRole(role) {
+    document.getElementById("boardSidebar").style.display = "none";
+    document.getElementById("rsoApproveSidebar").style.display = "none";
+    document.getElementById("rsoNotifySidebar").style.display = "none";
+
+    if (role === "board" || role === "mgt") {
       document.getElementById("boardSidebar").style.display = "block";
-      document.getElementById("rsoSidebar").style.display = "none";
+    } else if (role === "rso_approve") {
+      document.getElementById("rsoApproveSidebar").style.display = "block";
+    } else if (role === "rso_notify") {
+      document.getElementById("rsoNotifySidebar").style.display = "block";
     }
   }
 </script>
@@ -474,6 +652,192 @@ submitAdminLogin() {
 </script>
 ```
 
+### RSO Calendar Page (admin_rso_calendar) — rso_approve & rso_notify
+
+```html
+<div id="rso_calendar" class="page" style="display: none;">
+  <h2>Approved Facility Reservations Calendar</h2>
+
+  <div class="filter-section">
+    <label>Facility:</label>
+    <select id="calendarFacilityFilter" onchange="loadRsoCalendar()">
+      <option value="all">All Facilities</option>
+      <option value="tennis">Tennis Court / Basketball</option>
+      <option value="leobo">Leobo</option>
+    </select>
+
+    <label>Month:</label>
+    <input type="month" id="calendarMonthFilter" onchange="loadRsoCalendar()">
+  </div>
+
+  <div id="calendarContainer" class="calendar-view">
+    <!-- Calendar will be rendered here -->
+  </div>
+</div>
+
+<script>
+  function loadRsoCalendar() {
+    const token = sessionStorage.getItem("admin_token");
+    const facility = document.getElementById("calendarFacilityFilter").value;
+    const month = document.getElementById("calendarMonthFilter").value || new Date().toISOString().slice(0, 7);
+
+    google.script.run.withSuccessHandler(function(response) {
+      if (response.success) {
+        renderCalendar(response.events);
+      } else {
+        alert("Error loading calendar: " + response.message);
+      }
+    }).handlePortalApi("admin_rso_notify_approved_calendar", {
+      token: token,
+      facility: facility,
+      month: month
+    });
+  }
+
+  function renderCalendar(events) {
+    const container = document.getElementById("calendarContainer");
+    container.innerHTML = "";
+
+    if (events.length === 0) {
+      container.innerHTML = "<p>No approved reservations for this period</p>";
+      return;
+    }
+
+    // Group events by date
+    const eventsByDate = {};
+    events.forEach(event => {
+      if (!eventsByDate[event.event_date]) {
+        eventsByDate[event.event_date] = [];
+      }
+      eventsByDate[event.event_date].push(event);
+    });
+
+    // Render events by date
+    Object.keys(eventsByDate).sort().forEach(date => {
+      const dateDiv = document.createElement("div");
+      dateDiv.className = "calendar-date";
+      dateDiv.innerHTML = `<h4>${date}</h4>`;
+
+      eventsByDate[date].forEach(event => {
+        const eventDiv = document.createElement("div");
+        eventDiv.className = "calendar-event";
+        eventDiv.innerHTML = `
+          <div class="event-time">${event.event_time}</div>
+          <div class="event-details">
+            <strong>${event.facility}</strong> - ${event.household_name}
+            <br><small>Contact: ${event.primary_contact}</small>
+            <br><small>Guests: ${event.guest_count}</small>
+          </div>
+        `;
+        dateDiv.appendChild(eventDiv);
+      });
+
+      container.appendChild(dateDiv);
+    });
+  }
+
+  // Load calendar on page view
+  document.addEventListener("pageshow", function() {
+    if (sessionStorage.getItem("current_page") === "rso_calendar") {
+      loadRsoCalendar();
+    }
+  });
+</script>
+```
+
+### RSO Approved Guest Lists Page (admin_rso_approved_guest_lists) — rso_approve & rso_notify
+
+```html
+<div id="rso_approved_guest_lists" class="page" style="display: none;">
+  <h2>Approved Guest Lists (Reference)</h2>
+
+  <div class="filter-section">
+    <label>Facility:</label>
+    <select id="guestListFacilityFilter" onchange="loadRsoApprovedGuestLists()">
+      <option value="all">All Facilities</option>
+      <option value="tennis">Tennis Court / Basketball</option>
+      <option value="leobo">Leobo</option>
+    </select>
+
+    <label>Month:</label>
+    <input type="month" id="guestListMonthFilter" onchange="loadRsoApprovedGuestLists()">
+  </div>
+
+  <div id="guestListsContainer" class="guest-lists-view">
+    <!-- Populated by JavaScript -->
+  </div>
+</div>
+
+<script>
+  function loadRsoApprovedGuestLists() {
+    const token = sessionStorage.getItem("admin_token");
+    const facility = document.getElementById("guestListFacilityFilter").value;
+    const month = document.getElementById("guestListMonthFilter").value;
+
+    const filters = {
+      facility: facility !== "all" ? facility : undefined,
+      date_range: month ? {
+        start: month + "-01",
+        end: new Date(month + "-01").addMonths(1).toISOString().slice(0, 10)
+      } : undefined
+    };
+
+    google.script.run.withSuccessHandler(function(response) {
+      if (response.success) {
+        renderApprovedGuestLists(response.guest_lists);
+      } else {
+        alert("Error loading guest lists: " + response.message);
+      }
+    }).handlePortalApi("admin_rso_notify_approved_guest_lists", {
+      token: token,
+      filters: filters
+    });
+  }
+
+  function renderApprovedGuestLists(guestLists) {
+    const container = document.getElementById("guestListsContainer");
+    container.innerHTML = "";
+
+    if (guestLists.length === 0) {
+      container.innerHTML = "<p>No approved guest lists for this period</p>";
+      return;
+    }
+
+    guestLists.forEach(gl => {
+      const card = document.createElement("div");
+      card.className = "guest-list-card";
+
+      const guestRows = gl.guests.map(guest => `
+        <li>${guest.guest_name} <span class="relationship">(${guest.relationship})</span></li>
+      `).join("");
+
+      card.innerHTML = `
+        <div class="guest-list-header">
+          <h3>${gl.household_name} - ${gl.facility}</h3>
+          <p><strong>Event:</strong> ${gl.event_date} @ ${gl.event_time}</p>
+          <p><strong>Guest Count:</strong> ${gl.guest_count}</p>
+          <p><strong>Approved:</strong> ${gl.rso_approval_date} by ${gl.rso_approved_by}</p>
+        </div>
+        <div class="guest-list-details">
+          <h4>Approved Guests:</h4>
+          <ul class="guest-list">
+            ${guestRows}
+          </ul>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  // Load on page view
+  document.addEventListener("pageshow", function() {
+    if (sessionStorage.getItem("current_page") === "rso_approved_guest_lists") {
+      loadRsoApprovedGuestLists();
+    }
+  });
+</script>
+```
+
 ---
 
 ## Code.js Updates
@@ -482,21 +846,23 @@ submitAdminLogin() {
 
 ```javascript
 // Around line 218 in Code.js, add:
-case "admin_rso_pending_documents":   return _handleAdminRsoPendingDocuments(params);
-case "admin_rso_approve_documents":   return _handleAdminRsoApproveDocuments(params);
-case "admin_rso_pending_guest_lists": return _handleAdminRsoPendingGuestLists(params);
-case "admin_rso_approve_guest_list":  return _handleAdminRsoApproveGuestList(params);
+case "admin_rso_pending_documents":       return _handleAdminRsoPendingDocuments(params);
+case "admin_rso_approve_documents":       return _handleAdminRsoApproveDocuments(params);
+case "admin_rso_pending_guest_lists":     return _handleAdminRsoPendingGuestLists(params);
+case "admin_rso_approve_guest_list":      return _handleAdminRsoApproveGuestList(params);
+case "admin_rso_notify_approved_calendar": return _handleAdminRsoNotifyCalendar(params);
+case "admin_rso_notify_approved_guest_lists": return _handleAdminRsoNotifyGuestLists(params);
 ```
 
 ### Handler Implementation
 
 ```javascript
 /**
- * HANDLER: _handleAdminRsoPendingDocuments
+ * HANDLER: _handleAdminRsoPendingDocuments (rso_approve only)
  * Lists documents awaiting RSO review
  */
 function _handleAdminRsoPendingDocuments(p) {
-  var auth = requireAuth(p.token, "rso");
+  var auth = requireAuth(p.token, "rso_approve");
   if (!auth.ok) return auth.response;
 
   try {
@@ -510,11 +876,11 @@ function _handleAdminRsoPendingDocuments(p) {
 }
 
 /**
- * HANDLER: _handleAdminRsoApproveDocuments
+ * HANDLER: _handleAdminRsoApproveDocuments (rso_approve only)
  * RSO approves or rejects a document submission
  */
 function _handleAdminRsoApproveDocuments(p) {
-  var auth = requireAuth(p.token, "rso");
+  var auth = requireAuth(p.token, "rso_approve");
   if (!auth.ok) return auth.response;
 
   try {
@@ -538,11 +904,11 @@ function _handleAdminRsoApproveDocuments(p) {
 }
 
 /**
- * HANDLER: _handleAdminRsoPendingGuestLists
+ * HANDLER: _handleAdminRsoPendingGuestLists (rso_approve only)
  * Lists guest lists awaiting RSO review
  */
 function _handleAdminRsoPendingGuestLists(p) {
-  var auth = requireAuth(p.token, "rso");
+  var auth = requireAuth(p.token, "rso_approve");
   if (!auth.ok) return auth.response;
 
   try {
@@ -556,11 +922,11 @@ function _handleAdminRsoPendingGuestLists(p) {
 }
 
 /**
- * HANDLER: _handleAdminRsoApproveGuestList
+ * HANDLER: _handleAdminRsoApproveGuestList (rso_approve only)
  * RSO approves/rejects individual guests in a guest list
  */
 function _handleAdminRsoApproveGuestList(p) {
-  var auth = requireAuth(p.token, "rso");
+  var auth = requireAuth(p.token, "rso_approve");
   if (!auth.ok) return auth.response;
 
   try {
@@ -581,6 +947,44 @@ function _handleAdminRsoApproveGuestList(p) {
   } catch (e) {
     Logger.log("ERROR _handleAdminRsoApproveGuestList: " + e);
     return errorResponse("Error processing guest list", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoNotifyCalendar (rso_approve & rso_notify)
+ * Get approved reservations for calendar view
+ */
+function _handleAdminRsoNotifyCalendar(p) {
+  var auth = requireAuth(p.token, ["rso_approve", "rso_notify"]);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var month = p.month;  // "2026-04"
+    var facility = p.facility || "all";
+
+    var events = getApprovedCalendarEvents(month, facility);
+    return successResponse({ count: events.length, events: events });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoNotifyCalendar: " + e);
+    return errorResponse("Error loading calendar", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoNotifyGuestLists (rso_approve & rso_notify)
+ * Get approved guest lists for reference/coordination
+ */
+function _handleAdminRsoNotifyGuestLists(p) {
+  var auth = requireAuth(p.token, ["rso_approve", "rso_notify"]);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var filters = p.filters || {};
+    var guestLists = getApprovedGuestListsForRsoNotify(filters);
+    return successResponse({ count: guestLists.length, guest_lists: guestLists });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoNotifyGuestLists: " + e);
+    return errorResponse("Error loading guest lists", "SERVER_ERROR");
   }
 }
 ```
@@ -889,29 +1293,56 @@ Next deadline: {{DEADLINE}}
 ## Implementation Checklist
 
 ### Phase 1: Backend Infrastructure
-- [ ] Add 4 new handlers to Code.js (_handleAdminRsoPendingDocuments, etc.)
+- [ ] **CRITICAL:** Update Administrators table: Change existing "rso" role entries to either "rso_approve" or "rso_notify"
+- [ ] Update AuthService.js: Enhance `requireAuth()` to support role arrays (e.g., `["rso_approve", "rso_notify"]`)
+- [ ] Add 6 new handlers to Code.js:
+  - [ ] _handleAdminRsoPendingDocuments (rso_approve only)
+  - [ ] _handleAdminRsoApproveDocuments (rso_approve only)
+  - [ ] _handleAdminRsoPendingGuestLists (rso_approve only)
+  - [ ] _handleAdminRsoApproveGuestList (rso_approve only)
+  - [ ] _handleAdminRsoNotifyCalendar (rso_approve & rso_notify read-only)
+  - [ ] _handleAdminRsoNotifyGuestLists (rso_approve & rso_notify read-only)
 - [ ] Add helper functions to FileSubmissionService.js (getDocumentsForRsoReview, approveDocumentForRso)
-- [ ] Add helper functions to ReservationService.js (getGuestListsForRsoReview, processRsoGuestListDecisions)
+- [ ] Add helper functions to ReservationService.js (getGuestListsForRsoReview, processRsoGuestListDecisions, getApprovedCalendarEvents)
 - [ ] Update ApplicationService.js workflow to mark documents as rso_pending instead of generating links
-- [ ] Add 3 new email templates (ADM_DOCUMENT_APPROVED_BY_RSO, ADM_DOCUMENT_REJECTED_BY_RSO, ADM_DOCUMENTS_SUBMITTED_FOR_RSO_REVIEW)
+- [ ] Add 4 new email templates:
+  - [ ] ADM_DOCUMENT_APPROVED_BY_RSO
+  - [ ] ADM_DOCUMENT_REJECTED_BY_RSO
+  - [ ] ADM_DOCUMENTS_SUBMITTED_FOR_RSO_REVIEW
+  - [ ] ADM_RSO_NOTIFY_EVENT_REMINDER (for rso_notify members)
 - [ ] Update existing email template (ADM_BOARD_APPROVED_AWAITING_RSO) to remove link reference
+- [ ] Add nightly task: sendRsoNotifyEventReminders() to NotificationService.js (sends daily event reminders to rso_notify members)
 - [ ] Test all handlers with curl/Postman before UI implementation
 
 ### Phase 2: Frontend (Admin.html)
-- [ ] Update login handler to detect RSO role and store in sessionStorage
-- [ ] Add conditional sidebar showing RSO-only sections
-- [ ] Create RSO Documents page (admin_rso_documents)
+- [ ] Update login handler to detect RSO role (rso_approve or rso_notify) and store in sessionStorage
+- [ ] Update conditional sidebar to show role-appropriate sections
+  - [ ] rso_approve: Document Reviews, Guest List Reviews, Coordination (calendar + approved lists)
+  - [ ] rso_notify: Calendar Coordination only (calendar + approved lists read-only)
+  - [ ] Hide board-only sections from RSO roles
+- [ ] Create RSO Documents page (admin_rso_documents) — **rso_approve only**
   - [ ] Filter by document type
   - [ ] Display document list with applicant info
   - [ ] Approve/Reject buttons with reason dialog
   - [ ] Audit trail display
-- [ ] Create RSO Guest Lists page (admin_rso_guest_lists)
+- [ ] Create RSO Guest Lists page (admin_rso_guest_lists) — **rso_approve only**
   - [ ] Display pending guest lists by reservation
   - [ ] Table view of guests with individual approve/reject buttons
   - [ ] Finalize review button
   - [ ] Reason text input for rejections
-- [ ] Add CSS styling for new pages
-- [ ] Test RSO login flow and dashboard navigation
+- [ ] Create RSO Calendar page (admin_rso_calendar) — **rso_approve & rso_notify read-only**
+  - [ ] Filter by facility and month
+  - [ ] Display approved reservations grouped by date
+  - [ ] Show household, contact, guest count, facility info
+  - [ ] Read-only view for rso_notify
+- [ ] Create RSO Approved Guest Lists page (admin_rso_approved_guest_lists) — **rso_approve & rso_notify read-only**
+  - [ ] Filter by facility and month
+  - [ ] Display approved guest lists with guest names
+  - [ ] Show approval date and RSO reviewer name
+  - [ ] Read-only reference for coordination
+- [ ] Add CSS styling for new pages (calendar grid, guest list cards, etc.)
+- [ ] Test RSO login flow and dashboard navigation (both roles)
+- [ ] Test role-based access control (rso_notify cannot access approval pages)
 
 ### Phase 3: Documentation Updates
 - [ ] Update CLAUDE_Membership_Implementation.md - STEP 7 (RSO portal login instead of links)
@@ -920,13 +1351,34 @@ Next deadline: {{DEADLINE}}
 - [ ] Update architecture diagram in GEA_System_Architecture.md
 
 ### Phase 4: Testing & Deployment
-- [ ] Create test RSO account in Administrators table
-- [ ] Test complete document review workflow (application → board → RSO → GEA admin)
-- [ ] Test complete guest list review workflow (reservation → member submits → RSO → event)
-- [ ] Verify audit log captures RSO email correctly
-- [ ] Test email notifications for applicants (rejections, approvals)
-- [ ] Test rolebasedAccess (RSO cannot see board sections, vice versa)
+- [ ] Create test accounts in Administrators table:
+  - [ ] test_rso_approve@example.com (role=rso_approve)
+  - [ ] test_rso_notify@example.com (role=rso_notify)
+- [ ] Test rso_approve role:
+  - [ ] Can login and see approval sections
+  - [ ] Can review and approve documents (documents disappear after approval)
+  - [ ] Can review and approve guest lists (guests can be individually rejected)
+  - [ ] Can view calendar and approved guest lists (read-only)
+  - [ ] Audit log captures rso_approve email in all operations
+- [ ] Test rso_notify role:
+  - [ ] Can login and see calendar only
+  - [ ] Cannot access document review page
+  - [ ] Cannot access guest list review page
+  - [ ] Can view approved calendar (read-only)
+  - [ ] Can view approved guest lists (read-only)
+  - [ ] Receives email notifications about upcoming events
+- [ ] Test complete document review workflow (application → board → rso_approve → GEA admin)
+- [ ] Test complete guest list review workflow (reservation → member submits → rso_approve → event)
+- [ ] Verify email notifications:
+  - [ ] Applicants receive rejection notices with RSO feedback
+  - [ ] Households receive guest list rejection notices
+  - [ ] rso_notify members receive daily event reminders
+- [ ] Test role-based access control:
+  - [ ] rso_notify cannot see board sections
+  - [ ] board cannot see rso_approve sections
+  - [ ] Conditional sidebar updates correctly on login
 - [ ] Deploy to @HEAD and test in production
+- [ ] Verify Administrators table has been updated (no old "rso" entries)
 - [ ] Disable/remove one-time link generation in production
 
 ### Phase 5: Deprecation
@@ -951,32 +1403,63 @@ If RSO portal has critical issues:
 
 ## Security Considerations
 
-✅ **Authentication:** RSO must log in with Administrators table credentials (same auth layer as board)
-✅ **Authorization:** Each action checks `requireAuth(p.token, "rso")` before proceeding
+✅ **Authentication:** RSO members must log in with Administrators table credentials (same auth layer as board)
+✅ **Authorization:** Enforced at handler level:
+  - `requireAuth(p.token, "rso_approve")` — Approval handlers (documents, guest lists)
+  - `requireAuth(p.token, ["rso_approve", "rso_notify"])` — Read-only handlers (calendar, approved lists)
+  - rso_notify members cannot access approval workflows at code level
 ✅ **Audit Trail:** rso_reviewed_by captures individual RSO member email (not generic EMAIL_RSO_APPROVE)
 ✅ **Session Management:** Token expires after 24 hours; nightly purge of expired sessions
 ✅ **Input Validation:** All params validated before processing
-⚠️ **Data Leakage:** RSO can only see documents/guest lists pending their review (no cross-filtering)
+✅ **Role Separation:**
+  - rso_approve: Full approval authority (binding decisions)
+  - rso_notify: Read-only coordination (no approval capability)
+⚠️ **Data Leakage:**
+  - rso_approve can see documents/guest lists pending their review
+  - rso_notify can see approved items and calendar (no sensitive applicant data leaked)
 
 ---
 
 ## FAQ
 
-**Q: Can RSO members approve documents for applications they didn't originate?**
-A: Yes. Any RSO member can log in and approve/reject any pending document. This is by design (shared responsibility, coverage).
+**Q: What's the difference between rso_approve and rso_notify roles?**
+A: rso_approve members review and make binding decisions on documents and guest lists. rso_notify members view the approved calendar and guest lists for coordination purposes only, and receive email notifications about upcoming events (proactive, no portal checking needed).
 
-**Q: What if an RSO member leaves and has pending documents?**
-A: Another RSO member can complete the review. The documents remain in rso_pending status until reviewed (no owner field).
+**Q: Can rso_approve members approve documents for applications they didn't originate?**
+A: Yes. Any rso_approve member can log in and approve/reject any pending document. This is by design (shared responsibility, coverage).
 
-**Q: Can RSO members see board-only sections?**
-A: No. The Admin.html sidebar conditionally hides board sections when role="rso". Navigation routing also checks role before displaying pages.
+**Q: What if an rso_approve member leaves and has pending documents?**
+A: Another rso_approve member can complete the review. The documents remain in rso_pending status until reviewed (no owner field).
+
+**Q: Can rso_notify members approve documents or guest lists?**
+A: No. rso_notify members have read-only portal access. They cannot see approval sections and cannot make decisions. Authorization is enforced at the code level.
+
+**Q: Can rso_notify members see board-only sections?**
+A: No. The Admin.html sidebar conditionally shows only calendar and approved guest list sections for rso_notify. Navigation routing checks role before displaying pages.
+
+**Q: Why doesn't rso_notify need to check the portal?**
+A: rso_notify members receive daily email notifications about upcoming events (sendRsoNotifyEventReminders runs at 6:00 AM GMT+2). They don't need to log in unless they want to see the full calendar view for planning.
+
+**Q: How many rso_approve members should we have?**
+A: At least 2 for redundancy (if one is unavailable). All rso_approve members have full approval authority; no escalation or approval thresholds.
 
 **Q: What happens to old one-time links?**
-A: They remain functional but deprecated. Recommend disabling in runNightlyTasks() or removing token cleanup.
+A: They remain functional but deprecated. Recommend disabling in runNightlyTasks() or removing token cleanup post-deployment.
 
 ---
 
 **Last Updated:** March 24, 2026
 **Status:** 🔄 PLANNED (Not yet implemented)
 **Branch:** claude/rso-document-approval-bIjgi
-**Expected Implementation Time:** ~3–4 hours (backend + frontend + testing)
+**Architecture:** Dual-role RSO system (rso_approve for approvals, rso_notify for coordination/proactive notifications)
+**Expected Implementation Time:** ~4–5 hours (backend + dual-role frontend + testing)
+
+---
+
+## Key Design Decisions
+
+1. **Two RSO Roles:** Separating approval authority (rso_approve) from coordination (rso_notify) reduces risk and allows focused workflows
+2. **No Portal Requirement for rso_notify:** Email-first notifications mean rso_notify members don't need to remember to check the portal
+3. **Shared Responsibility for rso_approve:** Any rso_approve member can approve any document or guest list (no bottleneck if one member unavailable)
+4. **Read-Only Calendar:** Both roles can view approved calendar for planning, but only rso_approve can approve
+5. **Backward Compatibility:** Keep one-time links functional during transition period (Phase 5: Deprecation)

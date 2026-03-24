@@ -23,7 +23,7 @@ const timestamp = catTime.toISOString().replace('T', ' ').substring(0, 19); // Y
 
 // Update the DEPLOYMENT_TIMESTAMP constant
 // Look for: var DEPLOYMENT_TIMESTAMP = "..."; (with any amount of whitespace)
-const timestampPattern = /var DEPLOYMENT_TIMESTAMP\s*=\s*"[^"]*";/;
+const timestampPattern = /var DEPLOYMENT_TIMESTAMP\s*=\s*"[^"]*";.*/;
 const timestampReplacement = `var DEPLOYMENT_TIMESTAMP    = "${timestamp}";  // Updated by scripts/update-deploy-timestamp.js before clasp push`;
 
 if (content.match(timestampPattern)) {

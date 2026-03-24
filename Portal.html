@@ -4016,8 +4016,8 @@ function submitLogin(event) {
     var phoneLabel = document.createElement('strong');
     phoneLabel.textContent = 'Phone:';
     applicantDiv.appendChild(phoneLabel);
-    var appDialCode = getDialCode(applicationFormData.country_code_primary || 'US');
-    applicantDiv.appendChild(document.createTextNode(' +' + appDialCode + ' ' + (applicationFormData.phone_primary || '—')));
+    var phoneText = formatPhoneNumber(applicationFormData.country_code_primary || 'US', applicationFormData.phone_primary);
+    applicantDiv.appendChild(document.createTextNode(' ' + (phoneText || '—')));
     if (applicationFormData.phone_primary_whatsapp) {
       var whatsappNote = document.createElement('em');
       whatsappNote.textContent = ' (WhatsApp available)';
@@ -4699,9 +4699,8 @@ function submitLogin(event) {
         var phoneDiv = document.createElement('div');
         phoneDiv.style.fontSize = '13px';
         phoneDiv.style.marginTop = '8px';
-        var dialCode = hh.country_code_primary ? getDialCode(hh.country_code_primary) : '';
-        var phoneDisplay = (dialCode ? '+' + dialCode + ' ' : '') + hh.phone_primary;
-        phoneDiv.textContent = phoneDisplay;
+        var phoneDisplay = formatPhoneNumber(hh.country_code_primary, hh.phone_primary);
+        phoneDiv.textContent = phoneDisplay || hh.phone_primary;
         if (hh.phone_primary_whatsapp) {
           var waSpan = document.createElement('span');
           waSpan.style.fontSize = '11px';
@@ -5933,11 +5932,7 @@ function submitLogin(event) {
     }).length;
 
     // Format phone number from household fields
-    var phoneDisplay = '—';
-    if (hh.phone_primary) {
-      var dialCode = hh.country_code_primary ? getDialCode(hh.country_code_primary) : '';
-      phoneDisplay = (dialCode ? '+' + dialCode + ' ' : '') + hh.phone_primary;
-    }
+    var phoneDisplay = formatPhoneNumber(hh.country_code_primary, hh.phone_primary) || '—';
 
     [
       ['Household Name', hh.household_name || '—'],
@@ -7264,6 +7259,19 @@ function submitLogin(event) {
       }
     }
     return countryCode;
+  }
+
+  /**
+   * Format phone number for display: combines country code and phone into +[dialcode] [phone] format
+   * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
+   * @param {string} phoneNumber - Phone number
+   * @returns {string} Formatted phone like "+267 71234567" or empty string if invalid
+   */
+  function formatPhoneNumber(countryCode, phoneNumber) {
+    if (!countryCode || !phoneNumber) return '';
+    var dialCode = getDialCode(countryCode);
+    if (!dialCode || dialCode === countryCode) return ''; // Unknown country code
+    return '+' + dialCode + ' ' + phoneNumber;
   }
 
   function loadProfile() {

@@ -61,7 +61,7 @@ GEA membership is determined by your employment status or official capacity. Cho
 
 **You qualify if:** You are employed by a USG-funded contractor, grantee, or funded organization. (Not an employee of the U.S. Government directly, but funded by U.S. Government programs.)
 
-**Sponsorship:** Required—must be sponsored by an active Full member.
+**Sponsorship:** Not required.
 
 **Benefits:** Full access to all facilities; facility access determined by Board.
 
@@ -72,7 +72,7 @@ GEA membership is determined by your employment status or official capacity. Cho
 
 **You qualify if:** You are hired locally (in Botswana) by the U.S. Embassy, regardless of your citizenship.
 
-**Sponsorship:** Required—must be sponsored by an active Full member.
+**Sponsorship:** Not required.
 
 **Benefits:** Facility access determined by Board.
 
@@ -83,7 +83,7 @@ GEA membership is determined by your employment status or official capacity. Cho
 
 **You qualify if:** You have official diplomatic status (with diplomatic passport) or are accredited personnel of an international organization headquartered in Gaborone.
 
-**Sponsorship:** Required—must be sponsored by an active Full member.
+**Sponsorship:** Not required.
 
 **Benefits:** Full facility access; facility access determined by Board.
 
@@ -118,15 +118,13 @@ GEA membership is determined by your employment status or official capacity. Cho
 ### Sponsorship Questions?
 
 **Q: Do I need a sponsor?**
-- Full members: No
-- Associate, Affiliate, Diplomatic, Community: Yes
-- Temporary: No
+Only **Community members require a sponsor**. All other categories do not.
 
 **Q: What does my sponsor need to do?**
 The sponsor simply confirms that you are known to them and in good standing in the community. No ongoing obligations—sponsorship is a one-time verification during your application.
 
 **Q: Can anyone be a sponsor?**
-Only an active Full member can sponsor you. (Associate, Affiliate, Diplomatic, and Community members cannot sponsor—only Full members can.)
+Only an active Full member can sponsor you.
 
 ---
 
@@ -136,7 +134,7 @@ Only an active Full member can sponsor you. (Associate, Affiliate, Diplomatic, a
 
 Before starting your application, confirm:
 1. **Your employment status or official capacity** matches one of the six categories above
-2. **Your sponsor** (if required) is an active GEA Full member and willing to sponsor you
+2. **Your sponsor** (Community members only) — If you're applying for Community membership, find an active GEA Full member willing to sponsor you
 3. **You have valid identification** (passport, Omang, or diplomatic passport)
 4. **You have a recent photo** (600x600 to 1200x1200 pixels, clear face shot, any background)
 
@@ -584,7 +582,7 @@ A: Yes, your sponsor must be an **active** Full member at the time of your appli
 A: Yes! During the application, if you qualify for multiple categories, you can select your preference. Choose the category that best fits your situation.
 
 **Q: I'm an Associate member. Can I sponsor someone?**
-A: No, only Full members can sponsor. If you're Associate, Affiliate, Diplomatic, or Community, you cannot sponsor other applicants.
+A: No, only Full members can sponsor. To be clear: Community members are the only ones who need sponsors—only Full members can provide that sponsorship.
 
 **Q: What if my sponsor doesn't respond to board requests?**
 A: The board will contact your sponsor. If unable to verify sponsorship, your application may be denied. Contact the board for updates.

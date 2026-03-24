@@ -224,9 +224,7 @@ function determineEligibilityLevel(applicant) {
     return {
       assignedLevel: 'associate',
       householdOptions: ['indiv', 'family'],
-      requiresProofOf: 'Employment verification',
-      requiresSponsor: true,
-      sponsorMustBeFull: true
+      requiresProofOf: 'Employment verification'
     };
   }
 
@@ -235,9 +233,7 @@ function determineEligibilityLevel(applicant) {
     return {
       assignedLevel: 'affiliate',
       householdOptions: ['indiv', 'family'],
-      requiresProofOf: 'Embassy employment verification',
-      requiresSponsor: true,
-      sponsorMustBeFull: true
+      requiresProofOf: 'Embassy employment verification'
     };
   }
 
@@ -246,8 +242,7 @@ function determineEligibilityLevel(applicant) {
     return {
       assignedLevel: 'diplomatic',
       householdOptions: ['indiv', 'family'],
-      requiresSponsor: true,
-      sponsorMustBeFull: true
+      requiresProofOf: 'Diplomatic passport or accreditation'
     };
   }
 
@@ -283,20 +278,22 @@ function determineEligibilityLevel(applicant) {
    - Embassy employment verification letter or staff roster
    - Local ID documentation
 
-4. **Diplomatic Membership:** Full-member sponsor required (no documentation)
-   - Sponsor must be a paid Full member
+4. **Diplomatic Membership:** Diplomatic passport or accreditation letter (no sponsor required)
+   - Proof of diplomatic or international organization status
 
-5. **Community Membership:** Full-member sponsor required (no documentation)
+5. **Community Membership:** Full-member sponsor required (proof of identity documents)
    - Sponsor must be a paid Full member
 
 6. **Temporary Membership:** Proof of USG Direct-Hire status plus TDY documentation
    - TDY orders, assignment letter, or official visitor documentation
 
-### Sponsor Requirements (UPDATED)
+### Sponsor Requirements
 - **Full Membership:** NO sponsor required
-- **Associate, Affiliate:** YES - sponsor must be a paid Full member
-- **Diplomatic, Community:** YES - sponsor must be a paid Full member
-- Sponsors must be active, paid members with voting rights (full_indiv or full_family)
+- **Associate Membership:** NO sponsor required
+- **Affiliate Membership:** NO sponsor required
+- **Diplomatic Membership:** NO sponsor required
+- **Temporary Membership:** NO sponsor required
+- **Community Membership:** YES - sponsor must be a paid Full member (active, paid, with full_indiv or full_family status)
 
 ### Currency and Dues Mechanism
 - **USD Dues:** Canonical base fees (USD rates are authoritative)

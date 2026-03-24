@@ -4016,11 +4016,13 @@ function submitLogin(event) {
     var phoneLabel = document.createElement('strong');
     phoneLabel.textContent = 'Phone:';
     applicantDiv.appendChild(phoneLabel);
-    applicantDiv.appendChild(document.createTextNode(' ' + (applicationFormData.country_code_primary || 'US') + ' ' + (applicationFormData.phone_primary || '—')));
-    if (applicationFormData.phone_primary_whatsapp) {
-      var whatsappNote = document.createElement('em');
-      whatsappNote.textContent = ' (WhatsApp available)';
-      applicantDiv.appendChild(whatsappNote);
+    var phoneText = formatPhoneWithWhatsApp(applicationFormData.country_code_primary || 'US', applicationFormData.phone_primary, applicationFormData.phone_primary_whatsapp);
+    if (phoneText) {
+      var phoneSpan = document.createElement('span');
+      phoneSpan.innerHTML = ' ' + phoneText; // Safe: SVG icon is hardcoded, phone is formatted
+      applicantDiv.appendChild(phoneSpan);
+    } else {
+      applicantDiv.appendChild(document.createTextNode(' —'));
     }
     applicantDiv.appendChild(document.createElement('br'));
 
@@ -4698,15 +4700,11 @@ function submitLogin(event) {
         var phoneDiv = document.createElement('div');
         phoneDiv.style.fontSize = '13px';
         phoneDiv.style.marginTop = '8px';
-        var phoneDisplay = (hh.country_code_primary ? hh.country_code_primary + ' ' : '') + hh.phone_primary;
-        phoneDiv.textContent = phoneDisplay;
-        if (hh.phone_primary_whatsapp) {
-          var waSpan = document.createElement('span');
-          waSpan.style.fontSize = '11px';
-          waSpan.style.color = '#25D366';
-          waSpan.style.fontWeight = '600';
-          waSpan.textContent = ' WhatsApp';
-          phoneDiv.appendChild(waSpan);
+        var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp);
+        if (phoneDisplay) {
+          phoneDiv.innerHTML = phoneDisplay;
+        } else {
+          phoneDiv.textContent = hh.phone_primary;
         }
         contactDiv.appendChild(phoneDiv);
       } else {
@@ -5923,9 +5921,6 @@ function submitLogin(event) {
     title.textContent = 'Household Overview';
     card.appendChild(title);
 
-    var primary = members.filter(function(m) {
-      return m.relationship_to_primary === 'Primary';
-    })[0] || {};
     var familyCount = members.filter(function(m) {
       return m.relationship_to_primary !== 'Staff';
     }).length;
@@ -5933,13 +5928,16 @@ function submitLogin(event) {
       return m.relationship_to_primary === 'Staff';
     }).length;
 
+    // Format phone number from household fields
+    var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp) || '—';
+
     [
       ['Household Name', hh.household_name || '—'],
       ['Household ID',   hh.household_id   || '—'],
       ['Type',           hh.household_type  || '—'],
-      ['Primary Contact', (primary.first_name || '') + ' ' + (primary.last_name || '')],
-      ['Email',          primary.email      || '—'],
-      ['Phone',          (primary.country_code_primary ? '+' + primary.country_code_primary + ' ' : '') + (primary.phone_primary || '—')],
+      ['Primary Contact', (hh.primary_first_name || '') + ' ' + (hh.primary_last_name || '')],
+      ['Email',          hh.primary_email   || '—'],
+      ['Phone',          phoneDisplay],
       ['Family Members', String(familyCount)],
       ['Staff Members',  String(staffCount)]
     ].forEach(function(pair) {
@@ -6038,28 +6036,31 @@ function submitLogin(event) {
       card.appendChild(row);
     });
 
-    var addBtns = document.createElement('div');
-    addBtns.style.display = 'flex';
-    addBtns.style.gap = '8px';
-    addBtns.style.marginTop = '12px';
+    // Only show add family member buttons for Family membership types
+    if (hh.household_type === 'Family') {
+      var addBtns = document.createElement('div');
+      addBtns.style.display = 'flex';
+      addBtns.style.gap = '8px';
+      addBtns.style.marginTop = '12px';
 
-    if (!hasSpouse && hh.household_type === 'Family') {
-      var addSpouseBtn = document.createElement('button');
-      addSpouseBtn.className = 'btn';
-      addSpouseBtn.style.minHeight = '44px';
-      addSpouseBtn.textContent = '+ Add Spouse';
-      addSpouseBtn.onclick = function() { _openAddMemberModal('Spouse'); };
-      addBtns.appendChild(addSpouseBtn);
+      if (!hasSpouse) {
+        var addSpouseBtn = document.createElement('button');
+        addSpouseBtn.className = 'btn';
+        addSpouseBtn.style.minHeight = '44px';
+        addSpouseBtn.textContent = '+ Add Spouse';
+        addSpouseBtn.onclick = function() { _openAddMemberModal('Spouse'); };
+        addBtns.appendChild(addSpouseBtn);
+      }
+
+      var addChildBtn = document.createElement('button');
+      addChildBtn.className = 'btn';
+      addChildBtn.style.minHeight = '44px';
+      addChildBtn.textContent = '+ Add Child';
+      addChildBtn.onclick = function() { _openAddMemberModal('Child'); };
+      addBtns.appendChild(addChildBtn);
+
+      card.appendChild(addBtns);
     }
-
-    var addChildBtn = document.createElement('button');
-    addChildBtn.className = 'btn';
-    addChildBtn.style.minHeight = '44px';
-    addChildBtn.textContent = '+ Add Child';
-    addChildBtn.onclick = function() { _openAddMemberModal('Child'); };
-    addBtns.appendChild(addChildBtn);
-
-    card.appendChild(addBtns);
     return card;
   }
 
@@ -6139,7 +6140,8 @@ function submitLogin(event) {
       card.appendChild(row);
     });
 
-    if (!hasStaff) {
+    // Only show add staff member button for Family membership types
+    if (!hasStaff && hh.household_type === 'Family') {
       var addBtn = document.createElement('button');
       addBtn.className = 'btn';
       addBtn.style.minHeight = '44px';
@@ -7256,6 +7258,36 @@ function submitLogin(event) {
     return countryCode;
   }
 
+  /**
+   * Format phone number for display: combines country code and phone into +[dialcode] [phone] format
+   * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
+   * @param {string} phoneNumber - Phone number
+   * @returns {string} Formatted phone like "+267 71234567" or empty string if invalid
+   */
+  function formatPhoneNumber(countryCode, phoneNumber) {
+    if (!countryCode || !phoneNumber) return '';
+    var dialCode = getDialCode(countryCode);
+    if (!dialCode || dialCode === countryCode) return ''; // Unknown country code
+    return '+' + dialCode + ' ' + phoneNumber;
+  }
+
+  /**
+   * Format phone number with WhatsApp indicator including SVG icon
+   * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
+   * @param {string} phoneNumber - Phone number
+   * @param {boolean} hasWhatsApp - Whether this number is available on WhatsApp
+   * @returns {string} Formatted phone with WhatsApp SVG icon if applicable
+   */
+  function formatPhoneWithWhatsApp(countryCode, phoneNumber, hasWhatsApp) {
+    var formatted = formatPhoneNumber(countryCode, phoneNumber);
+    if (!formatted) return '';
+    if (hasWhatsApp) {
+      // Add WhatsApp SVG icon (safe: hardcoded URL, no user data interpolation)
+      formatted += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height:14px;width:14px;margin-left:4px;vertical-align:middle;display:inline-block;">';
+    }
+    return formatted;
+  }
+
   function loadProfile() {
     apiCall('profile', {}).then(function(res) {
       if (!res.success) {
@@ -7274,35 +7306,11 @@ function submitLogin(event) {
         emergencyPhone = member.phone_emergency;
       }
 
-      // Format primary phone with dial code lookup
-      var primaryPhone = 'Not provided';
-      if (member.phone_primary && member.country_code_primary) {
-        var dialCodePrimary = getDialCode(member.country_code_primary);
-        primaryPhone = '(+' + dialCodePrimary + ') ' + member.phone_primary;
-        if (member.phone_primary_whatsapp) {
-          primaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      } else if (member.phone_primary) {
-        primaryPhone = member.phone_primary;
-        if (member.phone_primary_whatsapp) {
-          primaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      }
+      // Format primary phone
+      var primaryPhone = formatPhoneWithWhatsApp(member.country_code_primary, member.phone_primary, member.phone_primary_whatsapp) || 'Not provided';
 
-      // Format secondary phone with dial code lookup
-      var secondaryPhone = 'Not provided';
-      if (member.phone_secondary && member.country_code_secondary) {
-        var dialCodeSecondary = getDialCode(member.country_code_secondary);
-        secondaryPhone = '(+' + dialCodeSecondary + ') ' + member.phone_secondary;
-        if (member.phone_secondary_whatsapp) {
-          secondaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      } else if (member.phone_secondary) {
-        secondaryPhone = member.phone_secondary;
-        if (member.phone_secondary_whatsapp) {
-          secondaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      }
+      // Format secondary phone
+      var secondaryPhone = formatPhoneWithWhatsApp(member.country_code_secondary, member.phone_secondary, member.phone_secondary_whatsapp) || 'Not provided';
 
       var profileContainer = document.getElementById('profileContent');
       profileContainer.innerHTML = '';

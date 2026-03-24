@@ -4017,7 +4017,13 @@ function submitLogin(event) {
     phoneLabel.textContent = 'Phone:';
     applicantDiv.appendChild(phoneLabel);
     var phoneText = formatPhoneWithWhatsApp(applicationFormData.country_code_primary || 'US', applicationFormData.phone_primary, applicationFormData.phone_primary_whatsapp);
-    applicantDiv.appendChild(document.createTextNode(' ' + (phoneText || '—')));
+    if (phoneText) {
+      var phoneSpan = document.createElement('span');
+      phoneSpan.innerHTML = ' ' + phoneText; // Safe: SVG icon is hardcoded, phone is formatted
+      applicantDiv.appendChild(phoneSpan);
+    } else {
+      applicantDiv.appendChild(document.createTextNode(' —'));
+    }
     applicantDiv.appendChild(document.createElement('br'));
 
     addField(applicantDiv, 'Citizenship', applicationFormData.citizenship_country || '—');
@@ -7270,17 +7276,18 @@ function submitLogin(event) {
   }
 
   /**
-   * Format phone number with WhatsApp indicator appended as text
+   * Format phone number with WhatsApp indicator including SVG icon
    * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
    * @param {string} phoneNumber - Phone number
    * @param {boolean} hasWhatsApp - Whether this number is available on WhatsApp
-   * @returns {string} Formatted phone with WhatsApp indicator if applicable
+   * @returns {string} Formatted phone with WhatsApp SVG icon if applicable
    */
   function formatPhoneWithWhatsApp(countryCode, phoneNumber, hasWhatsApp) {
     var formatted = formatPhoneNumber(countryCode, phoneNumber);
     if (!formatted) return '';
     if (hasWhatsApp) {
-      formatted += ' (WhatsApp)';
+      // Add WhatsApp SVG icon (safe: hardcoded URL, no user data interpolation)
+      formatted += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height:14px;width:14px;margin-left:4px;vertical-align:middle;display:inline-block;">';
     }
     return formatted;
   }

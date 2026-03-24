@@ -1,10 +1,10 @@
 # Email Templates Manifest
 
-Complete index of all 62 GEA email templates. Each entry shows the semantic name (used in code), the file name, recipient, and required variables.
+Complete index of all 63 GEA email templates. Each entry shows the semantic name (used in code), the file name, recipient, and required variables.
 
 ---
 
-## Administrative (13 templates)
+## Administrative (14 templates)
 
 | Semantic Name | File | Recipient | Variables |
 |---------------|------|-----------|-----------|
@@ -17,6 +17,7 @@ Complete index of all 62 GEA email templates. Each entry shows the semantic name
 | ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE | administrative/ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE.txt | RSO | APPLICANT_NAME, APPLICATION_ID, DOCUMENT_TYPES, APPROVAL_DEADLINE |
 | ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER | administrative/ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER.txt | Member | FIRST_NAME, DOCUMENT_TYPE, APPROVAL_DATE |
 | ADM_DOCS_SENT_TO_RSO_TO_BOARD | administrative/ADM_DOCS_SENT_TO_RSO_TO_BOARD.txt | Board | FIRST_NAME, APPLICANT_NAME, APPLICATION_ID, DOCUMENT_TYPES, SUBMISSION_DATE, RSO_CONTACT |
+| ADM_DOCS_SENT_TO_RSO_TO_MEMBER | administrative/ADM_DOCS_SENT_TO_RSO_TO_MEMBER.txt | Member | FIRST_NAME, DOCUMENT_TYPES, SUBMISSION_DATE |
 | ADM_MGT_APPROVAL_REQUEST_TO_MGT | administrative/ADM_MGT_APPROVAL_REQUEST_TO_MGT.txt | Mgmt Officer | FIRST_NAME, BOARD_ITEM_TYPE, MEMBER_NAME, REQUEST_ID, APPROVAL_DEADLINE, REQUEST_SUMMARY |
 | ADM_NEW_APPLICATION_BOARD_TO_BOARD | administrative/ADM_NEW_APPLICATION_BOARD_TO_BOARD.txt | Board | FIRST_NAME, APPLICANT_NAME, APPLICATION_ID, APPLICATION_DATE, BOARD_REVIEW_DEADLINE |
 | ADM_READY_FOR_FINAL_APPROVAL_TO_MEMBER | administrative/ADM_READY_FOR_FINAL_APPROVAL_TO_MEMBER.txt | Applicant | FIRST_NAME, APPLICATION_ID, NEXT_STEP, TIMELINE |

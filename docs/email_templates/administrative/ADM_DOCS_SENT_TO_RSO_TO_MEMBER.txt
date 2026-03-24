@@ -1,0 +1,18 @@
+Dear {{FIRST_NAME}},
+
+Your documents have been sent for review.
+
+Your submitted documents have been forwarded to our Regional Security Officer for validation. We'll notify you once the review is complete.
+
+Document Types: {{DOCUMENT_TYPES}}
+Forwarded Date: {{SUBMISSION_DATE}}
+
+You may review the status of all your requests in the portal.
+
+Best regards,
+Gaborone Employee Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

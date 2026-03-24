@@ -2740,42 +2740,34 @@ function submitLogin(event) {
    * @returns {Promise<boolean>}
    */
   function resolveApplicantPortalMode(loginData) {
+    // Fast path: login response always includes is_applicant — trust it directly.
     if (loginData && loginData.is_applicant === true) {
-      updatePortalDebug({
-        resolve_source: 'login_payload',
-        probe_success: null,
-        probe_status: '',
-        probe_message: ''
-      });
+      updatePortalDebug({ resolve_source: 'login_payload', probe_success: null, probe_status: '', probe_message: '' });
       return Promise.resolve(true);
     }
+    if (loginData && loginData.is_applicant === false) {
+      updatePortalDebug({ resolve_source: 'login_payload', probe_success: null, probe_status: '', probe_message: '' });
+      return Promise.resolve(false);
+    }
 
-    // Probe applicant endpoint; success with non-activated status means applicant UI.
+    // Reload path: no loginData — use cached sessionStorage flag if present.
+    var cached = sessionStorage.getItem('gea_is_applicant');
+    if (cached !== null) {
+      updatePortalDebug({ resolve_source: 'session_storage', probe_success: null, probe_status: cached, probe_message: '' });
+      return Promise.resolve(cached === '1');
+    }
+
+    // Final fallback: probe the applicant endpoint (first-ever load with no cached flag).
     return apiCall('application_status', {}).then(function(res) {
       if (!res || !res.success || !res.data) {
-        updatePortalDebug({
-          resolve_source: 'application_status_probe',
-          probe_success: !!(res && res.success),
-          probe_status: '',
-          probe_message: (res && res.message) ? String(res.message) : 'No applicant data returned'
-        });
+        updatePortalDebug({ resolve_source: 'application_status_probe', probe_success: false, probe_status: '', probe_message: (res && res.message) ? String(res.message) : 'No applicant data returned' });
         return false;
       }
       var status = String(res.data.status || '').toLowerCase();
-      updatePortalDebug({
-        resolve_source: 'application_status_probe',
-        probe_success: true,
-        probe_status: status,
-        probe_message: res.message || ''
-      });
+      updatePortalDebug({ resolve_source: 'application_status_probe', probe_success: true, probe_status: status, probe_message: res.message || '' });
       return status && status !== 'activated';
     }).catch(function() {
-      updatePortalDebug({
-        resolve_source: 'application_status_probe_error',
-        probe_success: false,
-        probe_status: '',
-        probe_message: 'Probe request failed'
-      });
+      updatePortalDebug({ resolve_source: 'application_status_probe_error', probe_success: false, probe_status: '', probe_message: 'Probe request failed' });
       return false;
     });
   }

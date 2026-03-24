@@ -56,10 +56,10 @@ Individual applicant:
   └─ Sponsor info (required for Community/Guest/Affiliate/Associate): Name + email of GEA Full-category member
 
 Family applicant:
-  ├─ Primary member info (as above)
-  ├─ Spouse info: First name, last name, email, phone (optional), employment info (NO spouse employment required)
-  ├─ Child(ren) info: First name, last name, date of birth (age threshold: 17+ = voting eligible)
-  └─ Household staff (optional): Name, DOB, Omang number, employment start date, phone (required), email (optional)
+  ├─ Primary member info (as above; date of birth extracted from ID document during verification)
+  ├─ Spouse info: First name, last name, email, phone (optional), employment info (NO spouse employment required; date of birth extracted from ID document)
+  ├─ Child(ren) info: First name, last name, date of birth (REQUIRED for each child, age threshold: 17+ = voting eligible)
+  └─ Household staff (optional): Name, Omang number, employment start date, phone (required), email (optional; date of birth extracted from Omang)
 ```
 
 ### STEP 3: Applicant Submits Application
@@ -93,8 +93,8 @@ Create primary individual_id for applicant:
 
 Create additional individuals (if family):
   ├─ Spouse: relationship_to_primary = "Spouse", can_access_unaccompanied = TRUE
-  ├─ Children: relationship_to_primary = "Child", can_access_unaccompanied = FALSE (until age 18)
-  └─ Household staff: relationship_to_primary = "[Role]", can_access_unaccompanied = FALSE
+  ├─ Children: relationship_to_primary = "Child", can_access_unaccompanied = FALSE (until age 18), date_of_birth (REQUIRED at submission)
+  └─ Household staff: relationship_to_primary = "[Role]", can_access_unaccompanied = FALSE, arrival_date (employment start date)
 
 Create Application record in Membership Applications sheet (42 columns):
   ├─ application_id, household_id, primary_individual_id

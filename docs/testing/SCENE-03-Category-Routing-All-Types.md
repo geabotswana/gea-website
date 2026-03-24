@@ -6,7 +6,7 @@
 - All 6 questionnaire paths produce the correct category assignment
 - Each category's dues amount loads from Membership Pricing sheet (not hardcoded)
 - Application record stores the correct membership_category value
-- Sponsorship requirement appears for categories that need it (Affiliate, Associate, Diplomatic, Community)
+- Sponsorship requirement appears ONLY for Community membership (not for other categories)
 - Individual vs Family selection is available for all categories
 - Correct email templates are triggered per category
 
@@ -85,15 +85,14 @@
 2. Q2: "Recruited outside Botswana or USG-funded contractor?" → **YES**
 3. Household type: **Individual**
 4. Fill personal info (name: Fatima Al-Hassan); employment fields for USG-funded contractor
-5. **Sponsor field:** enter the household_id or name of an active Full member (from Scene 01 — Alice Thornton)
-6. Submit
+5. Submit
 
 **Check:**
 - Application row: membership_category = "Associate"
-- Sponsor field was required and recorded
+- No sponsor field shown (Associates do NOT need sponsors)
 - membership_level_id = "associate_indiv"
 
-**Fail if:** Category = "Full" or "Affiliate", sponsor field not required, or submission succeeds without a sponsor
+**Fail if:** Category = "Full" or "Affiliate", or sponsor field is shown
 
 ---
 
@@ -106,16 +105,15 @@
 3. Q3: "Embassy employee recruited IN Botswana?" → **YES**
 4. Household type: **Individual**
 5. Fill personal info (name: James Nkosi, employer = US Embassy, local hire)
-6. Provide sponsor from active Full member
-7. Submit
+6. Submit
 
 **Check:**
 - Application row: membership_category = "Affiliate"
 - membership_level_id = "affiliate_indiv"
-- Sponsor recorded
+- No sponsor field shown (Affiliates do NOT need sponsors)
 - Employer/employment fields accepted (different fields from Full USG staff)
 
-**Fail if:** Category = "Associate" (Q2/Q3 branch confusion), or wrong employment fields shown
+**Fail if:** Category = "Associate" (Q2/Q3 branch confusion), wrong employment fields shown, or sponsor field appears
 
 ---
 
@@ -127,15 +125,15 @@
 2. Q4: "Registered diplomat of another mission?" → **YES**
 3. Household type: **Individual**
 4. Fill personal info (name: Isabella Rodrigues, Mission = Embassy of Brazil, title = Second Secretary)
-5. Provide sponsor
-6. Submit
+5. Submit
 
 **Check:**
 - Application row: membership_category = "Diplomatic"
 - Diplomatic-specific fields (mission, diplomatic title, posting dates) were shown and accepted
 - membership_level_id = "diplomatic_indiv"
+- No sponsor field shown (Diplomats do NOT need sponsors)
 
-**Fail if:** Category = "Community" (Q4 branch not working)
+**Fail if:** Category = "Community" (Q4 branch not working), or sponsor field appears
 
 ---
 
@@ -187,6 +185,6 @@ For any two categories (e.g. Full vs Community), compare the dues displayed on t
 Scene 03 is **PASS** when:
 - All 6 questionnaire paths produce the correct category
 - All 6 create correct Household and Individual records
-- Sponsor requirement enforced for Affiliate, Associate, Diplomatic, Community
-- Sponsor NOT required for Full and Temporary
+- Sponsor requirement enforced for Community ONLY
+- Sponsor NOT required for Full, Associate, Affiliate, Diplomatic, or Temporary
 - Dues amounts differ by category and are not hardcoded

@@ -1629,7 +1629,7 @@
         <p><strong>Next Steps:</strong></p>
         <ol style="margin-left: 20px; margin-top: 8px;">
           <li>Log in to the member portal</li>
-          <li>Upload required documents (passport, omang, photo)</li>
+          <li>Upload required documents (photo required; passport or omang based on age)</li>
           <li>Wait for board and security review (5-7 business days)</li>
           <li>Submit payment once approved</li>
           <li>Receive confirmation of active membership</li>
@@ -5224,30 +5224,109 @@ function submitLogin(event) {
     card.appendChild(title);
 
     (app.individuals || []).forEach(function(ind) {
+      var age = _calculateAge(ind.date_of_birth);
+      var isAdult = age === null || age >= 18;
+
       var member = document.createElement('div');
       member.style.padding = '12px 0';
       member.style.borderBottom = '1px solid #eee';
       var memberName = document.createElement('strong');
       memberName.textContent = (ind.first_name || '') + ' ' + (ind.last_name || '');
+      if (age !== null) {
+        memberName.textContent += ' (Age ' + age + ')';
+      }
       member.appendChild(memberName);
 
-      ['passport', 'omang', 'photo'].forEach(function(docType) {
+      var documentTypes = isAdult
+        ? ['passport_omang', 'photo'] // Group for adults: ID (passport or omang) + photo
+        : ['photo', 'passport', 'omang']; // For minors: photo (required), then optional ID docs
+
+      if (isAdult) {
+        // ADULTS: Show passport/omang as a group (one or the other required)
         var row = document.createElement('div');
         row.style.display = 'flex';
         row.style.justifyContent = 'space-between';
         row.style.alignItems = 'center';
         row.style.marginTop = '8px';
-        var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+        var passportSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'passport'; });
+        var omangSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'omang'; });
+        var hasId = passportSubs.length > 0 || omangSubs.length > 0;
         var label = document.createElement('span');
-        label.textContent = docType.toUpperCase() + ': ' + (submissions.length > 0 ? '✅ Uploaded' : '⏳ Pending');
+        var idType = passportSubs.length > 0 ? 'PASSPORT' : omangSubs.length > 0 ? 'OMANG' : 'PASSPORT or OMANG';
+        label.textContent = idType + ': ' + (hasId ? '✅ Uploaded' : '⏳ Required');
+        label.style.fontWeight = '600';
         row.appendChild(label);
-        var upload = document.createElement('button');
-        upload.className = 'btn btn-small';
-        upload.textContent = submissions.length > 0 ? 'Replace' : 'Upload';
-        upload.onclick = function() { triggerDocumentUpload(ind.individual_id, docType); };
-        row.appendChild(upload);
+        var uploadDiv = document.createElement('div');
+        uploadDiv.style.display = 'flex';
+        uploadDiv.style.gap = '6px';
+        var uploadPass = document.createElement('button');
+        uploadPass.className = 'btn btn-small';
+        uploadPass.textContent = passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport';
+        uploadPass.onclick = function() { triggerDocumentUpload(ind.individual_id, 'passport'); };
+        uploadDiv.appendChild(uploadPass);
+        var uploadOmang = document.createElement('button');
+        uploadOmang.className = 'btn btn-small';
+        uploadOmang.textContent = omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang';
+        uploadOmang.onclick = function() { triggerDocumentUpload(ind.individual_id, 'omang'); };
+        uploadDiv.appendChild(uploadOmang);
+        row.appendChild(uploadDiv);
         member.appendChild(row);
-      });
+
+        // Photo (required for adults too)
+        var photoRow = document.createElement('div');
+        photoRow.style.display = 'flex';
+        photoRow.style.justifyContent = 'space-between';
+        photoRow.style.alignItems = 'center';
+        photoRow.style.marginTop = '8px';
+        var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
+        var photoLabel = document.createElement('span');
+        photoLabel.textContent = 'PHOTO: ' + (photoSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
+        photoLabel.style.fontWeight = '600';
+        photoRow.appendChild(photoLabel);
+        var photoUpload = document.createElement('button');
+        photoUpload.className = 'btn btn-small';
+        photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
+        photoUpload.onclick = function() { triggerDocumentUpload(ind.individual_id, 'photo'); };
+        photoRow.appendChild(photoUpload);
+        member.appendChild(photoRow);
+      } else {
+        // MINORS: Photo is required, ID documents are optional
+        var photoRow = document.createElement('div');
+        photoRow.style.display = 'flex';
+        photoRow.style.justifyContent = 'space-between';
+        photoRow.style.alignItems = 'center';
+        photoRow.style.marginTop = '8px';
+        var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
+        var photoLabel = document.createElement('span');
+        photoLabel.textContent = 'PHOTO: ' + (photoSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
+        photoLabel.style.fontWeight = '600';
+        photoRow.appendChild(photoLabel);
+        var photoUpload = document.createElement('button');
+        photoUpload.className = 'btn btn-small';
+        photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
+        photoUpload.onclick = function() { triggerDocumentUpload(ind.individual_id, 'photo'); };
+        photoRow.appendChild(photoUpload);
+        member.appendChild(photoRow);
+
+        // Passport and Omang (optional for minors)
+        ['passport', 'omang'].forEach(function(docType) {
+          var row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.justifyContent = 'space-between';
+          row.style.alignItems = 'center';
+          row.style.marginTop = '8px';
+          var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+          var label = document.createElement('span');
+          label.textContent = docType.toUpperCase() + ': ' + (submissions.length > 0 ? '✅ Uploaded' : '⏳ Optional');
+          row.appendChild(label);
+          var upload = document.createElement('button');
+          upload.className = 'btn btn-small';
+          upload.textContent = submissions.length > 0 ? 'Replace' : 'Upload';
+          upload.onclick = function() { triggerDocumentUpload(ind.individual_id, docType); };
+          row.appendChild(upload);
+          member.appendChild(row);
+        });
+      }
       card.appendChild(member);
     });
 
@@ -5455,7 +5534,7 @@ function submitLogin(event) {
           ['How long does the application take?',
            'Once all required documents are submitted and confirmed, board review typically takes 1–2 weeks. RSO security review adds another 3–5 business days.'],
           ['What documents are required?',
-           'Each household member needs a passport and Omang (national ID). A clear member photo is also required. Staff members need an Omang and employment details.'],
+           'Applicants 18 and over need one form of ID (passport or Omang) and a clear photo. Applicants under 18 need a clear photo, and may optionally provide a passport or Omang. Staff members need an Omang and employment details.'],
           ['Can I edit my application after submitting?',
            'You can add or update household members and upload replacement documents at any time before your application is activated.'],
           ['What happens if my application is rejected?',
@@ -6344,15 +6423,46 @@ function submitLogin(event) {
     return 'No immediate action required. We will email you for next steps.';
   }
 
+  function _calculateAge(dateOfBirth) {
+    if (!dateOfBirth) return null;
+    var today = new Date();
+    var birthDate = new Date(dateOfBirth);
+    var age = today.getFullYear() - birthDate.getFullYear();
+    var monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
   function getApplicantDocumentSummary(app) {
     var requiredCount = 0;
     var submittedCount = 0;
     (app.individuals || []).forEach(function(ind) {
-      ['passport', 'omang', 'photo'].forEach(function(docType) {
+      var age = _calculateAge(ind.date_of_birth);
+      var isAdult = age === null || age >= 18;
+
+      if (isAdult) {
+        // Adults need: (passport OR omang) + photo = count as 2 "required" for display
+        requiredCount += 2;
+        var hasId = false;
+        var hasPhoto = false;
+        (app.documents && app.documents[ind.individual_id] || []).forEach(function(s) {
+          if ((s.document_type === 'passport' || s.document_type === 'omang') && !hasId) {
+            submittedCount += 1;
+            hasId = true;
+          }
+          if (s.document_type === 'photo') {
+            submittedCount += 1;
+            hasPhoto = true;
+          }
+        });
+      } else {
+        // Minors need: photo only = count as 1 "required"
         requiredCount += 1;
-        var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+        var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
         if (submissions.length > 0) submittedCount += 1;
-      });
+      }
     });
     return submittedCount + ' of ' + requiredCount + ' required uploads submitted.';
   }

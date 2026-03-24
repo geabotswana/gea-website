@@ -95,7 +95,7 @@ var FOLDER_DOCUMENTS                = "1z_u96Ooc45SluZkbL_Z4JQcgfd3WBpFK";
 var FOLDER_MEMBERSHIP_APPLICATIONS  = "1NNSnUQElNRl1pDzr0pYVlTzXJod2aN6T";
 var FOLDER_BRAND_ASSETS             = "1kxQ0hcFO3jQHIiOro2HksaJw56lpvDV0";
 var FOLDER_PAYMENT_CONFIRMATIONS    = "1vmcu23niZhkC6b2Ctw6gmVLxwM2dKUee";
-var FOLDER_PASSPORT_SCANS           = "1uNDYDRLo_NpHTgNMvdiobuni5Jm_6kk8";
+var FOLDER_IDENTIFICATION_SCANS     = "1uNDYDRLo_NpHTgNMvdiobuni5Jm_6kk8";  // Rename Drive folder: "Passport Scans" → "Identification Scans"
 var FOLDER_EMPLOYMENT_VERIFICATION  = "1Ee9acuyKpbfEv7NVHCJqfRcaBExJHOEs";
 var FOLDER_FILE_SUBMISSION_ARCHIVE  = "1r-G03qnH-kN_1FBaze5OAtq3WfjyDYuy";
 
@@ -817,7 +817,7 @@ var SYSTEM_BUILD_DATE       = "2026-03-24";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "RSO dual-role portal (rso_approve/rso_notify) with authenticated document review";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-24 19:30:07";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var DEPLOYMENT_TIMESTAMP    = "2026-03-24 19:47:58";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

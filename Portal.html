@@ -1080,9 +1080,47 @@
         border-right: none;
       }
     }
+    /* Toast notifications */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      max-width: 320px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: auto;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .toast.toast-success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+    .toast.toast-error {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
   </style>
 </head>
 <body>
+<div id="toast-container"></div>
 
 <!-- ============================================================ -->
 <!-- APP STRUCTURE                                                -->
@@ -3201,7 +3239,7 @@ function submitLogin(event) {
     var householdType = document.getElementById('testHouseholdSelect').value;
 
     if (!category || !householdType) {
-      alert('Please select both category and household type');
+      showToast('Please select both category and household type', 'error');
       return;
     }
 
@@ -5317,13 +5355,27 @@ function submitLogin(event) {
         var uploadPass = document.createElement('button');
         uploadPass.className = 'btn btn-small';
         uploadPass.textContent = passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport';
-        uploadPass.onclick = function() { triggerDocumentUpload(ind.individual_id, 'passport'); };
+        uploadPass.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'passport'); }; })(ind.individual_id);
         uploadDiv.appendChild(uploadPass);
+        if (passportSubs.some(function(s) { return s.status === 'submitted'; })) {
+          var removePass = document.createElement('button');
+          removePass.className = 'btn btn-small btn-danger';
+          removePass.textContent = 'Remove Passport';
+          removePass.onclick = (function(id) { return function() { removeDocument(id, 'passport'); }; })(ind.individual_id);
+          uploadDiv.appendChild(removePass);
+        }
         var uploadOmang = document.createElement('button');
         uploadOmang.className = 'btn btn-small';
         uploadOmang.textContent = omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang';
-        uploadOmang.onclick = function() { triggerDocumentUpload(ind.individual_id, 'omang'); };
+        uploadOmang.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'omang'); }; })(ind.individual_id);
         uploadDiv.appendChild(uploadOmang);
+        if (omangSubs.some(function(s) { return s.status === 'submitted'; })) {
+          var removeOmang = document.createElement('button');
+          removeOmang.className = 'btn btn-small btn-danger';
+          removeOmang.textContent = 'Remove Omang';
+          removeOmang.onclick = (function(id) { return function() { removeDocument(id, 'omang'); }; })(ind.individual_id);
+          uploadDiv.appendChild(removeOmang);
+        }
         row.appendChild(uploadDiv);
         member.appendChild(row);
 
@@ -5374,11 +5426,22 @@ function submitLogin(event) {
           var label = document.createElement('span');
           label.textContent = docType.toUpperCase() + ': ' + (submissions.length > 0 ? '✅ Uploaded' : '⏳ Optional');
           row.appendChild(label);
+          var btnDiv = document.createElement('div');
+          btnDiv.style.display = 'flex';
+          btnDiv.style.gap = '6px';
           var upload = document.createElement('button');
           upload.className = 'btn btn-small';
           upload.textContent = submissions.length > 0 ? 'Replace' : 'Upload';
-          upload.onclick = function() { triggerDocumentUpload(ind.individual_id, docType); };
-          row.appendChild(upload);
+          upload.onclick = (function(id, dt) { return function() { triggerDocumentUpload(id, dt); }; })(ind.individual_id, docType);
+          btnDiv.appendChild(upload);
+          if (submissions.some(function(s) { return s.status === 'submitted'; })) {
+            var removeBtn = document.createElement('button');
+            removeBtn.className = 'btn btn-small btn-danger';
+            removeBtn.textContent = 'Remove';
+            removeBtn.onclick = (function(id, dt) { return function() { removeDocument(id, dt); }; })(ind.individual_id, docType);
+            btnDiv.appendChild(removeBtn);
+          }
+          row.appendChild(btnDiv);
           member.appendChild(row);
         });
       }
@@ -6539,6 +6602,19 @@ function submitLogin(event) {
     });
   }
 
+  function removeDocument(individualId, docType) {
+    if (!confirm('Remove this ' + docType + '? You can upload a new one at any time.')) return;
+    apiCall('remove_document', { individual_id: individualId, document_type: docType })
+      .then(function(res) {
+        if (res.ok) {
+          showToast(docType.charAt(0).toUpperCase() + docType.slice(1) + ' removed.', 'success');
+          loadApplicantPortal();
+        } else {
+          showToast(res.message || 'Could not remove document.', 'error');
+        }
+      });
+  }
+
   function triggerDocumentUpload(individualId, docType) {
     // Create a temporary file input and trigger it
     var input = document.createElement('input');
@@ -6959,7 +7035,7 @@ function submitLogin(event) {
       
       // Success — reset form and reload
       event.target.reset();
-      alert('Reservation submitted! Status: ' + res.data.status);
+      showToast('Reservation submitted! Status: ' + res.data.status, 'success');
       loadReservations();
     });
   }
@@ -6976,7 +7052,7 @@ function submitLogin(event) {
         return;
       }
       
-      alert('Reservation cancelled');
+      showToast('Reservation cancelled', 'success');
       loadReservations();
     });
   }
@@ -7229,9 +7305,9 @@ function submitLogin(event) {
 
       closeGuestListModal();
       if (res.data && res.data.lateSubmission) {
-        alert('Guest list submitted (after the deadline). The RSO has been notified.');
+        showToast('Guest list submitted (after the deadline). The RSO has been notified.', 'success');
       } else {
-        alert('Guest list submitted successfully!');
+        showToast('Guest list submitted successfully!', 'success');
       }
       loadReservations();
     });
@@ -7752,11 +7828,25 @@ function submitLogin(event) {
   // ============================================================ //
   
   /**
-   * Shows an error message to the user.
+   * Shows a toast notification. type is 'error' (default) or 'success'.
    */
-  function showError(message) {
-    alert('Error: ' + message);
-    console.error(message);
+  function showToast(message, type) {
+    type = type || 'error';
+    if (type === 'error') console.error(message);
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('show'); });
+    setTimeout(function() {
+      toast.classList.remove('show');
+      setTimeout(function() { container.removeChild(toast); }, 300);
+    }, type === 'success' ? 3000 : 5000);
+  }
+
+  function showError(message, type) {
+    showToast(message, type || 'error');
   }
 </script>
 

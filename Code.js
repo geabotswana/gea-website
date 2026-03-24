@@ -185,6 +185,7 @@ function _routeAction(action, params) {
     case "application_status":  return _handleApplicationStatus(params);
     case "confirm_documents":   return _handleConfirmDocuments(params);
     case "upload_document":     return _handleUploadDocument(params);
+    case "remove_document":     return _handleRemoveDocument(params);
     case "submit_payment_proof": return _handleSubmitPaymentProof(params);
     case "upload_file": return _handleFileUpload(params);
     case "get_file_status": return _handleGetFileStatus(params);
@@ -1691,6 +1692,19 @@ function _handleConfirmDocuments(p) {
 }
 
 /**
+ * HANDLER: _handleRemoveDocument
+ * PURPOSE: Applicant removes a just-uploaded document that has not yet entered RSO review
+ */
+function _handleRemoveDocument(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+  if (!p.individual_id || !p.document_type) return errorResponse("Missing individual_id or document_type.", "INVALID_PARAM");
+  var validTypes = ["passport", "omang", "photo"];
+  if (validTypes.indexOf(p.document_type) === -1) return errorResponse("Invalid document type.", "INVALID_PARAM");
+  return removeDocumentSubmission(p.individual_id, p.document_type, auth.email);
+}
+
+/**
  * HANDLER: _handleUploadDocument
  * PURPOSE: Applicant uploads a required document (passport, omang, photo)
  */
@@ -1710,9 +1724,12 @@ function _handleUploadDocument(p) {
       return errorResponse("Invalid document type.", "INVALID_PARAM");
     }
 
-    // Decode base64 and create file
-    var blob = Utilities.newBlob(Utilities.base64Decode(p.file_data_base64), "application/octet-stream", p.file_name);
-    var folder = DriveApp.getFolderById(FOLDER_DOCUMENTS);
+    // Decode base64 and create file with a meaningful name
+    var ext = p.file_name.indexOf('.') !== -1 ? p.file_name.split('.').pop().toLowerCase() : 'bin';
+    var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
+    var meaningfulName = p.individual_id + '_' + p.document_type + '_' + dateStr + '.' + ext;
+    var blob = Utilities.newBlob(Utilities.base64Decode(p.file_data_base64), "application/octet-stream", meaningfulName);
+    var folder = DriveApp.getFolderById(_getSubmissionFolderId_(p.document_type));
     var file = folder.createFile(blob);
 
     // Create File Submission record
@@ -1723,7 +1740,7 @@ function _handleUploadDocument(p) {
       document_type: p.document_type,
       status: "submitted",
       file_id: file.getId(),
-      file_name: p.file_name,
+      file_name: meaningfulName,
       submitted_date: new Date(),
       doc_number: p.doc_number || "",
       doc_expiry_date: p.doc_expiry || "",

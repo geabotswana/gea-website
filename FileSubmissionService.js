@@ -330,7 +330,7 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
 function _getSubmissionFolderId_(documentType) {
   if (documentType === "photo") return FOLDER_PHOTOS_PENDING;
   if (documentType === "employment") return FOLDER_EMPLOYMENT_VERIFICATION;
-  return FOLDER_DOCUMENTS;
+  return FOLDER_IDENTIFICATION_SCANS;  // passport, omang
 }
 
 function _getFileSubmissionsSheet_() {
@@ -398,6 +398,35 @@ function _getAllSubmissions_() {
   var out = [];
   for (var i = 1; i < data.length; i++) out.push(rowToObject(headers, data[i]));
   return out;
+}
+
+/**
+ * Deletes a document submission that is still in 'submitted' status (not yet in review).
+ * Only the current submission can be removed; once RSO has started review it is locked.
+ */
+function removeDocumentSubmission(individualId, documentType, callerEmail) {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    for (var i = data.length - 1; i >= 1; i--) {
+      var obj = rowToObject(headers, data[i]);
+      if (obj.individual_id === individualId
+          && String(obj.document_type || '').toLowerCase() === String(documentType || '').toLowerCase()
+          && (obj.is_current === true || obj.is_current === 'TRUE')
+          && obj.status === 'submitted') {
+        var submissionId = obj.submission_id;
+        sheet.deleteRow(i + 1);
+        logAuditEntry(callerEmail, 'document_removed', 'FileSubmission', submissionId,
+          'Applicant removed ' + documentType + ' submission before review');
+        return { ok: true };
+      }
+    }
+    return { ok: false, message: 'No removable submission found. The document may already be under review.' };
+  } catch (e) {
+    logError('removeDocumentSubmission', e);
+    return { ok: false, message: 'Error removing document.' };
+  }
 }
 
 function _expireCurrentSubmission_(individualId, documentType) {

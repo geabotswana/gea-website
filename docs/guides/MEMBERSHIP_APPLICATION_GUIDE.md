@@ -24,7 +24,7 @@ Welcome! This guide walks you through the GEA membership application process ste
 
 ### What is GEA?
 
-The Gaborone Employee Association is a community organization serving U.S. Government employees, contractors, diplomats, and community members in Botswana. GEA provides access to shared facilities including tennis courts, basketball courts, a recreation hall (Leobo), gym facilities, and a playground.
+The Gaborone Employee Association is a community organization serving U.S. Government employees, contractors, diplomats, and community members in Botswana. GEA provides access to shared facilities including tennis courts, basketball courts, a covered meeting area (the Leobo), gym facilities, and a playground.
 
 ### Why Become a Member?
 

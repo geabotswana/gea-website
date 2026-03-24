@@ -2,7 +2,7 @@
 
 You have requested to book additional Leobo stays.
 
-Thank you for your request to exceed the standard Leobo Lodge reservation limit.
+Thank you for your request to exceed the standard Leobo reservation limit.
 
 Requested Date: {{REQUESTED_DATE}}
 Reason: {{REASON}}

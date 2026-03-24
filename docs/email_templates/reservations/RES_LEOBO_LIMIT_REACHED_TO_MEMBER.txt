@@ -1,8 +1,8 @@
 ﻿Dear {{FIRST_NAME}},
 
-You have reached your Leobo Lodge reservation limit.
+You have reached your Leobo reservation limit.
 
-You currently have {{CURRENT_RESERVATIONS}} active Leobo Lodge reservations, which is at your limit of {{LIMIT}}.
+You currently have {{CURRENT_RESERVATIONS}} active Leobo reservations, which is at your limit of {{LIMIT}}.
 
 {{WAITLIST_INFO}}
 

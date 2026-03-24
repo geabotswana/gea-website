@@ -1593,7 +1593,7 @@ function _safePublicHousehold(hh) {
   return {
     household_id:               hh.household_id,
     household_name:             hh.household_name,
-    household_type:             hh.household_type,
+    household_type:             hh.membership_type,
     membership_type:            hh.membership_type,
     application_status:         hh.application_status,
     active:                     hh.active,

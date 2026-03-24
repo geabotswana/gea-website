@@ -53,7 +53,7 @@ Individual applicant:
   │  ├─ Posting date (YES, capture for Full/Associate/Diplomatic/Temporary only)
   │  ├─ Anticipated departure date (YES, capture for Full/Associate/Diplomatic/Temporary)
   │  └─ Employment status (NO, implicit in membership category)
-  └─ Sponsor info (required for Community/Guest/Affiliate/Associate): Name + email of GEA Full-category member
+  └─ Sponsor info (required for Community only): Name + email of GEA Full-category member
 
 Family applicant:
   ├─ Primary member info (as above; date of birth extracted from ID document during verification)
@@ -191,7 +191,7 @@ Admin.html showPage('applications') displays pending applications
   └─ Board member clicks application → viewApplicationDetails(application_id)
 
 Admin sees:
-  ├─ Applicant info (name, email, phone, category, sponsor)
+  ├─ Applicant info (name, email, phone, category, sponsor if Community member)
   ├─ Family members (spouse, children, staff)
   ├─ Employment info (if provided)
   ├─ Submitted documents (with download links & approval status)
@@ -489,9 +489,9 @@ NotificationService.runNightlyTasks() runs daily at 2:00 AM GMT+2
 | Category | Level Type | Individual Fee | Family Fee | Sponsor Required | Full Year | Temp Only |
 |----------|-----------|-----------------|------------|------------------|-----------|-----------|
 | **Full** | Full | $50 USD | $100 USD | ✗ No | ✓ Yes | ✓ Can use |
-| **Associate** | Full | $50 USD | $100 USD | ✓ Yes (Full member) | ✓ Yes | ✗ No |
-| **Affiliate** | Full | $50 USD | $100 USD | ✓ Yes (Full member) | ✓ Yes | ✗ No |
-| **Diplomatic** | Full | $75 USD | $150 USD | ✓ Yes (Full member) | ✓ Yes | ✗ No |
+| **Associate** | Full | $50 USD | $100 USD | ✗ No | ✓ Yes | ✗ No |
+| **Affiliate** | Full | $50 USD | $100 USD | ✗ No | ✓ Yes | ✗ No |
+| **Diplomatic** | Full | $75 USD | $150 USD | ✗ No | ✓ Yes | ✗ No |
 | **Community** | Full | $75 USD | $150 USD | ✓ Yes (Full member) | ✓ Yes | ✗ No |
 | **Temporary** | Temporary | $20 USD | N/A | ✗ No | ✗ No | ✓ Only (max 6mo) |
 
@@ -522,11 +522,14 @@ Each applicant answers a series of yes/no questions and is assigned exactly one 
 ### Sponsorship Verification
 
 ```
-Sponsor must be active, paid Full member (full_indiv or full_family)
+Only Community members require a sponsor.
+
+Sponsor must be an active, paid Full member (full_indiv or full_family)
 Sponsor verified by board via email confirmation or member directory lookup
-Non-Full categories cannot sponsor:
-  └─ Associate/Affiliate/Diplomatic/Community can ONLY be sponsored by Full
-Temporary members do NOT require sponsor
+
+All other categories (Full, Associate, Affiliate, Diplomatic, Temporary) do NOT require a sponsor.
+
+Note: Only Full members can serve as sponsors. Non-Full members cannot sponsor.
 ```
 
 ---

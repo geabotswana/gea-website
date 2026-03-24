@@ -83,10 +83,22 @@ function createApplicationRecord(formData, createdBy) {
     var today = new Date();
     var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
 
+    // Generate household name: check if there's a spouse with different last name
+    var householdName = capitalizeName(formData.last_name) + " Household";
+    if (householdType === HOUSEHOLD_FAMILY && formData.family_members && formData.family_members.length > 0) {
+      var spouse = formData.family_members.find(function(fm) {
+        return fm.relationship_to_primary === RELATIONSHIP_SPOUSE;
+      });
+      if (spouse && spouse.last_name && capitalizeName(spouse.last_name) !== capitalizeName(formData.last_name)) {
+        householdName = capitalizeName(formData.last_name) + "-" + capitalizeName(spouse.last_name) + " Household";
+      }
+    }
+
     var householdData = {
       household_id: householdId,
       primary_member_id: individualId,
-      household_name: capitalizeName(formData.last_name) + " Household",
+      household_name: householdName,
+      household_type: householdType,
       membership_type: formData.membership_category,
       membership_category: formData.membership_category,
       membership_level_id: _getMembershipLevelId(formData.membership_category, householdType),

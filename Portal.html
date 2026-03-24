@@ -6038,28 +6038,31 @@ function submitLogin(event) {
       card.appendChild(row);
     });
 
-    var addBtns = document.createElement('div');
-    addBtns.style.display = 'flex';
-    addBtns.style.gap = '8px';
-    addBtns.style.marginTop = '12px';
+    // Only show add family member buttons for Family membership types
+    if (hh.household_type === 'Family') {
+      var addBtns = document.createElement('div');
+      addBtns.style.display = 'flex';
+      addBtns.style.gap = '8px';
+      addBtns.style.marginTop = '12px';
 
-    if (!hasSpouse && hh.household_type === 'Family') {
-      var addSpouseBtn = document.createElement('button');
-      addSpouseBtn.className = 'btn';
-      addSpouseBtn.style.minHeight = '44px';
-      addSpouseBtn.textContent = '+ Add Spouse';
-      addSpouseBtn.onclick = function() { _openAddMemberModal('Spouse'); };
-      addBtns.appendChild(addSpouseBtn);
+      if (!hasSpouse) {
+        var addSpouseBtn = document.createElement('button');
+        addSpouseBtn.className = 'btn';
+        addSpouseBtn.style.minHeight = '44px';
+        addSpouseBtn.textContent = '+ Add Spouse';
+        addSpouseBtn.onclick = function() { _openAddMemberModal('Spouse'); };
+        addBtns.appendChild(addSpouseBtn);
+      }
+
+      var addChildBtn = document.createElement('button');
+      addChildBtn.className = 'btn';
+      addChildBtn.style.minHeight = '44px';
+      addChildBtn.textContent = '+ Add Child';
+      addChildBtn.onclick = function() { _openAddMemberModal('Child'); };
+      addBtns.appendChild(addChildBtn);
+
+      card.appendChild(addBtns);
     }
-
-    var addChildBtn = document.createElement('button');
-    addChildBtn.className = 'btn';
-    addChildBtn.style.minHeight = '44px';
-    addChildBtn.textContent = '+ Add Child';
-    addChildBtn.onclick = function() { _openAddMemberModal('Child'); };
-    addBtns.appendChild(addChildBtn);
-
-    card.appendChild(addBtns);
     return card;
   }
 
@@ -6139,7 +6142,8 @@ function submitLogin(event) {
       card.appendChild(row);
     });
 
-    if (!hasStaff) {
+    // Only show add staff member button for Family membership types
+    if (!hasStaff && hh.household_type === 'Family') {
       var addBtn = document.createElement('button');
       addBtn.className = 'btn';
       addBtn.style.minHeight = '44px';

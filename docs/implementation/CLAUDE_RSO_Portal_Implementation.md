@@ -1301,9 +1301,9 @@ Next deadline: {{DEADLINE}}
   - [x] ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER (generic approval for all document types)
 - [x] Note: Rejections use existing ADM_RSO_DOCUMENT_ISSUE_TO_BOARD template (board relays diplomatically)
 - [x] Note: Document submission alerts use existing ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE template
-- ⚠️ Email template updates needed:
-  - [ ] ADM_BOARD_APPROVED_AWAITING_RSO (needs update to reference secure admin portal instead of one-time links)
-  - [ ] Additional RSO notification templates may be needed (document approval/rejection workflows)
+- ⚠️ Email template review needed:
+  - Check if applicants should receive notification when their documents are sent to RSO for review
+  - ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD and ADM_DOCS_SENT_TO_RSO_TO_BOARD exist for board notifications
 - [x] Handlers tested and working ✓
 
 ### Phase 2: Frontend (Admin.html)
@@ -1359,16 +1359,15 @@ Next deadline: {{DEADLINE}}
 
 **Recommended Fix:** Edit Admin.html line 2131 navRoles to exclude rso_approve from applications page.
 
-### ⚠️ REMAINING: Email Template Workflow Updates
+### ℹ️ Email Templates
 
-**Status:** ADM_BOARD_APPROVED_AWAITING_RSO exists but needs verification for updated RSO workflow
+**Current status:**
+- ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER (newly created for generic document approvals) ✓
+- ADM_RSO_DOCUMENT_ISSUE_TO_BOARD (for rejection notifications to board) ✓
+- ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD (board notified when application goes to RSO) ✓
+- ADM_DOCS_SENT_TO_RSO_TO_BOARD (board notified when documents forwarded to RSO) ✓
 
-**Templates needing potential updates:**
-- ADM_BOARD_APPROVED_AWAITING_RSO (reference secure portal instead of one-time links)
-- ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER (already created, new for generic document approvals)
-- Rejection workflow via ADM_RSO_DOCUMENT_ISSUE_TO_BOARD (existing template)
-
-**Action:** Review email template implementations in Config.js to ensure they reference RSO portal logins correctly.
+**Potential gap:** No template notifies applicants that their documents have been sent to RSO for review. Currently applicants only learn this through the ADM_READY_FOR_FINAL_APPROVAL_TO_MEMBER template or by checking their portal.
 
 ### Phase 4: Testing & Deployment
 - [ ] Create test accounts in Administrators table:

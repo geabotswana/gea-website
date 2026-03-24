@@ -1,0 +1,21 @@
+Dear GEA Board,
+
+Document Rejected by RSO
+
+The RSO has reviewed and rejected submitted documents. Please communicate the rejection to the applicant with diplomatic feedback.
+
+Applicant: {{APPLICANT_NAME}}
+Application ID: {{APPLICATION_ID}}
+Document Type: {{DOCUMENT_TYPE}}
+Rejection Reason: {{REJECTION_REASON}}
+Resubmit By: {{RESUBMIT_DEADLINE}}
+
+Please inform the applicant to resubmit corrected documents via the member portal.
+
+Best regards,
+Gaborone Employee Association
+Email: board@geabotswana.org
+Website: www.geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

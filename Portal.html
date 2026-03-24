@@ -4700,15 +4700,11 @@ function submitLogin(event) {
         var phoneDiv = document.createElement('div');
         phoneDiv.style.fontSize = '13px';
         phoneDiv.style.marginTop = '8px';
-        var phoneDisplay = formatPhoneNumber(hh.country_code_primary, hh.phone_primary);
-        phoneDiv.textContent = phoneDisplay || hh.phone_primary;
-        if (hh.phone_primary_whatsapp) {
-          var waSpan = document.createElement('span');
-          waSpan.style.fontSize = '11px';
-          waSpan.style.color = '#25D366';
-          waSpan.style.fontWeight = '600';
-          waSpan.textContent = ' WhatsApp';
-          phoneDiv.appendChild(waSpan);
+        var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp);
+        if (phoneDisplay) {
+          phoneDiv.innerHTML = phoneDisplay;
+        } else {
+          phoneDiv.textContent = hh.phone_primary;
         }
         contactDiv.appendChild(phoneDiv);
       } else {
@@ -5933,7 +5929,7 @@ function submitLogin(event) {
     }).length;
 
     // Format phone number from household fields
-    var phoneDisplay = formatPhoneNumber(hh.country_code_primary, hh.phone_primary) || '—';
+    var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp) || '—';
 
     [
       ['Household Name', hh.household_name || '—'],
@@ -7310,35 +7306,11 @@ function submitLogin(event) {
         emergencyPhone = member.phone_emergency;
       }
 
-      // Format primary phone with dial code lookup
-      var primaryPhone = 'Not provided';
-      if (member.phone_primary && member.country_code_primary) {
-        var dialCodePrimary = getDialCode(member.country_code_primary);
-        primaryPhone = '(+' + dialCodePrimary + ') ' + member.phone_primary;
-        if (member.phone_primary_whatsapp) {
-          primaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      } else if (member.phone_primary) {
-        primaryPhone = member.phone_primary;
-        if (member.phone_primary_whatsapp) {
-          primaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      }
+      // Format primary phone
+      var primaryPhone = formatPhoneWithWhatsApp(member.country_code_primary, member.phone_primary, member.phone_primary_whatsapp) || 'Not provided';
 
-      // Format secondary phone with dial code lookup
-      var secondaryPhone = 'Not provided';
-      if (member.phone_secondary && member.country_code_secondary) {
-        var dialCodeSecondary = getDialCode(member.country_code_secondary);
-        secondaryPhone = '(+' + dialCodeSecondary + ') ' + member.phone_secondary;
-        if (member.phone_secondary_whatsapp) {
-          secondaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      } else if (member.phone_secondary) {
-        secondaryPhone = member.phone_secondary;
-        if (member.phone_secondary_whatsapp) {
-          secondaryPhone += ' <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="height: 16px; width: 16px; margin-left: 6px; vertical-align: middle;">';
-        }
-      }
+      // Format secondary phone
+      var secondaryPhone = formatPhoneWithWhatsApp(member.country_code_secondary, member.phone_secondary, member.phone_secondary_whatsapp) || 'Not provided';
 
       var profileContainer = document.getElementById('profileContent');
       profileContainer.innerHTML = '';

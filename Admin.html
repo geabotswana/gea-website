@@ -1259,6 +1259,20 @@
         <span class="nav-icon">🔑</span>
         <span>Administrators</span>
       </div>
+      <!-- RSO-only nav items (hidden for board/mgt) -->
+      <div class="nav-item" data-page="rso-documents" onclick="showPage('rso-documents', event)">
+        <span class="nav-icon">🔍</span>
+        <span>Document Review</span>
+        <span id="rso-documents-badge" class="badge" style="display:none;">0</span>
+      </div>
+      <div class="nav-item" data-page="rso-calendar" onclick="showPage('rso-calendar', event)">
+        <span class="nav-icon">📅</span>
+        <span>Event Calendar</span>
+      </div>
+      <div class="nav-item" data-page="rso-approved-guests" onclick="showPage('rso-approved-guests', event)">
+        <span class="nav-icon">✅</span>
+        <span>Approved Guest Lists</span>
+      </div>
     </aside>
     
     <!-- ============================================================ -->
@@ -1691,7 +1705,8 @@
         <h1 class="page-title">Admin Accounts</h1>
         <p style="color:#666; margin-bottom:20px;">
           Manage who can log into this Admin Portal. Roles: <strong>board</strong> (full access),
-          <strong>mgt</strong> (Leobo reservations), <strong>rso</strong> (guest lists &amp; documents).
+          <strong>mgt</strong> (Leobo reservations), <strong>rso_approve</strong> (document &amp; guest list review),
+          <strong>rso_notify</strong> (event calendar &amp; approved guest lists, read-only).
         </p>
 
         <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
@@ -1719,7 +1734,8 @@
               <select id="newAdminRole" class="form-input">
                 <option value="board">Board (full access)</option>
                 <option value="mgt">Management Officer (Leobo only)</option>
-                <option value="rso">RSO (guest lists &amp; documents)</option>
+                <option value="rso_approve">RSO Approve (document &amp; guest list review)</option>
+                <option value="rso_notify">RSO Notify (calendar &amp; approved guest lists, read-only)</option>
               </select>
             </div>
             <div class="form-group">
@@ -1740,10 +1756,101 @@
         </div>
       </div>
 
+      <!-- ========================================================== -->
+      <!-- PAGE: RSO DOCUMENT REVIEW (rso_approve only)               -->
+      <!-- ========================================================== -->
+      <div id="rso-documents" class="page">
+        <h1 class="page-title">Document Review</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review passport and omang submissions from membership applicants. Approved documents proceed to GEA admin for final review.</p>
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <label style="font-weight:500; font-size:14px;">Document type:</label>
+          <select id="rsoDocTypeFilter" class="form-input" style="width:auto;" onchange="loadRsoDocuments()">
+            <option value="">All</option>
+            <option value="passport">Passport</option>
+            <option value="omang">Omang</option>
+          </select>
+          <button class="btn btn-secondary btn-small" onclick="loadRsoDocuments()">Refresh</button>
+        </div>
+
+        <div id="rsoDocsContent">
+          <p style="color:#aaa;">Loading...</p>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: RSO EVENT CALENDAR (rso_approve & rso_notify)        -->
+      <!-- ========================================================== -->
+      <div id="rso-calendar" class="page">
+        <h1 class="page-title">Event Calendar</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Approved facility reservations for the selected month. Guest lists with finalized RSO review are indicated.</p>
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+          <label style="font-weight:500; font-size:14px;">Month:</label>
+          <input type="month" id="rsoCalMonth" class="form-input" style="width:auto;" onchange="loadRsoCalendar()">
+          <label style="font-weight:500; font-size:14px;">Facility:</label>
+          <select id="rsoCalFacility" class="form-input" style="width:auto;" onchange="loadRsoCalendar()">
+            <option value="all">All</option>
+            <option value="Leobo">Leobo</option>
+            <option value="Tennis Court/Basketball">Tennis Court / Basketball</option>
+          </select>
+          <button class="btn btn-secondary btn-small" onclick="loadRsoCalendar()">Refresh</button>
+        </div>
+
+        <div id="rsoCalContent">
+          <p style="color:#aaa;">Loading...</p>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: RSO APPROVED GUEST LISTS (rso_approve & rso_notify)  -->
+      <!-- ========================================================== -->
+      <div id="rso-approved-guests" class="page">
+        <h1 class="page-title">Approved Guest Lists</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Finalized guest lists for upcoming events. These are the approved guests as reviewed by RSO.</p>
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+          <label style="font-weight:500; font-size:14px;">Month:</label>
+          <input type="month" id="rsoGlMonth" class="form-input" style="width:auto;" onchange="loadRsoApprovedGuestLists()">
+          <label style="font-weight:500; font-size:14px;">Facility:</label>
+          <select id="rsoGlFacility" class="form-input" style="width:auto;" onchange="loadRsoApprovedGuestLists()">
+            <option value="all">All</option>
+            <option value="Leobo">Leobo</option>
+            <option value="Tennis Court/Basketball">Tennis Court / Basketball</option>
+          </select>
+          <button class="btn btn-secondary btn-small" onclick="loadRsoApprovedGuestLists()">Refresh</button>
+        </div>
+
+        <div id="rsoGlContent">
+          <p style="color:#aaa;">Loading...</p>
+        </div>
+      </div>
+
 <!-- ============================================================ -->
 <!-- MODALS                                                       -->
 <!-- Overlay dialogs for actions and detailed views              -->
 <!-- ============================================================ -->
+
+<!-- RSO Document Rejection Modal -->
+<div id="rsoRejectDocModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Reject Document</h2>
+      <button class="modal-close" onclick="document.getElementById('rsoRejectDocModal').style.display='none';">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:#555; margin-bottom:12px;">Please provide a reason so the applicant can correct and resubmit.</p>
+      <div class="form-group">
+        <label class="form-label">Rejection Reason</label>
+        <textarea id="rsoRejectReason" class="form-input" rows="3" placeholder="e.g. Document is expired, photo is unclear, name does not match application..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('rsoRejectDocModal').style.display='none';">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmRsoRejectDoc();">Reject Document</button>
+    </div>
+  </div>
+</div>
 
 <!-- Reservation Detail and Action Modal -->
 <div id="resDetailModal" class="modal-overlay">
@@ -1956,7 +2063,18 @@
 
       document.getElementById('loginScreen').classList.remove('show');
       showAuthenticatedUI();
-      loadDashboard();
+
+      // Navigate to role-appropriate landing page
+      var loginRole = res.data.role;
+      if (loginRole === 'rso_notify') {
+        showPage('rso-calendar');
+        loadRsoCalendar();
+      } else if (loginRole === 'rso_approve' || loginRole === 'rso') {
+        showPage('rso-documents');
+        loadRsoDocuments();
+      } else {
+        loadDashboard();
+      }
     }).catch(function(err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Sign In';
@@ -1994,23 +2112,31 @@
 
   /**
    * Shows/hides sidebar nav items based on the logged-in admin's role.
-   *   board — sees everything
-   *   mgt   — Leobo reservations only (pending reservations, waitlist, dashboard, reports)
-   *   rso   — guest lists + document review only (guest-lists, applications, photos, dashboard)
+   *   board       — sees everything
+   *   mgt         — Leobo reservations only (pending reservations, waitlist, dashboard, reports)
+   *   rso_approve — document review, guest lists, applications, photos, calendar, approved guest lists
+   *   rso_notify  — event calendar + approved guest lists (read-only)
+   *   rso         — backward-compat alias for rso_approve
    */
   function _applyNavRoleFilter(role) {
+    // Normalize legacy "rso" role to "rso_approve"
+    var effectiveRole = (role === 'rso') ? 'rso_approve' : role;
+
     // Map nav page IDs to the roles that can see them (empty = all roles)
     var navRoles = {
-      'dashboard':    [],                    // all roles
-      'reservations': ['board', 'mgt'],      // board + mgt
-      'waitlist':     ['board', 'mgt'],
-      'members':      ['board'],
-      'applications': ['board', 'rso'],
-      'photos':       ['board', 'rso'],
-      'guest-lists':  ['board', 'rso'],
-      'payments':     ['board'],
-      'reports':      ['board'],
-      'administrators': ['board']
+      'dashboard':           ['board', 'mgt'],                         // board + mgt only
+      'reservations':        ['board', 'mgt'],
+      'waitlist':            ['board', 'mgt'],
+      'members':             ['board'],
+      'applications':        ['board', 'rso_approve'],
+      'photos':              ['board', 'rso_approve'],
+      'guest-lists':         ['board', 'rso_approve'],
+      'payments':            ['board'],
+      'reports':             ['board'],
+      'administrators':      ['board'],
+      'rso-documents':       ['rso_approve'],
+      'rso-calendar':        ['rso_approve', 'rso_notify'],
+      'rso-approved-guests': ['rso_approve', 'rso_notify']
     };
 
     var sidebarItems = document.querySelectorAll('#sidebar .nav-item');
@@ -2018,7 +2144,7 @@
       var page = item.getAttribute('data-page');
       if (!page) return;
       var allowed = navRoles[page];
-      if (!allowed || allowed.length === 0 || allowed.indexOf(role) !== -1) {
+      if (!allowed || allowed.length === 0 || allowed.indexOf(effectiveRole) !== -1) {
         item.style.display = '';
       } else {
         item.style.display = 'none';
@@ -2156,6 +2282,23 @@
         break;
       case 'administrators':
         loadAdminAccounts();
+        break;
+      case 'rso-documents':
+        loadRsoDocuments();
+        break;
+      case 'rso-calendar':
+        if (!document.getElementById('rsoCalMonth').value) {
+          var now = new Date();
+          document.getElementById('rsoCalMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        }
+        loadRsoCalendar();
+        break;
+      case 'rso-approved-guests':
+        if (!document.getElementById('rsoGlMonth').value) {
+          var now2 = new Date();
+          document.getElementById('rsoGlMonth').value = now2.getFullYear() + '-' + String(now2.getMonth() + 1).padStart(2, '0');
+        }
+        loadRsoApprovedGuestLists();
         break;
     }
   }
@@ -4748,6 +4891,163 @@
   function showError(message) {
     alert('Error: ' + message);
     console.error(message);
+  }
+
+  // ============================================================ //
+  // SECTION: RSO PORTAL — DOCUMENT REVIEW                        //
+  // ============================================================ //
+
+  var _rsoPendingDocRejectId = null;
+
+  function loadRsoDocuments() {
+    var container = document.getElementById('rsoDocsContent');
+    container.innerHTML = '<p style="color:#aaa;">Loading...</p>';
+    var docType = document.getElementById('rsoDocTypeFilter').value;
+    apiCall('admin_rso_pending_documents', { document_type: docType || null }).then(function(res) {
+      if (!res.success) { container.innerHTML = '<p style="color:#c00;">Error: ' + res.message + '</p>'; return; }
+      var docs = res.data.documents || [];
+      // Update badge
+      var badge = document.getElementById('rso-documents-badge');
+      if (badge) { badge.textContent = docs.length; badge.style.display = docs.length > 0 ? '' : 'none'; }
+
+      if (docs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#10003;</div><div class="empty-state-text">No documents pending review</div></div>';
+        return;
+      }
+      var html = '<div class="table-container"><table><thead><tr><th>Applicant</th><th>Type</th><th>Submitted</th><th>Actions</th></tr></thead><tbody>';
+      docs.forEach(function(doc) {
+        var nameEl = document.createElement('span');
+        nameEl.textContent = doc.applicant_name;
+        var typeEl = document.createElement('span');
+        typeEl.textContent = doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1);
+        html += '<tr>' +
+          '<td>' + nameEl.outerHTML + '<br><small style="color:#999;">' + (function(){ var e=document.createElement('span'); e.textContent=doc.applicant_email; return e.outerHTML; })() + '</small></td>' +
+          '<td>' + typeEl.outerHTML + '</td>' +
+          '<td>' + (doc.submitted_date || '') + '</td>' +
+          '<td style="white-space:nowrap;">' +
+            (doc.file_id ? '<a href="https://drive.google.com/file/d/' + encodeURIComponent(doc.file_id) + '/view" target="_blank" class="btn btn-secondary btn-small" style="margin-right:4px;">View</a>' : '') +
+            '<button class="btn btn-primary btn-small" style="margin-right:4px;" onclick="rsoApproveDoc(\'' + doc.submission_id + '\')">Approve</button>' +
+            '<button class="btn btn-danger btn-small" onclick="rsoRejectDocPrompt(\'' + doc.submission_id + '\')">Reject</button>' +
+          '</td>' +
+        '</tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }).catch(function() { container.innerHTML = '<p style="color:#c00;">Failed to load documents.</p>'; });
+  }
+
+  function rsoApproveDoc(submissionId) {
+    if (!confirm('Approve this document for GEA admin review?')) return;
+    apiCall('admin_rso_approve_document', { submission_id: submissionId, decision: 'approve' }).then(function(res) {
+      if (!res.success) { showError(res.message); return; }
+      loadRsoDocuments();
+    });
+  }
+
+  function rsoRejectDocPrompt(submissionId) {
+    _rsoPendingDocRejectId = submissionId;
+    document.getElementById('rsoRejectReason').value = '';
+    document.getElementById('rsoRejectDocModal').style.display = 'flex';
+  }
+
+  function confirmRsoRejectDoc() {
+    var reason = (document.getElementById('rsoRejectReason').value || '').trim();
+    if (!reason) { alert('Please enter a rejection reason.'); return; }
+    apiCall('admin_rso_approve_document', {
+      submission_id: _rsoPendingDocRejectId,
+      decision: 'reject',
+      rejection_reason: reason
+    }).then(function(res) {
+      if (!res.success) { showError(res.message); return; }
+      document.getElementById('rsoRejectDocModal').style.display = 'none';
+      _rsoPendingDocRejectId = null;
+      loadRsoDocuments();
+    });
+  }
+
+  // ============================================================ //
+  // SECTION: RSO PORTAL — EVENT CALENDAR                         //
+  // ============================================================ //
+
+  function loadRsoCalendar() {
+    var container = document.getElementById('rsoCalContent');
+    container.innerHTML = '<p style="color:#aaa;">Loading...</p>';
+    var month    = document.getElementById('rsoCalMonth').value || '';
+    var facility = document.getElementById('rsoCalFacility').value || 'all';
+    apiCall('admin_rso_approved_calendar', { month: month || null, facility: facility }).then(function(res) {
+      if (!res.success) { container.innerHTML = '<p style="color:#c00;">Error: ' + res.message + '</p>'; return; }
+      var events = res.data.events || [];
+      if (events.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128197;</div><div class="empty-state-text">No approved reservations this month</div></div>';
+        return;
+      }
+      // Group by date
+      var byDate = {};
+      events.forEach(function(ev) {
+        if (!byDate[ev.event_date]) byDate[ev.event_date] = [];
+        byDate[ev.event_date].push(ev);
+      });
+      var html = '';
+      Object.keys(byDate).sort().forEach(function(date) {
+        html += '<div class="card" style="margin-bottom:12px;"><div style="background:#f0f4f8; padding:10px 16px; font-weight:600; border-radius:6px 6px 0 0;">' + date + '</div>';
+        byDate[date].forEach(function(ev) {
+          var hhEl = document.createElement('span'); hhEl.textContent = ev.household_name;
+          var facEl = document.createElement('span'); facEl.textContent = ev.facility;
+          var glBadge = ev.guest_list_submitted ? '<span style="background:#27ae60; color:#fff; border-radius:4px; padding:1px 6px; font-size:11px; margin-left:6px;">Guest List Reviewed</span>' : '';
+          html += '<div style="padding:10px 16px; border-top:1px solid #eee; display:flex; align-items:center; gap:12px;">' +
+            '<span style="min-width:80px; font-weight:500; color:#555;">' + ev.start_time + '–' + ev.end_time + '</span>' +
+            '<span>' + facEl.outerHTML + '</span>' +
+            '<span>' + hhEl.outerHTML + '</span>' +
+            '<span style="color:#777; font-size:13px;">Guests: ' + ev.guest_count + '</span>' +
+            glBadge +
+          '</div>';
+        });
+        html += '</div>';
+      });
+      container.innerHTML = html;
+    }).catch(function() { container.innerHTML = '<p style="color:#c00;">Failed to load calendar.</p>'; });
+  }
+
+  // ============================================================ //
+  // SECTION: RSO PORTAL — APPROVED GUEST LISTS                   //
+  // ============================================================ //
+
+  function loadRsoApprovedGuestLists() {
+    var container = document.getElementById('rsoGlContent');
+    container.innerHTML = '<p style="color:#aaa;">Loading...</p>';
+    var month    = document.getElementById('rsoGlMonth').value || '';
+    var facility = document.getElementById('rsoGlFacility').value || 'all';
+    apiCall('admin_rso_approved_guest_lists', { month: month || null, facility: facility }).then(function(res) {
+      if (!res.success) { container.innerHTML = '<p style="color:#c00;">Error: ' + res.message + '</p>'; return; }
+      var lists = res.data.guestLists || [];
+      if (lists.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#10003;</div><div class="empty-state-text">No finalized guest lists this month</div></div>';
+        return;
+      }
+      var html = '';
+      lists.forEach(function(gl) {
+        var hhEl = document.createElement('span'); hhEl.textContent = gl.household_name;
+        var facEl = document.createElement('span'); facEl.textContent = gl.facility;
+        var reviewerEl = document.createElement('span'); reviewerEl.textContent = gl.rso_reviewed_by;
+        var guestRows = gl.approved_guests.map(function(g) {
+          var nameEl = document.createElement('span'); nameEl.textContent = g.name;
+          return '<li>' + nameEl.outerHTML + (g.age_group ? ' <span style="color:#999; font-size:12px;">(' + (g.age_group === 'over_18' ? 'Adult' : 'Under 18') + ')</span>' : '') + '</li>';
+        }).join('');
+        html += '<div class="card" style="margin-bottom:12px;">' +
+          '<div style="padding:12px 16px; background:#f0f4f8; border-radius:6px 6px 0 0; display:flex; gap:16px; flex-wrap:wrap;">' +
+            '<strong>' + facEl.outerHTML + '</strong>' +
+            '<span>' + hhEl.outerHTML + '</span>' +
+            '<span style="color:#555;">' + gl.event_date + ' ' + gl.start_time + '–' + gl.end_time + '</span>' +
+            '<span style="color:#777; font-size:12px;">Reviewed by ' + reviewerEl.outerHTML + ' on ' + gl.rso_review_date + '</span>' +
+          '</div>' +
+          '<div style="padding:12px 16px;">' +
+            '<strong>Approved Guests (' + gl.approved_count + '):</strong>' +
+            '<ul style="margin:8px 0 0 20px; padding:0;">' + (guestRows || '<li style="color:#999;">No approved guests</li>') + '</ul>' +
+          '</div>' +
+        '</div>';
+      });
+      container.innerHTML = html;
+    }).catch(function() { container.innerHTML = '<p style="color:#c00;">Failed to load guest lists.</p>'; });
   }
 </script>
 

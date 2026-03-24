@@ -1909,3 +1909,122 @@ function resendReservationEmail(reservationId, senderEmail) {
     return { ok: false, error: String(e), code: "SERVER_ERROR" };
   }
 }
+
+// ============================================================
+// RSO PORTAL: READ-ONLY CALENDAR & APPROVED GUEST LISTS
+// ============================================================
+
+/**
+ * Returns approved reservations for RSO calendar view.
+ * Optionally filtered by month (YYYY-MM) and facility name.
+ * Only includes reservations with approval_status = "approved".
+ *
+ * @param {string|null} month     "YYYY-MM" or null for current month
+ * @param {string|null} facility  Facility name or null for all
+ * @returns {Array}
+ */
+function getApprovedReservationsForCalendar(month, facility) {
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    // Determine date window
+    var refDate  = month ? new Date(month + "-01") : new Date();
+    var start    = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+    var end      = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
+
+    var results = [];
+    for (var i = 1; i < data.length; i++) {
+      var obj = rowToObject(headers, data[i]);
+      if (obj.approval_status !== "approved" && obj.approval_status !== "approved_auto") continue;
+      if (!obj.event_date) continue;
+
+      var eventDate = new Date(obj.event_date);
+      if (eventDate < start || eventDate > end) continue;
+      if (facility && facility !== "all" && obj.facility !== facility) continue;
+
+      results.push({
+        reservation_id:   obj.reservation_id,
+        household_id:     obj.household_id,
+        household_name:   obj.household_name || "",
+        facility:         obj.facility,
+        event_date:       formatDate(eventDate, true),
+        start_time:       obj.start_time || "",
+        end_time:         obj.end_time || "",
+        guest_count:      obj.guest_count || 0,
+        guest_list_submitted: obj.guest_list_submitted === true || obj.guest_list_submitted === "TRUE"
+      });
+    }
+
+    results.sort(function(a, b) { return a.event_date < b.event_date ? -1 : 1; });
+    return results;
+  } catch (e) {
+    Logger.log("ERROR getApprovedReservationsForCalendar: " + e);
+    return [];
+  }
+}
+
+/**
+ * Returns finalized guest lists for RSO notify reference view.
+ * Optionally filtered by month (YYYY-MM) and facility.
+ * Only includes guest lists with submission_status = "finalized".
+ *
+ * @param {string|null} month
+ * @param {string|null} facility
+ * @returns {Array}
+ */
+function getApprovedGuestListsForRsoNotify(month, facility) {
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var refDate = month ? new Date(month + "-01") : new Date();
+    var start   = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+    var end     = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
+
+    var results = [];
+    for (var i = 1; i < data.length; i++) {
+      var obj = rowToObject(headers, data[i]);
+      if (obj.submission_status !== GUEST_LIST_STATUS_FINALIZED) continue;
+      if (!obj.event_date) continue;
+
+      var eventDate = new Date(obj.event_date);
+      if (eventDate < start || eventDate > end) continue;
+      if (facility && facility !== "all" && obj.facility !== facility) continue;
+
+      // Parse decisions to extract approved guests only
+      var decisions = [];
+      try { decisions = JSON.parse(obj.rso_draft_json || "[]"); } catch (e) {}
+      var guests = [];
+      try { guests = JSON.parse(obj.guests_json || "[]"); } catch (e) {}
+      var approvedGuests = decisions
+        .filter(function(d) { return d.rso_status === "approved"; })
+        .map(function(d) {
+          var g = guests[d.index] || {};
+          return { name: (g.first_name || "") + " " + (g.last_name || ""), age_group: g.age_group || "" };
+        });
+
+      results.push({
+        guest_list_id:   obj.guest_list_id,
+        reservation_id:  obj.reservation_id,
+        household_name:  obj.household_name || "",
+        facility:        obj.facility || "",
+        event_date:      formatDate(eventDate, true),
+        start_time:      obj.start_time || "",
+        end_time:        obj.end_time || "",
+        rso_reviewed_by: obj.rso_reviewed_by || "",
+        rso_review_date: obj.rso_review_date ? formatDate(new Date(obj.rso_review_date), true) : "",
+        approved_count:  approvedGuests.length,
+        approved_guests: approvedGuests
+      });
+    }
+
+    results.sort(function(a, b) { return a.event_date < b.event_date ? -1 : 1; });
+    return results;
+  } catch (e) {
+    Logger.log("ERROR getApprovedGuestListsForRsoNotify: " + e);
+    return [];
+  }
+}

@@ -461,3 +461,99 @@ function _allRequiredFilesComplete_(submissions) {
   }
   return need.photo && (need.passport || need.omang);
 }
+
+// ============================================================
+// RSO PORTAL: DOCUMENT REVIEW (AUTHENTICATED)
+// ============================================================
+
+/**
+ * Returns all passport/omang submissions with status="submitted" awaiting RSO review.
+ * Optionally filtered by document_type.
+ *
+ * @param {string|null} documentTypeFilter  "passport", "omang", or null for all
+ * @returns {Array}
+ */
+function getDocumentsForRsoReview(documentTypeFilter) {
+  try {
+    var sheet   = _getFileSubmissionsSheet_();
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var results = [];
+
+    for (var i = 1; i < data.length; i++) {
+      var obj = rowToObject(headers, data[i]);
+      var docType = String(obj.document_type || "").toLowerCase();
+      var status  = String(obj.status || "").toLowerCase();
+
+      // RSO reviews passport and omang only; status must be "submitted"
+      if (docType !== "passport" && docType !== "omang") continue;
+      if (status !== "submitted") continue;
+      if (documentTypeFilter && docType !== documentTypeFilter.toLowerCase()) continue;
+
+      // Get applicant name from Individuals sheet
+      var individual = getMemberById(obj.individual_id);
+      results.push({
+        submission_id:   obj.submission_id,
+        individual_id:   obj.individual_id,
+        applicant_name:  individual ? (individual.first_name + " " + individual.last_name) : "(unknown)",
+        applicant_email: individual ? individual.email : "",
+        document_type:   obj.document_type,
+        status:          obj.status,
+        submitted_date:  obj.submission_timestamp ? formatDate(new Date(obj.submission_timestamp), true) : "",
+        file_id:         obj.file_id || "",
+        file_name:       obj.file_name || ""
+      });
+    }
+
+    results.sort(function(a, b) { return a.submitted_date < b.submitted_date ? -1 : 1; });
+    return results;
+  } catch (e) {
+    Logger.log("ERROR getDocumentsForRsoReview: " + e);
+    return [];
+  }
+}
+
+/**
+ * Approves or rejects a document submission by an authenticated RSO member.
+ * Equivalent to handleRsoApprovalLink() but uses the portal session instead of a one-time link.
+ *
+ * @param {string} submissionId
+ * @param {string} decision       "approve" or "reject"
+ * @param {string} rejectionReason  Required if decision="reject"
+ * @param {string} rsoEmail       Authenticated RSO member's email (from session)
+ * @returns {Object}  { ok, new_status } or { ok: false, error }
+ */
+function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail) {
+  try {
+    var found = _findSubmissionById_(submissionId);
+    if (!found) return { ok: false, error: "Submission not found." };
+
+    var docType = String(found.obj.document_type || "").toLowerCase();
+    if (docType !== "passport" && docType !== "omang") {
+      return { ok: false, error: "RSO review only applies to passport/omang documents." };
+    }
+    if (found.obj.status !== "submitted") {
+      return { ok: false, error: "Document is not in 'submitted' state (current: " + found.obj.status + ")." };
+    }
+
+    var approve    = decision === "approve";
+    var newStatus  = approve ? "gea_pending" : "rso_rejected";
+
+    _setSubmissionFields_(found, {
+      status:                          newStatus,
+      rso_reviewed_by:                 rsoEmail,
+      rso_review_date:                 new Date(),
+      member_facing_rejection_reason:  approve ? "" : (rejectionReason || "Rejected by RSO")
+    });
+
+    logAuditEntry(rsoEmail,
+      approve ? AUDIT_FILE_SUBMISSION_RSO_APPROVED : AUDIT_FILE_SUBMISSION_RSO_REJECTED,
+      "FileSubmission", submissionId,
+      approve ? "Approved via RSO portal" : "Rejected via RSO portal: " + rejectionReason);
+
+    return { ok: true, new_status: newStatus };
+  } catch (e) {
+    Logger.log("ERROR approveDocumentByRso: " + e);
+    return { ok: false, error: String(e) };
+  }
+}

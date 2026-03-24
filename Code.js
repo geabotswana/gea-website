@@ -213,6 +213,10 @@ function _routeAction(action, params) {
     case "admin_save_guest_list_draft":    return _handleAdminSaveGuestListDraft(params);
     case "admin_finalize_guest_list":      return _handleAdminFinalizeGuestList(params);
     case "admin_guest_histories":          return _handleAdminGuestHistories(params);
+    case "admin_rso_pending_documents":    return _handleAdminRsoPendingDocuments(params);
+    case "admin_rso_approve_document":     return _handleAdminRsoApproveDocument(params);
+    case "admin_rso_approved_calendar":    return _handleAdminRsoApprovedCalendar(params);
+    case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
     case "admin_members": return _handleAdminMembers(params);
     case "admin_photo":   return _handleAdminPhoto(params);
     case "admin_applications":       return _handleAdminApplications(params);
@@ -3052,7 +3056,7 @@ function _handleGetGuestProfiles(p) {
  * RETURNS: { success, data: { guestLists: [...] } }
  */
 function _handleAdminGuestLists(p) {
-  var auth = requireAuth(p.token, "board");
+  var auth = requireAuth(p.token, ["board", "rso_approve", "rso"]);
   if (!auth.ok) return auth.response;
 
   // Default: show both submitted and in_review
@@ -3076,7 +3080,7 @@ function _handleAdminGuestLists(p) {
  * REQUIRED PARAMS: token, guest_list_id, decisions (JSON string)
  */
 function _handleAdminSaveGuestListDraft(p) {
-  var auth = requireAuth(p.token, "board");
+  var auth = requireAuth(p.token, ["board", "rso_approve", "rso"]);
   if (!auth.ok) return auth.response;
 
   if (!p.guest_list_id) return errorResponse("guest_list_id required.", "MISSING_PARAM");
@@ -3100,7 +3104,7 @@ function _handleAdminSaveGuestListDraft(p) {
  * REQUIRED PARAMS: token, guest_list_id, decisions (JSON string)
  */
 function _handleAdminFinalizeGuestList(p) {
-  var auth = requireAuth(p.token, "board");
+  var auth = requireAuth(p.token, ["board", "rso_approve", "rso"]);
   if (!auth.ok) return auth.response;
 
   if (!p.guest_list_id) return errorResponse("guest_list_id required.", "MISSING_PARAM");
@@ -3128,7 +3132,7 @@ function _handleAdminFinalizeGuestList(p) {
  * RETURNS: { success, data: { histories: { id_number: [{...}] } } }
  */
 function _handleAdminGuestHistories(p) {
-  var auth = requireAuth(p.token, "board");
+  var auth = requireAuth(p.token, ["board", "rso_approve", "rso"]);
   if (!auth.ok) return auth.response;
 
   if (!p.id_numbers) return errorResponse("id_numbers required.", "MISSING_PARAM");
@@ -3189,6 +3193,89 @@ function _handleAdminResendEmail(p) {
     : errorResponse(result.error, result.code);
 }
 
+
+// ============================================================
+// RSO PORTAL HANDLERS
+// ============================================================
+
+/**
+ * HANDLER: _handleAdminRsoPendingDocuments
+ * PURPOSE: rso_approve views passport/omang documents awaiting RSO review.
+ * RETURNS: { success, data: { documents: [...], count } }
+ */
+function _handleAdminRsoPendingDocuments(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+  try {
+    var docs = getDocumentsForRsoReview(p.document_type || null);
+    return successResponse({ documents: docs, count: docs.length });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoPendingDocuments: " + e);
+    return errorResponse("Could not load documents.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoApproveDocument
+ * PURPOSE: rso_approve approves or rejects a single document submission.
+ * REQUIRED PARAMS: submission_id, decision ("approve"|"reject"), rejection_reason (if rejecting)
+ * RETURNS: { success, data: { submission_id, new_status } }
+ */
+function _handleAdminRsoApproveDocument(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+  if (!p.submission_id) return errorResponse("submission_id required.", "MISSING_PARAM");
+  if (!p.decision || ["approve","reject"].indexOf(p.decision) === -1) {
+    return errorResponse("decision must be 'approve' or 'reject'.", "INVALID_PARAM");
+  }
+  if (p.decision === "reject" && !p.rejection_reason) {
+    return errorResponse("rejection_reason required when rejecting.", "MISSING_PARAM");
+  }
+  try {
+    var result = approveDocumentByRso(p.submission_id, p.decision, p.rejection_reason || "", auth.session.email);
+    if (!result.ok) return errorResponse(result.error || "Could not process decision.", "OPERATION_FAILED");
+    return successResponse({ submission_id: p.submission_id, new_status: result.new_status });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoApproveDocument: " + e);
+    return errorResponse("Could not process decision.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoApprovedCalendar
+ * PURPOSE: rso_approve & rso_notify view approved reservations for a given month.
+ * OPTIONAL PARAMS: month (YYYY-MM), facility ("all"|"Leobo"|"Tennis Court/Basketball")
+ * RETURNS: { success, data: { events: [...], count } }
+ */
+function _handleAdminRsoApprovedCalendar(p) {
+  var auth = requireAuth(p.token, ["rso_approve", "rso_notify"]);
+  if (!auth.ok) return auth.response;
+  try {
+    var events = getApprovedReservationsForCalendar(p.month || null, p.facility || null);
+    return successResponse({ events: events, count: events.length });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoApprovedCalendar: " + e);
+    return errorResponse("Could not load calendar.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoApprovedGuestLists
+ * PURPOSE: rso_approve & rso_notify view finalized guest lists for upcoming events.
+ * OPTIONAL PARAMS: month (YYYY-MM), facility
+ * RETURNS: { success, data: { guestLists: [...], count } }
+ */
+function _handleAdminRsoApprovedGuestLists(p) {
+  var auth = requireAuth(p.token, ["rso_approve", "rso_notify"]);
+  if (!auth.ok) return auth.response;
+  try {
+    var lists = getApprovedGuestListsForRsoNotify(p.month || null, p.facility || null);
+    return successResponse({ guestLists: lists, count: lists.length });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoApprovedGuestLists: " + e);
+    return errorResponse("Could not load guest lists.", "SERVER_ERROR");
+  }
+}
 
 function setupEmailTemplates_Instructions() {
   Logger.log("Email templates standardization complete!");

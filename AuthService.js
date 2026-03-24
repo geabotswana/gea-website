@@ -462,8 +462,16 @@ function requireAuth(token, requiredRole) {
     return { ok: false, response: errorResponse(session.message, "AUTH_REQUIRED") };
   }
 
-  if (requiredRole && session.role !== requiredRole && session.role !== "board") {
-    return { ok: false, response: errorResponse(ERR_NOT_AUTHORIZED, "FORBIDDEN") };
+  if (requiredRole) {
+    var allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    var role = session.role;
+    // board is always a superuser; "rso" is backward compat alias for rso_approve
+    var isAllowed = role === "board" ||
+                    allowed.indexOf(role) !== -1 ||
+                    (role === "rso" && allowed.indexOf("rso_approve") !== -1);
+    if (!isAllowed) {
+      return { ok: false, response: errorResponse(ERR_NOT_AUTHORIZED, "FORBIDDEN") };
+    }
   }
 
   return { ok: true, session: session };
@@ -926,7 +934,8 @@ function getAuthHealthReport() {
 /**
  * Authenticates an admin using the Administrators table.
  * Called from the Admin Portal login screen (separate from member login).
- * Roles: "board", "mgt", "rso" — determined by the Administrators table.
+ * Roles: "board", "mgt", "rso_approve", "rso_notify" — determined by the Administrators table.
+ * "rso" is accepted as a backward-compatible alias for "rso_approve".
  *
  * @param {string} email
  * @param {string} password
@@ -1057,8 +1066,8 @@ function createAdminAccount(params, callerEmail) {
   if (!isValidEmail(email))   return { success: false, message: "Invalid email address." };
   if (!firstName)             return { success: false, message: "First name is required." };
   if (!lastName)              return { success: false, message: "Last name is required." };
-  if (["board","mgt","rso"].indexOf(role) === -1) {
-    return { success: false, message: "Role must be board, mgt, or rso." };
+  if (["board","mgt","rso","rso_approve","rso_notify"].indexOf(role) === -1) {
+    return { success: false, message: "Role must be board, mgt, rso_approve, or rso_notify." };
   }
   if (!password || password.length < PASSWORD_MIN_LENGTH) {
     return { success: false, message: "Password must be at least " + PASSWORD_MIN_LENGTH + " characters." };

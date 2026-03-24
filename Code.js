@@ -2030,6 +2030,12 @@ function _handleGetHouseholdMembers(p) {
 
     var members = getHouseholdMembers(member.household_id);
 
+    // Fetch primary member details using the household's primary_member_id
+    var primaryMember = null;
+    if (hh.primary_member_id) {
+      primaryMember = getMemberById(hh.primary_member_id);
+    }
+
     var membersOut = members.map(function(m) {
       var docStatus = getFileSubmissionStatus(m.individual_id) || {};
       return {
@@ -2054,8 +2060,16 @@ function _handleGetHouseholdMembers(p) {
       };
     });
 
+    // Include primary member details in household response
+    var householdOut = _safePublicHousehold(hh);
+    if (primaryMember) {
+      householdOut.primary_first_name = primaryMember.first_name || "";
+      householdOut.primary_last_name = primaryMember.last_name || "";
+      householdOut.primary_email = primaryMember.email || "";
+    }
+
     return successResponse({
-      household: _safePublicHousehold(hh),
+      household: householdOut,
       members:   membersOut,
       self_id:   member.individual_id
     });

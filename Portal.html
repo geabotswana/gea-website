@@ -5923,9 +5923,6 @@ function submitLogin(event) {
     title.textContent = 'Household Overview';
     card.appendChild(title);
 
-    var primary = members.filter(function(m) {
-      return m.relationship_to_primary === 'Primary';
-    })[0] || {};
     var familyCount = members.filter(function(m) {
       return m.relationship_to_primary !== 'Staff';
     }).length;
@@ -5933,13 +5930,19 @@ function submitLogin(event) {
       return m.relationship_to_primary === 'Staff';
     }).length;
 
+    // Format phone number from household fields
+    var phoneDisplay = '—';
+    if (hh.phone_primary) {
+      phoneDisplay = (hh.country_code_primary ? '+' + hh.country_code_primary + ' ' : '') + hh.phone_primary;
+    }
+
     [
       ['Household Name', hh.household_name || '—'],
       ['Household ID',   hh.household_id   || '—'],
       ['Type',           hh.household_type  || '—'],
-      ['Primary Contact', (primary.first_name || '') + ' ' + (primary.last_name || '')],
-      ['Email',          primary.email      || '—'],
-      ['Phone',          (primary.country_code_primary ? '+' + primary.country_code_primary + ' ' : '') + (primary.phone_primary || '—')],
+      ['Primary Contact', (hh.primary_first_name || '') + ' ' + (hh.primary_last_name || '')],
+      ['Email',          hh.primary_email   || '—'],
+      ['Phone',          phoneDisplay],
       ['Family Members', String(familyCount)],
       ['Staff Members',  String(staffCount)]
     ].forEach(function(pair) {

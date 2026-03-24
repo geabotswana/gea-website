@@ -5361,7 +5361,7 @@ function submitLogin(event) {
           var removePass = document.createElement('button');
           removePass.className = 'btn btn-small btn-danger';
           removePass.textContent = 'Remove Passport';
-          removePass.onclick = (function(id) { return function() { removeDocument(id, 'passport'); }; })(ind.individual_id);
+          removePass.onclick = (function(id, btn) { return function() { removeDocument(id, 'passport', btn); }; })(ind.individual_id, removePass);
           uploadDiv.appendChild(removePass);
         }
         var uploadOmang = document.createElement('button');
@@ -5373,7 +5373,7 @@ function submitLogin(event) {
           var removeOmang = document.createElement('button');
           removeOmang.className = 'btn btn-small btn-danger';
           removeOmang.textContent = 'Remove Omang';
-          removeOmang.onclick = (function(id) { return function() { removeDocument(id, 'omang'); }; })(ind.individual_id);
+          removeOmang.onclick = (function(id, btn) { return function() { removeDocument(id, 'omang', btn); }; })(ind.individual_id, removeOmang);
           uploadDiv.appendChild(removeOmang);
         }
         row.appendChild(uploadDiv);
@@ -5438,7 +5438,7 @@ function submitLogin(event) {
             var removeBtn = document.createElement('button');
             removeBtn.className = 'btn btn-small btn-danger';
             removeBtn.textContent = 'Remove';
-            removeBtn.onclick = (function(id, dt) { return function() { removeDocument(id, dt); }; })(ind.individual_id, docType);
+            removeBtn.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, docType, removeBtn);
             btnDiv.appendChild(removeBtn);
           }
           row.appendChild(btnDiv);
@@ -5957,7 +5957,7 @@ function submitLogin(event) {
       wrapper.innerHTML = '';
       wrapper.appendChild(_buildHouseholdOverviewCard(hh, members));
       wrapper.appendChild(_buildFamilyMembersCard(family, selfId, hh, hasSpouse));
-      wrapper.appendChild(_buildHouseholdStaffCard(staff, selfId, hasStaff));
+      wrapper.appendChild(_buildHouseholdStaffCard(staff, selfId, hasStaff, hh));
     }).catch(function(err) {
       wrapper.innerHTML = '';
       var errCard = document.createElement('div');
@@ -6127,7 +6127,7 @@ function submitLogin(event) {
     return card;
   }
 
-  function _buildHouseholdStaffCard(staff, selfId, hasStaff) {
+  function _buildHouseholdStaffCard(staff, selfId, hasStaff, hh) {
     var card = document.createElement('div');
     card.className = 'card';
     card.style.padding = '16px';
@@ -6602,17 +6602,38 @@ function submitLogin(event) {
     });
   }
 
-  function removeDocument(individualId, docType) {
-    if (!confirm('Remove this ' + docType + '? You can upload a new one at any time.')) return;
-    apiCall('remove_document', { individual_id: individualId, document_type: docType })
-      .then(function(res) {
-        if (res.ok) {
-          showToast(docType.charAt(0).toUpperCase() + docType.slice(1) + ' removed.', 'success');
-          loadApplicantPortal();
-        } else {
-          showToast(res.message || 'Could not remove document.', 'error');
-        }
-      });
+  function removeDocument(individualId, docType, triggerBtn) {
+    // Replace the trigger button with inline Yes/Cancel to avoid native confirm()
+    var label = docType.charAt(0).toUpperCase() + docType.slice(1);
+    triggerBtn.style.display = 'none';
+    var confirmSpan = document.createElement('span');
+    confirmSpan.style.display = 'inline-flex';
+    confirmSpan.style.gap = '6px';
+    confirmSpan.style.alignItems = 'center';
+    var yesBtn = document.createElement('button');
+    yesBtn.className = 'btn btn-small btn-danger';
+    yesBtn.textContent = 'Yes, remove';
+    var noBtn = document.createElement('button');
+    noBtn.className = 'btn btn-small btn-secondary';
+    noBtn.textContent = 'Cancel';
+    noBtn.onclick = function() { confirmSpan.remove(); triggerBtn.style.display = ''; };
+    yesBtn.onclick = function() {
+      yesBtn.disabled = true;
+      apiCall('remove_document', { individual_id: individualId, document_type: docType })
+        .then(function(res) {
+          if (res.ok) {
+            showToast(label + ' removed.', 'success');
+            loadApplicantPortal();
+          } else {
+            confirmSpan.remove();
+            triggerBtn.style.display = '';
+            showToast(res.message || 'Could not remove document.', 'error');
+          }
+        });
+    };
+    confirmSpan.appendChild(yesBtn);
+    confirmSpan.appendChild(noBtn);
+    triggerBtn.parentNode.insertBefore(confirmSpan, triggerBtn.nextSibling);
   }
 
   function triggerDocumentUpload(individualId, docType) {

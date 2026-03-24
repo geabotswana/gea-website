@@ -416,7 +416,11 @@ function removeDocumentSubmission(individualId, documentType, callerEmail) {
           && (obj.is_current === true || obj.is_current === 'TRUE')
           && obj.status === 'submitted') {
         var submissionId = obj.submission_id;
+        var fileId = obj.file_id;
         sheet.deleteRow(i + 1);
+        if (fileId) {
+          try { DriveApp.getFileById(fileId).setTrashed(true); } catch (fe) { /* file already gone */ }
+        }
         logAuditEntry(callerEmail, 'document_removed', 'FileSubmission', submissionId,
           'Applicant removed ' + documentType + ' submission before review');
         return { ok: true };

@@ -212,19 +212,19 @@ APPROVE PATH:
   │  └─ board_approval_timestamp = NOW
   │
   ├─ Send documents to RSO for review:
-  │  ├─ Update File Submissions: status = "rso_pending" (for each document)
-  │  └─ Email template: "Documents Submitted for RSO Review"
+  │  ├─ Update File Submissions: status = "submitted" (awaiting RSO review)
+  │  └─ Email template: ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE
   │     ├─ Applicant info summary
-  │     ├─ Document list with download links
-  │     ├─ RSO approval deadline: NOW + 5 business days
-  │     └─ Link to RSO approval interface
+  │     ├─ Document types listed
+  │     ├─ RSO review deadline: NOW + 5 business days
+  │     └─ Notification that RSO will review via secure Admin Portal
   │
   └─ Send applicant email:
-     └─ Email template: "Application Approved by Board - Awaiting RSO Review"
-        ├─ Congratulations message
-        ├─ Next step: RSO review of documents
-        ├─ Expected timeline
-        └─ Link to application dashboard
+     └─ Email template: ADM_DOCS_SENT_TO_RSO_TO_MEMBER (NEW)
+        ├─ Confirmation that documents were forwarded to RSO
+        ├─ List of document types submitted
+        ├─ Notice to check portal for status updates
+        └─ Portal link to application dashboard
 
 DENY PATH:
   ├─ Admin.denyApplication(application_id, denial_reason)

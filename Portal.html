@@ -5459,9 +5459,9 @@ function submitLogin(event) {
           ['Can I edit my application after submitting?',
            'You can add or update household members and upload replacement documents at any time before your application is activated.'],
           ['What happens if my application is rejected?',
-           'You will receive an email with the reason. You may reapply after addressing the stated concerns. Contact the Treasurer for guidance.'],
+           'You will receive an email with the reason. You may reapply after addressing the stated concerns. Contact the Board for guidance.'],
           ['Can a rejected applicant reapply?',
-           'Yes. Please contact the Treasurer to discuss next steps before submitting a new application.']
+           'Yes. Please contact the Board to discuss next steps before submitting a new application.']
         ]
       },
       {
@@ -5498,7 +5498,7 @@ function submitLogin(event) {
         topic: 'Technical & Access',
         items: [
           ['How do I reset my password?',
-           'Use the "Forgot password?" link on the login page, or contact the Treasurer to have a new temporary password issued.'],
+           'Use the "Forgot password?" link on the login page, or contact the Board to have a new temporary password issued.'],
           ['Why can\'t I see certain sections?',
            'Some sections only appear once your application reaches a certain stage. For example, Payment Verification is only shown once your application is approved.'],
           ['My documents show as pending — what does that mean?',
@@ -5562,13 +5562,13 @@ function submitLogin(event) {
 
     var formTitle = document.createElement('h3');
     formTitle.className = 'card-title';
-    formTitle.textContent = 'Contact the Treasurer';
+    formTitle.textContent = 'Contact the Board';
     formCard.appendChild(formTitle);
 
     var desc = document.createElement('p');
     desc.style.color = '#555';
     desc.style.marginBottom = '16px';
-    desc.textContent = 'Send a message directly to the Treasurer. You will receive a reply at your email address within 1–2 business days.';
+    desc.textContent = 'Send a message directly to the Board. You will receive a reply at your email address within 1–2 business days.';
     formCard.appendChild(desc);
 
     // Subject dropdown
@@ -5661,7 +5661,7 @@ function submitLogin(event) {
         messageArea.value = '';
         charCount.textContent = '0 / 1000';
         urgentChk.checked = false;
-        formSuccess.textContent = 'Message sent. The Treasurer will reply within 1-2 business days.';
+        formSuccess.textContent = 'Message sent. The Board will reply within 1-2 business days.';
         formSuccess.style.display = 'block';
       }).catch(function(err) {
         sendBtn.disabled = false;
@@ -5684,7 +5684,7 @@ function submitLogin(event) {
     infoCard.appendChild(infoTitle);
 
     [
-      ['Email', 'treasurer@geabotswana.org'],
+      ['Email', 'board@geabotswana.org'],
       ['Typical Response Time', '1–2 business days'],
       ['Portal Support', 'board@geabotswana.org']
     ].forEach(function(row) {

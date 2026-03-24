@@ -92,11 +92,20 @@ board       // Administrators
             // ├─ Search member directory
             // └─ Access Admin.html
 
-mgt         // Management Officer (RSO, Treasurer)
-            // ├─ Approve Leobo reservations
-            // ├─ Review guest lists
-            // ├─ Verify payments (if Treasurer role)
+mgt         // Management Officer (Leobo approval authority)
+            // ├─ Approve Leobo reservations (first tier)
             // └─ Access restricted admin sections
+
+rso_approve // Regional Security Officer (RSO) - Approval Authority
+            // ├─ Review and approve/reject documents (passports, omangs, photos)
+            // ├─ Review and approve/reject guest lists
+            // ├─ View event calendar for coordination
+            // └─ Access RSO Admin Portal sections
+
+rso_notify  // RSO Coordinator (Read-only)
+            // ├─ View approved event calendar
+            // ├─ View approved guest lists (reference only)
+            // └─ Cannot approve/reject documents or guest lists
 
 Authorization check at handler entry:
 var auth = requireAuth(p.token, "board");  // Validates token & role
@@ -331,7 +340,7 @@ function getExchangeRate()                           // Read current rate with f
 - One-tier photo approval (GEA admin only)
 - Employment verification requests
 - Cloud Storage integration for approved files
-- One-time RSO approval links with expiration
+- RSO reviews via secure Admin Portal login (rso_approve role)
 - Submission history and audit trail
 
 **Key Functions:**
@@ -340,8 +349,8 @@ function submitFile(params)                          // Member uploads document/
 function getSubmissionHistory(householdId, documentType)  // View submission history
 function approveSubmission(submissionId, approverEmail)  // Approve and move to Cloud Storage
 function rejectSubmission(submissionId, approverEmail, reason)  // Reject and notify
-function generateRsoApprovalLink(submissionId)       // Create one-time approval URL
-function handleRsoApproval(linkToken, decision, reason)  // RSO reviews via link
+function getDocumentsForRsoReview()                  // RSO portal: list documents awaiting review
+function approveDocumentByRso(submissionId, rsoEmail)  // RSO approves via admin portal
 function getSubmissionStatus(submissionId)           // Check current status
 ```
 

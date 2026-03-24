@@ -47,6 +47,7 @@ Web app (Portal.html) displays "New Member Application" link
 ```
 Individual applicant:
   ├─ First name, last name, email, phone (three-part: country_code_primary, phone_primary, phone_primary_whatsapp)
+  ├─ Date of birth (REQUIRED, needed to validate document requirements: 18+ = photo + ID, under 18 = photo only)
   ├─ Employment info (captured for all applicants):
   │  ├─ Job title (YES, capture for all applicants)
   │  ├─ Department (NO, do not capture)
@@ -56,10 +57,10 @@ Individual applicant:
   └─ Sponsor info (required for Community/Guest/Affiliate/Associate): Name + email of GEA Full-category member
 
 Family applicant:
-  ├─ Primary member info (as above)
-  ├─ Spouse info: First name, last name, email, phone (optional), employment info (NO spouse employment required)
-  ├─ Child(ren) info: First name, last name, date of birth (age threshold: 17+ = voting eligible)
-  └─ Household staff (optional): Name, DOB, Omang number, employment start date, phone (required), email (optional)
+  ├─ Primary member info (as above, including date of birth)
+  ├─ Spouse info: First name, last name, email, phone (optional), date of birth (OPTIONAL, presumed 18+), employment info (NO spouse employment required)
+  ├─ Child(ren) info: First name, last name, date of birth (REQUIRED, age threshold: 17+ = voting eligible)
+  └─ Household staff (optional): Name, DOB (REQUIRED), Omang number, employment start date, phone (required), email (optional)
 ```
 
 ### STEP 3: Applicant Submits Application
@@ -84,7 +85,7 @@ Create new Household record:
 Create primary individual_id for applicant:
   ├─ individual_id (IND-YYYY-MM-DD-###)
   ├─ household_id (from above)
-  ├─ first_name, last_name, email, phone
+  ├─ first_name, last_name, email, phone, date_of_birth
   ├─ password_hash (auto-generated temporary password sent via email)
   ├─ relationship_to_primary = "Primary" (self)
   ├─ can_access_unaccompanied = TRUE (primary can book reservations)
@@ -92,9 +93,9 @@ Create primary individual_id for applicant:
   └─ application_id (link to Membership Applications sheet)
 
 Create additional individuals (if family):
-  ├─ Spouse: relationship_to_primary = "Spouse", can_access_unaccompanied = TRUE
-  ├─ Children: relationship_to_primary = "Child", can_access_unaccompanied = FALSE (until age 18)
-  └─ Household staff: relationship_to_primary = "[Role]", can_access_unaccompanied = FALSE
+  ├─ Spouse: relationship_to_primary = "Spouse", can_access_unaccompanied = TRUE, date_of_birth (if provided)
+  ├─ Children: relationship_to_primary = "Child", can_access_unaccompanied = FALSE (until age 18), date_of_birth
+  └─ Household staff: relationship_to_primary = "[Role]", can_access_unaccompanied = FALSE, date_of_birth, arrival_date (start date)
 
 Create Application record in Membership Applications sheet (42 columns):
   ├─ application_id, household_id, primary_individual_id

@@ -817,13 +817,8 @@ var SYSTEM_BUILD_DATE       = "2026-03-24";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "RSO dual-role portal (rso_approve/rso_notify) with authenticated document review";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-24 19:28:25";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var DEPLOYMENT_TIMESTAMP    = "2026-03-24 19:30:07";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
-
-// TEST MODE: Set to TRUE to prefix all generated IDs with "TEST-" for easy cleanup before production
-// When TEST_MODE is enabled, all IDs look like: TEST-APP-2026-00001, TEST-HSH-2026-00001, etc.
-// Before go-live: Set TEST_MODE to FALSE and delete all TEST- prefixed records
-var TEST_MODE               = true;
 
 // ============================================================
 // END OF CONFIGURATION FILE

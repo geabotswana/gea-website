@@ -258,8 +258,6 @@ function dialCodeToCountryCode(dialCode) {
  */
 function generateId(prefix) {
   var year = new Date().getFullYear();
-  var testMode = getConfigValue("TEST_MODE") === true || getConfigValue("TEST_MODE") === "TRUE";
-
   // Get counter from Config sheet
   var counterKey = prefix + "_COUNTER";
   var counter = getConfigValue(counterKey) || 0;
@@ -268,12 +266,8 @@ function generateId(prefix) {
   // Persist incremented counter so next call gets the next number
   setConfigValue(counterKey, counter);
 
-  // Format: [TEST-]PREFIX-YEAR-00001
+  // Format: PREFIX-YEAR-00001
   var id = prefix + "-" + year + "-" + String(counter).padStart(5, '0');
-
-  if (testMode) {
-    id = "TEST-" + id;
-  }
 
   return id;
 }

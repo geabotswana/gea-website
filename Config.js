@@ -817,7 +817,7 @@ var SYSTEM_BUILD_DATE       = "2026-03-24";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "RSO dual-role portal (rso_approve/rso_notify) with authenticated document review";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-24 20:20:08";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var DEPLOYMENT_TIMESTAMP    = "2026-03-24 20:37:36";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -5071,7 +5071,8 @@ function submitLogin(event) {
    */
   var applicantPortalState = {
     activeSection: 'dashboard',
-    application: null
+    application: null,
+    householdData: null  // cached response from get_household_members; cleared on mutation
   };
 
   // Generation counters: incremented each time a load is initiated.
@@ -5924,8 +5925,36 @@ function submitLogin(event) {
    * Builds the My Household section. Makes an API call to fetch members,
    * then renders overview, family, and staff cards.
    */
+  function _renderHouseholdInto(wrapper, data) {
+    var hh      = data.household;
+    var members = data.members || [];
+    var selfId  = data.self_id;
+
+    var family = members.filter(function(m) {
+      return m.relationship_to_primary !== 'Staff';
+    });
+    var staff = members.filter(function(m) {
+      return m.relationship_to_primary === 'Staff';
+    });
+    var hasSpouse = members.some(function(m) {
+      return m.relationship_to_primary === 'Spouse';
+    });
+    var hasStaff = staff.length > 0;
+
+    while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
+    wrapper.appendChild(_buildHouseholdOverviewCard(hh, members));
+    wrapper.appendChild(_buildFamilyMembersCard(family, selfId, hh, hasSpouse));
+    wrapper.appendChild(_buildHouseholdStaffCard(staff, selfId, hasStaff, hh));
+  }
+
   function buildApplicantHouseholdSection() {
     var wrapper = document.createElement('div');
+
+    // Serve from cache if available
+    if (applicantPortalState.householdData) {
+      _renderHouseholdInto(wrapper, applicantPortalState.householdData);
+      return wrapper;
+    }
 
     var loadingCard = document.createElement('div');
     loadingCard.className = 'card';
@@ -5938,7 +5967,7 @@ function submitLogin(event) {
 
     apiCall('get_household_members', {}).then(function(res) {
       if (!res.success) {
-        wrapper.innerHTML = '';
+        while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
         var errCard = document.createElement('div');
         errCard.className = 'card';
         errCard.style.padding = '16px';
@@ -5949,27 +5978,10 @@ function submitLogin(event) {
         wrapper.appendChild(errCard);
         return;
       }
-      var hh      = res.data.household;
-      var members = res.data.members || [];
-      var selfId  = res.data.self_id;
-
-      var family = members.filter(function(m) {
-        return m.relationship_to_primary !== 'Staff';
-      });
-      var staff = members.filter(function(m) {
-        return m.relationship_to_primary === 'Staff';
-      });
-      var hasSpouse = members.some(function(m) {
-        return m.relationship_to_primary === 'Spouse';
-      });
-      var hasStaff = staff.length > 0;
-
-      wrapper.innerHTML = '';
-      wrapper.appendChild(_buildHouseholdOverviewCard(hh, members));
-      wrapper.appendChild(_buildFamilyMembersCard(family, selfId, hh, hasSpouse));
-      wrapper.appendChild(_buildHouseholdStaffCard(staff, selfId, hasStaff, hh));
+      applicantPortalState.householdData = res.data; // cache for subsequent tab visits
+      _renderHouseholdInto(wrapper, res.data);
     }).catch(function(err) {
-      wrapper.innerHTML = '';
+      while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
       var errCard = document.createElement('div');
       errCard.className = 'card';
       errCard.style.padding = '16px';
@@ -6005,14 +6017,14 @@ function submitLogin(event) {
     var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp) || '—';
 
     [
-      ['Household Name', hh.household_name || '—'],
-      ['Household ID',   hh.household_id   || '—'],
-      ['Type',           hh.household_type  || '—'],
-      ['Primary Contact', (hh.primary_first_name || '') + ' ' + (hh.primary_last_name || '')],
-      ['Email',          hh.primary_email   || '—'],
-      ['Phone',          phoneDisplay],
-      ['Family Members', String(familyCount)],
-      ['Staff Members',  String(staffCount)]
+      ['Household Name', hh.household_name || '—', false],
+      ['Household ID',   hh.household_id   || '—', false],
+      ['Type',           hh.household_type  || '—', false],
+      ['Primary Contact', (hh.primary_first_name || '') + ' ' + (hh.primary_last_name || ''), false],
+      ['Email',          hh.primary_email   || '—', false],
+      ['Phone',          phoneDisplay, true],  // may contain WhatsApp icon HTML
+      ['Family Members', String(familyCount), false],
+      ['Staff Members',  String(staffCount), false]
     ].forEach(function(pair) {
       var row = document.createElement('div');
       row.style.display = 'flex';
@@ -6024,7 +6036,11 @@ function submitLogin(event) {
       label.style.flexShrink = '0';
       label.textContent = pair[0] + ':';
       var val = document.createElement('span');
-      val.textContent = pair[1];
+      if (pair[2]) {
+        val.innerHTML = pair[1]; // safe: only hardcoded WhatsApp icon HTML, no user data
+      } else {
+        val.textContent = pair[1];
+      }
       row.appendChild(label);
       row.appendChild(val);
       card.appendChild(row);
@@ -6233,6 +6249,7 @@ function submitLogin(event) {
   }
 
   function _refreshHouseholdSection() {
+    applicantPortalState.householdData = null; // invalidate cache after mutation
     renderApplicantPortalSection('household');
   }
 

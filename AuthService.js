@@ -174,6 +174,11 @@ function login(email, password) {
     response.application_status = applicationStatusRaw || householdStatusRaw || "in_progress";
   }
 
+  // Flag if user needs to change their temporary password on first login
+  if (!member.first_login_date) {
+    response.require_password_change = true;
+  }
+
   return response;
 }
 
@@ -295,6 +300,116 @@ function setPassword(individualId, plainPassword, boardEmail) {
   } catch (e) {
     Logger.log("ERROR setPassword: " + e);
     return { success: false, message: "Failed to set password." };
+  }
+}
+
+
+/**
+ * FUNCTION: changePassword
+ * PURPOSE: Allows an authenticated user to change their password.
+ *          Verifies the old password before allowing change.
+ *          Used for first-login password change and voluntary updates.
+ *
+ * HOW IT WORKS:
+ * 1. Validate all parameters are provided
+ * 2. Verify the user's current password matches their stored hash
+ * 3. Validate the new password meets minimum length requirement
+ * 4. Hash the new password using SHA256
+ * 5. Store the hash in the password_hash column of Individuals sheet
+ * 6. Clear first_login_date requirement by marking password_changed_on_date
+ * 7. Invalidate all existing sessions (user must log in again with new password)
+ * 8. Log the action to the Audit Log
+ * 9. Send the member an email confirming password change
+ *
+ * SECURITY:
+ * - Requires user to verify their current password (prevents unauthorized changes)
+ * - The plaintext password is never stored, only the hash
+ * - Changing a password invalidates all existing sessions
+ * - All sessions are cleared to prevent using old tokens with new password
+ *
+ * CALLED BY: Code.js _handleChangePassword() from Portal.html and Admin.html
+ *
+ * @param {string} email              The user's email address (member or admin)
+ * @param {string} currentPassword    Current plaintext password
+ * @param {string} newPassword        New plaintext password to set
+ * @param {string} userType           "member" or "admin"
+ * @returns {Object}
+ *   On success: { success: true, message: "Password changed successfully." }
+ *   On failure: { success: false, message: "Error message" }
+ *
+ * EXAMPLE:
+ * changePassword("jane@state.gov", "OldPassword123!", "NewPassword456!", "member")
+ */
+function changePassword(email, currentPassword, newPassword, userType) {
+  if (!email || !currentPassword || !newPassword) {
+    return { success: false, message: "Email, current password, and new password are required." };
+  }
+
+  if (!isValidEmail(email)) {
+    return { success: false, message: "Invalid email address." };
+  }
+
+  if (newPassword.length < PASSWORD_MIN_LENGTH) {
+    return { success: false, message: "New password must be at least " + PASSWORD_MIN_LENGTH + " characters." };
+  }
+
+  // Normalize userType
+  var normalizedUserType = (userType || "member").toLowerCase();
+
+  try {
+    // Get the user based on type
+    var user = null;
+    if (normalizedUserType === "member") {
+      user = getMemberByEmail(email, true);
+    } else if (normalizedUserType === "admin") {
+      user = _getAdminByEmail(email);
+    } else {
+      return { success: false, message: "Invalid user type." };
+    }
+
+    if (!user) {
+      return { success: false, message: "User not found." };
+    }
+
+    // Verify the current password is correct
+    var currentPasswordHash = hashPassword(currentPassword);
+    if (!constantTimeCompare(currentPasswordHash, user.password_hash || "")) {
+      logAuditEntry(email, AUDIT_PASSWORD_CHANGE_FAILED, "Authentication", user.individual_id || user.admin_id,
+                    "Password change failed: incorrect current password");
+      return { success: false, message: "Current password is incorrect." };
+    }
+
+    // Hash the new password
+    var newPasswordHash = hashPassword(newPassword);
+
+    // Update password in appropriate sheet
+    var userId = normalizedUserType === "member" ? user.individual_id : user.admin_id;
+    if (normalizedUserType === "member") {
+      updateMemberField(userId, "password_hash", newPasswordHash, "system");
+      // Clear the first_login_date to allow future reference to first login
+      // but mark that password has been changed
+      updateMemberField(userId, "password_changed_on_date", new Date(), "system");
+    } else {
+      _updateAdminField(userId, "password_hash", newPasswordHash);
+    }
+
+    // Invalidate all existing sessions for this user (force re-authentication)
+    _invalidateSessionsForEmail(email);
+
+    // Send confirmation email
+    var templateId = normalizedUserType === "member" ? "MEM_PASSWORD_CHANGED_TO_MEMBER" : "ADM_PASSWORD_CHANGED_TO_ADMIN";
+    sendEmailFromTemplate(templateId, email, {
+      FIRST_NAME: user.first_name || "User",
+      PORTAL_URL: normalizedUserType === "member" ? URL_MEMBER_PORTAL : URL_ADMIN_PORTAL
+    });
+
+    logAuditEntry(email, AUDIT_PASSWORD_CHANGED, "Authentication", userId,
+                  "Password changed successfully (type: " + normalizedUserType + ")");
+
+    return { success: true, message: "Password changed successfully. Please log in again with your new password." };
+  } catch (e) {
+    Logger.log("ERROR changePassword: " + e);
+    return { success: false, message: "Failed to change password." };
   }
 }
 

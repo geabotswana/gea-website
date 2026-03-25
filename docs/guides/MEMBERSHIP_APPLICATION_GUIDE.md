@@ -254,7 +254,7 @@ You'll receive:
 ### Step 5: Log In & Upload Documents
 
 1. Log in to your member portal with your email and temporary password
-2. *(Optional)* You can change your password anytime using the password reset link
+2. **Create a permanent password** — For security, you must create your own password on your first login (the temporary password sent via email is not secure for long-term use)
 3. Navigate to **"My Application"** section
 4. You'll see which documents are **required** for your category:
 

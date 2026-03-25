@@ -29,7 +29,7 @@ The Gaborone Employee Association is a community organization serving U.S. Gover
 ### Why Become a Member?
 
 As a GEA member, you enjoy:
-- **Facility Access:** Book tennis court, basketball court, Leobo, gym, and playground
+- **Facility Access:** Book tennis court, basketball court, and Leobo; access gym and playground
 - **Community:** Connect with fellow expatriates and local community members
 - **Events:** Participate in organized social and recreational activities
 - **Family Benefits:** Extend membership to spouse, children, and household staff
@@ -391,7 +391,7 @@ The GEA Treasurer will verify your payment within **2 business days**.
 Once the Treasurer verifies your payment, your GEA membership is **fully active**.
 
 You now have access to:
-- **📅 Reservations:** Book tennis court, basketball court, Leobo, gym, playground
+- **📅 Reservations:** Book tennis court, basketball court, and Leobo; access gym and playground
 - **👥 Member Directory:** View other GEA members and connect
 - **🏠 Family Management:** View all household members
 - **📝 My Profile:** Update contact info, add additional photos
@@ -657,7 +657,7 @@ A: Check your spam folder. If you still don't see it, log in to your portal to c
 
 **Q: What can I do now that I'm a member?**
 A: You can:
-- Book tennis court, basketball court, Leobo, gym, playground
+- Book tennis court, basketball court, and Leobo; access gym and playground
 - View the member directory and connect with others
 - Edit your profile and add photos
 - Download your digital membership card

@@ -221,9 +221,10 @@ You'll fill out a form with your details. What you enter depends on whether you'
 - **Email** (you'll log in with this email and a temporary password)
 - **Phone:** Country code + phone number (e.g., +267 for Botswana)
 - **WhatsApp Enabled?** (checkbox to indicate if your phone number is WhatsApp-enabled)
+- **Employer/Organization** *(required for certain categories)*
 - **Job Title** (e.g., "Program Officer", "Teacher", "Diplomat")
-- **Employment Posting Date** *(if Full/Associate/Diplomatic/Temporary)*
-- **Anticipated Departure Date** *(if Full/Associate/Diplomatic/Temporary)*
+- **Starting Date** *(if Full/Associate/Diplomatic/Temporary; estimate if not known exactly)*
+- **Anticipated Departure Date** *(if Full/Associate/Diplomatic/Temporary; estimate if not known exactly)*
 - **Sponsor Information** *(if required for your category)* — Full name and email of your GEA Full member sponsor
 
 #### **Family Applicant:**

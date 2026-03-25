@@ -142,8 +142,8 @@ Before starting your application, confirm:
 
 Different membership categories require different documents. You'll upload these during your application:
 
-- **Passport** — For non-Botswana citizens (or Botswana citizens joining Full/Associate/Affiliate/Community categories)
-- **Omang (Botswana ID)** — For Botswana citizens
+- **Passport** — Anyone may provide a passport; diplomatic passports are preferred for those who have them
+- **Omang (Botswana ID)** — Botswana citizens may provide Omang
 - **Diplomatic Passport** — Required for Diplomatic category members only
 - **Passport-style Photo** — 600x600–1200x1200 pixels, clear face, 54KB–10MB file
 - **Employment Verification** *(if requested during application)* — Letter from employer confirming status
@@ -152,7 +152,7 @@ Different membership categories require different documents. You'll upload these
 
 - **Membership Year:** August 1 – July 31 (annual cycle)
 - **Join Anytime:** If you join mid-year (e.g., December), you pay a pro-rated amount and your membership remains active through July 31 of the next year.
-- **Example:** Join in December → Pay ~62% of annual dues → Active through July 31 of next year
+- **Example:** Join in January → Pay 75% of annual dues (Q2 rate) → Active through July 31 of next year
 - **Payment Method:** PayPal, SDFCU transfer, Zelle, or Absa bank transfer
 - **Payment Deadline:** Membership is not active until the treasurer verifies your payment
 
@@ -221,7 +221,7 @@ You'll fill out a form with your details. What you enter depends on whether you'
 - **First Name & Last Name**
 - **Email** (you'll log in with this email and a temporary password)
 - **Phone:** Country code + phone number (e.g., +267 for Botswana)
-- **WhatsApp Number** (optional, for portal communication)
+- **WhatsApp Enabled?** (checkbox to indicate if your phone number is WhatsApp-enabled)
 - **Job Title** (e.g., "Program Officer", "Teacher", "Diplomat")
 - **Employment Posting Date** *(if Full/Associate/Diplomatic/Temporary)*
 - **Anticipated Departure Date** *(if Full/Associate/Diplomatic/Temporary)*
@@ -229,14 +229,15 @@ You'll fill out a form with your details. What you enter depends on whether you'
 
 #### **Family Applicant:**
 - **Primary Member Info** (as above—usually the primary earner)
-- **Spouse Info** — First name, last name, phone (optional), date of birth *(extracted from your ID document during verification)*
+- **Spouse Info** — First name, last name, phone (optional), date of birth (required; determines some membership privileges)
 - **Children** — For each child:
   - First name, last name
-  - Date of birth *(required; affects voting eligibility at age 17+)*
+  - Date of birth (required; determines some membership privileges)
 - **Household Staff** *(optional)* — If applicable:
-  - Name, Omang number, phone, email (optional)
+  - Name, phone
+  - Passport or Omang number
   - Employment start date
-  - Date of birth *(extracted from Omang during verification)*
+  - Date of birth (required; determines some membership privileges)
 
 ---
 
@@ -724,7 +725,7 @@ The GEA office is located at the Leobo facility:
 
 **RSO (Regional Security Officer):** A security professional who reviews applicant documents (passports, Omang, photos) to confirm authenticity and validity.
 
-**Sponsor:** An active Full member who verifies that you are known to the community and in good standing. Required for Associate, Affiliate, Diplomatic, and Community categories.
+**Sponsor:** An active Full member who verifies that you are known to the community and in good standing. Required only for Community membership.
 
 **Membership Year:** The annual membership period, August 1 – July 31.
 

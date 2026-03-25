@@ -304,7 +304,7 @@ The Board checks:
 
 ---
 
-### Step 7: Security Officer Reviews Documents
+### Step 7: Regional Security Office Reviews Documents
 
 If your application is approved by the Board, the Regional Security Office (RSO) will review your documents within **5 business days**.
 

@@ -389,10 +389,9 @@ The GEA Treasurer will verify your payment within **2 business days**.
 Once the Treasurer verifies your payment, your GEA membership is **fully active**.
 
 You now have access to:
-- **📅 Reservations:** Book tennis court, basketball court, and Leobo; access gym and playground
-- **👥 Member Directory:** View other GEA members and connect
-- **🏠 Family Management:** View all household members
-- **📝 My Profile:** Update contact info, add additional photos
+- **📅 Reservations:** Book tennis court, basketball court, and Leobo; access gym and playground (not reservable)
+- **🏠 Family Management:** View and update all household members
+- **📝 My Profile:** Update contact info and phone numbers
 - **🪪 Membership Card:** Digital card showing your status and expiration date
 - **📧 Member Communications:** Receive event updates, facility alerts, and news
 

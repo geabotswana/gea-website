@@ -288,7 +288,7 @@ The Board checks:
 **Possible Outcomes:**
 
 **A) Approved** ✓
-- Your documents are sent to the Security Officer (RSO) for review
+- Your documents are sent to the Regional Security Office (RSO) for review
 - You'll receive an email: *"Your application is being reviewed by our security officer"*
 - **Next Step:** Wait for RSO approval (typically 5 business days)
 
@@ -306,7 +306,7 @@ The Board checks:
 
 ### Step 7: Security Officer Reviews Documents
 
-If your application is approved by the Board, the Security Officer (RSO) will review your documents within **5 business days**.
+If your application is approved by the Board, the Regional Security Office (RSO) will review your documents within **5 business days**.
 
 The RSO checks:
 - ✓ Passport/Omang valid and current?
@@ -720,7 +720,7 @@ The GEA office is located at the Leobo facility:
 
 **Household ID:** A unique identifier assigned to each membership household (format: HHS-YYYY-MM-DD-###).
 
-**RSO (Regional Security Officer):** A security professional who reviews applicant documents (passports, Omang, photos) to confirm authenticity and validity.
+**RSO (Regional Security Office):** The team that reviews applicant documents (passports, Omang, photos) to confirm authenticity and validity.
 
 **Sponsor:** An active Full member who verifies that you are known to the community and in good standing. Required only for Community membership.
 

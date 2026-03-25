@@ -351,7 +351,7 @@ The portal provides instructions for four payment methods:
 5. Upload your receipt
 6. Click **"Submit"**
 
-You'll receive an email confirmation: *"Payment received. We'll verify within 2 business days."*
+You'll receive an email confirmation: *"Proof of payment received. We'll verify within 2 business days."*
 
 ---
 

@@ -254,7 +254,7 @@ Reference table defining membership types and associated attributes.
 
 ### 2.1 Reservations Sheet
 
-Main reservations table for facilities (tennis courts, Leobo venue, etc.).
+Main reservations table for facilities (tennis court, Leobo, etc.).
 
 | Field | Type | Notes |
 |-------|------|-------|

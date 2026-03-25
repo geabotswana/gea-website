@@ -24,12 +24,12 @@ Welcome! This guide walks you through the GEA membership application process ste
 
 ### What is GEA?
 
-The Gaborone Employee Association is a community organization serving U.S. Government employees, contractors, diplomats, and community members in Botswana. GEA provides access to shared facilities including tennis courts, basketball courts, a covered meeting area (the Leobo), gym facilities, and a playground.
+The Gaborone Employee Association is a community organization serving U.S. Government employees, contractors, diplomats, and community members in Botswana. GEA provides access to shared facilities including a tennis court, a basketball court, a covered meeting area (the Leobo), gym facilities, and a playground.
 
 ### Why Become a Member?
 
 As a GEA member, you enjoy:
-- **Facility Access:** Book tennis courts, basketball courts, Leobo hall, gym, and playground
+- **Facility Access:** Book tennis court, basketball court, Leobo, gym, and playground
 - **Community:** Connect with fellow expatriates and local community members
 - **Events:** Participate in organized social and recreational activities
 - **Family Benefits:** Extend membership to spouse, children, and household staff
@@ -391,7 +391,7 @@ The GEA Treasurer will verify your payment within **2 business days**.
 Once the Treasurer verifies your payment, your GEA membership is **fully active**.
 
 You now have access to:
-- **📅 Reservations:** Book tennis courts, basketball, Leobo, gym, playground
+- **📅 Reservations:** Book tennis court, basketball court, Leobo, gym, playground
 - **👥 Member Directory:** View other GEA members and connect
 - **🏠 Family Management:** View all household members
 - **📝 My Profile:** Update contact info, add additional photos
@@ -657,7 +657,7 @@ A: Check your spam folder. If you still don't see it, log in to your portal to c
 
 **Q: What can I do now that I'm a member?**
 A: You can:
-- Book tennis courts, basketball, Leobo, gym, playground
+- Book tennis court, basketball court, Leobo, gym, playground
 - View the member directory and connect with others
 - Edit your profile and add photos
 - Download your digital membership card

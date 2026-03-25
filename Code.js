@@ -166,6 +166,7 @@ function _routeAction(action, params) {
     case "logout":      return _handleLogout(params);
     case "password_reset_request": return _handlePasswordResetRequest(params);
     case "password_reset_complete": return _handlePasswordResetComplete(params);
+    case "change_password": return _handleChangePassword(params);
     case "deployment_info": return _handleDeploymentInfo();
     case "get_config_value": return _handleGetConfigValue(params);
     case "submit_application": return _handleSubmitApplication(params);
@@ -495,6 +496,43 @@ function _handlePasswordResetComplete(p) {
   var result = completePasswordReset(p.token, p.email, p.password);
   if (!result.success) {
     return errorResponse(result.message, "PASSWORD_RESET_FAILED");
+  }
+
+  return successResponse({ message: result.message }, result.message);
+}
+
+/**
+ * HANDLER: _handleChangePassword
+ * PURPOSE: Allow authenticated user to change their password.
+ *          Verifies the current password before allowing change.
+ *          Used for first-login password change and voluntary updates.
+ *
+ * REQUIRED PARAMS:
+ *   - token (string): Current session token for authentication
+ *   - current_password (string): User's current password
+ *   - new_password (string): User's new password
+ *
+ * RETURNS:
+ *   On success: { success: true, message: "Password changed successfully..." }
+ *   On failure: { success: false, message: "Error message" }
+ *
+ * CALLED BY: Portal.html and Admin.html password change form
+ */
+function _handleChangePassword(p) {
+  if (!p.token || !p.current_password || !p.new_password) {
+    return errorResponse("Token, current password, and new password are required.", "MISSING_PARAM");
+  }
+
+  // Validate session and get user info
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  // Determine user type based on role
+  var userType = (auth.session.role === "board" || auth.session.role === "rso_approve" || auth.session.role === "rso_notify" || auth.session.role === "mgt") ? "admin" : "member";
+
+  var result = changePassword(auth.session.email, p.current_password, p.new_password, userType);
+  if (!result.success) {
+    return errorResponse(result.message, "PASSWORD_CHANGE_FAILED");
   }
 
   return successResponse({ message: result.message }, result.message);

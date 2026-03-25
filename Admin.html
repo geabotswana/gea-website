@@ -1210,6 +1210,77 @@
   </div>
 
   <!-- ============================================================ -->
+  <!-- FIRST LOGIN PASSWORD CHANGE MODAL                             -->
+  <!-- Shown when user logs in for the first time                    -->
+  <!-- ============================================================ -->
+
+  <div id="passwordChangeModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+      <div style="background: var(--color-primary); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin: -20px -20px 20px -20px;">
+        <h2 style="margin: 0; font-size: 20px;">Create Your Password</h2>
+        <p style="margin: 8px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">You're logging in for the first time</p>
+      </div>
+      <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
+        For security, we recommend you create a strong password. This temporary password was sent via email and should not be reused elsewhere.
+      </p>
+      <div id="passwordChangeError" class="alert alert-danger" style="display: none; margin-bottom: 20px;"></div>
+      <form onsubmit="submitPasswordChange(event, true)">
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="currentPassword" class="form-input" placeholder="••••••••••••" required minlength="12">
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" id="newPassword" class="form-input" placeholder="••••••••••••" required minlength="12">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" id="confirmPassword" class="form-input" placeholder="••••••••••••" required minlength="12">
+        </div>
+        <p style="font-size: 12px; color: #999; margin-bottom: 16px;">
+          Passwords must be at least 12 characters.
+        </p>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 12px;">Create Password</button>
+        <button type="button" class="btn btn-secondary" style="width: 100%;" onclick="logout()">Logout</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PASSWORD CHANGE FORM (from settings/menu)                    -->
+  <!-- Optional password change for existing members                 -->
+  <!-- ============================================================ -->
+
+  <div id="passwordChangeFormModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; font-size: 18px;">Change Password</h2>
+        <button type="button" class="btn btn-icon" onclick="closePasswordChangeForm()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">×</button>
+      </div>
+      <div id="passwordChangeFormError" class="alert alert-danger" style="display: none; margin-bottom: 20px;"></div>
+      <form onsubmit="submitPasswordChange(event, false)">
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="currentPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12">
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" id="newPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" id="confirmPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12">
+        </div>
+        <p style="font-size: 12px; color: #999; margin-bottom: 16px;">
+          Passwords must be at least 12 characters.
+        </p>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 12px;">Change Password</button>
+        <button type="button" class="btn btn-link" onclick="closePasswordChangeForm()" style="width: 100%; background: none; border: 1px solid #ddd; color: #666;">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
   <!-- MAIN APP (shown after authentication)                        -->
   <!-- ============================================================ -->
   
@@ -1230,6 +1301,9 @@
         <div class="header-user-name" id="headerUserName">Board Member</div>
         <div class="header-user-role">Administrator</div>
       </div>
+      <button class="btn-logout" onclick="openPasswordChangeForm();" title="Change your password">
+        <i class="fas fa-lock" style="margin-right: 6px;"></i>Change Password
+      </button>
       <button class="btn-logout" onclick="logout();">Logout</button>
     </div>
   </header>
@@ -2090,6 +2164,15 @@
       currentUser  = res.data;
       sessionStorage.setItem('gea_token', currentToken);
 
+      // Check if user needs to change their password on first login
+      if (res.data.require_password_change) {
+        // Hide login screen and show password change modal
+        document.getElementById('loginScreen').classList.remove('show');
+        document.getElementById('passwordChangeModal').style.display = 'block';
+        document.getElementById('currentPassword').focus();
+        return;
+      }
+
       document.getElementById('loginScreen').classList.remove('show');
       showAuthenticatedUI();
 
@@ -2135,6 +2218,123 @@
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginPassword').value = '';
     document.getElementById('loginEmail').focus();
+  }
+
+  /**
+   * Submits a password change request.
+   * Used for both first-login forced change and voluntary updates.
+   * @param {Event} event - Form submission event
+   * @param {boolean} isFirstLogin - True if this is forced first-login change
+   */
+  function submitPasswordChange(event, isFirstLogin) {
+    event.preventDefault();
+
+    var currentPassword, newPassword, confirmPassword, errorDiv, modalId;
+
+    if (isFirstLogin) {
+      currentPassword = document.getElementById('currentPassword').value;
+      newPassword = document.getElementById('newPassword').value;
+      confirmPassword = document.getElementById('confirmPassword').value;
+      errorDiv = document.getElementById('passwordChangeError');
+      modalId = 'passwordChangeModal';
+    } else {
+      currentPassword = document.getElementById('currentPasswordForm').value;
+      newPassword = document.getElementById('newPasswordForm').value;
+      confirmPassword = document.getElementById('confirmPasswordForm').value;
+      errorDiv = document.getElementById('passwordChangeFormError');
+      modalId = 'passwordChangeFormModal';
+    }
+
+    // Clear previous errors
+    errorDiv.textContent = '';
+    errorDiv.style.display = 'none';
+
+    // Validate passwords
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      errorDiv.textContent = 'All fields are required.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    if (newPassword.length < 12) {
+      errorDiv.textContent = 'New password must be at least 12 characters.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      errorDiv.textContent = 'New passwords do not match.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      errorDiv.textContent = 'New password must be different from current password.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    var submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Changing password...';
+
+    // Call the API
+    apiCall('change_password', {
+      token: currentToken,
+      current_password: currentPassword,
+      new_password: newPassword
+    }).then(function(res) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = isFirstLogin ? 'Create Password' : 'Change Password';
+
+      if (!res.success) {
+        errorDiv.textContent = res.message || 'Failed to change password.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      // Password changed successfully
+      if (isFirstLogin) {
+        // For first login, show success message and redirect to login
+        alert('Password created successfully! Please log in again with your new password.');
+        document.getElementById('passwordChangeModal').style.display = 'none';
+        currentToken = null;
+        currentUser = null;
+        sessionStorage.clear();
+        showLoginScreen();
+      } else {
+        // For voluntary change, close modal and show success
+        alert('Password changed successfully! You will be logged out for security. Please log in again.');
+        closePasswordChangeForm();
+        logout();
+      }
+    }).catch(function(err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = isFirstLogin ? 'Create Password' : 'Change Password';
+      errorDiv.textContent = 'Connection error. Please try again.';
+      errorDiv.style.display = 'block';
+      console.error('Password change error:', err);
+    });
+  }
+
+  /**
+   * Closes the password change form modal.
+   */
+  function closePasswordChangeForm() {
+    document.getElementById('passwordChangeFormModal').style.display = 'none';
+    document.getElementById('currentPasswordForm').value = '';
+    document.getElementById('newPasswordForm').value = '';
+    document.getElementById('confirmPasswordForm').value = '';
+    document.getElementById('passwordChangeFormError').textContent = '';
+    document.getElementById('passwordChangeFormError').style.display = 'none';
+  }
+
+  /**
+   * Opens the password change form modal from settings.
+   */
+  function openPasswordChangeForm() {
+    document.getElementById('passwordChangeFormModal').style.display = 'block';
+    document.getElementById('currentPasswordForm').focus();
   }
 
   /**

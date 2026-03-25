@@ -467,7 +467,7 @@ A: Membership is valid through July 31 of the current membership year. If you jo
 A: Contact the board at board@geabotswana.org. Your membership category may need to be updated. (For example, if you transition from Full to Associate, your dues may change.)
 
 **Q: Can I add family members after I join?**
-A: Currently, family members must be included in your initial application. If you need to add family members later, contact the board to discuss options.
+A: If you have a Family membership, you can submit new family members via the member portal throughout the year. New members are subject to board approval and must be legally resident with you. This may include children who attend a boarding school elsewhere, but not family members who normally reside at another address. You may also add or change household staff (up to one active at any given time). If you have an Individual membership, you may contact the Board to request a change to a Family membership.
 
 **Q: What if I lose my temporary password?**
 A: Click **"Forgot Password"** on the login screen, and a reset link will be emailed to you.
@@ -482,9 +482,6 @@ A: You likely qualify for Community membership. Confirm that you meet the Commun
 **Q: My sponsor is a Full member but their membership expires soon. Can they still sponsor me?**
 A: Yes, your sponsor must be an **active** Full member at the time of your application. Once your application is submitted, your sponsor's status doesn't affect your approval.
 
-**Q: Can I choose a different category if I qualify for multiple?**
-A: Yes! During the application, if you qualify for multiple categories, you can select your preference. Choose the category that best fits your situation.
-
 **Q: I'm an Associate member. Can I sponsor someone?**
 A: No, only Full members can sponsor. To be clear: Community members are the only ones who need sponsors—only Full members can provide that sponsorship.
 
@@ -496,13 +493,13 @@ A: The board will contact your sponsor. If unable to verify sponsorship, your ap
 ### Document Questions
 
 **Q: My passport is expiring soon. Can I still submit it?**
-A: Yes, but your passport must be valid at the time of submission. If it expires before your application is approved, you'll need to resubmit a new valid passport.
+A: Yes, but your passport must be valid at the time of submission. If it expires before your application is approved, you'll need to resubmit a new valid passport once it is available.
 
 **Q: Can I submit a photocopy instead of a scan?**
 A: No, the system requires digital uploads (PDF, JPG, PNG). Scan or photograph your documents clearly.
 
 **Q: What if my photo doesn't meet specifications?**
-A: The system will tell you if your photo is too small, too large, or unclear. You can easily replace it and resubmit. Make sure your face is clearly visible.
+A: If a problem is found with your photo, you'll be notified. You can easily replace it and resubmit.
 
 **Q: Do I need an apostille or certified copy of my documents?**
 A: No, standard scans are sufficient for the initial submission. RSO may request certified copies if needed.
@@ -515,10 +512,10 @@ A: You must have valid identification. If you're missing required documents, con
 ### Payment Questions
 
 **Q: What if I pay but forget to upload my receipt?**
-A: Your membership will not be activated until you submit proof of payment. Upload the receipt as soon as possible. If the Treasurer can't verify your payment within 2 business days, they'll send you a reminder.
+A: If you do not have a proof of payment document, you can submit the payment information nonetheless (payment method, date, amount, and payment reference), and the Treasurer will attempt to verify it. A payment document is not required but can be helpful.
 
 **Q: Can I pay in Botswana Pula instead of USD?**
-A: Yes! The portal displays the equivalent amount in BWP using daily exchange rates. You can pay in either currency using the appropriate payment method (SDFCU/Absa for BWP, PayPal/Zelle for USD).
+A: Yes! The portal displays the equivalent amount in BWP using exchange rates updated every Monday. Absa is in BWP, while PayPal, SDFCU, and Zelle are all in USD.
 
 **Q: What if I paid but the Treasurer says they don't see my payment?**
 A: Sometimes payments take time to process. Check:
@@ -562,8 +559,7 @@ A: Check your spam folder. If you still don't see it, log in to your portal to c
 **Q: What can I do now that I'm a member?**
 A: You can:
 - Book tennis court, basketball court, and Leobo; access gym and playground
-- View the member directory and connect with others
-- Edit your profile and add photos
+- Edit your profile and update contact information
 - Download your digital membership card
 - Participate in GEA events
 
@@ -574,10 +570,10 @@ A: Voting rights are available to Full members who are 17 years old or older. Ot
 A: Board eligibility is limited to Full members who are 17 years old or older. Contact the board to express interest.
 
 **Q: How do I renew my membership?**
-A: In late June/early July (before July 31 expiration), you'll receive an email with renewal instructions. The renewal process is similar to the initial application but typically faster if your documents are still valid.
+A: You'll receive renewal reminders 30 days and 7 days before July 31 expiration. The renewal process is simplified: certify your eligibility remains valid, confirm ID documents are current and unexpired, update household members, submit new photos for all children (yearly) and for adults (every three years), then submit proof of payment.
 
 **Q: What if my membership expires?**
-A: You'll receive reminder emails at 30 days and 7 days before expiration. After July 31, your membership becomes inactive and you lose facility access. You'll need to submit a renewal application (or new application) to reactivate.
+A: You'll receive reminder emails at 30 days and 7 days before expiration. After July 31, your membership becomes inactive and you lose facility access. You'll need to complete the renewal process to reactivate.
 
 ---
 
@@ -586,8 +582,6 @@ A: You'll receive reminder emails at 30 days and 7 days before expiration. After
 ### Board Contact Information
 
 **Email:** board@geabotswana.org
-
-**Phone:** Available through GEA office during business hours
 
 **Portal:** Once you're a member, you can message the board directly through your member portal
 
@@ -600,41 +594,9 @@ A: You'll receive reminder emails at 30 days and 7 days before expiration. After
 ### What to Include in Your Email
 
 To help the board respond quickly, include:
-- Your **full name** and **household ID** (if you have one)
-- Your **membership category** (or the category you're applying for)
+- Your **full name**
 - **Specific question or issue**
 - Any **relevant details** (e.g., application status, payment confirmation number, document name)
-
-### In-Person Support
-
-The GEA office is located at the Leobo facility:
-- **Address:** Gaborone Employee Association, Leobo Hall, Gaborone, Botswana
-- **Hours:** TBD (contact board@geabotswana.org for current hours)
-- **Services:** Pay membership dues in person, ask questions, collect membership card
-
----
-
-## Appendix: Common Terms
-
-**Active Member:** A member whose payment has been verified by the Treasurer and whose membership is currently valid through July 31.
-
-**Board:** The GEA Board of Directors, which reviews applications, approves memberships, and manages facility policies.
-
-**Facility:** A shared recreational resource available to GEA members (tennis court, basketball, Leobo, gym, playground).
-
-**Household:** A membership unit consisting of a primary member and any spouse, children, or household staff.
-
-**Household ID:** A unique identifier assigned to each membership household (format: HHS-YYYY-MM-DD-###).
-
-**RSO (Regional Security Office):** The team that reviews applicant documents (passports, Omang, photos) to confirm authenticity and validity.
-
-**Sponsor:** An active Full member who verifies that you are known to the community and in good standing. Required only for Community membership.
-
-**Membership Year:** The annual membership period, August 1 – July 31.
-
-**Treasurer:** The board member responsible for verifying payment and activating memberships.
-
-**Verification Status:** The current state of your application (Submitted, Board Review, RSO Review, Awaiting Payment, Activated, Denied).
 
 ---
 

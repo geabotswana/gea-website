@@ -152,7 +152,7 @@ Different membership categories require different documents. You'll upload these
 
 - **Membership Year:** August 1 – July 31 (annual cycle)
 - **Join Anytime:** If you join mid-year (e.g., December), you pay a pro-rated amount and your membership remains active through July 31 of the next year.
-- **Example:** Join in January → Pay 75% of annual dues (Q2 rate) → Active through July 31 of next year
+- **Example:** Join in January → Pay 75% of annual dues (Q2 rate) → Active until the next July 31
 - **Payment Method:** PayPal, SDFCU transfer, Zelle, or Absa bank transfer
 - **Payment Deadline:** Membership is not active until the treasurer verifies your payment
 
@@ -469,7 +469,7 @@ Your membership is active through **July 31** of the current membership year, re
   - **March–May (Q3):** 50% of annual dues
   - **June–July (Q4):** 25% of annual dues
 
-**Example:** Join in January → Owe 75% of full annual dues → Active through July 31 of following year
+**Example:** Join in January → Owe 75% of full annual dues → Active until the next July 31
 
 ### Payment Methods
 

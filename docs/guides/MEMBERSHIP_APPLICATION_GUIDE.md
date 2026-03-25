@@ -229,7 +229,7 @@ You'll fill out a form with your details. What you enter depends on whether you'
 
 #### **Family Applicant:**
 - **Primary Member Info** (as above—usually the primary earner)
-- **Spouse Info** — First name, last name, phone (optional), date of birth (required; determines some membership privileges)
+- **Spouse Info** — First name, last name, phone (optional)
 - **Children** — For each child:
   - First name, last name
   - Date of birth (required; determines some membership privileges)
@@ -237,7 +237,6 @@ You'll fill out a form with your details. What you enter depends on whether you'
   - Name, phone
   - Passport or Omang number
   - Employment start date
-  - Date of birth (required; determines some membership privileges)
 
 ---
 

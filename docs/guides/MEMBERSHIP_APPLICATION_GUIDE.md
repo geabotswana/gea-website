@@ -338,9 +338,9 @@ Once your documents are approved by the RSO, you're ready to pay membership dues
 
 **How to Pay:**
 The portal provides instructions for four payment methods:
-1. **PayPal** — Fastest and most convenient (geabotswana.org@gmail.com or linked Stripe)
+1. **PayPal** — Fastest and most convenient (geaboard@gmail.com)
 2. **SDFCU Transfer** — Bank-to-bank transfer to SDFCU account
-3. **Zelle** — U.S.-based money transfer (if available in your region)
+3. **Zelle** — U.S.-based money transfer
 4. **Absa Bank** — Direct deposit to Absa account in Botswana
 
 **Submit Payment Proof:**
@@ -473,7 +473,7 @@ Your membership is active through **July 31** of the current membership year, re
 All four methods are available in your portal:
 
 1. **PayPal** (Recommended)
-   - Pay to: geabotswana.org@gmail.com
+   - Pay to: geaboard@gmail.com
    - Fastest processing; receipt emailed instantly
    - Works worldwide
 

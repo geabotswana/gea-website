@@ -1,6 +1,6 @@
 # Email Templates Manifest
 
-Complete index of all 63 GEA email templates. Each entry shows the semantic name (used in code), the file name, recipient, and required variables.
+Complete index of all 67 GEA email templates. Each entry shows the semantic name (used in code), the file name, recipient, and required variables.
 
 ---
 
@@ -39,7 +39,7 @@ Complete index of all 63 GEA email templates. Each entry shows the semantic name
 
 ---
 
-## Membership (14 templates)
+## Membership (16 templates)
 
 | Semantic Name | File | Recipient | Variables |
 |---------------|------|-----------|-----------|
@@ -54,6 +54,8 @@ Complete index of all 63 GEA email templates. Each entry shows the semantic name
 | MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER | membership/MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER.txt | New Member | APPLICANT_NAME |
 | MEM_MEMBERSHIP_EXPIRED_TO_MEMBER | membership/MEM_MEMBERSHIP_EXPIRED_TO_MEMBER.txt | Member | FIRST_NAME, EXPIRED_DATE, REACTIVATION_AMOUNT, PORTAL_URL |
 | MEM_PASSPORT_EXPIRATION_WARNING_TO_MEMBER | membership/MEM_PASSPORT_EXPIRATION_WARNING_TO_MEMBER.txt | Member | FIRST_NAME, EXPIRATION_DATE, RENEWAL_URL |
+| MEM_PASSWORD_RESET_COMPLETE_TO_MEMBER | membership/MEM_PASSWORD_RESET_COMPLETE_TO_MEMBER.txt | Member | FIRST_NAME |
+| MEM_PASSWORD_RESET_REQUEST_TO_MEMBER | membership/MEM_PASSWORD_RESET_REQUEST_TO_MEMBER.txt | Member | FIRST_NAME, RESET_LINK, RESET_WINDOW_MINUTES |
 | MEM_PASSWORD_SET_TO_MEMBER | membership/MEM_PASSWORD_SET_TO_MEMBER.txt | Member | FIRST_NAME, PORTAL_URL |
 | MEM_RENEWAL_REMINDER_30_DAYS_TO_MEMBER | membership/MEM_RENEWAL_REMINDER_30_DAYS_TO_MEMBER.txt | Member | FIRST_NAME, RENEWAL_DEADLINE, MEMBERSHIP_YEAR, PORTAL_URL |
 | MEM_RENEWAL_REMINDER_7_DAYS_TO_MEMBER | membership/MEM_RENEWAL_REMINDER_7_DAYS_TO_MEMBER.txt | Member | FIRST_NAME, RENEWAL_DEADLINE, MEMBERSHIP_YEAR, PORTAL_URL |
@@ -105,6 +107,13 @@ Reserved for future general announcements (event reminders, news bulletins, meet
 
 ---
 
-## System (0 templates)
+## System (2 templates)
 
-Reserved for future system/account emails (password reset, account locked, maintenance notices).
+Account management and system notifications.
+
+| Semantic Name | File | Recipient | Variables |
+|---------------|------|-----------|-----------|
+| SYS_PASSWORD_RESET_COMPLETE_TO_ADMIN | system/SYS_PASSWORD_RESET_COMPLETE_TO_ADMIN.txt | Admin | FIRST_NAME |
+| SYS_PASSWORD_RESET_REQUEST_TO_ADMIN | system/SYS_PASSWORD_RESET_REQUEST_TO_ADMIN.txt | Admin | FIRST_NAME, RESET_LINK, RESET_WINDOW_MINUTES |
+
+Reserved for future system/account emails (account locked, maintenance notices, etc.).

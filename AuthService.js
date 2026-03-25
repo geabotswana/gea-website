@@ -505,7 +505,7 @@ function requestPasswordReset(email, userType) {
     var resetLink = "https://geabotswana.org/member.html?action=reset_password&token=" + encodeURIComponent(token);
     var firstName = user.first_name || "User";
 
-    sendEmail(templateId, email, {
+    sendEmailFromTemplate(templateId, email, {
       FIRST_NAME: firstName,
       RESET_LINK: resetLink,
       RESET_WINDOW_MINUTES: String(PASSWORD_RESET_WINDOW_MINUTES)
@@ -604,7 +604,7 @@ function completePasswordReset(token, email, newPassword) {
 
     // Send confirmation email
     var templateId = userType === "member" ? TPL_PASSWORD_RESET_COMPLETE_MEMBER : TPL_PASSWORD_RESET_COMPLETE_ADMIN;
-    sendEmail(templateId, email, {
+    sendEmailFromTemplate(templateId, email, {
       FIRST_NAME: user.first_name || "User"
     });
 

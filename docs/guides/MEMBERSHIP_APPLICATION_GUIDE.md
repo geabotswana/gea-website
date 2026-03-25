@@ -257,11 +257,9 @@ You'll receive:
 2. **Create a permanent password** — For security, you must create your own password on your first login (the temporary password sent via email is not secure for long-term use)
 3. Navigate to **"My Application"** section
 4. You'll see which documents are **required** for your category:
-
-   - **Passport** — For non-citizens or citizens applying for some categories
-   - **Omang (Botswana ID)** — For citizens, if applicable
-   - **Diplomatic Passport** — Only for Diplomatic members
-   - **Passport-style Photo** — Required for all applicants
+   - **One identification document per adult:** Passport, Omang, or Diplomatic Passport (depending on category)
+   - **One photo per adult:** 600x600–1200x1200 pixels, clear face shot
+   - **One photo per child:** Same specifications as adult photo
 
 5. **Upload each required document:**
    - Click **"Upload"** for each document type

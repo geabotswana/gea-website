@@ -73,6 +73,7 @@ var TAB_EMAIL_TEMPLATES     = "Email Templates";
 var TAB_AUDIT_LOG           = "Audit Log";
 var TAB_HOLIDAY_CALENDAR    = "Holiday Calendar";
 var TAB_SESSIONS            = "Sessions";
+var TAB_PASSWORD_RESET_TOKENS = "Password Reset Tokens";
 var TAB_ADMINISTRATORS      = "Administrators";  // Admin account table (board/mgt/rso logins)
 
 // GEA Payment Tracking tabs
@@ -725,6 +726,24 @@ var PASSWORD_MIN_LENGTH     = 12;        // Minimum 12 characters required
 // Uses Utilities.computeDigest() with SHA256
 // SHA256 is cryptographically secure and one-way
 var PASSWORD_HASH_ALGORITHM = "SHA256";
+
+// Password reset configuration (self-serve reset feature)
+// Users can request password reset via email, complete reset with token
+var PASSWORD_RESET_WINDOW_MINUTES = 15;        // Token validity window (15 minutes)
+var PASSWORD_RESET_MAX_REQUESTS_PER_HOUR = 3;  // Abuse prevention: max 3 requests per email per hour
+var PASSWORD_RESET_MAX_ATTEMPTS = 3;           // Max 3 failed validation attempts per token
+
+// Audit action types for password reset
+var AUDIT_PASSWORD_RESET_REQUESTED = "PASSWORD_RESET_REQUESTED";
+var AUDIT_PASSWORD_RESET_COMPLETED = "PASSWORD_RESET_COMPLETED";
+var AUDIT_PASSWORD_RESET_FAILED = "PASSWORD_RESET_FAILED";
+var AUDIT_PASSWORD_RESET_RATE_LIMITED = "PASSWORD_RESET_RATE_LIMITED";
+
+// Email template IDs for password reset
+var TPL_PASSWORD_RESET_REQUEST_MEMBER = "tpl_080";
+var TPL_PASSWORD_RESET_COMPLETE_MEMBER = "tpl_081";
+var TPL_PASSWORD_RESET_REQUEST_ADMIN = "tpl_082";
+var TPL_PASSWORD_RESET_COMPLETE_ADMIN = "tpl_083";
 
 
 // ============================================================

@@ -164,6 +164,8 @@ function _routeAction(action, params) {
     case "login":       return _handleLogin(params);
     case "admin_login": return _handleAdminLogin(params);
     case "logout":      return _handleLogout(params);
+    case "password_reset_request": return _handlePasswordResetRequest(params);
+    case "password_reset_complete": return _handlePasswordResetComplete(params);
     case "deployment_info": return _handleDeploymentInfo();
     case "get_config_value": return _handleGetConfigValue(params);
     case "submit_application": return _handleSubmitApplication(params);
@@ -435,6 +437,67 @@ function _handleAdminLogin(p) {
   if (!result.success) return errorResponse(result.message, "AUTH_FAILED");
 
   return successResponse({ token: result.token, role: result.role, admin: result.admin });
+}
+
+/**
+ * HANDLER: _handlePasswordResetRequest
+ * PURPOSE: Processes password reset requests from login screens.
+ *          User provides email address, backend generates reset token and sends email.
+ *
+ * CALLED BY: doGet() when action=password_reset_request
+ *
+ * PARAMETERS:
+ * - email: User's email address
+ * - user_type: "member" or "admin" (determines which sheet to reset password in)
+ *
+ * RETURNS:
+ * - On success: { success: true, message: "Check email..." }
+ * - On failure: { success: false, message: "Error message" }
+ */
+function _handlePasswordResetRequest(p) {
+  if (!p.email) {
+    return errorResponse("Email is required.", "MISSING_PARAM");
+  }
+
+  var userType = p.user_type || "member";
+  if (userType !== "member" && userType !== "admin") {
+    return errorResponse("Invalid user type.", "INVALID_PARAM");
+  }
+
+  var result = requestPasswordReset(p.email, userType);
+  if (!result.success) {
+    return errorResponse(result.message, "PASSWORD_RESET_FAILED");
+  }
+
+  return successResponse({ message: result.message }, result.message);
+}
+
+/**
+ * HANDLER: _handlePasswordResetComplete
+ * PURPOSE: Completes the password reset by validating token and updating password.
+ *
+ * CALLED BY: doGet() when action=password_reset_complete
+ *
+ * PARAMETERS:
+ * - token: Reset token from email link
+ * - email: User's email address (must match token record)
+ * - password: New plaintext password (will be hashed)
+ *
+ * RETURNS:
+ * - On success: { success: true, message: "Password reset successfully" }
+ * - On failure: { success: false, message: "Error message" }
+ */
+function _handlePasswordResetComplete(p) {
+  if (!p.token || !p.email || !p.password) {
+    return errorResponse("Token, email, and password are required.", "MISSING_PARAM");
+  }
+
+  var result = completePasswordReset(p.token, p.email, p.password);
+  if (!result.success) {
+    return errorResponse(result.message, "PASSWORD_RESET_FAILED");
+  }
+
+  return successResponse({ message: result.message }, result.message);
 }
 
 // ── Admin Account Management Handlers (board-only) ───────────────────────────

@@ -57,6 +57,9 @@ function runNightlyTasks() {
   // 7. Clean up expired sessions
   purgeExpiredSessions();
 
+  // 7b. Clean up expired password reset tokens
+  purgeExpiredResetTokens();
+
   // 8. Update exchange rate from API
   fetchAndUpdateExchangeRate();
 

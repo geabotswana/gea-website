@@ -191,24 +191,24 @@ The system will ask a series of yes/no questions to determine your category:
 
 *Continuing from "Yes":**
 - **Question 1b:** Are you in Botswana on temporary duty or as an official visitor?
-  - **Yes** → **TEMPORARY MEMBERSHIP** suggested ✓
-  - **No** → **FULL MEMBERSHIP** suggested ✓
+  - **Yes** → **TEMPORARY MEMBERSHIP** selected ✓
+  - **No** → **FULL MEMBERSHIP** selected ✓
 
 *Continuing from "No" in Question 1:*
 
 - **Question 2:** Are you a direct employee of the U.S. Embassy (recruited from outside Botswana) OR a U.S. citizen employed by a USG-funded contractor?
-  - **Yes** → **ASSOCIATE MEMBERSHIP** suggested ✓
+  - **Yes** → **ASSOCIATE MEMBERSHIP** selected ✓
   - **No** → Continue to Question 3
 
 - **Question 3:** Are you a direct employee of the U.S. Embassy (recruited in Botswana, i.e., local hire)?
-  - **Yes** → **AFFILIATE MEMBERSHIP** suggested ✓
+  - **Yes** → **AFFILIATE MEMBERSHIP** selected ✓
   - **No** → Continue to Question 4
 
 - **Question 4:** Are you a registered diplomat of another diplomatic or international-organization mission in Botswana?
-  - **Yes** → **DIPLOMATIC MEMBERSHIP** suggested ✓
-  - **No** → **COMMUNITY MEMBERSHIP** suggested ✓
+  - **Yes** → **DIPLOMATIC MEMBERSHIP** selected ✓
+  - **No** → **COMMUNITY MEMBERSHIP** selected ✓
 
-The system will suggest your category. You can confirm or select a different category if you qualify for multiple options.
+The system will select your category based on your answers.
 
 ---
 

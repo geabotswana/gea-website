@@ -74,7 +74,7 @@ GEA membership is determined by your employment status or official capacity. Cho
 
 **Sponsorship:** Not required.
 
-**Benefits:** Facility access per current by-laws.
+**Benefits:** Full access to all facilities per current by-laws.
 
 ---
 
@@ -98,7 +98,7 @@ GEA membership is determined by your employment status or official capacity. Cho
 
 **Note:** Sponsorship is a community introduction only. Sponsors have **no financial or legal responsibility** for your membership.
 
-**Benefits:** Facility access per current by-laws.
+**Benefits:** Full access to all facilities per current by-laws.
 
 ---
 

@@ -1,6 +1,6 @@
 ﻿Dear {{FIRST_NAME}},
 
-You have requested to book additional tennis courts.
+You have requested to book additional tennis court time.
 
 Thank you for your request to exceed the standard tennis court reservation limit.
 

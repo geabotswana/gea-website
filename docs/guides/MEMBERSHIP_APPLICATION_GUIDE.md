@@ -461,7 +461,7 @@ A: Email board@geabotswana.org. The GEA board will respond within 24 hours.
 A: Yes! You can apply remotely and upload documents electronically. Membership becomes active when payment is verified, and you can use facilities once you arrive.
 
 **Q: How long is my membership valid?**
-A: Membership is valid through July 31 of the current membership year. If you join mid-year, your membership extends to July 31 of the next year. You can renew annually.
+A: Membership is valid through July 31 of the current membership year. If you join mid-year, your membership extends to the next July 31. You can renew annually.
 
 **Q: What if my employment status changes during my membership?**
 A: Contact the board at board@geabotswana.org. Your membership category may need to be updated. (For example, if you transition from Full to Associate, your dues may change.)

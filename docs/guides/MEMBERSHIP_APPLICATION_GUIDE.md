@@ -135,8 +135,7 @@ Only an active Full member can sponsor you.
 Before starting your application, confirm:
 1. **Your employment status or official capacity** matches one of the six categories above
 2. **Your sponsor** (Community members only) — If you're applying for Community membership, find an active GEA Full member willing to sponsor you
-3. **You have valid identification** (passport, Omang, or diplomatic passport)
-4. **You have a recent photo** (600x600 to 1200x1200 pixels, clear face shot, any background)
+3. **You have your supporting documents**, per the following section
 
 ### Gather Required Documents
 

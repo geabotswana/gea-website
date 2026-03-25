@@ -338,9 +338,9 @@ Once your documents are approved by the RSO, you're ready to pay membership dues
 
 **How to Pay:**
 The portal provides instructions for four payment methods:
-1. **PayPal** — Fastest and most convenient (geaboard@gmail.com)
+1. **PayPal** — (geaboard@gmail.com)
 2. **SDFCU Transfer** — Bank-to-bank transfer to SDFCU account
-3. **Zelle** — U.S.-based money transfer
+3. **Zelle** (Recommended) — Fastest delivery, no fees
 4. **Absa Bank** — Direct deposit to Absa account in Botswana
 
 **Submit Payment Proof:**
@@ -472,20 +472,20 @@ Your membership is active through **July 31** of the current membership year, re
 
 All four methods are available in your portal:
 
-1. **PayPal** (Recommended)
+1. **PayPal**
    - Pay to: geaboard@gmail.com
-   - Fastest processing; receipt emailed instantly
-   - Works worldwide
+   - Receipt emailed instantly
+   - Works worldwide (note: includes transaction fees)
 
 2. **Bank Transfer (SDFCU)**
    - SDFCU account for Gaborone Employee Association
    - Include your name and household ID in memo
    - 1–2 business days to process
 
-3. **Zelle**
+3. **Zelle** (Recommended)
    - U.S. money transfer service
    - Available for U.S. bank accounts
-   - Instant to 1-day delivery
+   - Instant to 1-day delivery (no fees)
 
 4. **Absa Bank (Botswana)**
    - Direct deposit to GEA account in Botswana

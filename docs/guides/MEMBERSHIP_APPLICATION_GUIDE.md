@@ -401,7 +401,7 @@ Your membership is active through **July 31** of the current membership year, re
 
 **Example:** Join in December 2025 → Active through July 31, 2026 → Renewal application opens June 2026.
 
-**Renewal:** You'll receive renewal reminders 30 days and 7 days before expiration. Renewal follows the same process (brief questionnaire, document verification if needed, payment).
+**Renewal:** You'll receive renewal reminders 30 days and 7 days before expiration. Renewal is simplified: certify your eligibility remains valid, confirm ID documents are current and unexpired, update household members, submit new photos for all children and for adults who haven't submitted a photo in the past three years, then submit proof of payment.
 
 ---
 

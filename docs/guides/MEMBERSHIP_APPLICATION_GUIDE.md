@@ -271,7 +271,7 @@ You'll receive:
 - **Passport/Omang/Documents:** Clear, legible, full-page scans (PDF or high-quality JPG/PNG)
 - **File Size:** 10MB maximum per file
 
-**Resubmit:** If you need to replace a document, simply upload a new file—it will overwrite the previous one.
+**Resubmit:** If you need to replace a document, click **"Remove [Document]"** to delete the current version, then click **"Replace [Document]"** to upload a new file.
 
 ---
 

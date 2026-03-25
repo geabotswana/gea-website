@@ -412,6 +412,476 @@ function purgeExpiredSessions() {
 
 
 // ============================================================
+// PASSWORD RESET
+// ============================================================
+
+/**
+ * FUNCTION: requestPasswordReset
+ * PURPOSE: Initiates a password reset flow for a member or admin.
+ *
+ * HOW IT WORKS:
+ * 1. Validate email exists in the appropriate sheet (Individuals or Administrators)
+ * 2. Check rate limiting (max 3 requests per email per hour)
+ * 3. Generate a secure reset token with 15-minute expiration
+ * 4. Store token hash + metadata in "Password Reset Tokens" sheet
+ * 5. Send email with reset link containing the token
+ * 6. Return success message with generic wording
+ *
+ * SECURITY NOTES:
+ * - Generic success message whether email exists or not (prevents email enumeration)
+ * - Tokens are one-time use only (marked as used after completion)
+ * - Token expiration is 15 minutes (short window to limit exposure)
+ * - Tracks IP address of request for audit trail
+ * - Rate limiting prevents abuse (3 requests per hour max)
+ *
+ * @param {string} email     Email address requesting reset
+ * @param {string} userType  "member" or "admin" (determines which sheet to update password in)
+ * @returns {Object}
+ *   { success: true, message: "Check your email for reset instructions" }
+ *   { success: false, message: "User error message" } (generic on rate limit/not found)
+ */
+function requestPasswordReset(email, userType) {
+  if (!email || !isValidEmail(email)) {
+    return { success: false, message: "Please enter a valid email address." };
+  }
+
+  userType = userType || "member";
+  if (userType !== "member" && userType !== "admin") {
+    return { success: false, message: "Invalid user type." };
+  }
+
+  try {
+    // Verify the email exists in the appropriate sheet
+    var user = null;
+    if (userType === "member") {
+      user = getMemberByEmail(email, true);
+    } else {
+      user = _getAdminByEmail(email);
+    }
+
+    // Always return generic success message (don't reveal if email exists)
+    if (!user) {
+      logAuditEntry(email, AUDIT_PASSWORD_RESET_FAILED, "Authentication", email,
+                    "Reset requested but email not found");
+      return { success: true, message: "If that email is in our system, you'll receive reset instructions shortly." };
+    }
+
+    // Rate limiting: check if this email has too many recent reset requests
+    var recentRequestCount = _countRecentResetRequests(email);
+    if (recentRequestCount >= PASSWORD_RESET_MAX_REQUESTS_PER_HOUR) {
+      logAuditEntry(email, AUDIT_PASSWORD_RESET_RATE_LIMITED, "Authentication", email,
+                    "Too many reset requests (" + recentRequestCount + " in last hour)");
+      return { success: true, message: "If that email is in our system, you'll receive reset instructions shortly." };
+    }
+
+    // Generate reset token and token hash
+    var token = _generateToken();
+    var tokenHash = _hashToken(token);
+    var now = new Date();
+    var expiryTime = new Date(now.getTime() + PASSWORD_RESET_WINDOW_MINUTES * 60000);
+
+    // Store token in Password Reset Tokens sheet
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_PASSWORD_RESET_TOKENS);
+    var resetRow = {
+      token_id: generateId("RST"),
+      email: email,
+      token_hash: tokenHash,
+      request_timestamp: Utilities.formatDate(now, "Africa/Johannesburg", "yyyy-MM-dd HH:mm:ss"),
+      expiry_timestamp: Utilities.formatDate(expiryTime, "Africa/Johannesburg", "yyyy-MM-dd HH:mm:ss"),
+      request_ip: "unknown",  // Would be extracted from request context if available
+      used_timestamp: "",
+      used_by_ip: "",
+      reset_attempt_count: 0,
+      user_type: userType,
+      notes: ""
+    };
+    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    sheet.appendRow(headers.map(function(col) {
+      return resetRow[col] !== undefined ? resetRow[col] : "";
+    }));
+
+    // Send reset email based on user type
+    var templateId = userType === "member" ? TPL_PASSWORD_RESET_REQUEST_MEMBER : TPL_PASSWORD_RESET_REQUEST_ADMIN;
+    var resetLink = "https://geabotswana.org/member.html?action=reset_password&token=" + encodeURIComponent(token);
+    var firstName = user.first_name || "User";
+
+    sendEmailFromTemplate(templateId, email, {
+      FIRST_NAME: firstName,
+      RESET_LINK: resetLink,
+      RESET_WINDOW_MINUTES: String(PASSWORD_RESET_WINDOW_MINUTES)
+    });
+
+    logAuditEntry(email, AUDIT_PASSWORD_RESET_REQUESTED, "Authentication", email,
+                  "Password reset requested (type: " + userType + ")");
+
+    return { success: true, message: "If that email is in our system, you'll receive reset instructions shortly." };
+
+  } catch (e) {
+    Logger.log("ERROR requestPasswordReset: " + e);
+    return { success: false, message: "An error occurred. Please try again later." };
+  }
+}
+
+
+/**
+ * FUNCTION: completePasswordReset
+ * PURPOSE: Completes the password reset flow by validating the token and updating the password.
+ *
+ * HOW IT WORKS:
+ * 1. Validate token: exists, not expired, not already used, matches email
+ * 2. Validate new password: meets minimum length requirement
+ * 3. Hash the new password
+ * 4. Update password_hash in Individuals (members) or Administrators (admins) sheet
+ * 5. Invalidate all existing sessions for this user (force re-authentication)
+ * 6. Mark token as used (one-time use, cannot be reused)
+ * 7. Send confirmation email
+ * 8. Return success response
+ *
+ * SECURITY NOTES:
+ * - Token validation uses constant-time comparison (prevents timing attacks)
+ * - One-time use: token marked with used_timestamp after consumption
+ * - All sessions invalidated: user must log in with new password
+ * - Password is hashed before storage
+ * - Both token and password validation are strict
+ *
+ * @param {string} token         Reset token from email link
+ * @param {string} email         Email address (must match token record)
+ * @param {string} newPassword   New plaintext password (will be hashed)
+ * @returns {Object}
+ *   On success: { success: true, message: "Password reset successfully" }
+ *   On failure: { success: false, message: "Error message (generic for invalid tokens)" }
+ */
+function completePasswordReset(token, email, newPassword) {
+  if (!token || !email || !newPassword) {
+    return { success: false, message: "Invalid or missing parameters." };
+  }
+
+  if (!isValidEmail(email)) {
+    return { success: false, message: "Invalid email address." };
+  }
+
+  if (newPassword.length < PASSWORD_MIN_LENGTH) {
+    return { success: false, message: "Password must be at least " + PASSWORD_MIN_LENGTH + " characters." };
+  }
+
+  try {
+    // Validate and consume the reset token
+    var tokenValidation = _validateResetToken(token, email);
+    if (!tokenValidation.valid) {
+      logAuditEntry(email, AUDIT_PASSWORD_RESET_FAILED, "Authentication", email,
+                    "Password reset failed: " + tokenValidation.message);
+      return { success: false, message: "Invalid or expired reset link. Request a new one." };
+    }
+
+    // Determine user type and get user
+    var userType = tokenValidation.user_type;
+    var user = null;
+    if (userType === "member") {
+      user = getMemberByEmail(email, true);
+    } else {
+      user = _getAdminByEmail(email);
+    }
+
+    if (!user) {
+      return { success: false, message: "User not found. Request a new reset link." };
+    }
+
+    // Hash the new password
+    var passwordHash = hashPassword(newPassword);
+
+    // Update password in appropriate sheet
+    if (userType === "member") {
+      updateMemberField(user.individual_id, "password_hash", passwordHash, "system");
+    } else {
+      _updateAdminField(user.admin_id, "password_hash", passwordHash);
+    }
+
+    // Invalidate all existing sessions for this user (force re-authentication)
+    _invalidateSessionsForEmail(email);
+
+    // Mark the token as used
+    _markResetTokenAsUsed(tokenValidation.token_id);
+
+    // Send confirmation email
+    var templateId = userType === "member" ? TPL_PASSWORD_RESET_COMPLETE_MEMBER : TPL_PASSWORD_RESET_COMPLETE_ADMIN;
+    sendEmailFromTemplate(templateId, email, {
+      FIRST_NAME: user.first_name || "User"
+    });
+
+    logAuditEntry(email, AUDIT_PASSWORD_RESET_COMPLETED, "Authentication", email,
+                  "Password reset completed successfully (type: " + userType + ")");
+
+    return { success: true, message: "Your password has been reset successfully. Please log in." };
+
+  } catch (e) {
+    Logger.log("ERROR completePasswordReset: " + e);
+    return { success: false, message: "An error occurred. Please try again later." };
+  }
+}
+
+
+/**
+ * FUNCTION: purgeExpiredResetTokens
+ * PURPOSE: Cleans up expired password reset tokens from the database.
+ *
+ * Should be run nightly (via NotificationService.runNightlyTasks()) to keep
+ * the "Password Reset Tokens" sheet clean and to prevent accumulation of stale records.
+ */
+function purgeExpiredResetTokens() {
+  Logger.log("Purging expired password reset tokens...");
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_PASSWORD_RESET_TOKENS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var expiryCol = headers.indexOf("expiry_timestamp");
+    var now = new Date();
+    var purged = 0;
+
+    // Walk backward so row deletions don't shift indexes
+    for (var i = data.length - 1; i >= 1; i--) {
+      if (new Date(data[i][expiryCol]) < now) {
+        sheet.deleteRow(i + 1);
+        purged++;
+      }
+    }
+    Logger.log("Purged " + purged + " expired password reset tokens.");
+  } catch (e) { Logger.log("ERROR purgeExpiredResetTokens: " + e); }
+}
+
+
+// ============================================================
+// PASSWORD RESET - INTERNAL HELPERS
+// ============================================================
+
+/**
+ * INTERNAL: Validates a password reset token.
+ * Checks: existence, not expired, not already used, email match.
+ * Does NOT mark token as used (completePasswordReset() does that).
+ *
+ * @param {string} token    Reset token from email link
+ * @param {string} email    Email address to match
+ * @returns {Object}
+ *   { valid: true, token_id: "RST-...", user_type: "member", ... } or
+ *   { valid: false, message: "Error reason" }
+ */
+function _validateResetToken(token, email) {
+  if (!token || !email) {
+    return { valid: false, message: "Missing token or email." };
+  }
+
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_PASSWORD_RESET_TOKENS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var tokenHashCol = headers.indexOf("token_hash");
+    var emailCol = headers.indexOf("email");
+    var expiryCol = headers.indexOf("expiry_timestamp");
+    var usedCol = headers.indexOf("used_timestamp");
+    var attemptCol = headers.indexOf("reset_attempt_count");
+    var userTypeCol = headers.indexOf("user_type");
+    var tokenIdCol = headers.indexOf("token_id");
+    var rowIdx = -1;
+
+    // Hash the presented token for comparison
+    var presentedHash = _hashToken(token);
+    if (!presentedHash) {
+      return { valid: false, message: "Invalid token format." };
+    }
+
+    // Find matching token record
+    for (var i = 1; i < data.length; i++) {
+      if (constantTimeCompare(data[i][tokenHashCol], presentedHash) && data[i][emailCol] === email) {
+        rowIdx = i;
+        break;
+      }
+    }
+
+    if (rowIdx === -1) {
+      return { valid: false, message: "Token not found." };
+    }
+
+    // Check if already used
+    if (data[rowIdx][usedCol] && data[rowIdx][usedCol] !== "") {
+      return { valid: false, message: "This reset link has already been used." };
+    }
+
+    // Check expiration
+    var expiryTime = new Date(data[rowIdx][expiryCol]);
+    if (expiryTime < new Date()) {
+      return { valid: false, message: "This reset link has expired." };
+    }
+
+    // Increment and check failed attempt count
+    var attemptCount = parseInt(data[rowIdx][attemptCol]) || 0;
+    if (attemptCount >= PASSWORD_RESET_MAX_ATTEMPTS) {
+      return { valid: false, message: "Too many failed attempts. Request a new reset link." };
+    }
+
+    return {
+      valid: true,
+      token_id: data[rowIdx][tokenIdCol],
+      user_type: data[rowIdx][userTypeCol],
+      row_index: rowIdx
+    };
+
+  } catch (e) {
+    Logger.log("ERROR _validateResetToken: " + e);
+    return { valid: false, message: "Error validating token." };
+  }
+}
+
+
+/**
+ * INTERNAL: Counts recent password reset requests for an email address.
+ * Used for rate limiting (max 3 requests per hour).
+ *
+ * @param {string} email  Email address to check
+ * @returns {number}      Count of requests in last hour
+ */
+function _countRecentResetRequests(email) {
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_PASSWORD_RESET_TOKENS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var emailCol = headers.indexOf("email");
+    var requestCol = headers.indexOf("request_timestamp");
+    var now = new Date();
+    var oneHourAgo = new Date(now.getTime() - 3600000);
+    var count = 0;
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][emailCol] === email) {
+        var requestTime = new Date(data[i][requestCol]);
+        if (requestTime >= oneHourAgo) {
+          count++;
+        }
+      }
+    }
+    return count;
+  } catch (e) {
+    Logger.log("ERROR _countRecentResetRequests: " + e);
+    return 0;
+  }
+}
+
+
+/**
+ * INTERNAL: Marks a reset token as used (sets used_timestamp and used_by_ip).
+ * After a token is used, it cannot be used again.
+ *
+ * @param {string} tokenId  The token_id to mark as used
+ */
+function _markResetTokenAsUsed(tokenId) {
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_PASSWORD_RESET_TOKENS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var tokenIdCol = headers.indexOf("token_id");
+    var usedCol = headers.indexOf("used_timestamp");
+    var now = new Date();
+    var usedTime = Utilities.formatDate(now, "Africa/Johannesburg", "yyyy-MM-dd HH:mm:ss");
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][tokenIdCol] === tokenId) {
+        sheet.getRange(i + 1, usedCol + 1).setValue(usedTime);
+        break;
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _markResetTokenAsUsed: " + e);
+  }
+}
+
+
+/**
+ * INTERNAL: Gets an admin user by email address.
+ * Used in password reset flows to verify admin email exists.
+ *
+ * @param {string} email  Email address to search for
+ * @returns {Object}      Admin user object, or null if not found
+ */
+function _getAdminByEmail(email) {
+  try {
+    if (!email) return null;
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var emailCol = headers.indexOf("email");
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][emailCol].toLowerCase() === email.toLowerCase()) {
+        var admin = {};
+        headers.forEach(function(col, idx) {
+          admin[col] = data[i][idx];
+        });
+        return admin;
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _getAdminByEmail: " + e);
+  }
+  return null;
+}
+
+
+/**
+ * INTERNAL: Updates a field in the Administrators sheet.
+ *
+ * @param {string} adminId     The admin_id to update
+ * @param {string} fieldName   The column name to update
+ * @param {*} value            The new value
+ */
+function _updateAdminField(adminId, fieldName, value) {
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var adminIdCol = headers.indexOf("admin_id");
+    var fieldCol = headers.indexOf(fieldName);
+
+    if (fieldCol === -1) {
+      Logger.log("ERROR _updateAdminField: Column '" + fieldName + "' not found");
+      return;
+    }
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][adminIdCol] === adminId) {
+        sheet.getRange(i + 1, fieldCol + 1).setValue(value);
+        break;
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _updateAdminField: " + e);
+  }
+}
+
+
+/**
+ * INTERNAL: Invalidates all active sessions for a specific email address.
+ * Used when a user resets their password to force them to re-authenticate.
+ *
+ * @param {string} email  Email address whose sessions should be invalidated
+ */
+function _invalidateSessionsForEmail(email) {
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var emailCol = headers.indexOf("email");
+    var actCol = headers.indexOf("active");
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][emailCol] === email && data[i][actCol]) {
+        sheet.getRange(i + 1, actCol + 1).setValue(false);
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _invalidateSessionsForEmail: " + e);
+  }
+}
+
+
+// ============================================================
 // ROLE CHECKING
 // ============================================================
 

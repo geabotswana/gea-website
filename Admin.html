@@ -1177,9 +1177,38 @@
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
       </form>
+      <div style="text-align: center; margin-top: 16px;">
+        <button type="button" class="btn btn-link" onclick="showPasswordResetRequest();" style="font-size: 12px; color: #0A3161; text-decoration: none; background: none; border: none; cursor: pointer; padding: 0;">Forgot Password?</button>
+      </div>
     </div>
   </div>
-  
+
+  <!-- ============================================================ -->
+  <!-- PASSWORD RESET REQUEST SCREEN (Admin)                        -->
+  <!-- Request password reset via email                             -->
+  <!-- ============================================================ -->
+
+  <div id="passwordResetRequestScreen" style="display: none; padding: 40px 20px; min-height: 100vh; background: #F5F5F5;">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+      </div>
+      <h1 class="login-title">Reset Your Password</h1>
+      <p class="login-subtitle">We'll send you an email with instructions</p>
+      <div class="login-error" id="resetRequestError"></div>
+      <form class="login-form" onsubmit="submitPasswordResetRequest(event)">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="resetEmail" class="form-input" placeholder="you@geabotswana.org" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Send Reset Link</button>
+      </form>
+      <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+        <button type="button" class="btn btn-link" onclick="showLoginScreen();" style="font-size: 12px; color: #0A3161; text-decoration: none; background: none; border: none; cursor: pointer; padding: 0;">← Back to Login</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============================================================ -->
   <!-- MAIN APP (shown after authentication)                        -->
   <!-- ============================================================ -->
@@ -2083,7 +2112,94 @@
       console.error('Login error:', err);
     });
   }
-  
+
+  /**
+   * Shows the password reset request screen.
+   * User enters their email to request a password reset link.
+   */
+  function showPasswordResetRequest() {
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('passwordResetRequestScreen').style.display = 'block';
+    document.getElementById('resetRequestError').textContent = '';
+    document.getElementById('resetEmail').value = '';
+    document.getElementById('resetEmail').focus();
+  }
+
+  /**
+   * Shows the login screen (called from password reset or other flows).
+   */
+  function showLoginScreen() {
+    document.getElementById('passwordResetRequestScreen').style.display = 'none';
+    document.getElementById('loginScreen').classList.add('show');
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginEmail').focus();
+  }
+
+  /**
+   * Submits a password reset request.
+   * Backend generates a token and sends reset email.
+   */
+  function submitPasswordResetRequest(event) {
+    event.preventDefault();
+
+    var email = document.getElementById('resetEmail').value.trim().toLowerCase();
+    var errorDiv = document.getElementById('resetRequestError');
+    errorDiv.textContent = '';
+    errorDiv.classList.remove('show');
+
+    if (!email) {
+      errorDiv.textContent = 'Please enter your email address.';
+      errorDiv.classList.add('show');
+      return;
+    }
+
+    var submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    apiCall('password_reset_request', {
+      email: email,
+      user_type: 'admin'
+    }).then(function(res) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Reset Link';
+
+      if (!res.success) {
+        errorDiv.textContent = res.message || 'Error sending reset link.';
+        errorDiv.classList.add('show');
+        return;
+      }
+
+      // Show success message (generic, same whether email exists or not)
+      var card = document.querySelector('#passwordResetRequestScreen .login-card');
+      var successHtml = document.createElement('div');
+      successHtml.style.textAlign = 'center';
+      successHtml.style.padding = '24px';
+      successHtml.style.backgroundColor = '#E8F5E9';
+      successHtml.style.borderRadius = '4px';
+      successHtml.style.marginBottom = '20px';
+      successHtml.innerHTML = '<p style="color: #2E7D32; font-weight: 600; margin: 0;">Check your email</p>' +
+                              '<p style="color: #558B2F; font-size: 13px; margin: 8px 0 0 0;">If that email is in our system, you\'ll receive reset instructions shortly.</p>';
+
+      var form = card.querySelector('form');
+      form.parentNode.insertBefore(successHtml, form);
+      form.style.display = 'none';
+
+      // Auto-return to login after 5 seconds
+      setTimeout(function() {
+        showLoginScreen();
+      }, 5000);
+    }).catch(function(err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Reset Link';
+      errorDiv.textContent = 'Connection error. Please try again.';
+      errorDiv.classList.add('show');
+      console.error('Password reset error:', err);
+    });
+  }
+
   /**
    * Shows the authenticated admin interface (header, sidebar, content).
    * Sets the user's name in the header and makes all authenticated UI visible.

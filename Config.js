@@ -60,7 +60,6 @@ var TAB_INDIVIDUALS         = "Individuals";
 var TAB_FILE_SUBMISSIONS    = "File Submissions";
 var TAB_MEMBERSHIP_LEVELS   = "Membership Levels";
 var TAB_MEMBERSHIP_APPLICATIONS = "Membership Applications";  // NOTE: In MEMBER_DIRECTORY_ID, not SYSTEM_BACKEND_ID
-var TAB_RULES               = "Rules";  // Rules & Regulations (editable by board)
 
 // GEA Reservations tabs
 var TAB_RESERVATIONS        = "Reservations";
@@ -76,6 +75,7 @@ var TAB_HOLIDAY_CALENDAR    = "Holiday Calendar";
 var TAB_SESSIONS            = "Sessions";
 var TAB_PASSWORD_RESET_TOKENS = "Password Reset Tokens";
 var TAB_ADMINISTRATORS      = "Administrators";  // Admin account table (board/mgt/rso logins)
+var TAB_RULES               = "Rules";  // Rules & Regulations (editable by board)
 
 // GEA Payment Tracking tabs
 var TAB_PAYMENTS            = "Payments";

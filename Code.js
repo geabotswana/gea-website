@@ -636,7 +636,7 @@ function _handleGetConfigValue(p) {
  */
 function initializeRulesSheet() {
   try {
-    var ss = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
+    var ss = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
     var sheet = ss.insertSheet(TAB_RULES);
 
     // Header row

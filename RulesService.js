@@ -24,8 +24,8 @@
  */
 function getRulesText() {
   try {
-    // Fetch all rules from the Rules sheet
-    var rulesSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_RULES);
+    // Fetch all rules from the Rules sheet (in System Backend)
+    var rulesSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_RULES);
     var data = rulesSheet.getDataRange().getValues();
 
     if (data.length < 2) {

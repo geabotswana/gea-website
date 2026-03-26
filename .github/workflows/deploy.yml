@@ -1,9 +1,7 @@
 name: Deploy to GEA Botswana
-
 on:
   push:
     branches: [ main ]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -13,7 +11,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -24,33 +22,67 @@ jobs:
           ADMIN_EMAIL: "treasurer@geabotswana.org"
         run: |
           python - <<EOF
-          import os, json, base64
+          import os, fnmatch, json
           from google.oauth2 import service_account
           from googleapiclient.discovery import build
 
-          # 1. Authenticate with Impersonation
+          # 1. Authenticate with impersonation
           info = json.loads(os.environ['SERVICE_ACCOUNT_JSON'])
           creds = service_account.Credentials.from_service_account_info(
               info, scopes=['https://www.googleapis.com/auth/script.projects']
           ).with_subject(os.environ['ADMIN_EMAIL'])
-
           service = build('script', 'v1', credentials=creds)
 
-          # 2. Prepare files (simplified: reads all .gs and .html in root)
-          files = []
-          for filename in os.listdir('.'):
-              if filename.endswith(('.gs', '.html', '.json')):
-                  with open(filename, 'r') as f:
-                      content = f.read()
-                      # Apps Script calls the manifest 'appsscript', not 'appsscript.json'
-                      name = filename.replace('.json', '') if filename == 'appsscript.json' else filename.split('.')[0]
-                      type = 'SERVER_JS' if filename.endswith('.gs') else 'HTML' if filename.endswith('.html') else 'JSON'
-                      files.append({'name': name, 'type': type, 'source': content})
+          # 2. Parse .claspignore
+          ignore_patterns = []
+          include_patterns = []
+          if os.path.exists('.claspignore'):
+              with open('.claspignore', 'r') as f:
+                  for line in f:
+                      line = line.strip()
+                      if not line or line.startswith('#'):
+                          continue
+                      if line.startswith('!'):
+                          include_patterns.append(line[1:])
+                      else:
+                          ignore_patterns.append(line)
 
-          # 3. Push to Google
+          def should_include(rel_path):
+              included = any(fnmatch.fnmatch(rel_path, p) or fnmatch.fnmatch(os.path.basename(rel_path), p) for p in include_patterns)
+              if not included:
+                  return False
+              ignored = any(fnmatch.fnmatch(rel_path, p) or fnmatch.fnmatch(os.path.basename(rel_path), p) for p in ignore_patterns)
+              return not ignored
+
+          # 3. Collect files
+          files = []
+          for dirpath, dirnames, filenames in os.walk('.'):
+              dirnames[:] = [d for d in dirnames if not d.startswith('.')]
+              for filename in filenames:
+                  filepath = os.path.join(dirpath, filename)
+                  rel_path = os.path.relpath(filepath, '.').replace(os.sep, '/')
+                  if not should_include(rel_path):
+                      continue
+                  with open(filepath, 'r') as f:
+                      content = f.read()
+                  if filename == 'appsscript.json':
+                      name = 'appsscript'
+                      file_type = 'JSON'
+                  elif filename.endswith(('.gs', '.js')):
+                      name = rel_path.replace('.gs', '').replace('.js', '')
+                      file_type = 'SERVER_JS'
+                  else:
+                      name = rel_path.replace('.html', '')
+                      file_type = 'HTML'
+                  files.append({'name': name, 'type': file_type, 'source': content})
+                  print(f"Including: {rel_path}")
+
+          print(f"\nTotal files to deploy: {len(files)}")
+
+          # 4. Push to GAS
           service.projects().updateContent(
               scriptId=os.environ['SCRIPT_ID'],
               body={'files': files}
           ).execute()
-          print("Successfully deployed to GEA Botswana Shared Drive!")
+          print("Successfully deployed to GEA Botswana!")
           EOF

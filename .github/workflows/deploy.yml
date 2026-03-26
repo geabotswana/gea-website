@@ -13,15 +13,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Google Apps Script
-        uses: google-github-actions/setup-gcloud@v2 # Optional: standard GCP setup if needed
-
-      - name: GAS Action
-        uses: marketplace/actions/google-apps-script-gas-action@v1 # Use the official GAS Action
+        # This is the correct repository path for the action
+        uses: van-mourik/google-apps-script-deploy-action@v1
         with:
-          # Your Service Account JSON key from GitHub Secrets
-          serviceAccountJsonPlainText: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
-          # The ID of the script on your Shared Drive
-          scriptId: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
-          # Impersonate your treasurer account to bypass 16-hour limits
+          # Your raw JSON key from GitHub Secrets
+          service-account-key: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
+          
+          # The Script ID from your project settings on the Shared Drive
+          script-id: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
+          
+          # This triggers Domain-Wide Delegation to bypass the 16h limit
           impersonate: "treasurer@geabotswana.org"
-          command: 'push'

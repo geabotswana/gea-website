@@ -12,13 +12,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: GAS Action
-        # This is the verified repository path
-        uses: marcorinck/google-apps-script-gas-action@v1.0.3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          # Your raw JSON key from GitHub Secrets
-          serviceAccountJsonPlainText: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
-          # The ID of your project on the Shared Drive
-          scriptId: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
-          # Your admin address to bypass the 16-hour session limit
-          impersonate: "treasurer@geabotswana.org"
+          node-version: '20'
+
+      - name: Install Clasp
+        run: npm install -g @google/clasp
+
+      - name: Authenticate and Push
+        run: |
+          # 1. Create the credentials file clasp needs
+          # Since you have Domain-Wide Delegation, we use the Service Account
+          echo '${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}' > service-account.json
+          
+          # 2. Login using the Service Account key
+          # Note: Standard clasp push requires a .clasprc.json. 
+          # We'll use a direct script push if clasp acts up, 
+          # but first, try to bypass the 16h limit this way:
+          clasp login --service-account --key_file service-account.json
+          
+          # 3. Push the code
+          clasp push -f
+        env:
+          # Your Script ID from the Shared Drive project
+          CLASP_PROJECT_ID: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"

@@ -7009,6 +7009,8 @@ function submitPasswordResetRequest(event) {
       var file = e.target.files[0];
       if (!file) return;
 
+      showToast('Upload starting...', 'info');
+
       var reader = new FileReader();
       reader.onload = function(evt) {
         var base64 = evt.target.result.split(',')[1];
@@ -7064,6 +7066,7 @@ function submitPasswordResetRequest(event) {
         showError('Proof file must be 5 MB or smaller.');
         return;
       }
+      showToast('Upload starting...', 'info');
       var reader = new FileReader();
       reader.onload = function(evt) {
         payload.file_data_base64 = String(evt.target.result).split(',')[1];

@@ -5716,11 +5716,22 @@ function submitPasswordResetRequest(event) {
         photoLabel.textContent = 'PHOTO: ' + (photoSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
         photoLabel.style.fontWeight = '600';
         photoRow.appendChild(photoLabel);
+        var photoUploadDiv = document.createElement('div');
+        photoUploadDiv.style.display = 'flex';
+        photoUploadDiv.style.gap = '6px';
         var photoUpload = document.createElement('button');
         photoUpload.className = 'btn btn-small';
         photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
         photoUpload.onclick = function() { triggerDocumentUpload(ind.individual_id, 'photo'); };
-        photoRow.appendChild(photoUpload);
+        photoUploadDiv.appendChild(photoUpload);
+        if (photoSubs.some(function(s) { return s.status === 'submitted'; })) {
+          var removePhoto = document.createElement('button');
+          removePhoto.className = 'btn btn-small btn-danger';
+          removePhoto.textContent = 'Remove';
+          removePhoto.onclick = (function(id, btn) { return function() { removeDocument(id, 'photo', btn); }; })(ind.individual_id, removePhoto);
+          photoUploadDiv.appendChild(removePhoto);
+        }
+        photoRow.appendChild(photoUploadDiv);
         member.appendChild(photoRow);
       } else {
         // MINORS: Photo is required, ID documents are optional
@@ -5734,11 +5745,22 @@ function submitPasswordResetRequest(event) {
         photoLabel.textContent = 'PHOTO: ' + (photoSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
         photoLabel.style.fontWeight = '600';
         photoRow.appendChild(photoLabel);
+        var photoUploadDiv = document.createElement('div');
+        photoUploadDiv.style.display = 'flex';
+        photoUploadDiv.style.gap = '6px';
         var photoUpload = document.createElement('button');
         photoUpload.className = 'btn btn-small';
         photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
         photoUpload.onclick = function() { triggerDocumentUpload(ind.individual_id, 'photo'); };
-        photoRow.appendChild(photoUpload);
+        photoUploadDiv.appendChild(photoUpload);
+        if (photoSubs.some(function(s) { return s.status === 'submitted'; })) {
+          var removePhoto = document.createElement('button');
+          removePhoto.className = 'btn btn-small btn-danger';
+          removePhoto.textContent = 'Remove';
+          removePhoto.onclick = (function(id, btn) { return function() { removeDocument(id, 'photo', btn); }; })(ind.individual_id, removePhoto);
+          photoUploadDiv.appendChild(removePhoto);
+        }
+        photoRow.appendChild(photoUploadDiv);
         member.appendChild(photoRow);
 
         // Passport and Omang (optional for minors)

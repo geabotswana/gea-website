@@ -36,7 +36,7 @@ jobs:
             null,
             key.private_key,
             ['https://www.googleapis.com/auth/script.projects'],
-            'treasurer@geabotswana.org'
+            'treasurer@geabotswana.org' 
           );
 
           const script = google.script({version: 'v1', auth});

@@ -714,6 +714,7 @@
       <a href="#about">About</a>
       <a href="#facilities">Facilities</a>
       <a href="#membership">Membership</a>
+      <a href="#rules">Rules</a>
       <a href="#contact">Contact</a>
     </div>
 
@@ -945,6 +946,24 @@
 -->
 
 <!-- ================================================================ -->
+<!-- RULES & REGULATIONS                                              -->
+<!-- ================================================================ -->
+<section id="rules" style="background: #f9f9f9;">
+  <div class="container">
+    <h2>Rules & Regulations</h2>
+    <p style="margin-bottom: 30px; font-size: 15px; color: #666;">
+      All GEA members must follow our Rules & Regulations to maintain a safe, respectful, and welcoming environment for everyone.
+      <a href="/member.html" style="color: var(--color-primary); font-weight: 600;">Log in to your account</a> to view the full rules, or read a summary below.
+    </p>
+
+    <div id="rulesContent" style="background: white; padding: 24px; border-radius: 8px; border: 1px solid #e0e0e0; max-width: 900px; margin: 0 auto;">
+      <!-- Rules will be displayed here via JavaScript -->
+      <p style="text-align: center; color: #999;">Loading rules...</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
 <!-- CONTACT & FOOTER                                                -->
 <!-- ================================================================ -->
 <section id="contact">
@@ -1024,6 +1043,41 @@
       }
     });
   });
+
+  // Display Rules & Regulations on page load
+  /**
+   * Fetch Rules & Regulations from GAS API endpoint
+   * This keeps rules in sync between Portal and public website
+   */
+  function displayPublicRules() {
+    const container = document.getElementById('rulesContent');
+    if (!container) return;
+
+    // GEA production deployment ID
+    const GAS_DEPLOYMENT_ID = 'AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ';
+    const GAS_URL = 'https://script.google.com/a/macros/geabotswana.org/s/' + GAS_DEPLOYMENT_ID + '/exec';
+
+    // Show loading state
+    container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Loading rules...</p>';
+
+    // Fetch rules from GAS API
+    fetch(GAS_URL + '?action=get_rules')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.rules_html) {
+          container.innerHTML = data.rules_html;
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching rules:', error);
+        container.innerHTML = '<p style="color: #C62828; padding: 20px; text-align: center;">Unable to load rules at this time. Please try again later or contact <a href="mailto:board@geabotswana.org">board@geabotswana.org</a>.</p>';
+      });
+  }
+
+  // Load rules when page loads
+  document.addEventListener('DOMContentLoaded', displayPublicRules);
 </script>
 
 </body>

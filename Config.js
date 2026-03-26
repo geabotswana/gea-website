@@ -75,6 +75,7 @@ var TAB_HOLIDAY_CALENDAR    = "Holiday Calendar";
 var TAB_SESSIONS            = "Sessions";
 var TAB_PASSWORD_RESET_TOKENS = "Password Reset Tokens";
 var TAB_ADMINISTRATORS      = "Administrators";  // Admin account table (board/mgt/rso logins)
+var TAB_RULES               = "Rules";  // Rules & Regulations (editable by board)
 
 // GEA Payment Tracking tabs
 var TAB_PAYMENTS            = "Payments";

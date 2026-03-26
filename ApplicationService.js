@@ -254,6 +254,9 @@ function createApplicationRecord(formData, createdBy) {
       dues_amount: 0,
       membership_start_date: "",
       membership_expiration_date: "",
+      rules_agreement_accepted: formData.rules_agreement_accepted || false,
+      rules_agreement_name: formData.rules_agreement_name || "",
+      rules_agreement_date: (formData.rules_agreement_accepted ? todayStr : ""),
       created_date: todayStr,
       last_modified_date: todayStr,
       notes: ""

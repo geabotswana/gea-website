@@ -1880,7 +1880,7 @@
 
         <!-- Add Rule Form (hidden by default) -->
         <div id="addRuleForm" style="display:none; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:8px; padding:20px; margin-bottom:24px;">
-          <h3 style="margin:0 0 16px 0; font-size:16px;">New Rule</h3>
+          <h3 style="margin:0 0 16px 0; font-size:16px;" id="addRuleFormTitle">New Rule</h3>
           <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
             <div class="form-group">
               <label class="form-label">Rule Category *</label>
@@ -1897,7 +1897,7 @@
           </div>
           <div id="addRuleError" style="color:#c0392b; margin-bottom:8px; display:none;"></div>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-primary" onclick="saveNewRule();">Create Rule</button>
+            <button id="addRuleSaveBtn" class="btn btn-primary" onclick="saveNewRule();">Create Rule</button>
             <button class="btn btn-secondary" onclick="hideAddRuleForm();">Cancel</button>
           </div>
         </div>
@@ -5469,27 +5469,40 @@
       }
 
       currentRules.forEach(function(rule, index) {
-        var rowEl = document.createElement('tr');
-        rowEl.style.cssText = 'border-bottom:1px solid #e0e0e0;';
-
-        // Category
+        // Category (safe: use textContent)
         var catEl = document.createElement('span');
         catEl.textContent = rule.rule_category;
-        var catCell = '<td style="padding:12px;">' + catEl.outerHTML + '</td>';
 
-        // Sort order
-        var sortCell = '<td style="padding:12px; text-align:center;">' + rule.rule_category_sort + '</td>';
-
-        // Actions
+        // Actions with safe event delegation via data attributes
         var actionHtml = '<td style="padding:12px; text-align:center;">' +
-          '<button class="btn btn-small" style="font-size:12px; padding:4px 8px; background:#4a90e2; color:#fff; border:none; border-radius:4px; cursor:pointer;" onclick="editRule(\'' + (rule.rule_id || index) + '\');">Edit</button> ' +
-          '<button class="btn btn-small" style="font-size:12px; padding:4px 8px; background:#e74c3c; color:#fff; border:none; border-radius:4px; cursor:pointer;" onclick="deleteRule(\'' + (rule.rule_id || index) + '\');">Delete</button>' +
+          '<button class="rule-edit-btn btn btn-small" data-rule-id="' + (rule.rule_id || index) + '" style="font-size:12px; padding:4px 8px; background:#4a90e2; color:#fff; border:none; border-radius:4px; cursor:pointer;">Edit</button> ' +
+          '<button class="rule-delete-btn btn btn-small" data-rule-id="' + (rule.rule_id || index) + '" style="font-size:12px; padding:4px 8px; background:#e74c3c; color:#fff; border:none; border-radius:4px; cursor:pointer;">Delete</button>' +
           '</td>';
 
-        html += '<tr style="border-bottom:1px solid #e0e0e0;">' + catCell + sortCell + actionHtml + '</tr>';
+        html += '<tr style="border-bottom:1px solid #e0e0e0;">' +
+          '<td style="padding:12px;">' + catEl.outerHTML + '</td>' +
+          '<td style="padding:12px; text-align:center;">' + rule.rule_category_sort + '</td>' +
+          actionHtml +
+          '</tr>';
       });
 
       container.innerHTML = html;
+
+      // Attach event listeners to dynamically created buttons
+      var editButtons = container.querySelectorAll('.rule-edit-btn');
+      editButtons.forEach(function(btn) {
+        btn.onclick = function() {
+          editRule(this.getAttribute('data-rule-id'));
+        };
+      });
+
+      var deleteButtons = container.querySelectorAll('.rule-delete-btn');
+      deleteButtons.forEach(function(btn) {
+        btn.onclick = function() {
+          deleteRule(this.getAttribute('data-rule-id'));
+        };
+      });
+
       updateRulesPreview();
     }).catch(function(err) {
       container.innerHTML = '<tr><td colspan="3" style="padding:20px; text-align:center; color:#c00;">Failed to load rules</td></tr>';
@@ -5506,10 +5519,13 @@
   function hideAddRuleForm() {
     var form = document.getElementById('addRuleForm');
     form.style.display = 'none';
+    form.removeAttribute('data-editing-rule-id');
     document.getElementById('newRuleCategory').value = '';
     document.getElementById('newRuleSort').value = '1';
     document.getElementById('newRuleText').value = '';
     document.getElementById('addRuleError').style.display = 'none';
+    document.getElementById('addRuleFormTitle').textContent = 'New Rule';
+    document.getElementById('addRuleSaveBtn').textContent = 'Create Rule';
   }
 
   function saveNewRule() {
@@ -5517,6 +5533,8 @@
     var sort = document.getElementById('newRuleSort').value.trim();
     var text = document.getElementById('newRuleText').value.trim();
     var errorDiv = document.getElementById('addRuleError');
+    var btn = document.getElementById('addRuleSaveBtn');
+    var form = document.getElementById('addRuleForm');
 
     // Validation
     if (!category) {
@@ -5536,19 +5554,27 @@
     }
 
     errorDiv.style.display = 'none';
-
-    var btn = event.target;
     btn.disabled = true;
-    btn.textContent = 'Creating...';
 
-    apiCall('admin_save_rule', {
-      rule_id: '', // Empty = new rule
+    var isEditing = form.dataset.editingRuleId;
+    var isCreateMode = !isEditing;
+
+    if (isCreateMode) {
+      btn.textContent = 'Creating...';
+    } else {
+      btn.textContent = 'Updating...';
+    }
+
+    var payload = {
+      rule_id: isEditing ? form.dataset.editingRuleId : '', // Empty = new rule
       rule_category: category,
       rule_category_sort: parseInt(sort),
       rule_text: text
-    }).then(function(res) {
+    };
+
+    apiCall('admin_save_rule', payload).then(function(res) {
       btn.disabled = false;
-      btn.textContent = 'Create Rule';
+      btn.textContent = isCreateMode ? 'Create Rule' : 'Update Rule';
 
       if (!res.success) {
         errorDiv.textContent = 'Error: ' + (res.message || 'Failed to save rule');
@@ -5557,10 +5583,11 @@
       }
 
       hideAddRuleForm();
+      delete form.dataset.editingRuleId;
       loadRules();
     }).catch(function(err) {
       btn.disabled = false;
-      btn.textContent = 'Create Rule';
+      btn.textContent = isCreateMode ? 'Create Rule' : 'Update Rule';
       errorDiv.textContent = 'Error: ' + err.message;
       errorDiv.style.display = 'block';
       console.error('Save rule error:', err);
@@ -5568,8 +5595,12 @@
   }
 
   function editRule(ruleId) {
-    // Find the rule
-    var rule = currentRules.find(function(r) { return r.rule_id === ruleId || currentRules.indexOf(r) === parseInt(ruleId); });
+    // Find the rule by ID or index
+    var rule = currentRules.find(function(r) { return r.rule_id === ruleId; });
+    if (!rule) {
+      // Try as index
+      rule = currentRules[parseInt(ruleId)];
+    }
     if (!rule) {
       alert('Rule not found');
       return;
@@ -5584,60 +5615,12 @@
     var form = document.getElementById('addRuleForm');
     form.dataset.editingRuleId = rule.rule_id || ruleId;
 
-    // Change button text
-    var btn = form.querySelector('button.btn-primary');
+    // Update form title and button text
+    document.getElementById('addRuleFormTitle').textContent = 'Edit Rule';
+    var btn = document.getElementById('addRuleSaveBtn');
     btn.textContent = 'Update Rule';
-    btn.onclick = function() { saveEditedRule(); };
 
     showAddRuleForm();
-  }
-
-  function saveEditedRule() {
-    var form = document.getElementById('addRuleForm');
-    var ruleId = form.dataset.editingRuleId;
-    var category = document.getElementById('newRuleCategory').value.trim();
-    var sort = document.getElementById('newRuleSort').value.trim();
-    var text = document.getElementById('newRuleText').value.trim();
-    var errorDiv = document.getElementById('addRuleError');
-
-    // Validation
-    if (!category || !sort || !text) {
-      errorDiv.textContent = 'All fields are required';
-      errorDiv.style.display = 'block';
-      return;
-    }
-
-    errorDiv.style.display = 'none';
-
-    var btn = event.target;
-    btn.disabled = true;
-    btn.textContent = 'Updating...';
-
-    apiCall('admin_save_rule', {
-      rule_id: ruleId,
-      rule_category: category,
-      rule_category_sort: parseInt(sort),
-      rule_text: text
-    }).then(function(res) {
-      btn.disabled = false;
-      btn.textContent = 'Update Rule';
-
-      if (!res.success) {
-        errorDiv.textContent = 'Error: ' + (res.message || 'Failed to update rule');
-        errorDiv.style.display = 'block';
-        return;
-      }
-
-      hideAddRuleForm();
-      delete form.dataset.editingRuleId;
-      loadRules();
-    }).catch(function(err) {
-      btn.disabled = false;
-      btn.textContent = 'Update Rule';
-      errorDiv.textContent = 'Error: ' + err.message;
-      errorDiv.style.display = 'block';
-      console.error('Update rule error:', err);
-    });
   }
 
   function deleteRule(ruleId) {

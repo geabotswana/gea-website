@@ -675,4 +675,4 @@ Points to production versioned deployment: `AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3
 - **Production Portal:** https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec
 - **Public Website:** https://geabotswana.org
 - **GitHub Repository:** https://github.com/geabotswana/gea-website
-- **Last Updated:** v1.0.0 - February 23, 2026
+- **Last Updated:** v1.1.0 - March 26, 2026

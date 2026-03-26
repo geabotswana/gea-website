@@ -12,15 +12,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Deploy to Google Apps Script
-        # This is the correct repository path for the action
-        uses: van-mourik/google-apps-script-deploy-action@v1
+      - name: GAS Action
+        # This is the verified repository path
+        uses: marcorinck/google-apps-script-gas-action@v1.0.3
         with:
           # Your raw JSON key from GitHub Secrets
-          service-account-key: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
-          
-          # The Script ID from your project settings on the Shared Drive
-          script-id: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
-          
-          # This triggers Domain-Wide Delegation to bypass the 16h limit
+          serviceAccountJsonPlainText: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
+          # The ID of your project on the Shared Drive
+          scriptId: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
+          # Your admin address to bypass the 16-hour session limit
           impersonate: "treasurer@geabotswana.org"

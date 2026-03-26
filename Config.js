@@ -60,6 +60,7 @@ var TAB_INDIVIDUALS         = "Individuals";
 var TAB_FILE_SUBMISSIONS    = "File Submissions";
 var TAB_MEMBERSHIP_LEVELS   = "Membership Levels";
 var TAB_MEMBERSHIP_APPLICATIONS = "Membership Applications";  // NOTE: In MEMBER_DIRECTORY_ID, not SYSTEM_BACKEND_ID
+var TAB_RULES               = "Rules";  // Rules & Regulations (editable by board)
 
 // GEA Reservations tabs
 var TAB_RESERVATIONS        = "Reservations";

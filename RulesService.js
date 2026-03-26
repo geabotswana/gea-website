@@ -18,10 +18,90 @@
 
 /**
  * Get the full text of GEA Rules & Regulations
+ * Reads from Rules sheet in Member Directory
  * Returns a structured object with sections for rendering
  * @returns {Object} Rules with sections array
  */
 function getRulesText() {
+  try {
+    // Fetch all rules from the Rules sheet
+    var rulesSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_RULES);
+    var data = rulesSheet.getDataRange().getValues();
+
+    if (data.length < 2) {
+      // No rules found, return empty structure
+      return { title: "RULES & REGULATIONS", sections: [] };
+    }
+
+    // Parse header row (skip first row which is headers)
+    var rules = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      if (!row[0]) continue; // Skip empty rows
+
+      rules.push({
+        rule_id: row[0] || '',
+        rule_category: row[1] || '',
+        rule_category_sort: row[2] ? Number(row[2]) : 999,
+        rule_text: row[3] || ''
+      });
+    }
+
+    // Sort rules: first by category (alphabetical), then by sort order
+    rules.sort(function(a, b) {
+      if (a.rule_category !== b.rule_category) {
+        return a.rule_category.localeCompare(b.rule_category);
+      }
+      return a.rule_category_sort - b.rule_category_sort;
+    });
+
+    // Group rules by category into sections
+    var sections = [];
+    var currentCategory = null;
+    var currentSection = null;
+    var sectionNumber = 1;
+
+    rules.forEach(function(rule, index) {
+      if (rule.rule_category !== currentCategory) {
+        // Start a new section
+        if (currentSection) {
+          sections.push(currentSection);
+        }
+        currentCategory = rule.rule_category;
+        currentSection = {
+          number: sectionNumber++,
+          title: rule.rule_category,
+          content: []
+        };
+      }
+
+      if (currentSection) {
+        currentSection.content.push(rule.rule_text);
+      }
+    });
+
+    // Add the last section
+    if (currentSection) {
+      sections.push(currentSection);
+    }
+
+    return {
+      title: "RULES & REGULATIONS",
+      sections: sections
+    };
+  } catch (error) {
+    Logger.log("ERROR in getRulesText: " + error);
+    // Fallback to hardcoded rules if spreadsheet access fails
+    return getDefaultRulesText();
+  }
+}
+
+/**
+ * Get default (hardcoded) rules as fallback
+ * Used if Rules sheet is not accessible
+ * @returns {Object} Rules with sections array
+ */
+function getDefaultRulesText() {
   return {
     title: "RULES & REGULATIONS",
     sections: [

@@ -11,4 +11,5 @@ scripts/**
 BoardEmailConfig.gs
 .git
 .claude
+.gea
 node_modules

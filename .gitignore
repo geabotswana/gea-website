@@ -13,5 +13,6 @@
 
 # Local tooling
 .claude/
+.gea/
 node_modules/
 BoardEmailConfig.gs

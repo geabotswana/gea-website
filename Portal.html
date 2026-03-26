@@ -1302,7 +1302,8 @@
       <div class="step-item" data-step="3"><span class="step-number">3</span><span class="step-label">Sponsor</span></div>
       <div class="step-item" data-step="4"><span class="step-number">4</span><span class="step-label">Family</span></div>
       <div class="step-item" data-step="5"><span class="step-number">5</span><span class="step-label">Staff</span></div>
-      <div class="step-item" data-step="6"><span class="step-number">6</span><span class="step-label">Review</span></div>
+      <div class="step-item" data-step="6"><span class="step-number">6</span><span class="step-label">Rules</span></div>
+      <div class="step-item" data-step="7"><span class="step-number">7</span><span class="step-label">Review</span></div>
     </div>
 
     <!-- Step 1: Eligibility Questionnaire -->
@@ -1745,8 +1746,41 @@
       </div>
     </div>
 
-    <!-- Step 6: Review & Submit -->
+    <!-- Step 6: Rules & Regulations -->
     <div id="appStep6" class="app-step" style="display: none;">
+      <h3 style="margin-bottom: 20px;">Rules & Regulations</h3>
+      <p style="color: #666; margin-bottom: 20px; font-size: 14px;">Please review and agree to the GEA Rules & Regulations to continue.</p>
+
+      <!-- Rules Display Container -->
+      <div id="appRulesDisplay" style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; max-height: 400px; overflow-y: auto; font-size: 13px; border: 1px solid #e0e0e0;"></div>
+
+      <!-- Agreement Section -->
+      <div style="background: #e8f4f8; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0A3161;">
+        <p style="margin: 0 0 16px 0; font-weight: 600; color: #0A3161;">I agree to follow the rules and regulations of the Gaborone Employee Association.</p>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="rulesFullName" style="display: block; font-weight: 600; margin-bottom: 8px;">Full Name (in lieu of signature) *</label>
+          <input type="text" id="rulesFullName" class="form-input" placeholder="Enter your full name as it appears on your ID" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+          <p style="font-size: 12px; color: #666; margin-top: 4px;">By entering your name, you acknowledge that you have read and agree to follow these rules and regulations.</p>
+          <div id="rulesNameError" style="color: #C62828; font-size: 12px; margin-top: 8px; display: none;"></div>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="appRulesAgree" required>
+            <span>I have read and understand the Rules & Regulations and agree to comply with them.</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-primary" onclick="nextApplicationStep();" style="flex: 1;">I Agree & Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 7: Review & Submit -->
+    <div id="appStep7" class="app-step" style="display: none;">
       <h3 style="margin-bottom: 8px;">Review & Submit</h3>
       <p style="color: #666; margin-bottom: 20px; font-size: 13px;">Please review your information below. Click <strong>Back</strong> if you need to make changes.</p>
       <div id="applicationReview" style="background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; min-height: 200px; max-height: 400px; overflow-y: auto; font-size: 13px; border: 1px solid #e0e0e0;"></div>
@@ -2097,6 +2131,21 @@
 
         <div id="cardContent">
           <p style="text-align: center; color: #999; padding: 20px;">Loading...</p>
+        </div>
+
+        <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: RULES & REGULATIONS                                  -->
+      <!-- Display GEA Rules & Regulations for members                -->
+      <!-- ========================================================== -->
+      <div id="rules" class="page">
+        <h1 class="page-title">Rules & Regulations</h1>
+        <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
+
+        <div id="portalRulesContent" style="background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0;">
+          <p style="text-align: center; color: #999; padding: 20px;">Loading rules...</p>
         </div>
 
         <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
@@ -3495,7 +3544,9 @@ function submitPasswordResetRequest(event) {
     has_staff: false,
     staff_first_name: '',
     staff_last_name: '',
-    staff_citizenship: ''
+    staff_citizenship: '',
+    rules_agreement_name: '',
+    rules_agreement_accepted: false
   };
 
   var currentApplicationStep = 1;
@@ -3866,18 +3917,21 @@ function submitPasswordResetRequest(event) {
 
   function updateApplicationStep() {
     // Hide all steps
-    for (var i = 1; i <= 6; i++) {
-      document.getElementById('appStep' + i).style.display = 'none';
+    for (var i = 1; i <= 7; i++) {
+      var stepEl = document.getElementById('appStep' + i);
+      if (stepEl) stepEl.style.display = 'none';
     }
 
     // Show current step
-    document.getElementById('appStep' + currentApplicationStep).style.display = 'block';
+    var currentStepEl = document.getElementById('appStep' + currentApplicationStep);
+    if (currentStepEl) currentStepEl.style.display = 'block';
 
     // Update step indicator
     document.querySelectorAll('.step-item').forEach(function(item) {
       item.classList.remove('active');
     });
-    document.querySelector('[data-step="' + currentApplicationStep + '"]').classList.add('active');
+    var activeStepItem = document.querySelector('[data-step="' + currentApplicationStep + '"]');
+    if (activeStepItem) activeStepItem.classList.add('active');
 
     // Display assigned category in step 2
     if (currentApplicationStep === 2) {
@@ -3897,7 +3951,7 @@ function submitPasswordResetRequest(event) {
       // Family step: only show if household type is Family
       var isFamily = applicationFormData.household_type === 'Family';
       document.getElementById('familyMembersContainer').style.display = isFamily ? 'block' : 'none';
-      // If individual membership, skip to step 5 (and household staff) to step 6 (review)
+      // If individual membership, skip to step 5 (and household staff) to step 6 (rules)
       if (!isFamily) {
         currentApplicationStep++;
         updateApplicationStep();
@@ -3916,7 +3970,32 @@ function submitPasswordResetRequest(event) {
     }
 
     if (currentApplicationStep === 6) {
+      // Display rules
+      displayApplicationRules();
+      // Clear any previous validation errors
+      document.getElementById('rulesNameError').style.display = 'none';
+    }
+
+    if (currentApplicationStep === 7) {
+      // Prepare review for step 7
       prepareApplicationReview();
+    }
+  }
+
+  /**
+   * Display Rules & Regulations for the application
+   * Renders HTML-formatted rules into the appRulesDisplay container
+   */
+  function displayApplicationRules() {
+    var rulesContainer = document.getElementById('appRulesDisplay');
+    if (!rulesContainer) return;
+
+    try {
+      var rulesHtml = getRulesHTMLDisplay();
+      rulesContainer.innerHTML = rulesHtml;
+    } catch (error) {
+      console.error('Error displaying rules:', error);
+      rulesContainer.innerHTML = '<p style="color: #C62828;">Unable to load rules. Please try again.</p>';
     }
   }
 
@@ -4076,10 +4155,10 @@ function submitPasswordResetRequest(event) {
     saveApplicationStepData(currentApplicationStep);
 
     // Move to next step
-    if (currentApplicationStep < 6) {
+    if (currentApplicationStep < 7) {
       currentApplicationStep++;
       updateApplicationStep();
-    } else if (currentApplicationStep === 6) {
+    } else if (currentApplicationStep === 7) {
       // Prepare review
       prepareApplicationReview();
     }
@@ -4234,6 +4313,37 @@ function submitPasswordResetRequest(event) {
           return false;
         }
         break;
+      case 5:
+        // Step 5 (Staff) has no validation
+        break;
+      case 6:
+        // Validate Rules & Regulations agreement
+        var rulesFullName = document.getElementById('rulesFullName').value.trim();
+        var rulesAgreeCheckbox = document.getElementById('appRulesAgree').checked;
+
+        if (!rulesFullName) {
+          var nameErrorDiv = document.getElementById('rulesNameError');
+          nameErrorDiv.textContent = 'Please enter your full name to proceed.';
+          nameErrorDiv.style.display = 'block';
+          return false;
+        }
+
+        if (!rulesAgreeCheckbox) {
+          errorDiv.textContent = 'Please check the box to confirm you agree to the Rules & Regulations.';
+          errorDiv.style.display = 'block';
+          return false;
+        }
+
+        // Validate name format (use RulesService validation)
+        var nameValidation = validateRulesAgreement(rulesFullName);
+        if (!nameValidation.valid) {
+          var nameErrorDiv = document.getElementById('rulesNameError');
+          nameErrorDiv.textContent = nameValidation.message;
+          nameErrorDiv.style.display = 'block';
+          return false;
+        }
+
+        break;
     }
 
     return true;
@@ -4325,6 +4435,11 @@ function submitPasswordResetRequest(event) {
           applicationFormData.staff_citizenship = document.getElementById('appStaffCitizenship').value || '';
         }
         break;
+      case 6:
+        // Save rules agreement
+        applicationFormData.rules_agreement_name = document.getElementById('rulesFullName').value.trim();
+        applicationFormData.rules_agreement_accepted = document.getElementById('appRulesAgree').checked;
+        break;
     }
   }
 
@@ -4335,6 +4450,7 @@ function submitPasswordResetRequest(event) {
     saveApplicationStepData(3);
     saveApplicationStepData(4);
     saveApplicationStepData(5);
+    saveApplicationStepData(6);
 
     var reviewContainer = document.getElementById('applicationReview');
     reviewContainer.innerHTML = ''; // Clear existing content
@@ -4684,7 +4800,7 @@ function submitPasswordResetRequest(event) {
    */
   function showPage(pageName) {
     // Check if applicant is trying to access member-only pages
-    if (currentUser && currentUser.is_applicant && ['dashboard', 'reservations', 'profile', 'card', 'payment'].includes(pageName)) {
+    if (currentUser && currentUser.is_applicant && ['dashboard', 'reservations', 'profile', 'card', 'payment', 'rules'].includes(pageName)) {
       // Applicants can only view their application status
       pageName = 'applicant';
     }
@@ -4717,6 +4833,9 @@ function submitPasswordResetRequest(event) {
         break;
       case 'payment':
         loadPayments();
+        break;
+      case 'rules':
+        loadRules();
         break;
       case 'applicant':
         loadApplicantPortal();
@@ -7150,6 +7269,7 @@ function submitPasswordResetRequest(event) {
         { icon: '📅', label: 'Book Facility', page: 'reservations' },
         { icon: '💰', label: 'Submit Payment', page: 'payment' },
         { icon: '🎫', label: 'Digital Card', page: 'card' },
+        { icon: '📋', label: 'Rules & Regulations', page: 'rules' },
         { icon: '👤', label: 'Edit Profile', page: 'profile' }
       ];
 
@@ -8152,6 +8272,25 @@ function submitPasswordResetRequest(event) {
       wrapper.insertBefore(iconEl, wrapper.firstChild);
       display.appendChild(wrapper);
     });
+  }
+  /**
+   * Load and display GEA Rules & Regulations for members.
+   * Uses getRulesHTMLDisplay() from RulesService.js
+   */
+  function loadRules() {
+    try {
+      var rulesHtml = getRulesHTMLDisplay();
+      var container = document.getElementById('portalRulesContent');
+      if (container) {
+        container.innerHTML = rulesHtml;
+      }
+    } catch (error) {
+      console.error('Error loading rules:', error);
+      var container = document.getElementById('portalRulesContent');
+      if (container) {
+        container.innerHTML = '<p style="color: #C62828; text-align: center; padding: 20px;">Unable to load rules. Please try again later.</p>';
+      }
+    }
   }
 
   /**

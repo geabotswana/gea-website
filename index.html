@@ -714,6 +714,7 @@
       <a href="#about">About</a>
       <a href="#facilities">Facilities</a>
       <a href="#membership">Membership</a>
+      <a href="#rules">Rules</a>
       <a href="#contact">Contact</a>
     </div>
 
@@ -945,6 +946,24 @@
 -->
 
 <!-- ================================================================ -->
+<!-- RULES & REGULATIONS                                              -->
+<!-- ================================================================ -->
+<section id="rules" style="background: #f9f9f9;">
+  <div class="container">
+    <h2>Rules & Regulations</h2>
+    <p style="margin-bottom: 30px; font-size: 15px; color: #666;">
+      All GEA members must follow our Rules & Regulations to maintain a safe, respectful, and welcoming environment for everyone.
+      <a href="/member.html" style="color: var(--color-primary); font-weight: 600;">Log in to your account</a> to view the full rules, or read a summary below.
+    </p>
+
+    <div id="rulesContent" style="background: white; padding: 24px; border-radius: 8px; border: 1px solid #e0e0e0; max-width: 900px; margin: 0 auto;">
+      <!-- Rules will be displayed here via JavaScript -->
+      <p style="text-align: center; color: #999;">Loading rules...</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
 <!-- CONTACT & FOOTER                                                -->
 <!-- ================================================================ -->
 <section id="contact">
@@ -1024,6 +1043,120 @@
       }
     });
   });
+
+  // Display Rules & Regulations on page load
+  function displayPublicRules() {
+    const rulesData = {
+      sections: [
+        {
+          number: 1,
+          title: "General Membership Rules",
+          content: [
+            "An active membership is required to access GEA facilities and events.",
+            "Members must follow all posted rules and conduct themselves respectfully.",
+            "Guests must be accompanied by a GEA member and adhere to all guidelines. Guests may not be left at the facility in the absence of an active member escort.",
+            "The GEA Board reserves the right to modify rules and revoke access for violations."
+          ]
+        },
+        {
+          number: 2,
+          title: "Recreation Center Rules",
+          content: [
+            "Open to members and registered guests only, and only during the hours of 7am to 8pm. Everyone must depart by 8pm.",
+            "Children under 14 must be supervised by an adult.",
+            "Respect noise levels, shared spaces, and dispose of trash properly.",
+            "Report any damage, maintenance needs, or safety concerns to board@geabotswana.org.",
+            "",
+            "Leobo & Event Space:",
+            "• Members may reserve the space once per month for up to 6 hours.",
+            "• Official Embassy events take precedence over GEA member reservations.",
+            "• Leobo reservations are subject to approval by the Embassy and may be cancelled at any time.",
+            "• Reservations must include setup and cleanup time (these count toward your 6-hour maximum).",
+            "• Events must maintain respectful noise levels and conclude by 8pm to respect neighboring residents.",
+            "• No fundraising is allowed at the Rec Center.",
+            "• Guest lists must be submitted 3 business days in advance to board@geabotswana.org. For large events (30+ people), guest lists should be submitted 5 business days in advance.",
+            "• Parking inside is limited and subject to security directives; guest parking is outside.",
+            "",
+            "Basketball & Tennis Courts:",
+            "• Reservations are limited to 2 hours per day per member-family.",
+            "• No food is allowed on the courts (water and sports drinks are permitted).",
+            "• Members must clean up after use and follow supervision rules for minors."
+          ]
+        },
+        {
+          number: 3,
+          title: "Fitness Center Rules",
+          content: [
+            "Use at your own risk – GEA and the U.S. Embassy are not liable for injuries or accidents.",
+            "Minimum age for use: 15 years old.",
+            "No children under 10 are allowed inside the fitness center; children 11-14 may enter under supervision but may not use the equipment.",
+            "The door code is for members only – do not share it.",
+            "Personal trainers are allowed, but the code must not be disclosed.",
+            "Wipe down equipment after use and return it to its place.",
+            "Limit electronic equipment use (treadmills, ellipticals, etc.) to 30 minutes when others are waiting.",
+            "Turn off air conditioning, lights, and unplug machines before leaving and close the door securely.",
+            "No alcohol, drugs, or smoking allowed in the Fitness Center.",
+            "Report equipment issues to board@geabotswana.org.",
+            "",
+            "Fitness Center Liability Waiver:",
+            "By using the Fitness Center, you acknowledge that physical activity involves inherent risks. The Gaborone Employee Association (GEA) and the U.S. Embassy Gaborone assume no responsibility for injuries, accidents, or loss of property. Members agree to use the facilities at their own risk and waive all claims against GEA and its affiliates."
+          ]
+        },
+        {
+          number: 4,
+          title: "Events & Conduct",
+          content: [
+            "RSVP is required for some events; fees are non-refundable unless stated otherwise.",
+            "Guests may attend certain events — guidelines will be provided.",
+            "Children must be supervised by an adult at all times.",
+            "Disruptive behavior may result in removal from events and facility restrictions."
+          ]
+        },
+        {
+          number: 5,
+          title: "Compliance & Enforcement",
+          content: [
+            "Failure to comply with these rules may result in suspension or termination of membership privileges. The GEA Board reserves the right to enforce all policies to maintain a safe and welcoming environment.",
+            "These rules and regulations are subject to change by agreement of the Board of Directors. Members will be notified of any changes.",
+            "For questions, reservations, or concerns, contact board@geabotswana.org."
+          ]
+        }
+      ]
+    };
+
+    const container = document.getElementById('rulesContent');
+    if (!container) return;
+
+    let html = '<div style="line-height: 1.8; color: #333;">';
+
+    rulesData.sections.forEach(function(section) {
+      html += '<div style="margin-bottom: 24px;">';
+      html += '<h3 style="color: #0A3161; font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #0A3161; padding-bottom: 8px;">';
+      html += section.number + '. ' + section.title;
+      html += '</h3>';
+
+      section.content.forEach(function(item) {
+        if (item.trim() === '') {
+          // Empty line - add spacing
+          html += '<div style="height: 4px;"></div>';
+        } else if (item.startsWith('•')) {
+          // Bullet point
+          html += '<p style="margin: 8px 0; padding-left: 24px;">' + item.substring(2).trim() + '</p>';
+        } else {
+          // Regular paragraph
+          html += '<p style="margin: 10px 0;">' + item + '</p>';
+        }
+      });
+
+      html += '</div>';
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  // Load rules when page loads
+  document.addEventListener('DOMContentLoaded', displayPublicRules);
 </script>
 
 </body>

@@ -13,13 +13,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Google Apps Script
-        uses: daichan4649/google-apps-script-deploy-action@v1
+        uses: google-github-actions/setup-gcloud@v2 # Optional: standard GCP setup if needed
+
+      - name: GAS Action
+        uses: marketplace/actions/google-apps-script-gas-action@v1 # Use the official GAS Action
         with:
-          # This is your JSON key stored in GitHub Secrets
-          credentials: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
-          
-          # The Script ID of your project on the Shared Drive
-          script-id: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
-          
-          # Your admin address to bypass the 16-hour limit
-          impersonate-email: "treasurer@geabotswana.org"
+          # Your Service Account JSON key from GitHub Secrets
+          serviceAccountJsonPlainText: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
+          # The ID of the script on your Shared Drive
+          scriptId: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
+          # Impersonate your treasurer account to bypass 16-hour limits
+          impersonate: "treasurer@geabotswana.org"
+          command: 'push'

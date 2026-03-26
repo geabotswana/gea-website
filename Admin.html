@@ -1362,6 +1362,10 @@
         <span class="nav-icon">🔑</span>
         <span>Administrators</span>
       </div>
+      <div class="nav-item" data-page="rules" onclick="showPage('rules', event)">
+        <span class="nav-icon">📋</span>
+        <span>Rules & Regulations</span>
+      </div>
       <!-- RSO-only nav items (hidden for board/mgt) -->
       <div class="nav-item" data-page="rso-documents" onclick="showPage('rso-documents', event)">
         <span class="nav-icon">🔍</span>
@@ -1856,6 +1860,76 @@
         <!-- Admin Accounts Table -->
         <div id="adminListContent">
           <p style="color:#aaa;">Loading...</p>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: RULES & REGULATIONS (board-only)                    -->
+      <!-- Edit and manage GEA Rules & Regulations                   -->
+      <!-- ========================================================== -->
+      <div id="rules" class="page">
+        <h1 class="page-title">Rules & Regulations</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">
+          Edit GEA Rules & Regulations. Changes sync automatically to the public website and member portal.
+        </p>
+
+        <div style="display:flex; gap:16px; margin-bottom:24px;">
+          <button class="btn btn-primary" onclick="showAddRuleForm();">+ Add Rule</button>
+          <button class="btn btn-secondary" onclick="loadRules();">Refresh Rules</button>
+        </div>
+
+        <!-- Add Rule Form (hidden by default) -->
+        <div id="addRuleForm" style="display:none; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:8px; padding:20px; margin-bottom:24px;">
+          <h3 style="margin:0 0 16px 0; font-size:16px;">New Rule</h3>
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px; margin-bottom:12px;">
+            <div class="form-group">
+              <label class="form-label">Rule Category *</label>
+              <input type="text" id="newRuleCategory" class="form-input" placeholder="e.g., General Membership Rules, Fitness Center Rules">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sort Order *</label>
+              <input type="number" id="newRuleSort" class="form-input" value="1" placeholder="1, 2, 3...">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Rule Text *</label>
+            <textarea id="newRuleText" class="form-input" placeholder="Enter the rule text" style="min-height:80px;"></textarea>
+          </div>
+          <div id="addRuleError" style="color:#c0392b; margin-bottom:8px; display:none;"></div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="saveNewRule();">Create Rule</button>
+            <button class="btn btn-secondary" onclick="hideAddRuleForm();">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Rules Table -->
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px;">
+          <!-- Rules Table -->
+          <div>
+            <h3 style="margin:0 0 16px 0; font-size:14px; font-weight:600;">Current Rules</h3>
+            <div id="rulesTableContent" style="overflow-y:auto; max-height:600px; border:1px solid #e0e0e0; border-radius:4px;">
+              <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                  <tr style="background:#f5f5f5; border-bottom:2px solid #e0e0e0;">
+                    <th style="padding:12px; text-align:left; font-weight:600;">Category</th>
+                    <th style="padding:12px; text-align:center; font-weight:600; width:60px;">Sort</th>
+                    <th style="padding:12px; text-align:center; font-weight:600; width:60px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="rulesTableBody">
+                  <tr><td colspan="3" style="padding:20px; text-align:center; color:#999;">Loading rules...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Live Preview -->
+          <div>
+            <h3 style="margin:0 0 16px 0; font-size:14px; font-weight:600;">Preview</h3>
+            <div id="rulesPreview" style="background:#f9f9f9; border:1px solid #e0e0e0; border-radius:4px; padding:16px; max-height:600px; overflow-y:auto; font-size:12px; line-height:1.6;">
+              <p style="color:#999;">Rules preview will appear here</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2598,6 +2672,9 @@
         break;
       case 'administrators':
         loadAdminAccounts();
+        break;
+      case 'rules':
+        loadRules();
         break;
       case 'rso-documents':
         loadRsoDocuments();
@@ -5365,6 +5442,252 @@
       container.innerHTML = html;
     }).catch(function() { container.innerHTML = '<p style="color:#c00;">Failed to load guest lists.</p>'; });
   }
+
+  // ============================================================ //
+  // SECTION: RULES & REGULATIONS EDITOR                         //
+  // ============================================================ //
+
+  var currentRules = [];
+
+  function loadRules() {
+    var container = document.getElementById('rulesTableBody');
+    container.innerHTML = '<tr><td colspan="3" style="padding:20px; text-align:center; color:#999;">Loading rules...</td></tr>';
+
+    apiCall('admin_get_rules', {}).then(function(res) {
+      if (!res.success) {
+        container.innerHTML = '<tr><td colspan="3" style="padding:20px; text-align:center; color:#c00;">Error loading rules</td></tr>';
+        console.error('Error loading rules:', res.message);
+        return;
+      }
+
+      currentRules = res.data.rules || [];
+      var html = '';
+
+      if (currentRules.length === 0) {
+        container.innerHTML = '<tr><td colspan="3" style="padding:20px; text-align:center; color:#999;">No rules yet</td></tr>';
+        return;
+      }
+
+      currentRules.forEach(function(rule, index) {
+        var rowEl = document.createElement('tr');
+        rowEl.style.cssText = 'border-bottom:1px solid #e0e0e0;';
+
+        // Category
+        var catEl = document.createElement('span');
+        catEl.textContent = rule.rule_category;
+        var catCell = '<td style="padding:12px;">' + catEl.outerHTML + '</td>';
+
+        // Sort order
+        var sortCell = '<td style="padding:12px; text-align:center;">' + rule.rule_category_sort + '</td>';
+
+        // Actions
+        var actionHtml = '<td style="padding:12px; text-align:center;">' +
+          '<button class="btn btn-small" style="font-size:12px; padding:4px 8px; background:#4a90e2; color:#fff; border:none; border-radius:4px; cursor:pointer;" onclick="editRule(\'' + (rule.rule_id || index) + '\');">Edit</button> ' +
+          '<button class="btn btn-small" style="font-size:12px; padding:4px 8px; background:#e74c3c; color:#fff; border:none; border-radius:4px; cursor:pointer;" onclick="deleteRule(\'' + (rule.rule_id || index) + '\');">Delete</button>' +
+          '</td>';
+
+        html += '<tr style="border-bottom:1px solid #e0e0e0;">' + catCell + sortCell + actionHtml + '</tr>';
+      });
+
+      container.innerHTML = html;
+      updateRulesPreview();
+    }).catch(function(err) {
+      container.innerHTML = '<tr><td colspan="3" style="padding:20px; text-align:center; color:#c00;">Failed to load rules</td></tr>';
+      console.error('API Error:', err);
+    });
+  }
+
+  function showAddRuleForm() {
+    var form = document.getElementById('addRuleForm');
+    form.style.display = 'block';
+    document.getElementById('newRuleCategory').focus();
+  }
+
+  function hideAddRuleForm() {
+    var form = document.getElementById('addRuleForm');
+    form.style.display = 'none';
+    document.getElementById('newRuleCategory').value = '';
+    document.getElementById('newRuleSort').value = '1';
+    document.getElementById('newRuleText').value = '';
+    document.getElementById('addRuleError').style.display = 'none';
+  }
+
+  function saveNewRule() {
+    var category = document.getElementById('newRuleCategory').value.trim();
+    var sort = document.getElementById('newRuleSort').value.trim();
+    var text = document.getElementById('newRuleText').value.trim();
+    var errorDiv = document.getElementById('addRuleError');
+
+    // Validation
+    if (!category) {
+      errorDiv.textContent = 'Category is required';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    if (!sort || isNaN(sort)) {
+      errorDiv.textContent = 'Sort order must be a number';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    if (!text) {
+      errorDiv.textContent = 'Rule text is required';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    errorDiv.style.display = 'none';
+
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+
+    apiCall('admin_save_rule', {
+      rule_id: '', // Empty = new rule
+      rule_category: category,
+      rule_category_sort: parseInt(sort),
+      rule_text: text
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Create Rule';
+
+      if (!res.success) {
+        errorDiv.textContent = 'Error: ' + (res.message || 'Failed to save rule');
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      hideAddRuleForm();
+      loadRules();
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Create Rule';
+      errorDiv.textContent = 'Error: ' + err.message;
+      errorDiv.style.display = 'block';
+      console.error('Save rule error:', err);
+    });
+  }
+
+  function editRule(ruleId) {
+    // Find the rule
+    var rule = currentRules.find(function(r) { return r.rule_id === ruleId || currentRules.indexOf(r) === parseInt(ruleId); });
+    if (!rule) {
+      alert('Rule not found');
+      return;
+    }
+
+    // Show form with existing data
+    document.getElementById('newRuleCategory').value = rule.rule_category;
+    document.getElementById('newRuleSort').value = rule.rule_category_sort;
+    document.getElementById('newRuleText').value = rule.rule_text;
+
+    // Store the rule_id in a data attribute for saving
+    var form = document.getElementById('addRuleForm');
+    form.dataset.editingRuleId = rule.rule_id || ruleId;
+
+    // Change button text
+    var btn = form.querySelector('button.btn-primary');
+    btn.textContent = 'Update Rule';
+    btn.onclick = function() { saveEditedRule(); };
+
+    showAddRuleForm();
+  }
+
+  function saveEditedRule() {
+    var form = document.getElementById('addRuleForm');
+    var ruleId = form.dataset.editingRuleId;
+    var category = document.getElementById('newRuleCategory').value.trim();
+    var sort = document.getElementById('newRuleSort').value.trim();
+    var text = document.getElementById('newRuleText').value.trim();
+    var errorDiv = document.getElementById('addRuleError');
+
+    // Validation
+    if (!category || !sort || !text) {
+      errorDiv.textContent = 'All fields are required';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    errorDiv.style.display = 'none';
+
+    var btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+
+    apiCall('admin_save_rule', {
+      rule_id: ruleId,
+      rule_category: category,
+      rule_category_sort: parseInt(sort),
+      rule_text: text
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Update Rule';
+
+      if (!res.success) {
+        errorDiv.textContent = 'Error: ' + (res.message || 'Failed to update rule');
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      hideAddRuleForm();
+      delete form.dataset.editingRuleId;
+      loadRules();
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Update Rule';
+      errorDiv.textContent = 'Error: ' + err.message;
+      errorDiv.style.display = 'block';
+      console.error('Update rule error:', err);
+    });
+  }
+
+  function deleteRule(ruleId) {
+    // Find the rule
+    var rule = currentRules.find(function(r) { return r.rule_id === ruleId || currentRules.indexOf(r) === parseInt(ruleId); });
+    if (!rule) {
+      alert('Rule not found');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this rule?\n\n' + rule.rule_text.substring(0, 60) + '...')) {
+      return;
+    }
+
+    apiCall('admin_delete_rule', {
+      rule_id: ruleId
+    }).then(function(res) {
+      if (!res.success) {
+        alert('Error: ' + (res.message || 'Failed to delete rule'));
+        return;
+      }
+
+      loadRules();
+    }).catch(function(err) {
+      alert('Error: ' + err.message);
+      console.error('Delete rule error:', err);
+    });
+  }
+
+  function updateRulesPreview() {
+    var previewDiv = document.getElementById('rulesPreview');
+    previewDiv.innerHTML = '<p style="color:#999;">Loading preview...</p>';
+
+    apiCall('get_rules', {}).then(function(res) {
+      if (!res.success) {
+        previewDiv.innerHTML = '<p style="color:#c00;">Error loading preview</p>';
+        return;
+      }
+
+      previewDiv.innerHTML = res.data.rules_html || '<p style="color:#999;">No rules to display</p>';
+    }).catch(function(err) {
+      previewDiv.innerHTML = '<p style="color:#c00;">Failed to load preview</p>';
+      console.error('Preview error:', err);
+    });
+  }
+
+  // Load rules when page first loads
+  document.addEventListener('DOMContentLoaded', function() {
+    // Rules will load when user clicks on the Rules & Regulations page
+  });
 </script>
 
 </body>

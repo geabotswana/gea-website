@@ -731,7 +731,6 @@ function _handleGetRules(p) {
   try {
     var rulesHtml = getRulesHTMLDisplay();
     return successResponse({
-      success: true,
       rules_html: rulesHtml,
       timestamp: new Date().toISOString()
     });

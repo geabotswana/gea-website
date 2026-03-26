@@ -255,7 +255,7 @@ You'll receive:
 
 1. Log in to your member portal with your email and temporary password
 2. **Create a permanent password** — For security, you must create your own password on your first login (the temporary password sent via email is not secure for long-term use)
-3. Navigate to **"My Application"** section
+3. Your dashboard will display your application status and next steps
 4. You'll see which documents are **required** for your category:
    - **One identification document per adult:** Passport, Omang, or Diplomatic Passport (depending on category)
    - **One photo per adult:** 600x600–1200x1200 pixels, clear face shot
@@ -436,8 +436,7 @@ Day 13:         ✓ Membership Active!
 ### Check Your Status
 
 1. Log into your member portal (https://geabotswana.org)
-2. Go to **"My Application"**
-3. You'll see your current status, next steps, and any pending items
+2. Your dashboard will display your current status, next steps, and any pending items
 
 **Status Indicators:**
 - 🟡 **Submitted** — Awaiting Board review
@@ -544,7 +543,7 @@ A: Most delays are due to:
 Check your portal for status and any pending requests.
 
 **Q: Can I check my application status online?**
-A: Yes! Log in to your member portal and go to **"My Application"**. You'll see your current status and next steps.
+A: Yes! Log in to your member portal. Your dashboard will display your current status and next steps.
 
 **Q: How do I know when the Board has reviewed my application?**
 A: You'll receive an email when the Board makes a decision (Approved / Denied / Need More Info). You can also log in to check your status anytime.

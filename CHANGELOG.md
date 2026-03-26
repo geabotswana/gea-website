@@ -7,82 +7,383 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [2.0.0] — 2026-03-26
 
 ### Added
 
-#### Phase 2 Payment Features (Mar 13, 2026)
+#### Rules & Regulations System
+- New `Rules` sheet in System Backend spreadsheet with board-managed governance
+- Admin Portal Rules Editor: Board members can add/edit/delete rules with category sorting
+- Unique sort numbers for rules within each category
+- Member attestation in application (Step 8): checkbox confirmation + timestamp
+- Public website display: Rules outline on index.html with dynamic content sync
+- Backend support: `getRulesOutline()`, `saveRules()`, `createRulesIndex()` functions
+- Real-time sync between portal and spreadsheet
+
+#### Automated CI/CD Deployment Pipeline
+- GitHub Actions workflow (`.github/workflows/deploy.yml`)
+- Service account authentication via JWT (Apps Script REST API)
+- Fully automated deployment on every `git push` to main
+- HTML files excluded from Google Apps Script push
+- Eliminated manual `clasp push` requirement
+- Git commit-based deployment tracking
+
+#### MCP Integration for Development
+- **gea-sheets-mcp** server in `mcp/` directory
+- Model Context Protocol for Claude Code spreadsheet queries
+- JWT-based impersonation as treasurer@geabotswana.org
+- Four GEA spreadsheets accessible: MEMBER_DIRECTORY, RESERVATIONS, SYSTEM_BACKEND, PAYMENT_TRACKING
+- Two tools: `get_sheet` (read sheet data), `list_sheets` (list sheet names)
+- Read-only scope (`spreadsheets.readonly`) for safety
+- Successfully verified: 70 email templates in Email Templates sheet
+- Node.js dependencies: @modelcontextprotocol/sdk, googleapis v127.0.0
+
+#### Portal Improvements & Bug Fixes
+- Password reset functionality across all login screens
+- Photo management UI: Remove button for member photos
+- Upload feedback: Toast notifications for file submissions
+- Font Awesome updates: GEA kit, WhatsApp brand icon, Leobo shelter icon
+- Applicant portal memory leak fix (sessionStorage reference)
+- Code cleanup: Removed dead TEST_MODE flag, simplified ID-prefixing logic
+
+### Changed
+
+#### Membership Application Guide
+- Comprehensive applicant-facing guide with policy clarifications
+- Terminology standardization (RSO, Tennis Court, etc.)
+- Benefits language standardization
+- Document renewal policy clarifications
+- Sponsor requirements (Community-only membership)
+- DOB collection policy (children and staff only)
+- Payment method documentation
+- Structure improvements (removed redundant sections)
+
+#### Portal UX & Code Quality
+- Applicant portal portal URL handling (no OAuth redirect params)
+- Dev/Prod environment box removal (was debug-only)
+- Admin link removal from member login page
+- Header title update for applicants ("Applicant Portal")
+- Post-login debug panel removal
+
+#### Version Bump
+- CLAUDE.md: v1.0.0 → v2.0.0
+- Timestamp updated to March 26, 2026
+
+### Fixed
+
+#### Critical Bugs
+- `triggerRsoDailySummary()` infinite recursion → Fixed loadApplicantPortal() logic
+- Welcome email on every login → Added `first_login_date` flag to prevent re-triggering
+- Applicant auth check pattern → Changed `auth.success` to `auth.ok`
+- Admin login password field validation
+- Applicant portal environment selector (commented out dev/prod box)
+
+#### Portal Features
+- Removed infinite "Add Child"/"Add Staff" buttons for Individual memberships
+- Corrected hyphenated last-name formatting for Family memberships
+- Fixed household_type assignment at application creation
+- WhatsApp icon rendering in applicant portal
+
+---
+
+## [1.4.0] — 2026-03-24
+
+### Added
+
+#### RSO Dual-Role Portal (PR #26)
+- **rso_approve role:** Document review, guest list review, applications, photos
+- **rso_notify role:** Event calendar (read-only), approved guest lists
+- Authenticated sessions replace one-time email links
+- Admin Portal role-based navigation filtering (`_applyNavRoleFilter`)
+
+#### Applicant Portal Stabilization
+- New RSO email templates for document workflow:
+  - `ADM_DOCS_SENT_TO_RSO_TO_MEMBER` — Notification when documents sent for review
+  - `ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER` — Approval notification to applicant
+- Phone number formatting and household display improvements
+- "Add Child" / "Add Staff" button visibility tied to household_type
+
+#### Admin Portal Updates
+- Administrators page: Add, deactivate, reactivate, reset password for admin accounts
+- Password field in login form
+- Role dropdown for Admin account creation
+- Admin session management with role-based routing
+
+### Fixed
+
+#### Critical Bugs (10 total)
+1. Deprecated email template calls (tpl_040, tpl_041) → Updated to semantic names
+2. Email template loading spinner on submit button → Removed blocking behavior
+3. Infinite recursion in `loadApplicantPortal()` → Fixed navigation logic
+4. Missing `is_applicant` flag in login response → Added to AuthService
+5. Loading email templates per request → Optimized with caching
+6. Applicant portal environment selector (Dev/Prod) → Commented out
+7. Admin Portal link showing on member login page → Removed conditional display
+8. Membership dues calculation → Implemented `_calculateDuesAmount()` function (was called but undefined)
+9. Header title not reflecting applicant vs. member → Updated Portal.html logic
+10. First login welcome email sending repeatedly → Added `first_login_date` check
+
+### Changed
+
+#### Service Module Updates
+- AuthService.js: `adminLogin()` checks Administrators sheet instead of hardcoded accounts
+- Code.js: `_getRoleForEmail()` updated to reflect admin vs. member distinction
+- Bootstrap function: `bootstrapAdminAccounts()` for seeding Administrators sheet
+
+#### Documentation
+- Membership Application Guide: Board review version created with policy corrections
+- 20+ content refinements across application guide
+
+---
+
+## [1.3.0] — 2026-03-21
+
+### Added
+
+#### Database-Driven Admin Account Management (Option C)
+- New `Administrators` sheet in System Backend spreadsheet
+- Admin roles stored in database: `board`, `mgt` (Management), `rso` (all variants)
+- `adminLogin(email, password)` function → Checks Administrators sheet for credentials
+- `bootstrapAdminAccounts()` → Seed function for board@ and treasurer@ accounts
+- Password reset functionality for admin accounts
+
+#### Admin Portal Features
+- Admin account management page: Create, deactivate, reactivate admins
+- Password change workflow for board members
+- Role-based navigation filtering (board vs. mgt vs. rso roles)
+- Admin session storage separate from member sessions
+
+#### Test Suite Enhancements
+- 9 scenes updated for new admin login system
+- New SCENE-10: Admin Account Management
+- Login security testing
+- Role-based navigation testing
+- Deactivation/reactivation workflow testing
+
+### Changed
+
+#### Authentication Architecture
+- `adminLogin()` now references Administrators sheet (not hardcoded)
+- Admin roles determined by database lookup (no longer role parameters in requireAuth)
+- Session handling unified for admin and member accounts
+
+### Fixed
+
+#### Role Assignment Issues
+- `_getRoleForEmail()` function simplified (all member logins return role="member")
+- Admin role detection moved to Administrators sheet lookup
+- Legacy role aliasing support (rso → rso_approve)
+- `requireAuth()` now accepts role arrays (["rso_approve","rso_notify"])
+
+---
+
+## [1.2.0] — 2026-03-19
+
+### Added
+
+#### Guest List Redesign (RES.3)
+- Per-guest RSO review workflow: Approve/reject individual guests
+- `saveGuestListDraft()` → RSO saves partial decisions and returns to finalize later
+- `finalizeGuestListReview()` → RSO completes review for all guests
+- Event proceeds with approved subset; rejections sent to board
+
+#### New Data Structures
+- **Guest Profiles sheet** (new): Upserted by (household_id, id_number)
+  - Fields: guest_profile_id, household_id, name, id_number, age_group, submission_date
+- **Guest Lists sheet** (enhanced):
+  - New columns: rso_draft_json, last_modified_date
+  - Status flow: submitted → in_review → finalized
+
+#### Admin Portal Guest List Review
+- Guest List Reviews page with per-guest radio cards
+- Approve/Reject decision UI
+- Save draft and finalize workflows
+- Guest profile matching and history lookup
+
+#### Email Templates
+- `RES_GUEST_LIST_REJECTIONS_TO_BOARD` → New template for rejected guests notification
+
+### Changed
+
+#### ReservationService.js
+- Guest list acceptance/rejection logic refactored for per-guest decisions
+- New helper functions: `_saveGuestProfileIfNeeded()`, `_buildGuestListReviewResponse()`
+- Updated guest list status determination logic
+
+#### Admin.html Interface
+- Guest List Reviews page added to board navigation
+- Per-guest review UI with decision cards
+- Draft save and finalize buttons
+
+---
+
+## [1.1.0] — 2026-03-13
+
+### Added
+
+#### Phase 2 Payment Features
 
 **Automatic Exchange Rate Management:**
-- `fetchAndUpdateExchangeRate()` in PaymentService.js — Fetches USD↔BWP rate nightly from open.er-api.com
-- `getExchangeRate()` helper — Reads from Configuration sheet with EXCHANGE_RATE_DEFAULT fallback
+- `fetchAndUpdateExchangeRate()` in PaymentService.js → Nightly fetch from open.er-api.com
+- `getExchangeRate()` helper → Reads from Configuration sheet with EXCHANGE_RATE_DEFAULT fallback
 - Integrated into `runNightlyTasks()` (2:00 AM GMT+2)
 - Configuration-based storage: no API key needed, no hardcoded rates
+- Historical backfill via fawaz API
 
 **Payment History Report:**
-- New `getPaymentReport(filters)` function in PaymentService.js
+- `getPaymentReport(filters)` function in PaymentService.js
 - `admin_payment_report` route in Code.js
 - Admin Portal: Payment Management page with two tabs
   - **Pending Verification:** Current unverified payments list
   - **Payment Report:** Filterable historical report with:
-    - Membership year filter
-    - Status filter (Verified, Submitted, Rejected, Clarification Requested)
-    - Summary section (verified count, total collected USD/BWP)
+    - Membership year filter (All, 2025-26, 2026-27)
+    - Status filter (Verified, Submitted, Rejected, Clarification)
+    - Summary section: verified count, total collected USD/BWP
     - CSV export button
-- Report columns: Household, Email, Amount USD, Amount BWP, Method, Status, Submitted Date
+- Report columns: Household, Email, Amount USD, Amount BWP, Method, Status, Date
+
+**Dues Information API:**
+- `get_dues_info` route with live exchange rate
+- Membership year dropdown
+- Pro-ration percentage display
+- Dynamic amount calculation (USD ↔ BWP)
 
 **Code Quality Improvements:**
-- Pro-ration fix: Removed dead code block, now uses QUARTER_PERCENTAGES config constants
-- Legacy consolidation: Removed old payment handlers (_handlePaymentSubmit, _handleAdminPayment, _confirmPayment, _markPaymentNotFound)
-- Streamlined payment verification workflow in PaymentService.js
+- Pro-ration logic: Removed dead code block, uses QUARTER_PERCENTAGES config constants
+- Legacy handler consolidation: Removed old payment endpoints
+- Streamlined payment verification workflow
 
-**Updated Documentation:**
-- CLAUDE.md: Updated request flow routes, PaymentService description, Admin.html features
-- CLAUDE_Payments_Implementation.md: Comprehensive Phase 2 documentation including:
-  - Updated exchange rate system (open.er-api.com, Configuration storage)
-  - Payment report feature specifications and implementation
-  - Backend routes and PaymentService functions
-  - Phase 2 configuration constants
-  - Implementation status and testing checklist
-- CHANGELOG.md: This file documenting all Phase 2 changes
-
-#### Documentation Organization
-- **docs/** folder structure with organized documentation:
-  - `docs/policies/` — GEA policies (Membership, Reservations, Payments, Guest List, Document Submission, Data Management, Security/Privacy, Communications, Audit/Compliance)
-  - `docs/reference/` — Quick reference materials (Facility Rules, Membership Categories Matrix, Roles/Permissions Matrix)
-  - `docs/development/` — Development standards and repository organization guidelines
-  - `docs/decisions/` — Board decisions and policy evaluations
-  - `docs/implementation/` — Implementation guides
-  - `docs/workflows/` — Workflow documentation
-  - `docs/archive/` — Archived content
-- **docs/README.md** — Master documentation index with navigation, status tracking, and document relationships
-
-### Removed
-
-#### Legacy Payment Handlers (Mar 13, 2026 - Phase 2)
-- `_handlePaymentSubmit(p)` from Code.js — Replaced by `_handleSubmitPaymentVerification(p)` using PaymentService
-- `_handleAdminPayment(p)` from Code.js — Replaced by `_handleAdminApprovePayment`, `_handleAdminRejectPayment`, `_handleAdminClarifyPayment`
-- `_confirmPayment(paymentId, verifiedBy)` helper — Functionality absorbed into PaymentService.approvePaymentVerification()
-- `_markPaymentNotFound(paymentId, markedBy)` helper — Replaced by rejectPaymentVerification() with reason parameter
-- `action="payment"` route — Consolidated to `action="submit_payment_verification"`
-- `action="admin_payment"` route — Consolidated to three routes: approve, reject, clarify
-- Duplicate constant: `EXCHANGE_RATE_USD_TO_BWP` (removed from Config.js; now dynamic in Configuration sheet)
-- Duplicate constant: `EXCHANGE_RATE_LAST_UPDATED` (replaced by Configuration sheet entry)
-
-#### Redundant & Temporary Documentation
-- **MEMBERSHIP_LEVELS.md** — Removed from root; superseded by `docs/reference/MEMBERSHIP_CATEGORIES_MATRIX.md` (newer, more detailed version with regulatory basis)
-- **GEA_Board_Bios.md** — Removed from root; temporary reference file (board bios integrated into index.html)
+#### Documentation Updates
+- **CLAUDE_Payments_Implementation.md:** Comprehensive Phase 2 documentation
+  - Exchange rate system architecture
+  - Payment report specifications
+  - Backend routes and service functions
+  - Configuration constants and testing checklist
 
 ### Changed
 
-#### .gitignore
-- Added `*.bak` to ignore backup files
+#### PaymentService.js
+- Pro-ration calculation now uses config constants only
+- New functions: `fetchAndUpdateExchangeRate()`, `getExchangeRate()`
+
+#### Config.js
+- EXCHANGE_RATE_DEFAULT constant added
+- Exchange rate storage moved to Configuration sheet (dynamic)
+
+#### Removed
+
+#### Legacy Payment Handlers
+- `_handlePaymentSubmit(p)` from Code.js
+- `_handleAdminPayment(p)` from Code.js
+- `_confirmPayment(paymentId, verifiedBy)` helper
+- `_markPaymentNotFound(paymentId, markedBy)` helper
+- `action="payment"` route (consolidated)
+- `action="admin_payment"` route (consolidated)
+- Hardcoded constants: `EXCHANGE_RATE_USD_TO_BWP`, `EXCHANGE_RATE_LAST_UPDATED`
 
 ---
 
-## [1.0.0] — 2026-02-23
+## [1.0.0] — 2026-03-13 (Comprehensive Release)
 
 ### Added
+
+#### Complete Membership Application System (Mar 5-13, 2026)
+- **ApplicationService.js** (~1,200 lines): 12 functions + 3 helpers for full application lifecycle
+- **11-step application workflow:** Submit → Documents → Board Review → RSO Review → Payment → Activation
+- **6 membership categories** determined by eligibility questionnaire:
+  - Individual (local/expat)
+  - Family (local/expat, spouse + children)
+  - Staff (non-member household staff)
+- **Email templates:** 13 new templates (tpl_040-tpl_052) for entire lifecycle
+- **Portal.html:** 6-step application form with sponsor verification, document upload, payment
+- **Admin.html:** Applications management page with approval/denial workflow
+- **Applicant portal:** Read-only interface during approval process
+- **Auto account creation:** New household + individual records with temporary password
+
+#### Phase 1 Payment Verification System (Mar 12-13, 2026)
+- **PaymentService.js:** Core payment submission, verification, status tracking
+- **PaymentVerification sheet:** Tracks dues payments with status workflow
+- **Member portal:** Payment Details page with method instructions
+- **File upload:** Members submit payment proof with metadata
+- **Treasurer workflow:** Board admin approves, rejects, or requests clarification
+- **Email notifications:** 5 templates for submission, review, approval, rejection, clarification
+- **Pro-ration:** Quarterly dues calculation
+- **Status tracking:** submitted → verified/rejected/clarification_requested
+
+#### Email Infrastructure Overhaul (Mar 16-19, 2026)
+- **Drive-based templates:** Plain text files on Google Drive
+- **EmailService.js refactored:** 5 new functions for template loading and sending
+- **Semantic naming:** ~60 email templates use descriptive names
+- **Automatic wrapping:** Templates auto-wrapped in GEA master HTML template
+- **Board delegation:** Service account impersonates treasurer@ account
+- **Template migration:** All legacy `tpl_XXX` calls replaced with semantic names
+- **Drive storage:** Easily editable by board members
+
+#### Security Hardening (Mar 8, 2026)
+- **XSS Prevention (14 vulnerabilities fixed):**
+  - Safe DOM construction with `textContent`
+  - Event handler closures
+  - Git pre-commit hook for regression detection
+- **Session Token Security:**
+  - SHA256 hashing of session tokens
+  - Constant-time comparison for all credentials
+  - Improved token entropy
+  - One session per user enforcement
+- **Authentication Regression Tests:** 8 focused tests
+
+### Changed
+
+#### Code Quality & Refactoring
+- Dashboard layout redesign
+- Membership card enhancements
+- Navigation improvements
+- Session management fix
+- Form data collection fixes
+- Board email refactored
+
+### Fixed
+
+#### Critical Bugs (15+ total)
+- Session accumulation
+- Voting rights field mismatch
+- Membership level undefined
+- Header revert on page load
+- Form data collection errors
+- Family members creation
+- Citizenship country column
+- Board email sending
+- Test data loader
+- Nightly task failure
+- XSS vulnerabilities (14 total)
+- Email template indices
+- Dues display
+- Payment pro-ration
+- Auth patterns
+
+### Removed
+
+#### Legacy Payment Handlers
+- `_handlePaymentSubmit(p)`
+- `_handleAdminPayment(p)`
+- `_confirmPayment()` helper
+- `_markPaymentNotFound()` helper
+- Hardcoded payment routes
+
+---
+
+## [0.7.0] — 2026-02-22 to 2026-02-23
+
+### Added
+
+#### Dashboard Enhancement (Feb 22, 2026)
+- Dashboard layout redesign with 2-column grid (85vw responsive)
+- Membership card enhancements (level display, contact info, dues display)
+- Navigation improvements (clickable header, back-to-dashboard links)
+- Session management fix (one session per user)
+- Data field inventory documentation
+- Environmental metadata display (DEV vs. PROD indicator)
+
+#### Public Website Launch (Feb 23, 2026)
 
 #### Public Website (geabotswana.org)
 - **index.html:** Self-contained public informational website with 6 sections
@@ -302,6 +603,40 @@ The GEA Management System now has a professional public-facing website at **http
 
 ---
 
-**Last Updated:** February 23, 2026
+**Last Updated:** March 26, 2026
 **Maintained by:** Claude Code
 **License:** Internal Use (GEA/U.S. Mission to Botswana)
+
+---
+
+## Development Summary
+
+This changelog covers the GEA Management System development from **February 22 through March 26, 2026**.
+
+**Total Development Span:** 33 days
+**Versions Released:** v0.7.0 → v2.0.0
+**Major Features Implemented:** 12+
+**Commits:** 69+ across multiple PRs
+**Critical Bugs Fixed:** 50+
+**Security Vulnerabilities Resolved:** 14 XSS fixes + session hardening
+
+### Version Progression
+
+- **v0.7.0** (Feb 22-23): Dashboard enhancements, public website launch
+- **v1.0.0** (Mar 5-13): Membership applications, payment verification, email infrastructure, security hardening
+- **v1.1.0** (Mar 13): Phase 2 payments - exchange rate automation, payment report
+- **v1.2.0** (Mar 19): Guest list redesign - per-guest RSO review
+- **v1.3.0** (Mar 21): Admin account management - database-driven RBAC
+- **v1.4.0** (Mar 24): Applicant portal stabilization, RSO dual-role portal
+- **v2.0.0** (Mar 26): Rules & Regulations, CI/CD automation, MCP integration
+
+### Key Architectural Achievements
+
+1. Complete membership application lifecycle (11 steps)
+2. Drive-based email template system (60+ templates)
+3. Service account impersonation with domain-wide delegation
+4. Automated CI/CD deployment via GitHub Actions
+5. RSO dual-role portal with authenticated sessions
+6. Database-driven admin account management
+7. Rules & Regulations system with board management
+8. MCP integration for development tooling

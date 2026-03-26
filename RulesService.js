@@ -53,40 +53,59 @@ function getRulesText() {
     });
 
     // Group rules into outline structure (A, B, Ba, Bb, C, Ca, D, E...)
+    // Sort order format: sss = section(1-5) * 100 + subsection(0-9) * 10 + item(0-9)
+    // 100-109: A, 200-209: B, 210-219: Ba, 220-229: Bb, 300-309: C, 310-319: Ca, etc.
     var sections = [];
-    var sectionMap = {}; // Map sort order to section for nesting subsections
+    var sectionMap = {}; // Map main section sort to section object
+    var subsectionMap = {}; // Map subsection category to subsection object
     var mainSectionIndex = 0; // Track main sections for outline lettering
 
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i];
       var sortOrder = rule.rule_category_sort;
-      var isSubsection = sortOrder % 10 !== 0; // e.g., 21, 22 are subsections of 20
+      var sectionDigit = Math.floor(sortOrder / 100); // 1, 2, 3, 4, 5
+      var subsectionTens = Math.floor((sortOrder % 100) / 10); // 0 = main, 1+ = subsection
+      var isSubsection = subsectionTens > 0;
+      var parentSort = sectionDigit * 100; // Parent section (e.g., 200 for 210, 310)
 
       if (isSubsection) {
-        // This is a subsection - find parent and add as subsection
-        var parentSort = Math.floor(sortOrder / 10) * 10;
+        // This is a subsection - add to parent's subsections array
         if (sectionMap[parentSort]) {
           var parentSection = sectionMap[parentSort];
-          if (!parentSection.subsections) {
-            parentSection.subsections = [];
+          var subsectionKey = rule.rule_category; // Use category name as unique key
+
+          if (!subsectionMap[subsectionKey]) {
+            // First rule in this subsection - create it
+            subsectionMap[subsectionKey] = {
+              title: rule.rule_category,
+              content: []
+            };
+            if (!parentSection.subsections) {
+              parentSection.subsections = [];
+            }
+            parentSection.subsections.push(subsectionMap[subsectionKey]);
           }
-          parentSection.subsections.push({
-            title: rule.rule_category,
-            content: [rule.rule_text]
-          });
+
+          // Add this rule to the subsection
+          subsectionMap[subsectionKey].content.push(rule.rule_text);
         }
       } else {
-        // This is a main section
-        var outlineLetter = String.fromCharCode(65 + mainSectionIndex); // A, B, C, D, E...
-        var section = {
-          number: outlineLetter,
-          title: rule.rule_category,
-          content: [rule.rule_text],
-          subsections: []
-        };
-        sections.push(section);
-        sectionMap[sortOrder] = section;
-        mainSectionIndex++;
+        // This is a main section - check if we've already created it
+        if (!sectionMap[parentSort]) {
+          var outlineLetter = String.fromCharCode(65 + mainSectionIndex); // A, B, C, D, E...
+          var section = {
+            number: outlineLetter,
+            title: rule.rule_category,
+            content: [],
+            subsections: []
+          };
+          sections.push(section);
+          sectionMap[parentSort] = section;
+          mainSectionIndex++;
+        }
+
+        // Add this rule to the main section
+        sectionMap[parentSort].content.push(rule.rule_text);
       }
     }
 

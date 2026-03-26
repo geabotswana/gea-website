@@ -1,4 +1,4 @@
-name: Deploy to Google Apps Script
+name: Deploy to GEA Botswana Shared Drive
 
 on:
   push:
@@ -9,21 +9,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Deploy to Google Apps Script
+        uses: daichan4649/google-apps-script-deploy-action@v1
         with:
-          node-version: '20'
-
-      - name: Install clasp
-        run: npm install -g @google/clasp
-
-      - name: Write service account key
-        run: echo '${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}' > sa_key.json
-
-      - name: Authenticate clasp
-        run: clasp login --creds sa_key.json
-
-      - name: Push to GAS
-        run: clasp push --scriptId 1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv
+          # This is your JSON key stored in GitHub Secrets
+          credentials: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
+          
+          # The Script ID of your project on the Shared Drive
+          script-id: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
+          
+          # Your admin address to bypass the 16-hour limit
+          impersonate-email: "treasurer@geabotswana.org"

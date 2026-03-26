@@ -838,8 +838,8 @@ var SYSTEM_VERSION          = "2.0.1";
 var SYSTEM_BUILD_DATE       = "2026-03-26";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fixed Rules & Regulations display on public website";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-26 18:34:55";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed Rules & Regulations display on public website (JSON response structure)";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-26 18:40:47";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

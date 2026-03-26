@@ -1064,8 +1064,8 @@
     fetch(GAS_URL + '?action=get_rules')
       .then(response => response.json())
       .then(data => {
-        if (data.success && data.rules_html) {
-          container.innerHTML = data.rules_html;
+        if (data.success && data.data && data.data.rules_html) {
+          container.innerHTML = data.data.rules_html;
         } else {
           throw new Error('Invalid response from server');
         }

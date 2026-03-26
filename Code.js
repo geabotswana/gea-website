@@ -169,6 +169,7 @@ function _routeAction(action, params) {
     case "change_password": return _handleChangePassword(params);
     case "deployment_info": return _handleDeploymentInfo();
     case "get_config_value": return _handleGetConfigValue(params);
+    case "get_rules": return _handleGetRules(params);
     case "submit_application": return _handleSubmitApplication(params);
 
 
@@ -627,6 +628,24 @@ function _handleGetConfigValue(p) {
   return successResponse({ key: String(p.key), value: value });
 }
 
+/**
+ * PUBLIC: Get Rules & Regulations in HTML format
+ * Used by both Portal.html and index.html (GitHub Pages)
+ * No authentication required - rules are public information
+ */
+function _handleGetRules(p) {
+  try {
+    var rulesHtml = getRulesHTMLDisplay();
+    return successResponse({
+      success: true,
+      rules_html: rulesHtml,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    Logger.log("ERROR in _handleGetRules: " + error);
+    return errorResponse("Failed to load rules: " + error.message, "SERVER_ERROR");
+  }
+}
 
 function _handleDashboard(p) {
   var auth = requireAuth(p.token);

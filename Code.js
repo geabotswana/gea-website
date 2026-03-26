@@ -3536,6 +3536,10 @@ function _handleAdminDeleteRule(p) {
   }
 }
 
+// ============================================================
+// HANDLER: _handleAdminReservationsReport (SUP.3)
+// ============================================================
+/**
  * Returns aggregated reservation statistics for a given month.
  * Used by the Reports page in Admin.html.
  * Query param: month (ISO date string for any day in desired month; defaults to today)

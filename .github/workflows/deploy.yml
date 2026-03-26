@@ -22,7 +22,7 @@ jobs:
           ADMIN_EMAIL: "treasurer@geabotswana.org"
         run: |
           python - <<EOF
-          import os, fnmatch, json
+          import os, json
           from google.oauth2 import service_account
           from googleapiclient.discovery import build
 
@@ -33,53 +33,41 @@ jobs:
           ).with_subject(os.environ['ADMIN_EMAIL'])
           service = build('script', 'v1', credentials=creds)
 
-          # 2. Parse .claspignore
-          ignore_patterns = []
-          include_patterns = []
-          if os.path.exists('.claspignore'):
-              with open('.claspignore', 'r') as f:
-                  for line in f:
-                      line = line.strip()
-                      if not line or line.startswith('#'):
-                          continue
-                      if line.startswith('!'):
-                          include_patterns.append(line[1:])
-                      else:
-                          ignore_patterns.append(line)
+          # 2. Collect files
+          EXPLICIT_EXCLUDES = {
+              'BoardEmailConfig.gs',
+              'requirements.txt',
+              'index.html',
+              'member.html'
+          }
+          EXCLUDE_DIRS = {'.git', '.github', '.claude', 'node_modules', 'docs', 'scripts'}
 
-          def should_include(rel_path):
-              included = any(fnmatch.fnmatch(rel_path, p) or fnmatch.fnmatch(os.path.basename(rel_path), p) for p in include_patterns)
-              if not included:
-                  return False
-              ignored = any(fnmatch.fnmatch(rel_path, p) or fnmatch.fnmatch(os.path.basename(rel_path), p) for p in ignore_patterns)
-              return not ignored
-
-          # 3. Collect files
           files = []
           for dirpath, dirnames, filenames in os.walk('.'):
-              dirnames[:] = [d for d in dirnames if not d.startswith('.')]
+              dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS and not d.startswith('.')]
               for filename in filenames:
-                  filepath = os.path.join(dirpath, filename)
-                  rel_path = os.path.relpath(filepath, '.').replace(os.sep, '/')
-                  if not should_include(rel_path):
+                  if filename in EXPLICIT_EXCLUDES:
                       continue
+                  if filename == 'appsscript.json':
+                      file_type = 'JSON'
+                      name = 'appsscript'
+                  elif filename.endswith(('.gs', '.js')):
+                      file_type = 'SERVER_JS'
+                      name = filename.replace('.gs', '').replace('.js', '')
+                  elif filename.endswith('.html'):
+                      file_type = 'HTML'
+                      name = filename.replace('.html', '')
+                  else:
+                      continue
+                  filepath = os.path.join(dirpath, filename)
                   with open(filepath, 'r') as f:
                       content = f.read()
-                  if filename == 'appsscript.json':
-                      name = 'appsscript'
-                      file_type = 'JSON'
-                  elif filename.endswith(('.gs', '.js')):
-                      name = rel_path.replace('.gs', '').replace('.js', '')
-                      file_type = 'SERVER_JS'
-                  else:
-                      name = rel_path.replace('.html', '')
-                      file_type = 'HTML'
                   files.append({'name': name, 'type': file_type, 'source': content})
-                  print(f"Including: {rel_path}")
+                  print(f"Including: {filename}")
 
           print(f"\nTotal files to deploy: {len(files)}")
 
-          # 4. Push to GAS
+          # 3. Push to GAS
           service.projects().updateContent(
               scriptId=os.environ['SCRIPT_ID'],
               body={'files': files}

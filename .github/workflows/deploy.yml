@@ -16,14 +16,49 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install clasp
-        run: npm install -g @google/clasp
+      - name: Install dependencies
+        run: npm install googleapis
 
-      - name: Write service account key
-        run: echo '${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}' > sa_key.json
+      - name: Deploy to GAS
+        env:
+          GAS_SERVICE_ACCOUNT_KEY: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
+          SCRIPT_ID: 1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv
+        run: |
+          node -e "
+          const {google} = require('googleapis');
+          const fs = require('fs');
+          const path = require('path');
 
-      - name: Authenticate clasp
-        run: clasp login --creds sa_key.json
+          const key = JSON.parse(process.env.GAS_SERVICE_ACCOUNT_KEY);
+          const scriptId = process.env.SCRIPT_ID;
 
-      - name: Push to GAS
-        run: clasp push --scriptId 1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv
+          const auth = new google.auth.JWT(
+            key.client_email,
+            null,
+            key.private_key,
+            ['https://www.googleapis.com/auth/script.projects']
+          );
+
+          const script = google.script({version: 'v1', auth});
+
+          // Read all .gs and .html files
+          const files = fs.readdirSync('.').filter(f => 
+            f.endsWith('.gs') || f.endsWith('.html') || f === 'appsscript.json'
+          );
+
+          const fileContents = files.map(f => ({
+            name: f.replace(/\.(gs|html|json)$/, ''),
+            type: f.endsWith('.html') ? 'HTML' : 'SERVER_JS',
+            source: fs.readFileSync(f, 'utf8')
+          }));
+
+          // Fix appsscript.json entry
+          const manifest = fileContents.find(f => f.name === 'appsscript');
+          if (manifest) manifest.type = 'JSON';
+
+          script.projects.updateContent({
+            scriptId,
+            requestBody: { files: fileContents }
+          }).then(() => console.log('Deploy successful'))
+            .catch(e => { console.error(e.message); process.exit(1); });
+          "

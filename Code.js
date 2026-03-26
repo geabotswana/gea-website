@@ -238,6 +238,11 @@ function _routeAction(action, params) {
     case "admin_reservations_report": return _handleAdminReservationsReport(params);
     case "admin_resend_email":        return _handleAdminResendEmail(params);
 
+    // ── RULES MANAGEMENT (board-only) ────────────────────────
+    case "admin_get_rules":     return _handleAdminGetRules(params);
+    case "admin_save_rule":     return _handleAdminSaveRule(params);
+    case "admin_delete_rule":   return _handleAdminDeleteRule(params);
+
     // ── ADMIN ACCOUNT MANAGEMENT (board-only) ────────────────
     case "admin_list_admins":           return _handleAdminListAdmins(params);
     case "admin_create_admin":          return _handleAdminCreateAdmin(params);
@@ -3377,6 +3382,160 @@ function _handleAdminGuestHistories(p) {
 // HANDLER: _handleAdminReservationsReport (SUP.3)
 // ============================================================
 /**
+/**
+ * ADMIN: Get all rules for editing in Admin Portal
+ * Returns array of rules sorted by category and sort order
+ * Used by Rules Editor table in Admin.html
+ */
+function _handleAdminGetRules(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var rulesSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_RULES);
+    var data = rulesSheet.getDataRange().getValues();
+
+    if (data.length < 2) {
+      return successResponse({ rules: [] });
+    }
+
+    var rules = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      if (!row[0]) continue; // Skip empty rows
+
+      rules.push({
+        rule_id: row[0] || '',
+        rule_category: row[1] || '',
+        rule_category_sort: row[2] ? Number(row[2]) : 999,
+        rule_text: row[3] || '',
+        row_index: i + 1  // For updates, we need the spreadsheet row number
+      });
+    }
+
+    // Sort by category, then by sort order
+    rules.sort(function(a, b) {
+      if (a.rule_category !== b.rule_category) {
+        return a.rule_category.localeCompare(b.rule_category);
+      }
+      return a.rule_category_sort - b.rule_category_sort;
+    });
+
+    return successResponse({ rules: rules });
+  } catch (error) {
+    Logger.log("ERROR in _handleAdminGetRules: " + error);
+    return errorResponse("Failed to load rules: " + error.message, "SERVER_ERROR");
+  }
+}
+
+/**
+ * ADMIN: Save or update a rule
+ * Updates existing rule or creates new rule if rule_id is empty
+ */
+function _handleAdminSaveRule(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    if (!p.rule_category || !p.rule_text) {
+      return errorResponse("Missing required fields: rule_category, rule_text", "VALIDATION_ERROR");
+    }
+
+    var rulesSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_RULES);
+    var rule_sort = p.rule_category_sort ? Number(p.rule_category_sort) : 999;
+
+    if (p.rule_id && p.rule_id.trim()) {
+      // Update existing rule
+      var data = rulesSheet.getDataRange().getValues();
+      var found = false;
+
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][0] === p.rule_id) {
+          rulesSheet.getRange(i + 1, 1, 1, 4).setValues([[
+            p.rule_id,
+            p.rule_category,
+            rule_sort,
+            p.rule_text
+          ]]);
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        return errorResponse("Rule not found: " + p.rule_id, "NOT_FOUND");
+      }
+    } else {
+      // Create new rule with auto-generated ID
+      var newRuleId = "RULE-" + String(Math.floor(Math.random() * 100000)).padStart(4, '0');
+      rulesSheet.appendRow([newRuleId, p.rule_category, rule_sort, p.rule_text]);
+      p.rule_id = newRuleId;
+    }
+
+    // Log the change
+    Utilities.logAuditEntry({
+      timestamp: new Date().toISOString(),
+      user_email: auth.session.email,
+      action_type: 'rule_updated',
+      target_id: p.rule_id,
+      details: 'Category: ' + p.rule_category + '; Sort: ' + rule_sort,
+      ip_address: ''
+    });
+
+    return successResponse({
+      success: true,
+      rule_id: p.rule_id,
+      message: "Rule saved successfully"
+    });
+  } catch (error) {
+    Logger.log("ERROR in _handleAdminSaveRule: " + error);
+    return errorResponse("Failed to save rule: " + error.message, "SERVER_ERROR");
+  }
+}
+
+/**
+ * ADMIN: Delete a rule
+ */
+function _handleAdminDeleteRule(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    if (!p.rule_id) {
+      return errorResponse("Missing required field: rule_id", "VALIDATION_ERROR");
+    }
+
+    var rulesSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_RULES);
+    var data = rulesSheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === p.rule_id) {
+        rulesSheet.deleteRow(i + 1);
+
+        // Log the deletion
+        Utilities.logAuditEntry({
+          timestamp: new Date().toISOString(),
+          user_email: auth.session.email,
+          action_type: 'rule_deleted',
+          target_id: p.rule_id,
+          details: 'Deleted by board admin',
+          ip_address: ''
+        });
+
+        return successResponse({
+          success: true,
+          message: "Rule deleted successfully"
+        });
+      }
+    }
+
+    return errorResponse("Rule not found: " + p.rule_id, "NOT_FOUND");
+  } catch (error) {
+    Logger.log("ERROR in _handleAdminDeleteRule: " + error);
+    return errorResponse("Failed to delete rule: " + error.message, "SERVER_ERROR");
+  }
+}
+
  * Returns aggregated reservation statistics for a given month.
  * Used by the Reports page in Admin.html.
  * Query param: month (ISO date string for any day in desired month; defaults to today)

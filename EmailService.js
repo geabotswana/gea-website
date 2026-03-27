@@ -23,22 +23,15 @@
 /**
  * Sends a styled GEA email using a template from the spreadsheet.
  *
- * @param {string}       templateId  e.g. "tpl_007"
+ * @param {string}       templateId  Template ID as stored in the Email Templates sheet
  * @param {string|Array} recipient   Email address(es)
  * @param {Object}       variables   Placeholder values: { FIRST_NAME: "Jane", ... }
  * @param {string}       replyTo     (Optional) Reply-To address. Defaults to EMAIL_BOARD
  * @returns {boolean}    true if sent successfully
  *
- * EXAMPLE:
- *   sendEmail("tpl_007", "jane@state.gov", {
- *     FIRST_NAME:       "Jane",
- *     FACILITY:         "Tennis Court",
- *     RESERVATION_DATE: "Saturday, March 15, 2026",
- *     START_TIME:       "9:00 AM",
- *     END_TIME:         "10:00 AM",
- *     EVENT_NAME:       "Tennis",
- *     RESERVATION_ID:   "RES-2026-145238491"
- *   }, "noreply@geabotswana.org");
+ * NOTE: Prefer sendEmailFromTemplate() for new code — it uses semantic template names
+ * (e.g. "RES_BOOKING_RECEIVED_TO_MEMBER") and Drive-hosted templates. sendEmail() is
+ * retained for legacy sheet-based templates only.
  */
 function sendEmail(templateId, recipient, variables, replyTo) {
   try {
@@ -76,7 +69,7 @@ function sendEmail(templateId, recipient, variables, replyTo) {
  * not from the individual user. This ensures board notifications arrive as incoming mail,
  * not in the sender's Sent folder.
  *
- * @param {string}       templateId  e.g. "tpl_042"
+ * @param {string}       templateId  Template ID as stored in the Email Templates sheet
  * @param {string|Array} recipient   Email address(es)
  * @param {Object}       variables   Placeholder values
  * @returns {boolean}    true if sent successfully

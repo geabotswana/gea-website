@@ -1281,7 +1281,7 @@ function _getRoleForEmail(email) {
 }
 
 /**
- * Sends the first-login welcome email (tpl_021) to a new member.
+ * Sends the first-login welcome email (MEM_FIRST_LOGIN_WELCOME_TO_MEMBER) to a new member.
  * @param {Object} member  Individual record
  */
 function _sendFirstLoginWelcome(member) {

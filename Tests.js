@@ -756,7 +756,7 @@ function testAuditLog() {
 // ============================================================
 
 /**
- * Sends a real test email using tpl_001 to verify the full
+ * Sends a real test email using MEM_APPLICATION_RECEIVED_TO_APPLICANT to verify the full
  * email pipeline: template fetch → placeholder replacement →
  * HTML build → GmailApp send.
  *
@@ -775,21 +775,14 @@ function testSendEmail() {
     return;
   }
 
-  var ok = sendEmail("tpl_001", TEST_RECIPIENT, {
-    FIRST_NAME:       "Test User",
-    FULL_NAME:        "Test User",
-    MEMBERSHIP_LEVEL: "Full Membership",
-    HOUSEHOLD_TYPE:   "Family",
-    IF_FAMILY:        "true",
-    FAMILY_MEMBERS_LIST: "Jane Test, John Test",
-    IF_NON_FULL:      "",
-    SPONSOR_NAME:     "",
-    IF_TEMPORARY:     "",
-    DUES_AMOUNT:      "",
-    DURATION_MONTHS:  ""
+  var ok = sendEmailFromTemplate("MEM_APPLICATION_RECEIVED_TO_APPLICANT", TEST_RECIPIENT, {
+    FIRST_NAME:     "Test User",
+    APPLICATION_ID: "TEST-2026-00001",
+    SUBMITTED_DATE: new Date().toISOString().split("T")[0],
+    PORTAL_URL:     "https://geabotswana.org/member.html"
   });
 
-  _assert("tpl_001 email sent successfully", ok === true);
+  _assert("MEM_APPLICATION_RECEIVED_TO_APPLICANT email sent successfully", ok === true);
   if (ok) Logger.log("  INFO: Check " + TEST_RECIPIENT + " for the test email.");
 }
 
@@ -929,12 +922,11 @@ function testBoardEmailGmailAPI() {
 
   try {
     // Test sendEmailFromBoard function
-    var success = sendEmailFromBoard("tpl_042", boardEmail, {
-      "APPLICANT_NAME": "Test User",
-      "MEMBERSHIP_CATEGORY": "Full",
-      "HOUSEHOLD_TYPE": "Family",
-      "APPLICATION_ID": "TEST-2026-00001",
-      "SUBMITTED_DATE": new Date().toISOString().split('T')[0]
+    var success = sendEmailFromTemplate("ADM_NEW_APPLICATION_BOARD_TO_BOARD", boardEmail, {
+      APPLICANT_NAME:       "Test User",
+      APPLICATION_ID:       "TEST-2026-00001",
+      APPLICATION_DATE:     new Date().toISOString().split("T")[0],
+      BOARD_REVIEW_DEADLINE: formatDate(addDays(new Date(), 3))
     });
 
     if (success) {

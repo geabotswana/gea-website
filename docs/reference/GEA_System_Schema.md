@@ -511,18 +511,13 @@ Templates for all automated system emails.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `template_id` | Text | Unique ID (e.g., tpl_001, tpl_025, tpl_032) |
-| `template_name` | Text | Display name |
-| `subject` | Text | Email subject line (with variables) |
-| `body` | Text | Email body (with variables) |
+| `semantic_name` | Text | Unique semantic ID (e.g., MEM_APPLICATION_RECEIVED_TO_APPLICANT) |
+| `display_name` | Text | Human-readable name |
+| `subject` | Text | Email subject line (with `{{VARIABLE}}` placeholders) |
+| `body` | Text | Email body (with `{{VARIABLE}}` placeholders) |
 | `active` | Boolean | Template is in use |
 
-**Current Templates:**
-
-| ID | Name | Purpose |
-|----|------|---------|
-| tpl_001 | Application Received | Confirm membership application submitted |
-| (others) | ... | Various notifications, approvals, etc. |
+**Current Templates:** 69 templates across 6 categories. See [EMAIL_TEMPLATES_REFERENCE.md](EMAIL_TEMPLATES_REFERENCE.md) for the full list.
 
 **Template Variables:**
 - `{{FIRST_NAME}}` - First name

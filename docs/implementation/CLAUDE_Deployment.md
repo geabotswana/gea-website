@@ -250,10 +250,10 @@ function testCreateReservation() {
 }
 
 function testEmailSending() {
-  var result = EmailService.sendEmail(
-    "tpl_001",  // Template ID
+  var result = sendEmailFromTemplate(
+    "MEM_APPLICATION_RECEIVED_TO_APPLICANT",  // Semantic template name
     "jane@example.com",
-    {FIRST_NAME: "Jane", FACILITY: "Tennis"}
+    {FIRST_NAME: "Jane", APPLICATION_ID: "TEST-001", SUBMITTED_DATE: "2026-03-27", PORTAL_URL: ""}
   );
   console.log("Email result:", result);
   // Should return success confirmation

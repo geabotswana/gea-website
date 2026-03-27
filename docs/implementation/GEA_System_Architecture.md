@@ -130,14 +130,14 @@ Sections:
 
 ```
 Stored in Email Templates tab (System Backend spreadsheet)
-Template ID format: tpl_001, tpl_002, etc.
+Semantic name format: PREFIX_DESCRIPTION_TO_RECIPIENT (e.g. MEM_APPLICATION_RECEIVED_TO_APPLICANT)
 Supports placeholders: {{FIRST_NAME}}, {{FACILITY}}, {{RESERVATION_DATE}}
 Supports conditional blocks: {{IF_FAMILY}}...{{END_IF}}
-30+ templates for all member communications
+69 templates across 6 categories (ADM, DOC, MEM, PAY, RES, SYS)
 
 Implementation:
-1. Handler calls: EmailService.sendEmail(templateId, recipient, variables)
-2. EmailService fetches template by ID from sheet
+1. Handler calls: sendEmailFromTemplate(semanticName, recipient, variables)
+2. EmailService fetches template by semantic name from sheet
 3. Replaces {{PLACEHOLDER}} with variables
 4. Wraps in HTML template
 5. Sends from: "Gaborone Employee Association" <board@geabotswana.org>
@@ -190,7 +190,7 @@ logAuditEntry(userEmail, actionType, targetId, details, ipAddress);
 | Tab | Purpose | Key Lookup | Rows |
 |-----|---------|-----------|------|
 | **Configuration** | All business rules & thresholds | config_key (cached at runtime) | ~100 |
-| **Email Templates** | 30+ notification templates | template_id (tpl_001...tpl_032) | 32 |
+| **Email Templates** | 69 notification templates | semantic_name (ADM_*, DOC_*, MEM_*, PAY_*, RES_*, SYS_*) | 69 |
 | **Sessions** | Active user sessions | token (lookup on every request) | ~50 |
 | **Audit Log** | Compliance trail | timestamp, user_email, action_type | ~10000 |
 | **Membership Applications** | New member application workflow | application_id, status progression | ~300 |

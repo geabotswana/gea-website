@@ -140,9 +140,9 @@ var auth = requireAuth(p.token, "board");  // Validates token & role
 
 **Email Templates:**
 - Stored in **Email Templates** tab (System Backend spreadsheet)
-- Template ID format: `tpl_001`, `tpl_002`, etc.
+- Template semantic name format: `PREFIX_DESCRIPTION_TO_RECIPIENT` (e.g. `MEM_APPLICATION_RECEIVED_TO_APPLICANT`)
 - Supports placeholders: `{{FIRST_NAME}}`, `{{FACILITY}}`, `{{RESERVATION_DATE}}`
-- 30+ templates for all member communications
+- 69 templates across 6 categories (ADM, DOC, MEM, PAY, RES, SYS) — see [EMAIL_TEMPLATES_REFERENCE.md](docs/reference/EMAIL_TEMPLATES_REFERENCE.md)
 
 **Audit Logging:**
 - Every action logged to **Audit Log** tab
@@ -208,7 +208,7 @@ container.appendChild(div);
 | Tab | Purpose | Key Lookup |
 |-----|---------|-----------|
 | Configuration | All business rules & thresholds | `config_key` (cached at runtime) |
-| Email Templates | 30+ notification templates | `template_id` (tpl_001...tpl_032) |
+| Email Templates | 69 notification templates | `semantic_name` (e.g. ADM_*, DOC_*, MEM_*, PAY_*, RES_*, SYS_*) |
 | Sessions | Active user sessions | `token` (lookup on every request) |
 | Audit Log | Compliance trail (1000s of rows) | timestamp, user_email, action_type |
 | Membership Applications | New member application workflow | `application_id`, status progression |
@@ -397,7 +397,7 @@ container.appendChild(div);
 
 **Backend:** PaymentService.js (10 functions for submission, verification, status tracking)
 **Pro-ration:** Dues calculated by quarter (Q1: 100%, Q2: 75%, Q3: 50%, Q4: 25%)
-**Email Templates:** tpl_061 through tpl_065 (5 templates for payment notifications)
+**Email Templates:** PAY_PAYMENT_SUBMITTED_TO_MEMBER, PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD, PAY_PAYMENT_VERIFIED_TO_MEMBER, PAY_PAYMENT_REJECTED_TO_MEMBER, PAY_PAYMENT_CLARIFICATION_REQUESTED_TO_MEMBER (5 templates for payment notifications)
 
 ### Phase 2: Payment Enhancements (Mar 13, 2026)
 **Implementation Complete. See:** [CLAUDE_Payments_Implementation.md](docs/implementation/CLAUDE_Payments_Implementation.md) - PART B, PART G, PART I, PART K

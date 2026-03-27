@@ -114,12 +114,14 @@ If missing:
 ```javascript
 function testBoardEmailRecovery() {
   // sendEmailFromBoard(templateId, recipient, variables)
-  var result = sendEmailFromBoard(
-    "tpl_001",  // Template ID (or any valid template)
+  var result = sendEmailFromTemplate(
+    "MEM_APPLICATION_RECEIVED_TO_APPLICANT",  // Any valid semantic template name
     "treasurer@geabotswana.org",
     {
-      FIRST_NAME: "Test User",
-      MEMBER_NAME: "Test"
+      FIRST_NAME:     "Test User",
+      APPLICATION_ID: "TEST-2026-00001",
+      SUBMITTED_DATE: "2026-03-27",
+      PORTAL_URL:     "https://geabotswana.org/member.html"
     }
   );
   Logger.log("Email sent: " + result);
@@ -132,7 +134,7 @@ function testBoardEmailRecovery() {
 4. Check Logs tab for success message: `Email sent: true`
 5. Verify email arrives in treasurer's inbox as **incoming mail** (not sent folder)
 
-**Note:** Use an actual template ID (e.g., `tpl_001` for "New Reservation") or check `getEmailTemplate()` for available IDs. The variables must match the template's placeholders.
+**Note:** Use any semantic template name (e.g., `MEM_APPLICATION_RECEIVED_TO_APPLICANT`). See [EMAIL_TEMPLATES_REFERENCE.md](../reference/EMAIL_TEMPLATES_REFERENCE.md) for the full list. Variables must match the template's placeholders.
 
 ---
 

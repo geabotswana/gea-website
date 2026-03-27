@@ -577,10 +577,10 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
         APPROVAL_DEADLINE: formatDate(addDays(new Date(), 5))
       });
 
-      sendEmail("tpl_044", application.email, {
-        "APPLICANT_NAME": application.first_name,
-        "APPLICATION_ID": applicationId,
-        "STATUS": "Your documents have been forwarded to our security team for review."
+      sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.email, {
+        FIRST_NAME:      application.first_name,
+        DOCUMENT_TYPES:  "Passport / Omang / Photo",
+        SUBMISSION_DATE: formatDate(new Date())
       });
 
     } else if (decision === "denied") {
@@ -599,10 +599,11 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Denied at initial review. Reason: " + (reason || ""));
 
       // Notify applicant
-      sendEmail("tpl_045", application.email, {
-        "APPLICANT_NAME": application.first_name,
-        "REASON": reason || "Your application does not meet membership requirements at this time.",
-        "CONTACT": "board@geabotswana.org"
+      sendEmailFromTemplate("MEM_APPLICATION_DENIED_TO_APPLICANT", application.email, {
+        FIRST_NAME:    application.first_name,
+        APPLICATION_ID: applicationId,
+        DENIAL_REASON: reason || "Your application does not meet membership requirements at this time.",
+        CONTACT_EMAIL: "board@geabotswana.org"
       });
     }
 
@@ -675,10 +676,12 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
         DEADLINE_TO_RESOLVE:  formatDate(addDays(new Date(), 7))
       });
 
-      sendEmail("tpl_046", application.email, {
-        "APPLICANT_NAME": application.first_name,
-        "REASON": publicReason || "Your submitted documents did not meet our security requirements.",
-        "NEXT_STEP": "Please resubmit corrected documents through the member portal."
+      sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_MEMBER", application.email, {
+        FIRST_NAME:        application.first_name,
+        DOCUMENT_TYPE:     "Document",
+        REJECTION_REASON:  publicReason || "Your submitted documents did not meet our security requirements.",
+        RESUBMIT_DEADLINE: formatDate(addDays(new Date(), 7)),
+        PORTAL_URL:        getConfigValue("PORTAL_URL") || ""
       });
     }
 
@@ -725,23 +728,24 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       var duesAmount = _calculateDuesAmount(applicationId);
 
       // Notify applicant with payment instructions
-      sendEmail("tpl_048", application.email, {
-        "APPLICANT_NAME": application.first_name,
-        "PAYMENT_REFERENCE": paymentRef,
-        "DUES_AMOUNT": duesAmount,
-        "BANK_ACCOUNT": getConfigValue("BANK_ACCOUNT_INFO") || "",
-        "PAYPAL": getConfigValue("PAYPAL_EMAIL") || "",
-        "SDFCU": getConfigValue("SDFCU_INFO") || "",
-        "ZELLE": getConfigValue("ZELLE_INFO") || ""
+      sendEmailFromTemplate("MEM_APPLICATION_APPROVED_TO_APPLICANT", application.email, {
+        FIRST_NAME:       application.first_name,
+        APPLICATION_ID:   applicationId,
+        PAYMENT_AMOUNT:   duesAmount,
+        PAYMENT_DEADLINE: formatDate(addDays(new Date(), 30)),
+        PORTAL_URL:       getConfigValue("PORTAL_URL") || ""
       });
 
       // Notify treasurer
       var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
-      sendEmailFromBoard("tpl_050", treasurerEmail, {
-        "APPLICANT_NAME": application.first_name + " " + application.last_name,
-        "APPLICATION_ID": applicationId,
-        "PAYMENT_REFERENCE": paymentRef,
-        "DUES_AMOUNT": duesAmount
+      sendEmailFromTemplate("PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD", treasurerEmail, {
+        FIRST_NAME:      "Treasurer",
+        MEMBER_NAME:     application.first_name + " " + application.last_name,
+        PAYMENT_ID:      paymentRef,
+        AMOUNT:          duesAmount,
+        CURRENCY:        "BWP",
+        STATUS:          "Approved — payment expected",
+        SUBMISSION_DATE: formatDate(new Date())
       });
 
     } else if (decision === "denied") {
@@ -760,10 +764,11 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Final denial. Reason: " + (reason || ""));
 
       // Notify applicant
-      sendEmail("tpl_049", application.email, {
-        "APPLICANT_NAME": application.first_name,
-        "REASON": reason || "Your application was not approved for final membership.",
-        "CONTACT": "board@geabotswana.org"
+      sendEmailFromTemplate("MEM_APPLICATION_DENIED_TO_APPLICANT", application.email, {
+        FIRST_NAME:    application.first_name,
+        APPLICATION_ID: applicationId,
+        DENIAL_REASON: reason || "Your application was not approved for final membership.",
+        CONTACT_EMAIL: "board@geabotswana.org"
       });
     }
 
@@ -833,20 +838,23 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
                   "Payment submitted: " + paymentMethod);
 
     // Notify applicant and treasurer
-    sendEmail("tpl_050", email, {
-      "APPLICANT_NAME": application.first_name,
-      "PAYMENT_METHOD": paymentMethod,
-      "PAYMENT_DATE": formatDate(new Date(), "GMT+2", "yyyy-MM-dd"),
-      "NEXT_STEP": "Your payment will be verified by our Treasurer within 2 business days."
+    sendEmailFromTemplate("PAY_PAYMENT_PROOF_RECEIVED_TO_MEMBER", email, {
+      FIRST_NAME:      application.first_name,
+      PAYMENT_ID:      paymentId,
+      AMOUNT:          paymentData.amount_paid,
+      SUBMISSION_DATE: formatDate(new Date()),
+      PORTAL_URL:      getConfigValue("PORTAL_URL") || ""
     });
 
     var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
-    sendEmailFromBoard("tpl_050", treasurerEmail, {
-      "APPLICANT_NAME": application.first_name + " " + application.last_name,
-      "APPLICATION_ID": applicationId,
-      "PAYMENT_METHOD": paymentMethod,
-      "AMOUNT": paymentData.amount_paid,
-      "PROOF_FILE_ID": proofFileId
+    sendEmailFromTemplate("PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD", treasurerEmail, {
+      FIRST_NAME:      "Treasurer",
+      MEMBER_NAME:     application.first_name + " " + application.last_name,
+      PAYMENT_ID:      paymentId,
+      AMOUNT:          paymentData.amount_paid,
+      CURRENCY:        "BWP",
+      STATUS:          "submitted",
+      SUBMISSION_DATE: formatDate(new Date())
     });
 
     return { success: true, message: "Payment proof submitted for verification." };

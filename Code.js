@@ -2578,7 +2578,7 @@ function _objectToSubmissionRow(obj) {
  * Check the Logs to see results
  */
 function testSendSingleEmailTemplate(templateId) {
-  if (!templateId) templateId = "tpl_040"; // Default to Application Received
+  if (!templateId) templateId = "MEM_APPLICATION_RECEIVED_TO_APPLICANT"; // Default to Application Received
   var testEmail = "treasurer@geabotswana.org";
 
   // Common test variables used for templates
@@ -3020,10 +3020,13 @@ function _handleAdminPaymentReport(p) {
 
 
 /**
- * One-time setup function: Adds missing payment verification email templates
- * Run this once, then can be deleted.
- * Select from dropdown: addPaymentTemplates()
- * Click Run
+ * LEGACY SETUP FUNCTION — do not run again.
+ * Originally added payment email template rows (tpl_061-tpl_065) to the Email Templates sheet.
+ * Those templates have since been superseded by semantic-named Drive templates:
+ *   PAY_PAYMENT_SUBMITTED_TO_MEMBER, PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD,
+ *   PAY_PAYMENT_VERIFIED_TO_MEMBER, PAY_PAYMENT_REJECTED_TO_MEMBER,
+ *   PAY_PAYMENT_CLARIFICATION_REQUESTED_TO_MEMBER
+ * Kept for historical reference only.
  */
 function addPaymentTemplates() {
   try {

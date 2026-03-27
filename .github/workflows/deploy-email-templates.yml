@@ -111,7 +111,8 @@ jobs:
                   q=query,
                   spaces='drive',
                   fields='files(id, name)',
-                  pageSize=1
+                  pageSize=1,
+                  supportsTeamDrives=True
               ).execute()
 
               existing_file = results.get('files', [])
@@ -123,7 +124,8 @@ jobs:
                       media = MediaFileUpload(file_path, mimetype='text/plain', resumable=True)
                       drive_service.files().update(
                           fileId=file_id,
-                          media_body=media
+                          media_body=media,
+                          supportsTeamDrives=True
                       ).execute()
                       print(f"  ✏️  Updated: {file_id}")
                       updates[semantic_name] = file_id
@@ -138,7 +140,8 @@ jobs:
                       file = drive_service.files().create(
                           body=file_metadata,
                           media_body=media,
-                          fields='id'
+                          fields='id',
+                          supportsTeamDrives=True
                       ).execute()
                       file_id = file.get('id')
                       print(f"  ✨ Created: {file_id}")

@@ -1,18 +1,34 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-Application Final Denial
+APPLICATION FINAL DENIAL RECORDED
 
-Unfortunately, your application has been denied by the board.
+The board has issued a final denial for this membership application.
 
+APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
-Reason: {{DENIAL_REASON}}
-Appeal Process: {{APPEAL_PROCESS}}
+Board Denial Date: {{DENIAL_DATE}}
 
-Best regards,
+DENIAL REASON:
+{{DENIAL_REASON}}
+
+APPEAL PROCESS:
+{{APPEAL_PROCESS}}
+
+APPLICANT NOTIFICATION:
+The applicant has been notified of this final denial and the appeals process (if available).
+
+RECORD STATUS:
+This denial has been logged in the system for compliance and audit purposes.
+
+BOARD ACTION COMPLETE:
+No further board action is required on this application.
+
+Questions? Contact board@geabotswana.org
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+www.geabotswana.org
+board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

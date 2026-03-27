@@ -1,25 +1,33 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Thank you for submitting your guest list for your upcoming reservation.
+GUEST LIST RECEIVED
 
-Reservation: {{RESERVATION_ID}}
+Thank you for submitting your guest list for your upcoming reservation!
+
+SUBMISSION DETAILS:
+Reservation ID: {{RESERVATION_ID}}
 Facility: {{FACILITY_NAME}}
 Event Date: {{RESERVATION_DATE}}
 Guests Submitted: {{GUEST_COUNT}}
 
-Your guest list has been received and will be reviewed by the RSO before your event. Please ensure all guests bring a valid photo ID on the day of the event.
+WHAT HAPPENS NEXT:
+Your guest list has been received and will be reviewed by the RSO (Regional Security Officer) before your event. You'll receive notification once the review is complete.
 
-Guest List Submission Deadline: {{DEADLINE}}
+IMPORTANT REMINDERS:
+- All guests must bring a valid photo ID on the day of the event
+- Original submission deadline was: {{DEADLINE}}
+- If you need to make changes, contact board@geabotswana.org immediately
 
-If your guest list needs to change, please contact us at board@geabotswana.org before the deadline.
+GUEST REQUIREMENTS:
+- Ensure all guests know they must present valid photo ID
+- Double-check guest names for accuracy
+- Confirm all relationships are correctly listed
 
-You can view your reservation details in the Member Portal:
-{{PORTAL_URL}}
+VIEW YOUR RESERVATION:
+Access your complete reservation details and guest list in the Member Portal: {{PORTAL_URL}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+NEED TO MAKE CHANGES?
+If your guest list needs to change, contact us immediately at board@geabotswana.org. We can help you update it if time permits.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

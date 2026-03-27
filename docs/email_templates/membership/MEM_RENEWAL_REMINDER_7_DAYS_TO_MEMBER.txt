@@ -1,18 +1,31 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your GEA membership renewal is due in just 7 days!
+⏰ URGENT: MEMBERSHIP EXPIRES IN 7 DAYS
 
-Your current membership expires on {{RENEWAL_DEADLINE}}. Please renew your membership urgently to avoid losing access to GEA benefits.
+Your GEA membership is about to expire! Renew immediately to avoid losing access to all member benefits and facilities.
 
+RENEWAL DEADLINE:
 Membership Year: {{MEMBERSHIP_YEAR}}
-Renewal Deadline: {{RENEWAL_DEADLINE}}
+Expires: {{RENEWAL_DEADLINE}}
+Days Remaining: 7
 
-Renew now: {{PORTAL_URL}}
+RENEW IMMEDIATELY:
+{{PORTAL_URL}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHAT EXPIRES WITH YOUR MEMBERSHIP:
+- Facility access (tennis, Leobo, gym)
+- Reservation capabilities
+- Member discounts and events
+- Digital membership card
+- Portal access
+
+ACT NOW:
+1. Go to: {{PORTAL_URL}}
+2. Submit your renewal payment
+3. Your membership reactivates after verification
+
+QUESTIONS?
+Don't wait — if you have issues renewing, contact board@geabotswana.org right away!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

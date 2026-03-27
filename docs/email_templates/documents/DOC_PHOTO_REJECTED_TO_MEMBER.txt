@@ -1,20 +1,42 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your photos need resubmission.
+PHOTO RESUBMISSION REQUIRED
 
-Unfortunately, your submitted photos do not meet our requirements. Please resubmit new photos.
+Your submitted photos don't meet our requirements. Please resubmit with the corrections noted below.
 
-Reason: {{REJECTION_REASON}}
-Resubmit By: {{RESUBMIT_DEADLINE}}
+REJECTION REASON:
+{{REJECTION_REASON}}
 
-Please review the guidelines: {{PHOTO_GUIDELINES_URL}}
+RESUBMIT BY:
+{{RESUBMIT_DEADLINE}}
 
-Submit new photos through your member portal.
+PHOTO GUIDELINES:
+Review our requirements: {{PHOTO_GUIDELINES_URL}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+COMMON ISSUES:
+- Photo too dark or blurry
+- Face not clearly visible
+- Wrong background color
+- Photo too old or not recent
+- Multiple people in photo
+
+HOW TO FIX IT:
+1. Take a new photo following the guidelines
+2. Log into your member portal
+3. Upload the corrected photo
+4. We'll review and notify you
+
+HOW TO RESUBMIT:
+{{PORTAL_URL}}
+
+NEED EXAMPLES?
+Review the photo guidelines for examples of acceptable photos.
+
+URGENT:
+Please resubmit by {{RESUBMIT_DEADLINE}} to avoid delays to your membership.
+
+QUESTIONS?
+Contact board@geabotswana.org for photo tips or clarification.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

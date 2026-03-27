@@ -1,19 +1,23 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your reservation has been cancelled.
+RESERVATION CANCELLED
 
-Your reservation for {{FACILITY_NAME}} has been cancelled.
+Your facility reservation has been cancelled.
 
-Reservation ID: {{RESERVATION_ID}}
+CANCELLATION DETAILS:
+Facility: {{FACILITY_NAME}}
 Original Date: {{ORIGINAL_DATE}}
+Reservation ID: {{RESERVATION_ID}}
 Reason: {{CANCELLATION_REASON}}
 
-Feel free to book another date for {{FACILITY_NAME}} through your member portal.
+WHAT HAPPENS NOW:
+Your reservation is no longer active. Any guest list you may have submitted is also cancelled.
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+BOOK ANOTHER DATE:
+You can make a new reservation for {{FACILITY_NAME}} anytime through your member portal. Simply check availability and submit a new booking request.
+
+QUESTIONS OR CONCERNS?
+If you need more information about this cancellation or would like to discuss, contact us at board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

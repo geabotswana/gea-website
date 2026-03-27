@@ -1,20 +1,25 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-You have requested to book additional Leobo stays.
+EXCESS LEOBO REQUEST SUBMITTED
 
-Thank you for your request to exceed the standard Leobo reservation limit.
+Thank you for requesting additional Leobo accommodation beyond your standard monthly limit.
 
+REQUEST DETAILS:
 Requested Date: {{REQUESTED_DATE}}
-Reason: {{REASON}}
+Reason for Additional Stay: {{REASON}}
 
-Your request is being reviewed by the Board. You will be notified of the decision shortly.
+APPROVAL STATUS:
+Your request is being reviewed by the GEA Board. You will receive a decision shortly via email.
 
-View request status: {{APPROVAL_URL}}
+FACILITY LIMITS:
+Standard monthly limit: 1 reservation for your household
+Your request seeks to exceed this limit for special circumstances.
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+TRACK YOUR REQUEST:
+Monitor your request status anytime in your member portal: {{APPROVAL_URL}}
+
+NEED TO DISCUSS?
+Contact the board at board@geabotswana.org if you'd like to provide additional details about your request.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

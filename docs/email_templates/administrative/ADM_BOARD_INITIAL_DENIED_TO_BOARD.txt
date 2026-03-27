@@ -1,18 +1,36 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-Application Denial Notification
+APPLICATION INITIAL DENIAL RECORDED
 
 An application has been denied at the initial board review stage.
 
+APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
-Reason: {{DENIAL_REASON}}
-Decision Date: {{DECISION_DATE}}
+Board Decision Date: {{DECISION_DATE}}
 
-Best regards,
+DENIAL REASON:
+{{DENIAL_REASON}}
+
+APPLICANT NOTIFICATION:
+The applicant has been notified of this denial and provided with next steps.
+
+WHAT HAPPENS NEXT:
+- Application status updated to "Denied"
+- Applicant may contact board to discuss denial or appeal if applicable
+- No further processing will occur unless applicant reapplies
+
+RECORD STATUS:
+This denial has been logged in the system for compliance and audit purposes.
+
+BOARD ACTION COMPLETE:
+No further board action is required on this application.
+
+Questions? Contact board@geabotswana.org
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+www.geabotswana.org
+board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

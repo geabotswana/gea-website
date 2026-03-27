@@ -1,17 +1,32 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Important: Your passport is expiring soon.
+PASSPORT EXPIRATION NOTICE
 
-Our records indicate that your passport will expire on {{EXPIRATION_DATE}}.
+Your passport is expiring soon. Review and renewal details below.
 
-As a member of the Gaborone Employee Association, you may need a valid passport for certain activities. We recommend renewing your passport before it expires.
+YOUR PASSPORT:
+Current Expiration Date: {{EXPIRATION_DATE}}
+Status: Expiring within 6 months
 
-For information on passport renewal, visit: {{RENEWAL_URL}}
+WHY THIS MATTERS:
+- Traveling internationally requires a valid passport
+- GEA may require valid ID for certain activities
+- Passport renewals can take several months
+- Starting renewal early avoids delays
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+NEXT STEPS:
+- Contact your embassy for passport renewal procedures
+- More information: {{RENEWAL_URL}}
+- Plan to renew well before your expiration date
+
+UPDATING YOUR GEA RECORD:
+Once you renew your passport, please:
+1. Log into your member portal
+2. Update your document with your new passport
+3. Upload a copy for our records
+
+QUESTIONS?
+Need help with your GEA records? Contact board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

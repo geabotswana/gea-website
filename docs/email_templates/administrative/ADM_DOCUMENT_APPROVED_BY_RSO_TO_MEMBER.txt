@@ -1,18 +1,34 @@
-Dear {{FIRST_NAME}},
+Hi {{FIRST_NAME}},
 
-Your document has been approved.
+✓ YOUR DOCUMENT APPROVED!
 
-Your submitted document has been reviewed and approved.
+Excellent news! Your submitted document has been reviewed and approved by the RSO.
 
+APPROVAL DETAILS:
 Document Type: {{DOCUMENT_TYPE}}
 Approval Date: {{APPROVAL_DATE}}
+Status: Verified and Accepted
 
-You may review the status of all your requests in the portal.
+WHAT THIS MEANS:
+Your document has successfully passed RSO security verification and is now accepted as official GEA record.
 
-Best regards,
+YOUR APPLICATION STATUS:
+Your application continues to the next stage of processing. The GEA Board will now conduct their final review.
+
+TRACK YOUR PROGRESS:
+Monitor your complete application status anytime in your member portal. You'll receive notifications as your application moves through each stage.
+
+NEXT STEPS:
+The board will review your complete application and notify you of their final decision.
+
+QUESTIONS?
+If you have any questions about your documents or application status, contact us at board@geabotswana.org.
+
+Congratulations on passing the RSO document review!
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+board@geabotswana.org
+www.geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

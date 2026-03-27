@@ -1,19 +1,36 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your payment could not be verified.
+PAYMENT STATUS UPDATE
 
-Unfortunately, we were unable to verify your payment.
+Unfortunately, we could not verify your payment. Please review the details below and resubmit.
 
+PAYMENT DETAILS:
 Payment ID: {{PAYMENT_ID}}
+Status: Unable to Verify
 Reason: {{REJECTION_REASON}}
-Resubmit By: {{RESUBMIT_DEADLINE}}
 
-Please contact us for assistance: {{CONTACT_EMAIL}}
+RESUBMIT DEADLINE:
+{{RESUBMIT_DEADLINE}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHY WAS IT REJECTED?
+Common reasons include:
+- Amount doesn't match dues
+- Payment date outside acceptable window
+- Unclear or illegible documentation
+- Missing transaction details
+
+WHAT TO DO NEXT:
+1. Log into your member portal: {{PORTAL_URL}}
+2. Review the rejection reason
+3. Gather corrected payment proof
+4. Resubmit by {{RESUBMIT_DEADLINE}}
+
+NEED HELP?
+If you have questions about the rejection or need assistance, contact:
+{{CONTACT_EMAIL}}
+board@geabotswana.org
+
+We're here to help! Resubmit as soon as possible to activate your membership.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

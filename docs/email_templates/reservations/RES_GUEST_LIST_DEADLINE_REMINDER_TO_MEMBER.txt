@@ -1,20 +1,37 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Please submit your guest list for your upcoming reservation!
+GUEST LIST DEADLINE APPROACHING
 
-Your approved reservation is coming up, and we need your guest list.
+Your approved facility reservation is coming up! We need your guest list submission to finalize your booking.
 
-Reservation ID: {{RESERVATION_ID}}
+RESERVATION DETAILS:
 Facility: {{FACILITY_NAME}}
 Reservation Date: {{RESERVATION_DATE}}
-Deadline: {{DEADLINE}}
+Reservation ID: {{RESERVATION_ID}}
 
-Submit your guest list here: {{PORTAL_URL}}
+DEADLINE FOR SUBMISSION:
+Submit your guest list by {{DEADLINE}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+IMPORTANT:
+Guest list submission is required to confirm your reservation. Without it, your booking may be at risk.
+
+SUBMIT YOUR GUEST LIST:
+Log into your member portal and complete the guest list submission: {{PORTAL_URL}}
+
+WHY WE NEED THIS:
+Your guest list helps us ensure:
+- Facility safety and proper capacity planning
+- Security and access control
+- Event coordination and logistics
+- RSO review and clearance
+
+GUEST REQUIREMENTS:
+- All guests must bring a valid photo ID on the day of the event
+- List all household members and any external guests
+- Provide guest relationships (family, friends, colleagues)
+
+QUESTIONS?
+Need help with your guest list? Contact us at board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -1,18 +1,33 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Happy 16th Birthday, {{FIRST_NAME}}!
+🎉 HAPPY 16TH BIRTHDAY!
 
-Congratulations on turning 16! You are now eligible for adult membership with the Gaborone Employee Association.
+Congratulations! You're now 16 and eligible for full adult membership with all GEA privileges and benefits!
 
-Next Steps:
-- {{ADULT_MEMBERSHIP_INFO}}
-- Visit your member portal to upgrade your membership: {{PORTAL_URL}}
-- Enjoy full access to all GEA facilities and activities
+YOUR MEMBERSHIP UPGRADE:
+{{ADULT_MEMBERSHIP_INFO}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+UPGRADE YOUR MEMBERSHIP:
+Visit your member portal to complete your transition to adult status: {{PORTAL_URL}}
+
+WHAT YOU CAN NOW DO:
+- Make your own facility reservations
+- Book tennis (3 hours/week)
+- Reserve Leobo (1/month)
+- Attend member events independently
+- Access all GEA activities
+
+YOUR NEW PRIVILEGES:
+- Independent reservations in your name
+- Full facility access
+- Member discounts
+- Digital membership card
+- Voting eligibility (when 18)
+
+COMPLETE YOUR UPGRADE:
+Visit your portal and update your membership status to adult. Questions? Contact board@geabotswana.org
+
+Have an amazing birthday and welcome to adult membership! 🎂
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -1,19 +1,35 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-Final Approval Notification
+MEMBERSHIP APPLICATION — FINAL APPROVAL GRANTED
 
-The board has granted final approval for this membership.
+The board has granted final approval for this membership application.
 
+APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
 Membership Type: {{MEMBERSHIP_TYPE}}
-Approval Date: {{APPROVAL_DATE}}
-Activation Date: {{ACTIVATION_DATE}}
+Board Final Approval Date: {{APPROVAL_DATE}}
 
-Best regards,
+ACTIVATION STATUS:
+Membership Activation Date: {{ACTIVATION_DATE}}
+
+NEXT STEPS:
+1. Membership account will be activated on {{ACTIVATION_DATE}}
+2. Applicant will receive activation confirmation email
+3. Member can log into portal and access all facilities
+4. Full membership benefits become available immediately
+
+COMPLETION NOTES:
+This represents final board approval. No further board action is required.
+
+FOR RECORDS:
+This approval has been logged in the system for compliance and audit purposes.
+
+Questions? Contact board@geabotswana.org
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+www.geabotswana.org
+board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

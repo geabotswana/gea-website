@@ -1,19 +1,42 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your member photos have been approved!
+✓ PHOTOS APPROVED!
 
-Congratulations! Your member photos have been approved by the GEA Board.
+Great news! Your member photos have been approved by the GEA Board!
 
+APPROVAL DETAILS:
 Approved: {{APPROVED_DATE}}
-Photo Count: {{PHOTO_COUNT}}
-Membership Card Issued: {{CARD_ISSUANCE_DATE}}
+Photos Approved: {{PHOTO_COUNT}}
+Membership Card: {{CARD_ISSUANCE_DATE}}
 
-Your membership is now fully activated!
+WHAT THIS MEANS:
+- Your photos are now official GEA records
+- Your digital membership card is ready
+- Your membership is fully complete
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+YOUR MEMBERSHIP CARD:
+Download your digital membership card anytime from your portal: {{PORTAL_URL}}
+
+NEXT STEPS:
+1. Log into your member portal
+2. Download your membership card
+3. Start enjoying GEA facilities immediately!
+
+FACILITIES NOW AVAILABLE:
+- Tennis Court: 3 hours per week
+- Leobo: 1 reservation per month
+- Playground & Gym: Walk-up access
+- Member events and activities
+
+YOUR PROFILE COMPLETE:
+Your GEA account is now fully activated with:
+- Photo on file
+- Digital membership card
+- Full facility access
+- All member services available
+
+ENJOY!
+Welcome to the full GEA member experience!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

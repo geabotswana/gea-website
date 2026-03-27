@@ -1,19 +1,22 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your reservation is pending review.
+RESERVATION UNDER REVIEW
 
-Your reservation request for {{FACILITY_NAME}} is currently being reviewed by the GEA Board.
+Your facility reservation request is currently being reviewed by the GEA Board.
 
-Reservation ID: {{RESERVATION_ID}}
+REQUEST DETAILS:
+Facility: {{FACILITY_NAME}}
 Requested Date: {{RESERVATION_DATE}}
-Review Deadline: {{REVIEW_DEADLINE}}
+Reservation ID: {{RESERVATION_ID}}
 
-You will be notified of the Board's decision by {{REVIEW_DEADLINE}}.
+TIMELINE:
+You will receive an email notification with the board's decision by {{REVIEW_DEADLINE}}.
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+CHECK YOUR STATUS:
+Monitor your reservation status anytime in your member portal. You'll see real-time updates as the board processes your request.
+
+QUESTIONS?
+Need more information? Contact us at board@geabotswana.org. We appreciate your patience!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

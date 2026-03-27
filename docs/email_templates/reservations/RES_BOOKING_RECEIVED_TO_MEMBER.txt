@@ -1,22 +1,23 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Thank you for your reservation request!
+RESERVATION REQUEST RECEIVED
 
-We have received your reservation request. Here are the details:
+Thank you for submitting your facility reservation request! We have received your booking.
 
-Reservation ID: {{RESERVATION_ID}}
+YOUR REQUEST DETAILS:
 Facility: {{FACILITY_NAME}}
 Date: {{RESERVATION_DATE}}
 Time: {{RESERVATION_TIME}}
+Reservation ID: {{RESERVATION_ID}}
 
-Your reservation is being reviewed. You will receive confirmation within 1-2 business days.
+WHAT HAPPENS NEXT:
+Your request is being reviewed by the GEA Board. You will receive a decision within 1-2 business days via email. This means either approval or denial with explanation.
 
-Monitor your member portal for status updates: {{PORTAL_URL}}
+TRACK YOUR STATUS:
+Monitor your member portal anytime for real-time status updates: {{PORTAL_URL}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+NEED ASSISTANCE?
+Questions or concerns? Contact us at board@geabotswana.org and we'll help.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

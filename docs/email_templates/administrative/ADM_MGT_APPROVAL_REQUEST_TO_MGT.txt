@@ -1,21 +1,42 @@
-﻿Dear Management Officer,
+﻿Hi Management Officer,
 
-An item requires management review.
+ITEM REQUIRES MANAGEMENT REVIEW AND APPROVAL
 
-A submission requires management review and approval.
+A submission requires your review and approval decision.
 
+REQUEST DETAILS:
 Item Type: {{BOARD_ITEM_TYPE}}
 Member: {{MEMBER_NAME}}
 Reference ID: {{REQUEST_ID}}
 Decision Needed By: {{APPROVAL_DEADLINE}}
 
-Summary:
+SUMMARY:
 {{REQUEST_SUMMARY}}
 
-Best regards,
+YOUR RESPONSIBILITIES:
+1. Review the complete submission details
+2. Assess against GEA policies and guidelines
+3. Approve or deny the request
+4. Document your reasoning for audit purposes
+5. Escalate to board if needed
+
+APPROVAL OPTIONS:
+- APPROVE: Submission meets requirements
+- DENY: Submission does not meet requirements
+- REQUEST CLARIFICATION: Need additional information
+
+QUICK ACCESS:
+Log into the Management Portal to review and make your decision.
+
+TIMELINE:
+Please complete your review by {{APPROVAL_DEADLINE}}.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+board@geabotswana.org
+www.geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

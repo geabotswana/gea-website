@@ -1,20 +1,28 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your payment has been submitted.
+PAYMENT RECEIVED
 
-Thank you for submitting your GEA payment.
+Thank you for submitting your GEA payment! We've received your submission and will verify it shortly.
 
+PAYMENT DETAILS:
 Payment ID: {{PAYMENT_ID}}
 Amount: {{AMOUNT}} {{CURRENCY}}
 Submitted: {{SUBMISSION_DATE}}
+Status: Under Review
 
-Next Step:
+NEXT STEPS:
 {{NEXT_STEP}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHAT HAPPENS NOW:
+- Treasurer will review your payment proof
+- You'll receive an email confirming verification (usually within 2-3 business days)
+- Upon verification, your membership or renewal activates automatically
+
+PAYMENT TRACKING:
+Check your member portal anytime to view your payment status: {{PORTAL_URL}}
+
+QUESTIONS?
+If you have questions about your payment, contact board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

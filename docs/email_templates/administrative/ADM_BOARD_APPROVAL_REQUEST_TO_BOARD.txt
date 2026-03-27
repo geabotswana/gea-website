@@ -1,21 +1,32 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-An item requires board approval.
+ITEM REQUIRES BOARD APPROVAL
 
-A submission requires board review and approval.
+A submission requires your review and approval decision.
 
+REQUEST DETAILS:
 Item Type: {{BOARD_ITEM_TYPE}}
 Applicant/Member: {{APPLICANT_NAME}}
 Reference ID: {{APPLICATION_ID}}
 Decision Needed By: {{APPROVAL_DEADLINE}}
 
-Summary:
+SUMMARY:
 {{REQUEST_SUMMARY}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+YOUR DECISION REQUIRED:
+Log in to the Board Admin Portal to review this item and make your approval decision.
+
+PROCESS:
+1. Review the complete submission details in the portal
+2. Assess against GEA policies and guidelines
+3. Approve or deny the request
+4. Document your reasoning for audit purposes
+
+QUICK ACCESS:
+Board Admin Portal: www.geabotswana.org/admin
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

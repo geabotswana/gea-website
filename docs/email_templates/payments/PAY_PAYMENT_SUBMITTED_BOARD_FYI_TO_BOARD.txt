@@ -1,18 +1,27 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Payment Submission Notification
+PAYMENT SUBMISSION NOTIFICATION
 
-A member payment has been submitted.
+A member has submitted a payment that requires verification and board review.
 
+PAYMENT DETAILS:
 Member: {{MEMBER_NAME}}
 Payment ID: {{PAYMENT_ID}}
 Amount: {{AMOUNT}} {{CURRENCY}}
 Status: {{STATUS}}
+Submitted: {{SUBMISSION_DATE}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+ACTION REQUIRED:
+Treasurer should review and verify this payment in the Admin Portal.
+
+NEXT STEPS:
+1. Log into Admin Portal
+2. Go to Pending Payments section
+3. Review payment documentation
+4. Approve, reject, or request clarification
+
+FREQUENCY:
+You'll receive notifications for all member payment submissions. Batch review is recommended for efficiency.
 
 ---
-This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.
+This is an automated message from the GEA Management System.

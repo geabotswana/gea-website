@@ -1,17 +1,31 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-You have reached your tennis court reservation limit.
+TENNIS COURT RESERVATION LIMIT REACHED
 
-You currently have {{CURRENT_RESERVATIONS}} active tennis court reservations, which is at your limit of {{LIMIT}}.
+You have reached your weekly tennis court reservation limit for this week.
+
+YOUR CURRENT STATUS:
+Active tennis court reservations: {{CURRENT_RESERVATIONS}}
+Weekly limit: {{LIMIT}}
 
 {{WAITLIST_INFO}}
 
-Contact the Board if you have questions about your reservation limit.
+YOUR OPTIONS:
+1. Wait for your current reservations to be completed
+2. Cancel an existing reservation to make room for a new one
+3. Request special approval to exceed the limit by contacting the board
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+REQUEST APPROVAL:
+If you have special circumstances requiring additional tennis court time, contact the board to request an exception. Provide details about your need and the board will review your request.
+
+WHEN DOES YOUR LIMIT RESET?
+Your weekly limit resets every Monday. You'll be able to make new tennis court reservations starting then.
+
+TENNIS COURT STANDARD LIMIT:
+3 hours per week for your household
+
+QUESTIONS?
+Contact the board at board@geabotswana.org if you need assistance.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

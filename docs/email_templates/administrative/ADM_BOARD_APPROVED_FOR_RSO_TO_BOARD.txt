@@ -1,20 +1,34 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-Board Approval Notification
+APPLICATION APPROVED FOR RSO PROCESSING
 
-The board has approved this application for RSO processing.
+The board has approved this application to move forward with RSO (Regional Security Officer) processing.
 
+APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
-Approved: {{APPROVAL_DATE}}
+Board Approval Date: {{APPROVAL_DATE}}
 
-RSO Next Steps:
+RSO NEXT STEPS:
 {{RSO_NEXT_STEPS}}
 
-Best regards,
+WHAT HAPPENS NOW:
+1. Application moves to RSO processing phase
+2. RSO will review documents and verify information
+3. Applicant will be notified of RSO requirements
+4. Once RSO review complete, application proceeds to next phase
+
+TIMELINE:
+RSO review typically takes 5-7 business days.
+
+BOARD STATUS:
+Your board approval is complete. No further board action is required at this time.
+
+Questions or updates? Contact board@geabotswana.org
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+www.geabotswana.org
+board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -1,20 +1,37 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your GEA membership has expired.
+MEMBERSHIP EXPIRED
 
-Your membership with the Gaborone Employee Association expired on {{EXPIRED_DATE}}.
+Your GEA membership has expired and you've lost access to member benefits and facilities.
 
-To reactivate your membership and regain access to all GEA benefits and facilities, please submit a reactivation payment.
-
+MEMBERSHIP STATUS:
 Expiration Date: {{EXPIRED_DATE}}
+Current Status: Inactive
+
+REACTIVATE YOUR MEMBERSHIP:
+You can quickly reactivate by submitting a reactivation payment.
+
 Reactivation Amount: {{REACTIVATION_AMOUNT}}
+Portal: {{PORTAL_URL}}
 
-Reactivate your membership here: {{PORTAL_URL}}
+HOW TO REACTIVATE:
+1. Log into your member portal: {{PORTAL_URL}}
+2. Go to Payment Details
+3. Submit your reactivation payment proof
+4. Your membership reactivates after verification
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHAT YOU'LL REGAIN:
+- Access to all GEA facilities
+- Tennis court bookings (3 hours/week)
+- Leobo reservations (1/month)
+- Member discounts and events
+- All portal features
+
+WHY REACTIVATE?
+GEA membership offers exclusive access to facilities, community events, and benefits for the USG community in Gaborone.
+
+NEED HELP?
+Questions about reactivation or payments? Contact board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

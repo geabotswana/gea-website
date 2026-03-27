@@ -1,24 +1,39 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-We are delighted to inform you that your application to the Gaborone Employee Association has been approved!
+🎉 APPLICATION APPROVED!
 
-Congratulations! You are now eligible to join GEA. Please complete your membership by making your membership payment.
+Congratulations! Your membership application has been approved by the GEA Board!
 
+MEMBERSHIP DETAILS:
 Application ID: {{APPLICATION_ID}}
 Membership Fee: {{PAYMENT_AMOUNT}}
 Payment Due: {{PAYMENT_DEADLINE}}
 
-Next Steps:
-- Log into your member portal: {{PORTAL_URL}}
-- Submit your membership payment
-- Once payment is verified, your membership will be activated
+FINAL STEP — SUBMIT PAYMENT:
+To activate your membership, submit your payment by {{PAYMENT_DEADLINE}}.
 
-Please complete your payment by the deadline to secure your membership.
+HOW TO PAY:
+1. Log into your member portal: {{PORTAL_URL}}
+2. Go to Payment Details
+3. Follow payment instructions (PayPal, SDFCU, Zelle, Absa)
+4. Submit proof of payment
+5. Your membership activates after verification
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+PAYMENT METHODS:
+- PayPal
+- SDFCU (Botswana)
+- Zelle (USA)
+- Absa (Botswana)
+
+WHAT'S NEXT:
+Once your payment is verified, you'll receive:
+- Welcome email with membership activation
+- Access to all member facilities
+- Digital membership card
+- Full portal access
+
+NEED HELP?
+Questions about payment or payment methods? Contact board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

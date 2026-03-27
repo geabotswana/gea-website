@@ -1,18 +1,38 @@
-Dear RSO Team,
+Hi RSO Approval Team,
 
-Document Validation Needed
+DOCUMENTS REQUIRE RSO REVIEW AND APPROVAL
 
-The RSO requires board approval of submitted documents.
+Submitted documents are ready for your review and validation.
 
+APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
-Documents: {{DOCUMENT_TYPES}}
-Approval Needed By: {{APPROVAL_DEADLINE}}
+Documents to Review: {{DOCUMENT_TYPES}}
+Approval Deadline: {{APPROVAL_DEADLINE}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+YOUR RESPONSIBILITIES:
+- Review documents for authenticity and validity
+- Verify all required documents are present
+- Check information accuracy and completeness
+- Approve or request clarifications as needed
+- Log your decision in the system
+
+APPROVAL OPTIONS:
+1. APPROVE: Documents validated and acceptable
+2. REQUEST CLARIFICATION: Need additional info or re-submission
+3. REJECT: Documents do not meet requirements
+
+NEXT STEPS AFTER APPROVAL:
+Once you approve, the application will return to the board for final approval decision.
+
+ACCESS THE DOCUMENTS:
+Log into the RSO Portal to review documents and make your decision.
+
+TIMELINE:
+Please complete your review by {{APPROVAL_DEADLINE}}.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification on any documents.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

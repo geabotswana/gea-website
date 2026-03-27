@@ -1,20 +1,36 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-Documents Forwarded
+DOCUMENTS FORWARDED TO RSO FOR PROCESSING
 
-Application documents have been forwarded to the RSO for processing.
+Application documents have been forwarded to the RSO (Regional Security Officer) for review and verification. The board review is temporarily paused during RSO processing.
 
+APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
-Documents: {{DOCUMENT_TYPES}}
-Submitted: {{SUBMISSION_DATE}}
+Documents Submitted: {{DOCUMENT_TYPES}}
+Submission Date: {{SUBMISSION_DATE}}
 
-RSO Contact: {{RSO_CONTACT}}
+WHAT'S HAPPENING NOW:
+The RSO is verifying document authenticity, completeness, and compliance with GEA policies.
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+EXPECTED TIMELINE:
+RSO review typically takes 5-7 business days. You'll be notified of progress.
+
+RSO TEAM CONTACT:
+{{RSO_CONTACT}}
+
+YOUR BOARD ROLE:
+- Your duties on this application are temporarily paused
+- The application will return to the board after RSO processing is complete
+- You may still contact the RSO team with questions about the applicant
+
+NEXT STEPS:
+1. Board will receive notification once RSO review is complete
+2. Board will conduct final approval review
+3. Applicant will be notified of next steps in process
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -1,18 +1,42 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-Board Notification
+NEW MEMBERSHIP APPLICATION SUBMITTED FOR BOARD REVIEW
 
-A new application has been submitted for board review.
+A new membership application has been submitted and is ready for your review.
 
+APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
-Submitted: {{APPLICATION_DATE}}
-Review Deadline: {{BOARD_REVIEW_DEADLINE}}
+Submission Date: {{APPLICATION_DATE}}
+Board Review Deadline: {{BOARD_REVIEW_DEADLINE}}
 
-Best regards,
+BOARD REVIEW PROCESS:
+1. Review applicant information and qualifications
+2. Assess against GEA membership policies
+3. Approve or deny the application
+4. Document your decision for audit purposes
+5. Communicate decision to applicant via email
+
+APPROVAL OPTIONS:
+- APPROVE: Applicant meets all requirements
+- DENY: Applicant does not meet requirements (specify reason)
+- REQUEST INFORMATION: Need clarification from applicant
+
+QUICK ACCESS:
+Log into the Board Admin Portal to review the application: www.geabotswana.org/admin
+
+TIMELINE:
+Please complete your review by {{BOARD_REVIEW_DEADLINE}}.
+
+NEXT STEPS AFTER BOARD APPROVAL:
+If approved, the application advances to RSO document review phase.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need assistance.
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+board@geabotswana.org
+www.geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

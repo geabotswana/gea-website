@@ -1,19 +1,21 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi Board,
 
-Reservation Denial Notification
+RESERVATION DENIAL RECORDED
 
-A reservation request has been denied.
+A member's reservation request has been denied by the board. This confirms your action has been completed.
 
+DENIAL DETAILS:
 Member: {{MEMBER_NAME}}
-Reservation ID: {{RESERVATION_ID}}
 Facility: {{FACILITY_NAME}}
 Requested Date: {{REQUESTED_DATE}}
+Reservation ID: {{RESERVATION_ID}}
 Reason: {{DENIAL_REASON}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+MEMBER NOTIFICATION:
+The member has been automatically notified of this denial via email. They can contact the board to discuss alternative dates or appeal if they wish.
+
+RECORD STATUS:
+This denial has been logged in the system for audit and record-keeping purposes.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

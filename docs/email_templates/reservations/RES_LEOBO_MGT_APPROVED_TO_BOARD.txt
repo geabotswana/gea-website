@@ -1,6 +1,8 @@
-GEA Board,
+Hi Board,
 
-The Management Officer has reviewed and approved the following Leobo reservation. Your final board approval is now needed to confirm it.
+LEOBO RESERVATION — MANAGEMENT APPROVED, FINAL BOARD APPROVAL NEEDED
+
+The Management Officer has reviewed and approved a leobo reservation. Your final board approval is now needed to confirm it.
 
 RESERVATION DETAILS:
 Member: {{MEMBER_NAME}}
@@ -10,18 +12,20 @@ Facility: {{FACILITY}}
 Date: {{RESERVATION_DATE}}
 Time: {{START_TIME}} – {{END_TIME}}
 Event: {{EVENT_NAME}}
-Guests: {{GUEST_COUNT}}
+Guest Count: {{GUEST_COUNT}}
 Reservation ID: {{RESERVATION_ID}}
 
-MGT Approved By: {{MGT_APPROVED_BY}}
+APPROVAL WORKFLOW:
+1. Management Officer: APPROVED by {{MGT_APPROVED_BY}}
+2. Board: Awaiting your final approval
 
-Please log in to the Board Admin Portal to give final approval or deny:
-{{APPROVE_LINK}}
-{{DENY_LINK}}
+YOUR DECISION REQUIRED:
+Please log in to the Board Admin Portal to give final approval or deny this reservation:
+- APPROVE: {{APPROVE_LINK}}
+- DENY: {{DENY_LINK}}
 
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
+QUICK ACCESS:
+Log in to the Board Admin Portal: www.geabotswana.org/admin
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

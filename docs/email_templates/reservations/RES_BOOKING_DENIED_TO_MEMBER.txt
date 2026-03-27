@@ -1,19 +1,23 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Unfortunately, your reservation request was not approved.
+RESERVATION REQUEST DENIED
 
-The GEA Board was unable to approve your reservation request for {{FACILITY_NAME}}.
+Unfortunately, your facility reservation request was not approved by the GEA Board.
 
-Reservation ID: {{RESERVATION_ID}}
+REQUEST DETAILS:
+Facility: {{FACILITY_NAME}}
 Requested Date: {{REQUESTED_DATE}}
+Reservation ID: {{RESERVATION_ID}}
 Reason: {{DENIAL_REASON}}
 
-If you have questions, please contact: {{CONTACT_EMAIL}}
+WHAT THIS MEANS:
+Your reservation request has been reviewed and cannot be accommodated at this time. This decision is final unless you wish to discuss it further.
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+TRY ANOTHER DATE:
+You're welcome to submit a new booking request for a different date that may work better. Check facility availability in your member portal.
+
+WANT TO DISCUSS?
+If you believe this is an error or would like to discuss this decision, please contact the board at board@geabotswana.org. We're happy to help find a solution.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

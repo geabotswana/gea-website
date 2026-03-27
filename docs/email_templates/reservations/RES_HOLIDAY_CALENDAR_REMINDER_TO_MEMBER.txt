@@ -1,21 +1,27 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Important holiday information for GEA facilities.
+HOLIDAY FACILITY CLOSURE NOTICE
 
-Please note that GEA facilities will have limited availability or be closed during the upcoming holidays.
+Please note that GEA facilities will have limited availability or be completely closed during the upcoming holidays.
 
+HOLIDAY DETAILS:
 Holiday: {{HOLIDAY_NAME}}
 Dates: {{DATES}}
 
-Facility Closures:
+FACILITY STATUS:
 {{FACILITY_CLOSURES}}
 
-Thank you for planning ahead!
+PLAN AHEAD FOR YOUR BOOKINGS:
+- Keep these dates in mind when making facility reservations
+- Book early to secure slots before and after the holiday period
+- Consider scheduling your events on non-holiday dates when possible
+- Contact us if you need help finding alternative dates
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+CHECK AVAILABILITY:
+Log into your member portal to view current facility availability and make reservations: {{PORTAL_URL}}
+
+QUESTIONS ABOUT CLOSURES?
+Contact us at board@geabotswana.org if you have questions about facility availability during holidays.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

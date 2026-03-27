@@ -166,7 +166,29 @@
     #loginScreen.show {
       display: flex;
     }
-    
+
+    /* ============================================================ */
+    /* PASSWORD RESET REQUEST SCREEN                               */
+    /* Styled identically to login screen for consistency           */
+    /* ============================================================ */
+
+    #passwordResetRequestScreen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-blue) 100%);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #passwordResetRequestScreen.show {
+      display: flex;
+    }
+
     .login-card {
       background: var(--color-white);
       border-radius: 8px;
@@ -1276,7 +1298,7 @@
 <!-- Request password reset via email                             -->
 <!-- ============================================================ -->
 
-<div id="passwordResetRequestScreen" style="display: none;">
+<div id="passwordResetRequestScreen">
   <div class="login-card">
     <div class="login-logo">
       <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
@@ -2925,7 +2947,7 @@ function submitLogin(event) {
  */
 function showPasswordResetRequest() {
   document.getElementById('loginScreen').classList.remove('show');
-  document.getElementById('passwordResetRequestScreen').style.display = 'block';
+  document.getElementById('passwordResetRequestScreen').classList.add('show');
   document.getElementById('resetRequestError').textContent = '';
   document.getElementById('resetEmail').value = '';
   document.getElementById('resetEmail').focus();
@@ -2935,7 +2957,7 @@ function showPasswordResetRequest() {
  * Shows the login screen (called from password reset or other flows).
  */
 function showLoginScreen() {
-  document.getElementById('passwordResetRequestScreen').style.display = 'none';
+  document.getElementById('passwordResetRequestScreen').classList.remove('show');
   document.getElementById('loginScreen').classList.add('show');
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginEmail').value = '';

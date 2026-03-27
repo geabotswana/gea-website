@@ -29,6 +29,32 @@ clasp push                    # Push all code changes to @HEAD
 
 **Important:** HTML files (Portal.html, Admin.html) deploy as @HEAD and take effect immediately. JavaScript changes require `clasp push`.
 
+### Pre-commit Steps
+Before committing code changes, follow these steps to update deployment metadata:
+
+```bash
+# Step 1: Update deployment timestamp
+node scripts/update-deploy-timestamp.js
+
+# Step 2: Update Config.js with version info
+# Edit Config.js and update:
+#   - SYSTEM_VERSION: Increment version (e.g., 2.0.4 → 2.0.5)
+#   - SYSTEM_BUILD_DATE: Set to today's date (YYYY-MM-DD format)
+#   - SYSTEM_LAST_FEATURE: Describe the feature/change in one line
+#
+# Example:
+#   var SYSTEM_VERSION      = "2.0.5";
+#   var SYSTEM_BUILD_DATE   = "2026-03-27";
+#   var SYSTEM_LAST_FEATURE = "Styled password reset modal to match login screen";
+
+# Step 3: Commit and push
+git add .
+git commit -m "Your message"
+git push -u origin <branch-name>
+```
+
+**Note:** The deployment timestamp is automatically calculated from current time. Increment the minor version (x.y.Z) for bug fixes and styling updates, or major/minor (x.Y.z) for new features.
+
 ### Initial Setup: Install Regression Prevention Hooks
 After cloning this repository, install the git hooks for XSS regression prevention:
 

@@ -834,12 +834,12 @@ var HOUSEHOLD_PHONE_SYNC_MINUTE = 0;      // Runs at :00 minutes past the hour
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.0.4";
-var SYSTEM_BUILD_DATE       = "2026-03-26";
+var SYSTEM_VERSION          = "2.0.5";
+var SYSTEM_BUILD_DATE       = "2026-03-27";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Rules maintained in System Backend spreadsheet (removed hardcoded initialization)";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-26 19:24:46";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Styled password reset modal to match login screen";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-27 09:06:16";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

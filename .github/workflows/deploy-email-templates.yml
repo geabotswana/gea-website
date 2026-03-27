@@ -31,7 +31,7 @@ jobs:
           ADMIN_EMAIL: "treasurer@geabotswana.org"
           DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
-          python - <<'EOF'
+          python - <<'PYTHON_EOF'
           import os
           import json
           import csv
@@ -172,7 +172,7 @@ jobs:
               # Clear and rewrite the sheet
               sheets_service.spreadsheets().values().clear(
                   spreadsheetId=SPREADSHEET_ID,
-                  range=f"'{SHEET_NAME}'!A2:G",  # Keep header
+                  range=f"'{SHEET_NAME}'!A2:G",
               ).execute()
 
               sheets_service.spreadsheets().values().update(
@@ -188,4 +188,4 @@ jobs:
               print("Re-run without dry_run to apply changes")
 
           print(f"\n{'✨ Deployment complete!' if not DRY_RUN else '✅ Dry run complete!'}")
-          EOF
+          PYTHON_EOF

@@ -188,23 +188,42 @@ jobs:
 
           # Handle rebuild_spreadsheet: query Drive to get all file IDs
           if REBUILD_SPREADSHEET and not DRY_RUN:
-              print(f"\n🔄 Rebuild mode: querying Drive for all file IDs...\n")
+              print(f"\n🔄 Rebuild mode: syncing file IDs...\n")
+
+              # First, use any files we just created/updated
+              for semantic_name, file_id in updates.items():
+                  template_map[semantic_name]['drive_file_id'] = file_id
+                  print(f"  Synced: {semantic_name} → {file_id}")
+
+              # Then query Drive for any files we didn't just create
               for semantic_name in template_map.keys():
-                  query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
-                  results = drive_service.files().list(
-                      q=query,
-                      spaces='drive',
-                      fields='files(id)',
-                      pageSize=1,
-                      supportsTeamDrives=True
-                  ).execute()
-                  files = results.get('files', [])
-                  if files:
-                      file_id = files[0]['id']
-                      template_map[semantic_name]['drive_file_id'] = file_id
-                      print(f"  Found: {semantic_name} → {file_id}")
-                  else:
-                      print(f"  Missing: {semantic_name} (no file in Drive)")
+                  if template_map[semantic_name]['drive_file_id'] == '':  # Only if empty
+                      query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
+                      results = drive_service.files().list(
+                          q=query,
+                          spaces='drive',
+                          fields='files(id, createdTime)',
+                          pageSize=10,  # Get all matches
+                          supportsTeamDrives=True
+                      ).execute()
+                      files = results.get('files', [])
+                      if files:
+                          # Use the most recently created file
+                          latest_file = max(files, key=lambda x: x['createdTime'])
+                          file_id = latest_file['id']
+                          template_map[semantic_name]['drive_file_id'] = file_id
+                          print(f"  Found: {semantic_name} → {file_id}")
+
+                          # Optionally delete other duplicates
+                          for f in files:
+                              if f['id'] != file_id:
+                                  try:
+                                      drive_service.files().delete(fileId=f['id'], supportsTeamDrives=True).execute()
+                                      print(f"    Deleted duplicate: {f['id']}")
+                                  except:
+                                      pass  # Ignore errors
+                      else:
+                          print(f"  Missing: {semantic_name} (no file in Drive)")
           else:
               # Normal mode: update only files that were just created/updated
               for semantic_name, file_id in updates.items():

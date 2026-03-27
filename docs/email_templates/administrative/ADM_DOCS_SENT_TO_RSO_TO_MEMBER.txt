@@ -1,18 +1,35 @@
-Dear {{FIRST_NAME}},
+Hi {{FIRST_NAME}},
 
-Your documents have been sent for review.
+YOUR DOCUMENTS SENT FOR REVIEW
 
-Your submitted documents have been forwarded to our Regional Security Officer for validation. We'll notify you once the review is complete.
+Your submitted documents have been forwarded to our Regional Security Officer (RSO) for verification and validation.
 
+DOCUMENT DETAILS:
 Document Types: {{DOCUMENT_TYPES}}
 Forwarded Date: {{SUBMISSION_DATE}}
 
-You may review the status of all your requests in the portal.
+WHAT HAPPENS NEXT:
+The RSO will review your documents for authenticity and completeness. This is a standard security check as part of the membership application process.
 
-Best regards,
+EXPECTED TIMELINE:
+RSO review typically takes 5-7 business days.
+
+TRACK YOUR STATUS:
+You can review the status of your application anytime in your member portal. Log in to see updates and any requests for additional information.
+
+WHAT WE'RE CHECKING:
+- Document authenticity and validity
+- Information accuracy and completeness
+- Compliance with GEA requirements
+
+QUESTIONS?
+If you have questions about your documents or the review process, contact us at board@geabotswana.org.
+
+We'll notify you as soon as the RSO review is complete!
+
 Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+board@geabotswana.org
+www.geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

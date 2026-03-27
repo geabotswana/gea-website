@@ -1,18 +1,35 @@
-GEA Board,
+Hi Board,
 
-This is your daily reminder that {{PENDING_COUNT}} reservation(s) are currently awaiting your approval.
+RESERVATION APPROVAL REMINDER
+
+{{PENDING_COUNT}} reservation request(s) are currently awaiting your approval.
 
 PENDING RESERVATIONS:
 {{PENDING_LIST}}
 
-Please log in to the Board Admin Portal to review and act on these requests:
+URGENT ACTION NEEDED:
+Members are waiting to hear back on their requests. Please review and take action on these reservations at your earliest convenience. Timely decisions help members plan their events with confidence.
+
+TAKE ACTION:
+Log in to the Board Admin Portal to review and approve/deny these requests:
 {{ADMIN_PORTAL_URL}}
 
-Reservations remain pending until explicitly approved or denied. Members are waiting to hear back — please review at your earliest convenience.
+APPROVAL STATUS:
+All reservations listed above remain PENDING until you explicitly approve or deny them.
 
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
+IMPACT OF DELAYS:
+- Members cannot finalize plans without approval
+- Guest lists cannot be submitted until reservations are confirmed
+- Facility planning depends on timely decision-making
+
+QUICK TIPS:
+- Check facility calendar for conflicts
+- Verify household membership status is active
+- Review any special circumstances or limits
+- Document your approval/denial reasoning for audit trail
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification on any requests.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

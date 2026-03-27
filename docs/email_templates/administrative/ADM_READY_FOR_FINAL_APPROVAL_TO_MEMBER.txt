@@ -1,19 +1,30 @@
 ﻿Dear {{FIRST_NAME}},
 
-Your application is progressing!
+APPLICATION PROGRESSING - FINAL BOARD APPROVAL PENDING
 
-Good news! Your application is ready for final board approval.
+Good news! Your application has passed the document review and security verification phases and is now ready for final board approval.
 
+APPLICATION STATUS:
 Application ID: {{APPLICATION_ID}}
-Next Step: {{NEXT_STEP}}
+Current Stage: Final Board Approval
 Expected Timeline: {{TIMELINE}}
 
-Thank you for your patience!
+NEXT STEPS:
+The board will review your application and make a final approval decision. You will be notified of the outcome shortly.
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHAT'S COMPLETED:
+- Initial application review: Complete
+- Document verification: Complete
+- Security review: Complete
+
+TRACK YOUR PROGRESS:
+You can review the full status of your application at any time in the member portal:
+Portal: www.geabotswana.org/member
+
+QUESTIONS?
+If you have questions about your application status, please contact board@geabotswana.org.
+
+Thank you for your patience as we complete your membership application process!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

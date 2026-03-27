@@ -1,19 +1,30 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your documents have been confirmed.
+✓ DOCUMENTS CONFIRMED
 
-We have received and confirmed your submitted documents.
+Excellent news! Your documents have been received, reviewed, and confirmed!
 
+CONFIRMED DOCUMENTS:
 Documents: {{DOCUMENT_TYPES}}
-Confirmed Date: {{CONFIRMATION_DATE}}
+Confirmed: {{CONFIRMATION_DATE}}
 
-Next Step:
+NEXT STEP:
 {{NEXT_STEP}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHAT'S BEEN COMPLETED:
+- RSO reviewed documents
+- Documents approved as authentic and clear
+- GEA admin confirmed documents
+- Documents now on file
+
+YOUR PROFILE STATUS:
+Your membership file is now complete with verified documents. This helps us maintain accurate member records.
+
+FINAL STEPS:
+{{NEXT_STEP_DETAILS}}
+
+QUESTIONS?
+Contact board@geabotswana.org if you need anything.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

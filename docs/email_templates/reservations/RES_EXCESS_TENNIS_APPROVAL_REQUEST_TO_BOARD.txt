@@ -1,41 +1,42 @@
-﻿GEA Board,
+﻿Hi Board,
+
+EXCESS TENNIS REQUEST REQUIRES APPROVAL
 
 A member has requested a tennis court reservation that exceeds their weekly household limit.
 
-*** WARNING: THIS HOUSEHOLD HAS ALREADY BOOKED {{HOURS_USED}} OF {{TENNIS_WEEKLY_LIMIT_HOURS}} ALLOWED HOURS THIS WEEK ***
+HOUSEHOLD USAGE WARNING:
+This household has already booked {{HOURS_USED}} of {{TENNIS_WEEKLY_LIMIT_HOURS}} allowed hours this week.
 
 EXISTING BOOKINGS THIS WEEK:
 {{EXISTING_BOOKINGS_LIST}}
-Total hours used: {{HOURS_USED}} of {{TENNIS_WEEKLY_LIMIT_HOURS}} allowed
+Total hours used: {{HOURS_USED}} / {{TENNIS_WEEKLY_LIMIT_HOURS}} allowed
 
 NEW RESERVATION REQUEST:
-Requested by: {{MEMBER_NAME}} ({{MEMBER_EMAIL}})
+Member: {{MEMBER_NAME}} ({{MEMBER_EMAIL}})
 Facility: Tennis/Basketball Court
 Date: {{RESERVATION_DATE}}
 Time: {{START_TIME}} - {{END_TIME}}
 Duration: {{DURATION_HOURS}} hours
 Event: {{EVENT_NAME}}
-Status if Approved: TENTATIVE
+Tentative Status: If approved, will be TENTATIVE until {{BUMP_DEADLINE}}
 
-{{IF_GUESTS}}Guests: {{GUEST_COUNT}} listed
-Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
+{{IF_GUESTS}}GUEST INFORMATION:
+Guest Count: {{GUEST_COUNT}} listed
+View Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
 
-OTHER EVENTS ON {{RESERVATION_DATE}}:
+SCHEDULE CONFLICTS:
+Other events on {{RESERVATION_DATE}}:
 {{OTHER_EVENTS_LIST}}
 
-Please review and respond:
-APPROVE AS TENTATIVE: {{APPROVE_LINK}}
-DENY REQUEST: {{DENY_LINK}}
+YOUR DECISION REQUIRED:
+- APPROVE AS TENTATIVE: {{APPROVE_LINK}}
+- DENY REQUEST: {{DENY_LINK}}
 
-If approved, this reservation will be TENTATIVE and subject to bumping until {{BUMP_DEADLINE}}.
+BUMPING RULES:
+If approved, this reservation will be TENTATIVE and subject to bumping if a regular (non-excess) booking is cancelled before {{BUMP_DEADLINE}}.
 
-Or log in to Board Admin Portal: www.geabotswana.org/admin
+QUICK ACCESS:
+Log in to the Board Admin Portal: www.geabotswana.org/admin
 
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
-
----
-This is an automated message from the GEA Management System. Feel free to reply if you have any questions or comments.
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

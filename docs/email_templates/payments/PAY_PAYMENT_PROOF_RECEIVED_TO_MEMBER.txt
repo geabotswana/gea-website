@@ -1,19 +1,30 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your bank proof of payment has been received.
+PAYMENT PROOF RECEIVED
 
-Thank you for submitting your bank proof of payment.
+Thank you for submitting your bank proof of payment! We've received your documentation and will review it now.
 
+PAYMENT DETAILS:
 Payment ID: {{PAYMENT_ID}}
 Amount: {{AMOUNT}}
 Received: {{SUBMISSION_DATE}}
+Status: Under Review
 
-We will verify your payment and notify you of the result.
+VERIFICATION TIMELINE:
+- Treasurer will verify your payment (2-3 business days)
+- You'll receive email confirmation once verified
+- Your membership activates immediately upon verification
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHAT WE VERIFY:
+- Payment amount matches dues
+- Payment date is within acceptable window
+- Bank documentation is clear and legible
+
+CHECK YOUR STATUS:
+Log into your member portal anytime: {{PORTAL_URL}}
+
+QUESTIONS?
+Contact board@geabotswana.org if you have questions or concerns.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

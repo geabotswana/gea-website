@@ -1,23 +1,32 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Thank you for submitting your application to the Gaborone Employee Association (GEA)! We appreciate your interest in joining our community.
+APPLICATION RECEIVED
 
-We have received your application and it is now being reviewed by our Board. Here are your submission details:
+Thank you for submitting your membership application! We're excited to welcome you to the Gaborone Employee Association community.
 
+YOUR SUBMISSION:
 Application ID: {{APPLICATION_ID}}
 Submitted: {{SUBMITTED_DATE}}
+Status: Under Review
 
-What happens next?
-- Your application will be reviewed by the GEA Board
-- You will receive notification of the Board's decision within 7-10 business days
-- Log into your member portal to check application status at any time: {{PORTAL_URL}}
+WHAT HAPPENS NEXT:
+- Board review of your application
+- You'll receive a decision within 7-10 business days
+- Check your portal anytime for status updates: {{PORTAL_URL}}
+- You'll get email notifications at each stage
 
-If you have any questions about your application, please don't hesitate to contact us.
+APPLICATION STAGES:
+1. Board Review (current stage)
+2. RSO Document Review
+3. Payment Verification
+4. Membership Activation
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+CHECK YOUR STATUS:
+Log into your member portal: {{PORTAL_URL}}
+Your portal shows real-time updates on your application progress.
+
+QUESTIONS?
+Need help or have questions about your application? Contact board@geabotswana.org — we're here to help!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

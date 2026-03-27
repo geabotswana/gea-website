@@ -1,18 +1,35 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your GEA membership renewal is coming up soon!
+MEMBERSHIP RENEWAL REMINDER — 30 DAYS
 
-Your current membership expires on {{RENEWAL_DEADLINE}}. To maintain your membership and access to all GEA benefits, please renew your membership now.
+Time to renew your GEA membership! You have 30 days to maintain your membership and continue enjoying all benefits.
 
+RENEWAL DETAILS:
 Membership Year: {{MEMBERSHIP_YEAR}}
 Renewal Due: {{RENEWAL_DEADLINE}}
+Days Remaining: 30
 
-Renew your membership today by visiting your member portal: {{PORTAL_URL}}
+RENEW NOW:
+Visit your member portal to submit your renewal payment: {{PORTAL_URL}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHAT YOU'LL KEEP:
+- Access to all GEA facilities
+- Tennis court bookings (3 hours/week)
+- Leobo reservations (1/month)
+- Member discounts and events
+- Full portal access
+
+DON'T MISS THE DEADLINE:
+Your membership expires on {{RENEWAL_DEADLINE}}. After that date, you'll lose access to all benefits. Renew now to avoid interruption.
+
+PAYMENT OPTIONS:
+- PayPal
+- SDFCU
+- Zelle
+- Absa (Botswana)
+
+NEED HELP?
+Questions about renewal? Contact board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

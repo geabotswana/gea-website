@@ -1,21 +1,40 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your payment has been verified!
+✓ PAYMENT VERIFIED!
 
-Excellent! Your payment has been verified and processed.
+Great news! Your payment has been verified and your membership is now active!
 
+PAYMENT DETAILS:
 Payment ID: {{PAYMENT_ID}}
 Amount: {{AMOUNT}} {{CURRENCY}}
 Verified: {{VERIFICATION_DATE}}
+Status: Confirmed
 
-Membership Status: {{MEMBERSHIP_ACTIVATED}}
+MEMBERSHIP STATUS:
+{{MEMBERSHIP_ACTIVATED}}
 
-You now have full access to all GEA benefits and facilities.
+YOUR BENEFITS ARE NOW ACTIVE:
+- Book GEA facilities (tennis, Leobo, playground, gym)
+- Make reservations under your name
+- Access all member services
+- Download your digital membership card
+- Attend member events and activities
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+GET STARTED:
+Log into your member portal: {{PORTAL_URL}}
+
+FACILITY LIMITS:
+- Tennis Court: 3 hours per week (resets Monday)
+- Leobo: 1 reservation per month (resets 1st of month)
+- Other facilities: Walk-up access available
+
+NEXT STEPS:
+1. Complete your profile with current photo
+2. Start booking facilities
+3. Check portal for upcoming events
+
+WELCOME TO GEA!
+We're excited to have you as an active member. Enjoy!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

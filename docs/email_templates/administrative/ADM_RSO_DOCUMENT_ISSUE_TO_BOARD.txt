@@ -1,18 +1,36 @@
-﻿Dear GEA Board,
+﻿Hi Board,
 
-Document Problem Flagged
+DOCUMENT ISSUE FLAGGED BY RSO - DIPLOMATIC RELAY NEEDED
 
-The RSO has flagged an issue with submitted documents.
+The Regional Security Officer (RSO) has identified an issue with submitted documents that requires board intervention for sensitive communication with the applicant.
 
+ISSUE DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
-Issue: {{ISSUE_DESCRIPTION}}
-Resolve By: {{DEADLINE_TO_RESOLVE}}
+Document Issue: {{ISSUE_DESCRIPTION}}
+Resolution Deadline: {{DEADLINE_TO_RESOLVE}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+YOUR ACTION REQUIRED:
+The board should diplomatically contact the applicant to explain the document issue and request resubmission or clarification. This allows sensitive matters to be handled with appropriate diplomacy.
+
+PROCESS:
+1. Review the RSO's concerns in the Admin Portal
+2. Contact the applicant directly with explanation
+3. Request document resubmission or clarification
+4. Notify RSO once new documents are received for re-review
+5. Document the interaction for audit purposes
+
+NEXT STEPS:
+- Contact applicant by: {{DEADLINE_TO_RESOLVE}}
+- Applicant resubmits corrected documents
+- RSO reviews revised documents
+- Application continues if approved
+
+QUICK ACCESS:
+Board Admin Portal: www.geabotswana.org/admin
+
+QUESTIONS?
+Contact board@geabotswana.org or reach out to the RSO team if you need clarification on the specific document issue.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

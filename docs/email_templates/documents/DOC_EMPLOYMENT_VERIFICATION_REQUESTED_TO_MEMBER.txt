@@ -1,20 +1,47 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-GEA requires employment verification.
+EMPLOYMENT VERIFICATION NEEDED
 
-To complete your membership profile, we need employment verification for {{FIRST_NAME}}.
+To complete your GEA membership, we need employment verification for {{FIRST_NAME}}.
 
-Deadline: {{DEADLINE}}
+DEADLINE:
+{{DEADLINE}}
 
-Verification Process:
+VERIFICATION PROCESS:
 {{VERIFICATION_PROCESS}}
 
-Please contact us if you have questions: {{CONTACT_EMAIL}}
+WHAT'S NEEDED:
+Employment verification document from your organization confirming:
+- Current employment status
+- Position/title
+- Dates of employment
+- Organization contact information
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+ACCEPTABLE DOCUMENTS:
+- Employment letter from HR/supervisor
+- Pay stub showing current year
+- Employee ID card/badge
+- Contract or official employment document
+- U.S. State Department cable (for staff)
+
+HOW TO SUBMIT:
+1. Log into your member portal
+2. Go to Document Submissions
+3. Select Employment Verification
+4. Upload your document
+5. We'll review and notify you
+
+REVIEW TIMELINE:
+- RSO review: 3-5 business days
+- GEA final review: 2-3 business days
+- Total: 5-8 business days
+
+QUESTIONS?
+If you have questions about what documents are acceptable or how to submit:
+{{CONTACT_EMAIL}}
+board@geabotswana.org
+
+Don't miss the deadline!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

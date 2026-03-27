@@ -1,20 +1,42 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Please submit your GEA member photos.
+PHOTO SUBMISSION REMINDER
 
-We need you to submit member photos for your household to complete your membership profile.
+Your GEA membership is almost complete! Just need photos to finalize your profile.
 
-Submission Deadline: {{SUBMISSION_DEADLINE}}
+DEADLINE:
+Submit by: {{SUBMISSION_DEADLINE}}
 
-Photo Requirements:
+WHY WE NEED PHOTOS:
+- Digital membership card
+- Member identification
+- Official GEA records
+- Facility access verification
+
+PHOTO REQUIREMENTS:
 {{PHOTO_REQUIREMENTS}}
 
-Submit your photos here: {{PORTAL_URL}}
+TIPS FOR GOOD PHOTOS:
+- Well-lit, clear face visible
+- Neutral or light background
+- Recent photo (within 6 months)
+- No sunglasses or hats
+- Professional passport-style appearance
+- Smiling or neutral expression
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+SUBMIT YOUR PHOTOS:
+Visit your member portal: {{PORTAL_URL}}
+
+REVIEW TIMELINE:
+Once submitted:
+- GEA admin review: 2-3 business days
+- Your digital card will be ready
+- Final approval notification sent
+
+NEED HELP?
+Questions about photo requirements? Contact board@geabotswana.org
+
+Don't miss the deadline!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

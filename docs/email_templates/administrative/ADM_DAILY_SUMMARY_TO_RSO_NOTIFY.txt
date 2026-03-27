@@ -1,19 +1,34 @@
-Dear RSO Team,
+Hi RSO Notify Team,
 
-Daily Reservations Summary
+DAILY RESERVATIONS SUMMARY FOR {{TODAY_DATE}}
 
-Date: {{TODAY_DATE}}
+You have today's approved event information for your reference and coordination.
 
-{{IF_NO_RESERVATIONS}}{{RESERVATIONS_BLOCK}}
----
+SUMMARY STATISTICS:
 Total Reservations: {{TOTAL_RESERVATIONS}}
 Total Members Attending: {{TOTAL_MEMBERS}}
 Total Guests: {{TOTAL_GUESTS}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+TODAY'S APPROVED EVENTS:
+{{RESERVATIONS_BLOCK}}
+
+YOUR ROLE TODAY:
+- Monitor approved facility access
+- Verify guest lists are complete and current
+- Ensure attendees understand security procedures
+- Coordinate with members as needed for special requests
+- Document any issues or concerns
+
+KEY RESPONSIBILITIES:
+- You have read-only access (reference and coordination only)
+- Questions about approvals? Contact the RSO Approve team
+- Immediate issues? Contact board@geabotswana.org
+
+QUICK ACCESS:
+RSO Coordination Portal: www.geabotswana.org/admin
+
+QUESTIONS OR ISSUES?
+Contact board@geabotswana.org if you need immediate assistance.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

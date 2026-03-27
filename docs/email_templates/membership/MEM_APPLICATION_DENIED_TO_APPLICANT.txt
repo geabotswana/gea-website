@@ -1,18 +1,23 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Thank you for your interest in the Gaborone Employee Association.
+APPLICATION STATUS UPDATE
 
-After careful review, the GEA Board regrets to inform you that your application has not been approved at this time.
+Thank you for your interest in the Gaborone Employee Association. After careful review of your application, the GEA Board was unable to approve membership at this time.
 
+APPLICATION DETAILS:
 Application ID: {{APPLICATION_ID}}
-Reason: {{DENIAL_REASON}}
+Reason for Decision: {{DENIAL_REASON}}
 
-If you have questions about this decision, please contact the GEA Board at {{CONTACT_EMAIL}}.
+WHAT DOES THIS MEAN?
+Your application does not meet current membership eligibility requirements. This decision does not reflect on your character or qualifications — it simply means your circumstances do not align with GEA membership categories at this time.
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+CAN YOU REAPPLY?
+Yes. Your circumstances may change in the future. If you believe this was an error or your situation has changed, you may reapply after 90 days. Contact the board to discuss.
+
+QUESTIONS?
+The GEA Board welcome questions about this decision. Please reach out to {{CONTACT_EMAIL}} or board@geabotswana.org to discuss further.
+
+We appreciate your interest in GEA and wish you well.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

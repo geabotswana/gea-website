@@ -1,27 +1,31 @@
-{{FIRST_NAME}},
+Hi {{FIRST_NAME}},
 
-Your reservation request has been reviewed. Because the facility is currently at capacity for your requested period, you have been placed on the waitlist.
+RESERVATION WAITLISTED
 
-RESERVATION DETAILS:
+Your facility reservation request has been reviewed. The facility is currently at capacity for your requested period, so you've been placed on the waitlist.
+
+WAITLIST DETAILS:
 Facility: {{FACILITY_NAME}}
 Date: {{RESERVATION_DATE}}
 Time: {{RESERVATION_TIME}}
 Reservation ID: {{RESERVATION_ID}}
+Waitlist Position: #{{WAITLIST_POSITION}}
 
-WAITLIST POSITION: #{{WAITLIST_POSITION}}
+HOW THE WAITLIST WORKS:
+- If a confirmed booking is cancelled, you'll be automatically promoted and notified immediately
+- The board may also manually promote your position at any time
+- If no slot opens before your event date, you'll be notified and your waitlist position will expire
 
-If a confirmed booking is cancelled before your event, you will be automatically promoted and notified immediately. The board may also manually promote your position at any time.
+YOUR CHANCES:
+Slots typically open when other members cancel. We'll keep you updated with any opportunities.
 
-If no slot opens before your event date, your waitlist position will expire and you will be notified.
+TRACK YOUR POSITION:
+Monitor your waitlist status anytime in your member portal: {{PORTAL_URL}}
 
-You can view the status of your reservation at any time in your member portal:
-{{PORTAL_URL}}
+Thank you for your patience! We'll notify you as soon as a slot becomes available.
 
-Thank you for your patience.
-
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
+QUESTIONS?
+Contact us at board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

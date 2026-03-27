@@ -1,17 +1,28 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Happy 15th Birthday, {{FIRST_NAME}}!
+🎉 HAPPY 15TH BIRTHDAY!
 
-Today marks a special milestone! You're turning 15, and your household will soon be able to upgrade your membership to full adult membership.
+Today is your day! You're officially 15, and that means big changes ahead for your GEA membership!
 
+YOUR MILESTONE:
+You've reached age 15 — the age when you can transition to full adult membership with all GEA privileges.
+
+NEXT STEPS FOR YOUR HOUSEHOLD:
 {{ADULT_MEMBERSHIP_SOON}}
 
-We look forward to seeing you at GEA events and activities!
+WHAT'S AHEAD:
+- Full facility access (tennis, Leobo, gym)
+- Your own reservations and bookings
+- Member discounts and events
+- Growing independence in our community
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+UPCOMING:
+Your household can contact the board about your transition to adult membership status.
+
+ENJOY YOUR DAY:
+You're becoming a more active part of GEA! We look forward to seeing you at events and on the courts.
+
+Happy Birthday! 🎂
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

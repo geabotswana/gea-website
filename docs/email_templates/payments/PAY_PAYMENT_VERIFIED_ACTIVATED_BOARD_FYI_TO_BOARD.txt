@@ -1,18 +1,33 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Payment Verification & Activation
+PAYMENT VERIFIED & MEMBERSHIP ACTIVATED
 
-A member payment has been verified and processed.
+A member payment has been verified and successfully processed. Their membership is now active.
 
+PAYMENT DETAILS:
 Member: {{MEMBER_NAME}}
 Payment ID: {{PAYMENT_ID}}
 Amount: {{AMOUNT}} {{CURRENCY}}
-Activated: {{MEMBERSHIP_ACTIVATED}}
+Status: Verified & Activated
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+MEMBERSHIP STATUS:
+{{MEMBERSHIP_ACTIVATED}}
+
+ACTION TAKEN:
+- Payment verified in system
+- Membership automatically activated
+- Member notified via email
+- Member now has full portal access
+
+MEMBER NEXT STEPS:
+Member can now:
+- Book GEA facilities
+- Make reservations
+- Access member services
+- Download membership card
+
+NOTES:
+Member has been sent confirmation email with details about facility limits and how to get started.
 
 ---
-This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.
+This is an automated message from the GEA Management System.

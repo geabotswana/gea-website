@@ -1,19 +1,40 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-GEA needs clarification on your payment.
+PAYMENT CLARIFICATION NEEDED
 
-We need some additional information about your payment to complete verification.
+We received your payment but need a bit more information to complete verification. Please respond by the deadline below.
 
+PAYMENT DETAILS:
 Payment ID: {{PAYMENT_ID}}
-Information Needed: {{CLARIFICATION_NEEDED}}
-Please Respond By: {{DEADLINE}}
+Status: Awaiting Clarification
+Deadline: {{DEADLINE}}
 
-Please provide the requested information: {{CONTACT_EMAIL}}
+INFORMATION NEEDED:
+{{CLARIFICATION_NEEDED}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+WHY WE NEED THIS:
+This additional information helps us verify your payment is authentic and matches our records.
+
+HOW TO RESPOND:
+Send the requested information to: {{CONTACT_EMAIL}}
+
+Include:
+- Payment ID: {{PAYMENT_ID}}
+- The clarification information requested above
+- Any supporting documentation
+
+NEXT STEPS:
+Once we receive your clarification:
+1. We'll verify your payment
+2. You'll receive confirmation email
+3. Your membership activates immediately
+
+URGENT:
+Please respond by {{DEADLINE}} to avoid delays to your membership activation.
+
+QUESTIONS?
+Contact: {{CONTACT_EMAIL}}
+board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

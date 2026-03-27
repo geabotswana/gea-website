@@ -1,21 +1,26 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your reservation has been approved!
+✓ RESERVATION APPROVED!
 
-Great news! Your reservation request has been approved by the GEA Board.
+Great news! Your facility reservation has been approved by the GEA Board.
 
-Reservation ID: {{RESERVATION_ID}}
+RESERVATION DETAILS:
 Facility: {{FACILITY_NAME}}
 Date: {{RESERVATION_DATE}}
 Time: {{RESERVATION_TIME}}
 Guest Limit: {{GUEST_LIMIT}}
+Reservation ID: {{RESERVATION_ID}}
 
-Please submit your guest list before the deadline. View details in your member portal: {{PORTAL_URL}}
+IMPORTANT NEXT STEPS:
+1. Submit your guest list through your member portal before the deadline
+2. All guests must bring a valid photo ID on the day of the event
+3. View full reservation details and manage your booking at: {{PORTAL_URL}}
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+YOUR RESERVATION STATUS:
+Your booking is confirmed and ready to go. Guest list submission is required for final confirmation.
+
+NEED HELP?
+Questions about your reservation? Contact us at board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

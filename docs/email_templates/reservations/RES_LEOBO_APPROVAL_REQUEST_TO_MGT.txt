@@ -1,42 +1,39 @@
-﻿Dear Management Officer,
+﻿Hi Management Officer,
 
-A member has requested a leobo reservation that requires your approval.
+LEOBO RESERVATION REQUIRES YOUR APPROVAL
+
+A member has requested a leobo reservation that requires your review and approval.
 
 RESERVATION REQUEST:
-Requested by: {{MEMBER_NAME}} ({{MEMBER_EMAIL}}, {{MEMBER_PHONE}})
+Member: {{MEMBER_NAME}} ({{MEMBER_EMAIL}}, {{MEMBER_PHONE}})
 Facility: {{FACILITY}}
 Date: {{RESERVATION_DATE}}
 Time: {{START_TIME}} - {{END_TIME}}
 Duration: {{DURATION_HOURS}} hours
 Event: {{EVENT_NAME}}
-Status if Approved: TENTATIVE
+Tentative Status: If approved, will be TENTATIVE until {{BUMP_DEADLINE}}
 
-{{IF_GUESTS}}Guests: {{GUEST_COUNT}} listed
-Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
+{{IF_GUESTS}}GUEST INFORMATION:
+Guest Count: {{GUEST_COUNT}} listed
+View Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
 
-OTHER EVENTS ON {{RESERVATION_DATE}}:
-{{OTHER_EVENTS_LIST}}
-
-MEMBER STATUS:
+MEMBER INFORMATION:
 Membership: {{MEMBERSHIP_LEVEL}} - {{MEMBERSHIP_STATUS}}
 Household: {{HOUSEHOLD_NAME}}
-Leobo reservations this month: {{LEOBO_USAGE}} of {{LEOBO_MONTHLY_LIMIT}}
+Leobo reservations this month: {{LEOBO_USAGE}} / {{LEOBO_MONTHLY_LIMIT}}
 
-Please review and respond:
-APPROVE AS TENTATIVE: {{APPROVE_LINK}}
-DENY REQUEST: {{DENY_LINK}}
+SCHEDULE CONFLICTS:
+Other events on {{RESERVATION_DATE}}:
+{{OTHER_EVENTS_LIST}}
 
-If approved, this reservation will be TENTATIVE and subject to bumping until {{BUMP_DEADLINE}}.
+YOUR DECISION REQUIRED:
+- APPROVE AS TENTATIVE: {{APPROVE_LINK}}
+- DENY REQUEST: {{DENY_LINK}}
 
-Upon your approval, RSO will be automatically notified with event and guest details.
+IMPORTANT NOTES:
+- If approved, this reservation will be TENTATIVE and subject to bumping until {{BUMP_DEADLINE}}
+- Upon your approval, RSO will be automatically notified with event and guest details
+- Board contact: board@geabotswana.org
 
-GEA Board contact: board@geabotswana.org
-
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
-
----
-This is an automated message from the GEA Management System. Feel free to reply if you have any questions or comments.
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -1,38 +1,42 @@
-﻿GEA Board,
+﻿Hi Board,
 
-A reservation request requires your approval.
+RESERVATION REQUEST REQUIRES YOUR APPROVAL
+
+A member has submitted a facility reservation request that requires your review and decision.
 
 RESERVATION DETAILS:
-Requested by: {{MEMBER_NAME}} ({{MEMBER_EMAIL}}, {{MEMBER_PHONE}})
+Member: {{MEMBER_NAME}} ({{MEMBER_EMAIL}}, {{MEMBER_PHONE}})
 Facility: {{FACILITY}}
 Date: {{RESERVATION_DATE}}
 Time: {{START_TIME}} - {{END_TIME}}
 Event: {{EVENT_NAME}}
 Submitted: {{SUBMISSION_TIMESTAMP}}
 
-{{IF_GUESTS}}Guests: {{GUEST_COUNT}} guests listed
-Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
-
-OTHER EVENTS ON {{RESERVATION_DATE}}:
-{{OTHER_EVENTS_LIST}}
+{{IF_GUESTS}}GUEST INFORMATION:
+Guest Count: {{GUEST_COUNT}} guests listed
+View Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
 
 HOUSEHOLD STATUS:
 Membership: {{MEMBERSHIP_LEVEL}} - {{MEMBERSHIP_STATUS}}
 Leobo reservations this month: {{LEOBO_USAGE}} of {{LEOBO_MONTHLY_LIMIT}}
 
-Please review and respond:
-APPROVE: {{APPROVE_LINK}}
-DENY: {{DENY_LINK}}
+SCHEDULE CONFLICTS:
+Other events on {{RESERVATION_DATE}}:
+{{OTHER_EVENTS_LIST}}
 
-Or log in to the Board Admin Portal: www.geabotswana.org/admin
+YOUR DECISION REQUIRED:
+- APPROVE: {{APPROVE_LINK}}
+- DENY: {{DENY_LINK}}
 
-This request will escalate if not reviewed within 24 hours.
+QUICK ACCESS:
+Log in to the Board Admin Portal: www.geabotswana.org/admin
+
+RESPONSE TIMELINE:
+Please review and respond within 24 hours. Requests not reviewed within this timeframe may escalate.
 
 Gaborone Employee Association
 www.geabotswana.org
 board@geabotswana.org
 
----
-This is an automated message from the GEA Management System. Feel free to reply if you have any questions or comments.
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

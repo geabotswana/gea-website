@@ -1,19 +1,45 @@
-﻿Dear {{FIRST_NAME}},
+﻿Hi {{FIRST_NAME}},
 
-Your document submission was not approved.
+DOCUMENT RESUBMISSION REQUIRED
 
-Unfortunately, your submitted document was not approved. Please resubmit a corrected document.
+Your submitted document was not approved. Please review the reason and resubmit with corrections.
 
+DOCUMENT STATUS:
 Document Type: {{DOCUMENT_TYPE}}
-Reason: {{REJECTION_REASON}}
+Reason for Rejection: {{REJECTION_REASON}}
 Resubmit By: {{RESUBMIT_DEADLINE}}
 
-Please submit a corrected document through your member portal.
+WHY MIGHT IT HAVE BEEN REJECTED:
+- Document illegible or too blurry
+- Document expired or not current
+- Missing key information
+- Wrong document type submitted
+- Document not properly scanned
+- Information doesn't match our records
 
-Best regards,
-Gaborone Employee Association
-Email: board@geabotswana.org
-Website: www.geabotswana.org
+RESUBMIT CORRECTED DOCUMENT:
+1. Log into your member portal: {{PORTAL_URL}}
+2. Go to Document Submissions
+3. Upload the corrected document
+4. We'll review and notify you
+
+TIPS FOR SUCCESS:
+- Scan or photograph document clearly
+- Ensure all text is legible
+- Use good lighting
+- Provide current, valid document
+- Double-check document type
+
+TIMELINE:
+- RSO review: 3-5 business days
+- GEA review: 2-3 business days
+- Total: 5-8 business days
+
+URGENT:
+Please resubmit by {{RESUBMIT_DEADLINE}} to avoid delays.
+
+NEED HELP?
+Questions about requirements? Contact board@geabotswana.org
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

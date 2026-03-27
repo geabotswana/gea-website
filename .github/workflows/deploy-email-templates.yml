@@ -67,7 +67,7 @@ jobs:
 
           if os.path.exists(csv_path):
               with open(csv_path, 'r') as f:
-                  reader = csv.DictReader(f, delimiter=';')
+                  reader = csv.DictReader(f, delimiter='|')
                   for row in reader:
                       semantic_name = row['semantic_name']
                       template_map[semantic_name] = {

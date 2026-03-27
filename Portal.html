@@ -2355,9 +2355,12 @@
 
   // Current authentication token
   var currentToken = sessionStorage.getItem('gea_token') || null;
-  
+
   // Current user's email and role
   var currentUser = null;
+
+  // Guard against multiple concurrent password reset requests (prevents double-submit on Enter)
+  var _resetPasswordRequestInFlight = false;
   
   // Runtime debug state to help diagnose applicant/member routing mismatches.
   var portalDebugState = {
@@ -3089,6 +3092,9 @@ function openPasswordChangeForm() {
 function submitPasswordResetRequest(event) {
   event.preventDefault();
 
+  // Prevent crash from multiple concurrent GAS calls triggered by repeated Enter presses
+  if (_resetPasswordRequestInFlight) return;
+
   var email = document.getElementById('resetEmail').value.trim().toLowerCase();
   var errorDiv = document.getElementById('resetRequestError');
   errorDiv.textContent = '';
@@ -3100,6 +3106,7 @@ function submitPasswordResetRequest(event) {
     return;
   }
 
+  _resetPasswordRequestInFlight = true;
   var submitBtn = event.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Sending...';
@@ -3108,6 +3115,7 @@ function submitPasswordResetRequest(event) {
     email: email,
     user_type: 'member'
   }).then(function(res) {
+    _resetPasswordRequestInFlight = false;
     submitBtn.disabled = false;
     submitBtn.textContent = 'Send Reset Link';
 
@@ -3137,6 +3145,7 @@ function submitPasswordResetRequest(event) {
       showLoginScreen();
     }, 5000);
   }).catch(function(err) {
+    _resetPasswordRequestInFlight = false;
     submitBtn.disabled = false;
     submitBtn.textContent = 'Send Reset Link';
     errorDiv.textContent = 'Connection error. Please try again.';

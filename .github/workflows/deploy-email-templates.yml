@@ -7,6 +7,14 @@ on:
         description: 'Dry run (preview changes without updating)'
         required: false
         default: 'false'
+      force_redeploy:
+        description: 'Force redeploy all files to Drive (ignore existing files)'
+        required: false
+        default: 'false'
+      rebuild_spreadsheet:
+        description: 'Force rebuild spreadsheet (clear and rewrite all rows)'
+        required: false
+        default: 'false'
 
 jobs:
   deploy-templates:
@@ -30,6 +38,8 @@ jobs:
           SHEET_NAME: "Email Templates"
           ADMIN_EMAIL: "treasurer@geabotswana.org"
           DRY_RUN: ${{ github.event.inputs.dry_run }}
+          FORCE_REDEPLOY: ${{ github.event.inputs.force_redeploy }}
+          REBUILD_SPREADSHEET: ${{ github.event.inputs.rebuild_spreadsheet }}
         run: |
           python - <<'PYTHON_EOF'
           import os
@@ -48,6 +58,8 @@ jobs:
           SHEET_NAME = os.environ['SHEET_NAME']
           ADMIN_EMAIL = os.environ['ADMIN_EMAIL']
           DRY_RUN = os.environ.get('DRY_RUN', 'false').lower() == 'true'
+          FORCE_REDEPLOY = os.environ.get('FORCE_REDEPLOY', 'false').lower() == 'true'
+          REBUILD_SPREADSHEET = os.environ.get('REBUILD_SPREADSHEET', 'false').lower() == 'true'
 
           # Authenticate with Domain-Wide Delegation
           info = json.loads(SERVICE_ACCOUNT_JSON)
@@ -118,8 +130,8 @@ jobs:
               existing_file = results.get('files', [])
 
               if not DRY_RUN:
-                  if existing_file:
-                      # Update existing file
+                  if existing_file and not FORCE_REDEPLOY:
+                      # Update existing file (unless force_redeploy is true)
                       file_id = existing_file[0]['id']
                       media = MediaFileUpload(file_path, mimetype='text/plain', resumable=True)
                       drive_service.files().update(
@@ -128,6 +140,25 @@ jobs:
                           supportsTeamDrives=True
                       ).execute()
                       print(f"  ✏️  Updated: {file_id}")
+                      updates[semantic_name] = file_id
+                  elif existing_file and FORCE_REDEPLOY:
+                      # Force redeploy: delete old file and create new one
+                      old_id = existing_file[0]['id']
+                      drive_service.files().delete(fileId=old_id, supportsTeamDrives=True).execute()
+                      file_metadata = {
+                          'name': semantic_name,
+                          'parents': [DRIVE_FOLDER_ID],
+                          'mimeType': 'text/plain'
+                      }
+                      media = MediaFileUpload(file_path, mimetype='text/plain', resumable=True)
+                      file = drive_service.files().create(
+                          body=file_metadata,
+                          media_body=media,
+                          fields='id',
+                          supportsTeamDrives=True
+                      ).execute()
+                      file_id = file.get('id')
+                      print(f"  🔄 Redeployed: {file_id} (deleted {old_id})")
                       updates[semantic_name] = file_id
                   else:
                       # Create new file
@@ -148,17 +179,42 @@ jobs:
                       updates[semantic_name] = file_id
               else:
                   if existing_file:
-                      print(f"  [DRY RUN] Would update: {existing_file[0]['id']}")
+                      if FORCE_REDEPLOY:
+                          print(f"  [DRY RUN] Would redeploy: {existing_file[0]['id']}")
+                      else:
+                          print(f"  [DRY RUN] Would update: {existing_file[0]['id']}")
                   else:
                       print(f"  [DRY RUN] Would create new file in Drive")
 
-          # Update Email Templates sheet with new file IDs
-          if updates and not DRY_RUN:
-              print(f"\n📊 Updating {len(updates)} file IDs in spreadsheet...\n")
-
+          # Handle rebuild_spreadsheet: query Drive to get all file IDs
+          if REBUILD_SPREADSHEET and not DRY_RUN:
+              print(f"\n🔄 Rebuild mode: querying Drive for all file IDs...\n")
+              for semantic_name in template_map.keys():
+                  query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
+                  results = drive_service.files().list(
+                      q=query,
+                      spaces='drive',
+                      fields='files(id)',
+                      pageSize=1,
+                      supportsTeamDrives=True
+                  ).execute()
+                  files = results.get('files', [])
+                  if files:
+                      file_id = files[0]['id']
+                      template_map[semantic_name]['drive_file_id'] = file_id
+                      print(f"  Found: {semantic_name} → {file_id}")
+                  else:
+                      print(f"  Missing: {semantic_name} (no file in Drive)")
+          else:
+              # Normal mode: update only files that were just created/updated
               for semantic_name, file_id in updates.items():
                   if semantic_name in template_map:
                       template_map[semantic_name]['drive_file_id'] = file_id
+
+          # Update Email Templates sheet with new file IDs
+          if (updates or REBUILD_SPREADSHEET) and not DRY_RUN:
+              action = "Rebuilding" if REBUILD_SPREADSHEET else "Updating"
+              print(f"\n📊 {action} spreadsheet...\n")
 
               # Prepare data for sheet update
               rows = []
@@ -186,9 +242,14 @@ jobs:
                   body={'values': rows}
               ).execute()
 
-              print(f"✅ Updated {len(updates)} template file IDs in spreadsheet!")
+              if REBUILD_SPREADSHEET:
+                  print(f"✅ Rebuilt spreadsheet with all {len(template_map)} templates!")
+              else:
+                  print(f"✅ Updated {len(updates)} template file IDs in spreadsheet!")
           elif DRY_RUN:
-              print(f"\n[DRY RUN] Would update {len(updates)} file IDs in spreadsheet")
+              action = "rebuild" if REBUILD_SPREADSHEET else "update"
+              count = len(template_map) if REBUILD_SPREADSHEET else len(updates)
+              print(f"\n[DRY RUN] Would {action} spreadsheet with {count} templates")
               print("Re-run without dry_run to apply changes")
 
           print(f"\n{'✨ Deployment complete!' if not DRY_RUN else '✅ Dry run complete!'}")

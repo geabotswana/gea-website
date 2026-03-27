@@ -47,42 +47,66 @@ function getRulesText() {
       });
     }
 
-    // Sort rules: first by category (alphabetical), then by sort order
+    // Sort rules by sort order (maintains outline structure A, B, Ba, Bb, C, etc.)
     rules.sort(function(a, b) {
-      if (a.rule_category !== b.rule_category) {
-        return a.rule_category.localeCompare(b.rule_category);
-      }
       return a.rule_category_sort - b.rule_category_sort;
     });
 
-    // Group rules by category into sections
+    // Group rules into outline structure (A, B, Ba, Bb, C, Ca, D, E...)
+    // Sort order format: sss = section(1-5) * 100 + subsection(0-9) * 10 + item(0-9)
+    // 100-109: A, 200-209: B, 210-219: Ba, 220-229: Bb, 300-309: C, 310-319: Ca, etc.
     var sections = [];
-    var currentCategory = null;
-    var currentSection = null;
-    var sectionNumber = 1;
+    var sectionMap = {}; // Map main section sort to section object
+    var subsectionMap = {}; // Map subsection category to subsection object
+    var mainSectionIndex = 0; // Track main sections for outline lettering
 
-    rules.forEach(function(rule, index) {
-      if (rule.rule_category !== currentCategory) {
-        // Start a new section
-        if (currentSection) {
-          sections.push(currentSection);
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      var sortOrder = rule.rule_category_sort;
+      var sectionDigit = Math.floor(sortOrder / 100); // 1, 2, 3, 4, 5
+      var subsectionTens = Math.floor((sortOrder % 100) / 10); // 0 = main, 1+ = subsection
+      var isSubsection = subsectionTens > 0;
+      var parentSort = sectionDigit * 100; // Parent section (e.g., 200 for 210, 310)
+
+      if (isSubsection) {
+        // This is a subsection - add to parent's subsections array
+        if (sectionMap[parentSort]) {
+          var parentSection = sectionMap[parentSort];
+          var subsectionKey = rule.rule_category; // Use category name as unique key
+
+          if (!subsectionMap[subsectionKey]) {
+            // First rule in this subsection - create it
+            subsectionMap[subsectionKey] = {
+              title: rule.rule_category,
+              content: []
+            };
+            if (!parentSection.subsections) {
+              parentSection.subsections = [];
+            }
+            parentSection.subsections.push(subsectionMap[subsectionKey]);
+          }
+
+          // Add this rule to the subsection
+          subsectionMap[subsectionKey].content.push(rule.rule_text);
         }
-        currentCategory = rule.rule_category;
-        currentSection = {
-          number: sectionNumber++,
-          title: rule.rule_category,
-          content: []
-        };
-      }
+      } else {
+        // This is a main section - check if we've already created it
+        if (!sectionMap[parentSort]) {
+          var outlineLetter = String.fromCharCode(65 + mainSectionIndex); // A, B, C, D, E...
+          var section = {
+            number: outlineLetter,
+            title: rule.rule_category,
+            content: [],
+            subsections: []
+          };
+          sections.push(section);
+          sectionMap[parentSort] = section;
+          mainSectionIndex++;
+        }
 
-      if (currentSection) {
-        currentSection.content.push(rule.rule_text);
+        // Add this rule to the main section
+        sectionMap[parentSort].content.push(rule.rule_text);
       }
-    });
-
-    // Add the last section
-    if (currentSection) {
-      sections.push(currentSection);
     }
 
     return {
@@ -210,7 +234,7 @@ function getRulesHTMLDisplay() {
   rules.sections.forEach(function(section) {
     html += '<div style="margin-bottom: 24px;">';
 
-    // Section heading
+    // Section heading with outline letter
     html += '<h3 style="color: #0A3161; font-size: 16px; font-weight: bold; margin-bottom: 12px; border-bottom: 2px solid #0A3161; padding-bottom: 8px;">';
     html += section.number + '. ' + section.title;
     html += '</h3>';
@@ -220,11 +244,12 @@ function getRulesHTMLDisplay() {
       html += '<p style="margin: 10px 0; padding-left: 16px;">' + sanitizeHtmlOutput(item) + '</p>';
     });
 
-    // Subsections (if any)
+    // Subsections (if any) with outline style (Ba, Bb, Ca, etc.)
     if (section.subsections && section.subsections.length > 0) {
-      section.subsections.forEach(function(subsection) {
+      section.subsections.forEach(function(subsection, index) {
+        var subLetter = section.number + String.fromCharCode(97 + index); // A+a=Aa, B+a=Ba, etc.
         html += '<div style="margin-left: 16px; margin-top: 16px;">';
-        html += '<h4 style="color: #0A3161; font-size: 14px; font-weight: bold; margin-bottom: 8px;">' + sanitizeHtmlOutput(subsection.title) + '</h4>';
+        html += '<h4 style="color: #0A3161; font-size: 14px; font-weight: bold; margin-bottom: 8px;">' + subLetter + '. ' + sanitizeHtmlOutput(subsection.title) + '</h4>';
         subsection.content.forEach(function(item) {
           html += '<p style="margin: 8px 0; padding-left: 16px; font-size: 14px;">' + sanitizeHtmlOutput(item) + '</p>';
         });
@@ -257,10 +282,11 @@ function getRulesPlainText() {
     });
 
     if (section.subsections && section.subsections.length > 0) {
-      section.subsections.forEach(function(subsection) {
-        text += '\n  ' + subsection.title + ':\n';
+      section.subsections.forEach(function(subsection, index) {
+        var subLetter = section.number + String.fromCharCode(97 + index); // Ba, Bb, Ca, etc.
+        text += '\n  ' + subLetter + '. ' + subsection.title + ':\n';
         subsection.content.forEach(function(item) {
-          text += '  • ' + item + '\n';
+          text += '    • ' + item + '\n';
         });
       });
     }

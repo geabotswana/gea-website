@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "gea-sheets-mcp": {
+      "command": "node",
+      "args": ["mcp/sheets-mcp.js"]
+    }
+  }
+}

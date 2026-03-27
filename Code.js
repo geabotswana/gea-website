@@ -170,7 +170,6 @@ function _routeAction(action, params) {
     case "deployment_info": return _handleDeploymentInfo();
     case "get_config_value": return _handleGetConfigValue(params);
     case "get_rules": return _handleGetRules(params);
-    case "init_rules_sheet": return initializeRulesSheet();  // SETUP ONLY - delete after first run
     case "submit_application": return _handleSubmitApplication(params);
 
 
@@ -634,93 +633,6 @@ function _handleGetConfigValue(p) {
   return successResponse({ key: String(p.key), value: value });
 }
 
-/**
- * SETUP: Initialize Rules sheet with all current rules
- * Run this ONCE via: handlePortalApi("init_rules_sheet", {})
- * After running, delete this function and the action handler
- */
-function initializeRulesSheet() {
-  try {
-    var ss = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
-    var sheet = ss.insertSheet(TAB_RULES);
-
-    // Header row
-    var headers = ["rule_id", "rule_category", "rule_category_sort", "rule_text"];
-    sheet.appendRow(headers);
-
-    // Rules data - grouped by category, sorted within category
-    var rulesData = [
-      // General Membership Rules (1.x)
-      ["RULE-0001", "General Membership Rules", 1, "An active membership is required to access GEA facilities and events."],
-      ["RULE-0002", "General Membership Rules", 2, "Members must follow all posted rules and conduct themselves respectfully."],
-      ["RULE-0003", "General Membership Rules", 3, "Guests must be accompanied by a GEA member and adhere to all guidelines. Guests may not be left at the facility in the absence of an active member escort."],
-      ["RULE-0004", "General Membership Rules", 4, "The GEA Board reserves the right to modify rules and revoke access for violations."],
-
-      // Recreation Center Rules (2.x)
-      ["RULE-0005", "Recreation Center Rules", 1, "Open to members and registered guests only, and only during the hours of 7am to 8pm. Everyone must depart by 8pm."],
-      ["RULE-0006", "Recreation Center Rules", 2, "Children under 14 must be supervised by an adult."],
-      ["RULE-0007", "Recreation Center Rules", 3, "Respect noise levels, shared spaces, and dispose of trash properly."],
-      ["RULE-0008", "Recreation Center Rules", 4, "Report any damage, maintenance needs, or safety concerns to board@geabotswana.org."],
-
-      // Leobo & Event Space (3.x)
-      ["RULE-0009", "Leobo & Event Space", 1, "Members may reserve the space once per month for up to 6 hours."],
-      ["RULE-0010", "Leobo & Event Space", 2, "Official Embassy events take precedence over GEA member reservations."],
-      ["RULE-0011", "Leobo & Event Space", 3, "Leobo reservations are subject to approval by the Embassy and may be cancelled at any time."],
-      ["RULE-0012", "Leobo & Event Space", 4, "Reservations must include setup and cleanup time (these count toward your 6-hour maximum)."],
-      ["RULE-0013", "Leobo & Event Space", 5, "Events must maintain respectful noise levels and conclude by 8pm to respect neighboring residents."],
-      ["RULE-0014", "Leobo & Event Space", 6, "No fundraising is allowed at the Rec Center."],
-      ["RULE-0015", "Leobo & Event Space", 7, "Guest lists must be submitted 3 business days in advance to board@geabotswana.org. For large events (30+ people), guest lists should be submitted 5 business days in advance."],
-      ["RULE-0016", "Leobo & Event Space", 8, "Parking inside is limited and subject to security directives; guest parking is outside."],
-
-      // Basketball & Tennis Courts (4.x)
-      ["RULE-0017", "Basketball & Tennis Courts", 1, "Reservations are limited to 2 hours per day per member-family."],
-      ["RULE-0018", "Basketball & Tennis Courts", 2, "No food is allowed on the courts (water and sports drinks are permitted)."],
-      ["RULE-0019", "Basketball & Tennis Courts", 3, "Members must clean up after use and follow supervision rules for minors."],
-
-      // Fitness Center Rules (5.x)
-      ["RULE-0020", "Fitness Center Rules", 1, "Use at your own risk – GEA and the U.S. Embassy are not liable for injuries or accidents."],
-      ["RULE-0021", "Fitness Center Rules", 2, "Minimum age for use: 15 years old."],
-      ["RULE-0022", "Fitness Center Rules", 3, "No children under 10 are allowed inside the fitness center; children 11-14 may enter under supervision but may not use the equipment."],
-      ["RULE-0023", "Fitness Center Rules", 4, "The door code is for members only – do not share it."],
-      ["RULE-0024", "Fitness Center Rules", 5, "Personal trainers are allowed, but the code must not be disclosed."],
-      ["RULE-0025", "Fitness Center Rules", 6, "Wipe down equipment after use and return it to its place."],
-      ["RULE-0026", "Fitness Center Rules", 7, "Limit electronic equipment use (treadmills, ellipticals, etc.) to 30 minutes when others are waiting."],
-      ["RULE-0027", "Fitness Center Rules", 8, "Turn off air conditioning, lights, and unplug machines before leaving and close the door securely."],
-      ["RULE-0028", "Fitness Center Rules", 9, "No alcohol, drugs, or smoking allowed in the Fitness Center."],
-      ["RULE-0029", "Fitness Center Rules", 10, "Report equipment issues to board@geabotswana.org."],
-
-      // Fitness Center Liability Waiver (6.x)
-      ["RULE-0030", "Fitness Center Liability Waiver", 1, "By using the Fitness Center, you acknowledge that physical activity involves inherent risks. The Gaborone Employee Association (GEA) and the U.S. Embassy Gaborone assume no responsibility for injuries, accidents, or loss of property. Members agree to use the facilities at their own risk and waive all claims against GEA and its affiliates."],
-
-      // Events & Conduct (7.x)
-      ["RULE-0031", "Events & Conduct", 1, "RSVP is required for some events; fees are non-refundable unless stated otherwise."],
-      ["RULE-0032", "Events & Conduct", 2, "Guests may attend certain events — guidelines will be provided."],
-      ["RULE-0033", "Events & Conduct", 3, "Children must be supervised by an adult at all times."],
-      ["RULE-0034", "Events & Conduct", 4, "Disruptive behavior may result in removal from events and facility restrictions."],
-
-      // Compliance & Enforcement (8.x)
-      ["RULE-0035", "Compliance & Enforcement", 1, "Failure to comply with these rules may result in suspension or termination of membership privileges. The GEA Board reserves the right to enforce all policies to maintain a safe and welcoming environment."],
-      ["RULE-0036", "Compliance & Enforcement", 2, "These rules and regulations are subject to change by agreement of the Board of Directors. Members will be notified of any changes."],
-      ["RULE-0037", "Compliance & Enforcement", 3, "For questions, reservations, or concerns, contact board@geabotswana.org."]
-    ];
-
-    // Append all rules
-    sheet.getRange(2, 1, rulesData.length, 4).setValues(rulesData);
-
-    // Format header row (bold)
-    sheet.getRange(1, 1, 1, 4).setFontWeight("bold");
-    sheet.getRange(1, 1, 1, 4).setBackground("#0A3161").setFontColor("white");
-
-    // Auto-resize columns
-    sheet.autoResizeColumns(1, 4);
-
-    Logger.log("Rules sheet initialized successfully with " + rulesData.length + " rules");
-    return { success: true, message: "Rules sheet created with " + rulesData.length + " rules" };
-  } catch (error) {
-    Logger.log("ERROR initializing rules sheet: " + error);
-    return { success: false, message: "Error: " + error.message };
-  }
-}
 
 /**
  * PUBLIC: Get Rules & Regulations in HTML format

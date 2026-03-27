@@ -1,0 +1,15 @@
+  {
+    "name": "gea-sheets-mcp",
+    "version": "1.0.0",
+    "main": "sheets-mcp.js",
+    "bin": {
+      "gea-sheets-mcp": "sheets-mcp.js"
+    },
+    "scripts": {
+      "start": "node sheets-mcp.js"
+    },
+    "dependencies": {
+      "@modelcontextprotocol/sdk": "^0.6.0",
+      "googleapis": "^127.0.0"
+    }
+  }

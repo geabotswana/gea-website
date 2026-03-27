@@ -813,6 +813,23 @@ function _getBoardServiceAccount() {
  * @returns {string|null} OAuth access token, or null if error
  */
 function _getServiceAccountAccessToken() {
+  // Return cached token if still valid (tokens expire after 1 hour; cache for 55 min)
+  // Caching avoids a 2-5 second OAuth HTTP round-trip on every email send, which
+  // previously caused long GAS execution times and browser hangs on password resets.
+  try {
+    var scriptProps = PropertiesService.getScriptProperties();
+    var cachedToken = scriptProps.getProperty('_svc_token_cache');
+    var cachedExpiry = scriptProps.getProperty('_svc_token_expiry');
+    if (cachedToken && cachedExpiry) {
+      var expiry = Number(cachedExpiry);
+      if (!isNaN(expiry) && Date.now() < expiry) {
+        return cachedToken;
+      }
+    }
+  } catch (cacheReadErr) {
+    Logger.log("WARN _getServiceAccountAccessToken: cache read failed: " + cacheReadErr);
+  }
+
   try {
     // Step 1: Create and sign JWT with service account's private key
     var signedJwt = _createSignedDomainDelegationJwt();
@@ -836,6 +853,15 @@ function _getServiceAccountAccessToken() {
 
     if (response.getResponseCode() === 200) {
       Logger.log("Successfully obtained access token via JWT bearer grant");
+      // Cache for 55 minutes to avoid repeated OAuth round-trips
+      try {
+        PropertiesService.getScriptProperties().setProperties({
+          '_svc_token_cache':  result.access_token,
+          '_svc_token_expiry': String(Date.now() + 55 * 60 * 1000)
+        });
+      } catch (cacheWriteErr) {
+        Logger.log("WARN _getServiceAccountAccessToken: cache write failed: " + cacheWriteErr);
+      }
       return result.access_token;
     } else {
       Logger.log("ERROR exchanging JWT for access token: " + response.getContentText());

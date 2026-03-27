@@ -1,0 +1,190 @@
+name: Deploy Email Templates to Drive
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (preview changes without updating)'
+        required: false
+        default: 'false'
+
+jobs:
+  deploy-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install google-auth-oauthlib google-auth-httplib2 google-api-python-client
+
+      - name: Deploy Email Templates
+        env:
+          SERVICE_ACCOUNT_JSON: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
+          DRIVE_FOLDER_ID: "1jiubgmDEeR0aLJ20E8tqIJTM-tFoHuCb"
+          SPREADSHEET_ID: "1WvN4xU_ZxElwpkXQVdt0HlUkjXcCA_ZaImklSLvuzeI"
+          SHEET_NAME: "Email Templates"
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: |
+          python - <<'EOF'
+          import os
+          import json
+          import csv
+          import glob
+          from pathlib import Path
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaFileUpload
+
+          # Configuration
+          SERVICE_ACCOUNT_JSON = os.environ['SERVICE_ACCOUNT_JSON']
+          DRIVE_FOLDER_ID = os.environ['DRIVE_FOLDER_ID']
+          SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+          SHEET_NAME = os.environ['SHEET_NAME']
+          DRY_RUN = os.environ.get('DRY_RUN', 'false').lower() == 'true'
+
+          # Authenticate
+          info = json.loads(SERVICE_ACCOUNT_JSON)
+          creds = service_account.Credentials.from_service_account_info(
+              info,
+              scopes=[
+                  'https://www.googleapis.com/auth/drive',
+                  'https://www.googleapis.com/auth/spreadsheets'
+              ]
+          )
+          drive_service = build('drive', 'v3', credentials=creds)
+          sheets_service = build('sheets', 'v4', credentials=creds)
+
+          # Read existing CSV to get semantic names
+          csv_path = 'docs/email_templates/Email_Templates_Sheet.csv'
+          template_map = {}
+
+          if os.path.exists(csv_path):
+              with open(csv_path, 'r') as f:
+                  reader = csv.DictReader(f, delimiter=';')
+                  for row in reader:
+                      semantic_name = row['semantic_name']
+                      template_map[semantic_name] = {
+                          'display_name': row['display_name'],
+                          'subject': row['subject'],
+                          'drive_file_id': row['drive_file_id'],
+                          'placeholders': row['placeholders'],
+                          'active': row['active'],
+                          'notes': row['notes']
+                      }
+
+          # Find all template files
+          template_files = []
+          for file_path in sorted(glob.glob('docs/email_templates/**/*.txt', recursive=True)):
+              file_path = Path(file_path)
+              semantic_name = file_path.stem
+              if semantic_name not in ['_MANIFEST', 'README']:
+                  template_files.append({
+                      'file_path': file_path,
+                      'semantic_name': semantic_name,
+                      'display_name': file_path.name
+                  })
+
+          print(f"\n📧 Found {len(template_files)} email templates to process\n")
+
+          # Process each template
+          updates = {}
+          for template in template_files:
+              file_path = template['file_path']
+              semantic_name = template['semantic_name']
+
+              print(f"Processing: {semantic_name}")
+
+              # Read file content
+              with open(file_path, 'r', encoding='utf-8') as f:
+                  content = f.read()
+
+              # Check if file exists in Drive by name
+              query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
+              results = drive_service.files().list(
+                  q=query,
+                  spaces='drive',
+                  fields='files(id, name)',
+                  pageSize=1
+              ).execute()
+
+              existing_file = results.get('files', [])
+
+              if not DRY_RUN:
+                  if existing_file:
+                      # Update existing file
+                      file_id = existing_file[0]['id']
+                      media = MediaFileUpload(file_path, mimetype='text/plain', resumable=True)
+                      drive_service.files().update(
+                          fileId=file_id,
+                          media_body=media
+                      ).execute()
+                      print(f"  ✏️  Updated: {file_id}")
+                      updates[semantic_name] = file_id
+                  else:
+                      # Create new file
+                      file_metadata = {
+                          'name': semantic_name,
+                          'parents': [DRIVE_FOLDER_ID],
+                          'mimeType': 'text/plain'
+                      }
+                      media = MediaFileUpload(file_path, mimetype='text/plain', resumable=True)
+                      file = drive_service.files().create(
+                          body=file_metadata,
+                          media_body=media,
+                          fields='id'
+                      ).execute()
+                      file_id = file.get('id')
+                      print(f"  ✨ Created: {file_id}")
+                      updates[semantic_name] = file_id
+              else:
+                  if existing_file:
+                      print(f"  [DRY RUN] Would update: {existing_file[0]['id']}")
+                  else:
+                      print(f"  [DRY RUN] Would create new file in Drive")
+
+          # Update Email Templates sheet with new file IDs
+          if updates and not DRY_RUN:
+              print(f"\n📊 Updating {len(updates)} file IDs in spreadsheet...\n")
+
+              for semantic_name, file_id in updates.items():
+                  if semantic_name in template_map:
+                      template_map[semantic_name]['drive_file_id'] = file_id
+
+              # Prepare data for sheet update
+              rows = []
+              for semantic_name, data in template_map.items():
+                  rows.append([
+                      semantic_name,
+                      data['display_name'],
+                      data['subject'],
+                      data['drive_file_id'],
+                      data['placeholders'],
+                      data['active'],
+                      data['notes']
+                  ])
+
+              # Clear and rewrite the sheet
+              sheets_service.spreadsheets().values().clear(
+                  spreadsheetId=SPREADSHEET_ID,
+                  range=f"'{SHEET_NAME}'!A2:G",  # Keep header
+              ).execute()
+
+              sheets_service.spreadsheets().values().update(
+                  spreadsheetId=SPREADSHEET_ID,
+                  range=f"'{SHEET_NAME}'!A2",
+                  valueInputOption='RAW',
+                  body={'values': rows}
+              ).execute()
+
+              print(f"✅ Updated {len(updates)} template file IDs in spreadsheet!")
+          elif DRY_RUN:
+              print(f"\n[DRY RUN] Would update {len(updates)} file IDs in spreadsheet")
+              print("Re-run without dry_run to apply changes")
+
+          print(f"\n{'✨ Deployment complete!' if not DRY_RUN else '✅ Dry run complete!'}")
+          EOF

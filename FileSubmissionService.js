@@ -150,10 +150,16 @@ function generateRsoApprovalLink(submission_id) {
     var baseUrl = ScriptApp.getService().getUrl();
     var linkUrl = baseUrl + "?action=rso_approve&token=" + encodeURIComponent(token);
 
-    sendEmailFromBoard("tpl_058", EMAIL_RSO_APPROVE, {
-      SUBMISSION_ID: submission_id,
-      APPROVAL_LINK: linkUrl,
-      EXPIRES_AT: formatDate(expiresAt, false)
+    // NOTE: RSO now reviews documents via portal login (see CLAUDE.md — RSO Portal Access).
+    // The token-based approval link above is still generated and stored, but the email
+    // directs RSO to the portal. If direct-link approval is needed, add APPROVAL_LINK /
+    // EXPIRES_AT / SUBMISSION_ID placeholders to the ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE
+    // template in the Email Templates sheet.
+    sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
+      APPLICANT_NAME:    submission_id,
+      APPLICATION_ID:    submission_id,
+      DOCUMENT_TYPES:    "Document submission",
+      APPROVAL_DEADLINE: formatDate(expiresAt)
     });
 
     return { ok: true, link_url: linkUrl, expires_at: expiresAt };

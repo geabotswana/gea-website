@@ -174,12 +174,12 @@ function isGuestListDeadlineMet(eventDate) {
  * notification emails. Handles standard and excess reservations.
  *
  * Standard flow:
- *   - Tennis (within limit): auto-confirm → email tpl_007
- *   - Leobo (within limit): pending → email tpl_008 → board/MGT notified
+ *   - Tennis (within limit): auto-confirm → email RES_BOOKING_RECEIVED_TO_MEMBER
+ *   - Leobo (within limit): pending → email RES_BOOKING_PENDING_REVIEW_TO_MEMBER → board/MGT notified
  *
  * Excess flow:
- *   - Any facility over limit: pending → email tpl_008 →
- *     board/MGT notified with warning (tpl_030/tpl_031)
+ *   - Any facility over limit: pending → email RES_BOOKING_PENDING_REVIEW_TO_MEMBER →
+ *     board/MGT notified with warning (RES_EXCESS_TENNIS_APPROVAL_REQUEST_TO_MEMBER / RES_EXCESS_LEOBO_APPROVAL_REQUEST_TO_MEMBER)
  *
  * @param {Object} params
  *   householdId, primaryEmail, facility, eventDate (Date),
@@ -890,7 +890,7 @@ function processBumpWindowExpirations() {
 // ============================================================
 
 /**
- * Runs nightly. Sends tpl_013 to any member whose guest list
+ * Runs nightly. Sends RES_GUEST_LIST_DEADLINE_REMINDER_TO_MEMBER to any member whose guest list
  * is not yet submitted and whose deadline is tomorrow.
  */
 function sendGuestListReminders() {
@@ -998,7 +998,7 @@ function sendReservationApprovalReminders() {
 // ============================================================
 
 /**
- * Builds and sends the RSO daily summary email (tpl_014)
+ * Builds and sends the RSO daily summary email (ADM_DAILY_SUMMARY_TO_RSO_NOTIFY)
  * for all reservations on today's date.
  * Triggered nightly at RSO_SUMMARY_HOUR.
  */

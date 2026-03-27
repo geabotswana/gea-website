@@ -50,7 +50,7 @@ function runNightlyTasks() {
   // 5. Bump window: promote tentative reservations whose window has passed
   processBumpWindowExpirations();
 
-  // 6. Photo reminders: send tpl_016 to members missing photos
+  // 6. Photo reminders: send DOC_PHOTO_SUBMISSION_REMINDER_TO_MEMBER to members missing photos
   //    who activated more than PHOTO_REMINDER_DAYS_AFTER_ACTIVATION ago
   sendPhotoReminders();
 
@@ -86,7 +86,7 @@ function runNightlyTasks() {
 
 /**
  * RSO DAILY SUMMARY — attach to a daily trigger at 6:00 AM.
- * Sends tpl_014 to EMAIL_RSO_NOTIFY with all reservations for today.
+ * Sends ADM_DAILY_SUMMARY_TO_RSO_NOTIFY to EMAIL_RSO_NOTIFY with all reservations for today.
  * Defined in ReservationService.gs; exposed here as a trigger wrapper.
  */
 function triggerRsoDailySummary() {
@@ -97,7 +97,7 @@ function triggerRsoDailySummary() {
 
 /**
  * HOLIDAY CALENDAR REMINDER — attach to a yearly trigger on Nov 1.
- * Sends tpl_027 to the board reminding them to update holidays
+ * Sends RES_HOLIDAY_CALENDAR_REMINDER_TO_MEMBER to the board reminding them to update holidays
  * for the coming year.
  */
 function sendHolidayCalReminder() {
@@ -358,7 +358,7 @@ function syncHouseholdPhonesFromPrimary() {
 // ============================================================
 
 /**
- * Sends tpl_016 (photo submission reminder) to members who:
+ * Sends DOC_PHOTO_SUBMISSION_REMINDER_TO_MEMBER to members who:
  *   - Have an active membership
  *   - Have no approved photo
  *   - Have been activated for at least PHOTO_REMINDER_DAYS days

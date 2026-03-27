@@ -15,4 +15,5 @@
 .claude/
 .gea/
 node_modules/
+mcp/
 BoardEmailConfig.gs

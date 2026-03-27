@@ -28,6 +28,7 @@ jobs:
           DRIVE_FOLDER_ID: "1jiubgmDEeR0aLJ20E8tqIJTM-tFoHuCb"
           SPREADSHEET_ID: "1WvN4xU_ZxElwpkXQVdt0HlUkjXcCA_ZaImklSLvuzeI"
           SHEET_NAME: "Email Templates"
+          ADMIN_EMAIL: "treasurer@geabotswana.org"
           DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
           python - <<'EOF'
@@ -45,6 +46,7 @@ jobs:
           DRIVE_FOLDER_ID = os.environ['DRIVE_FOLDER_ID']
           SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
           SHEET_NAME = os.environ['SHEET_NAME']
+          ADMIN_EMAIL = os.environ['ADMIN_EMAIL']
           DRY_RUN = os.environ.get('DRY_RUN', 'false').lower() == 'true'
 
           # Authenticate with Domain-Wide Delegation
@@ -55,7 +57,7 @@ jobs:
                   'https://www.googleapis.com/auth/drive',
                   'https://www.googleapis.com/auth/spreadsheets'
               ]
-          ).with_subject('treasurer@geabotswana.org')
+          ).with_subject(ADMIN_EMAIL)
           drive_service = build('drive', 'v3', credentials=creds)
           sheets_service = build('sheets', 'v4', credentials=creds)
 

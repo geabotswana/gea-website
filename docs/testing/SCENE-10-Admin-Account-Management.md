@@ -48,7 +48,7 @@
 - Login succeeds
 - Dashboard loads
 - Header shows the board member's name (from Administrators tab, not Individuals)
-- Sidebar shows ALL nav items: Dashboard, Pending Reservations, Waitlist, Members, Applications, Photo Review, Guest Lists, Payments, Reports, **Administrators**
+- Sidebar shows ALL nav items: Dashboard, Pending Reservations, Waitlist, **Reservation Calendar**, Members, Applications, Photo Review, Guest Lists, Payments, Reports, **Administrators**
 
 **Fail if:** Login accepts email only (no password prompt), or Administrators nav item is missing for board role
 
@@ -128,7 +128,7 @@
 **Check:**
 - Login succeeds
 - Header shows "Test MGT" (name from Administrators tab)
-- Sidebar shows ONLY: Dashboard, Pending Reservations, Waitlist
+- Sidebar shows ONLY: Dashboard, Pending Reservations, Waitlist, Reservation Calendar
 - The following are NOT visible in the sidebar: Members, Applications, Photo Review, Guest Lists, Payments, Reports, Administrators
 - Attempting to access the Administrators page by clicking a link or typing its equivalent shows nothing (page is not in nav)
 
@@ -136,7 +136,7 @@
 
 ---
 
-### Step C2 — RSO Login — Sees Only Guest Lists, Applications, Photos
+### Step C2 — RSO Login — Sees Only RSO-Specific Pages
 **Who:** Test RSO Account
 **Where:** Admin Portal login (different browser or incognito)
 
@@ -144,10 +144,11 @@
 
 **Check:**
 - Login succeeds
-- Sidebar shows ONLY: Dashboard, Applications, Photo Review, Guest Lists
-- The following are NOT visible: Pending Reservations, Waitlist, Members, Payments, Reports, Administrators
+- Portal lands on the Document Review page (rso_approve default)
+- Sidebar shows ONLY RSO pages: Guest Lists, Document Review, RSO Event Calendar, RSO Approved Guests
+- The following are NOT visible: Dashboard, Pending Reservations, Waitlist, Reservation Calendar, Members, Applications, Photo Review, Payments, Reports, Administrators
 
-**Fail if:** rso user can see Payments, Pending Reservations, or Administrators
+**Fail if:** rso user can see Payments, Pending Reservations, Members, or Administrators
 
 ---
 
@@ -302,9 +303,9 @@
 
 Scene 10 is **PASS** when:
 - Admin Portal login requires email + password (both fields present and enforced)
-- Board sees all nav items including Administrators page
-- mgt sees only Dashboard, Pending Reservations, Waitlist
-- rso sees only Dashboard, Applications, Photo Review, Guest Lists
+- Board sees all nav items including Reservation Calendar and Administrators page
+- mgt sees only Dashboard, Pending Reservations, Waitlist, Reservation Calendar
+- rso sees only Guest Lists, Document Review, RSO Event Calendar, RSO Approved Guests
 - New accounts can be created for all three roles
 - Deactivated accounts cannot log in (specific error message)
 - Reactivated accounts can log in again

@@ -3,7 +3,7 @@
 **Order:** Can begin once several applications from prior scenes are in various stages (they provide test accounts at different statuses). Run during or after Scenes 01–07.
 
 **What this tests:**
-- Non-Member Portal renders correctly at each of the 8 application statuses
+- Non-Member Portal renders correctly at each of the 9 application statuses
 - Navigation items are conditionally visible per status
 - Page content matches the current status (correct status messages, action items, buttons)
 - Responsive design: desktop (1200px+), tablet (768px), mobile (390px)
@@ -39,6 +39,7 @@ You need test accounts at each of the following statuses. Use accounts from prio
 | `board_final_review` | After RSO approval |
 | `approved_pending_payment` | After board final approval |
 | `payment_submitted` | After submitting payment proof |
+| `lapsed` | An activated member whose membership has expired (run `checkExpiringMemberships()` in GAS editor, or manually set application_status = "lapsed" and active = FALSE in the Households sheet for a test household) |
 | `denied` | Scene 04 accounts (Nina Walsh or Owen Batho) |
 | `activated` | Scene 01 account (Alice Thornton) — though she redirects to member portal |
 
@@ -55,9 +56,9 @@ For each status, log in as the corresponding test account and verify the followi
 **Navigation visible:**
 - [ ] Dashboard ✓
 - [ ] Documents ✓
+- [ ] Application Status ✓ (visible for all active-application statuses)
 - [ ] My Household ✓
 - [ ] Help ✓
-- [ ] Status — verify: visible or hidden?
 - [ ] Payment — should be HIDDEN
 
 **Dashboard:**
@@ -158,6 +159,33 @@ For each status, log in as the corresponding test account and verify the followi
 
 ---
 
+### Status: `lapsed`
+
+> **Setup:** Use an activated member whose membership has expired. Either manually set `application_status = "lapsed"` and `active = FALSE` in the Households sheet, or trigger `checkExpiringMemberships()` for a household with a past expiration date.
+
+**Navigation visible (payment-only renewal path):**
+- [ ] Dashboard ✓
+- [ ] My Household ✓
+- [ ] Payment Verification ✓ (lapsed members renew by paying dues)
+- [ ] Help & Contact ✓
+
+**Navigation HIDDEN (no active application):**
+- [ ] Application Status — HIDDEN
+- [ ] Documents — HIDDEN (lapsed members do not re-submit documents; payment only)
+
+**Dashboard:**
+- [ ] Status badge color: **purple**
+- [ ] Status message: "Your membership has lapsed. Submit your annual dues payment to renew your membership." (or similar)
+- [ ] Action item: "Next step: go to Payment Verification and submit your annual dues."
+
+**Payment Verification page:**
+- [ ] Payment form IS visible (lapsed members can submit renewal dues)
+- [ ] Dues breakdown card shows the correct amount for the current membership year
+
+**Fail if:** Lapsed member can see Application Status or Documents pages, or payment form is hidden for `lapsed` status
+
+---
+
 ### Status: `denied`
 
 **Navigation:**
@@ -248,6 +276,7 @@ The Admin Portal login now uses email + password and returns a role (board, mgt,
 - [ ] Dashboard
 - [ ] Pending Reservations
 - [ ] Waitlist
+- [ ] Reservation Calendar
 - [ ] Members
 - [ ] Applications
 - [ ] Photo Review
@@ -277,6 +306,7 @@ The Admin Portal login now uses email + password and returns a role (board, mgt,
 - [ ] Dashboard
 - [ ] Pending Reservations
 - [ ] Waitlist
+- [ ] Reservation Calendar
 
 **Check — sidebar does NOT show:**
 - [ ] Members — hidden
@@ -291,29 +321,33 @@ The Admin Portal login now uses email + password and returns a role (board, mgt,
 
 ---
 
-### Admin Role: `rso`
+### Admin Role: `rso` (`rso_approve`)
 **Who:** RSO account (rso-approve@geabotswana.org)
 **Where:** Admin Portal
 
 **Pre-condition:** An rso-role account exists in the Administrators tab.
 
-**Action:** Log in with rso credentials.
+**Action:** Log in with rso_approve credentials. The portal lands on the Document Review page.
 
-**Check — sidebar shows ONLY:**
-- [ ] Dashboard
-- [ ] Applications
-- [ ] Photo Review
-- [ ] Guest Lists
+**Check — sidebar shows ONLY (RSO-specific pages):**
+- [ ] Guest Lists (shared with board — RSO reviews guest lists)
+- [ ] Document Review (rso-documents — RSO-specific document queue)
+- [ ] RSO Event Calendar (rso-calendar — read-only calendar of upcoming events)
+- [ ] RSO Approved Guests (rso-approved-guests — approved guest lists for events)
 
-**Check — sidebar does NOT show:**
+**Check — sidebar does NOT show (board/mgt pages):**
+- [ ] Dashboard — hidden
 - [ ] Pending Reservations — hidden
 - [ ] Waitlist — hidden
+- [ ] Reservation Calendar — hidden
 - [ ] Members — hidden
+- [ ] Applications — hidden
+- [ ] Photo Review — hidden
 - [ ] Payments — hidden
 - [ ] Reports — hidden
 - [ ] Administrators — hidden
 
-**Fail if:** rso user can see Payments, Members, or Administrators
+**Fail if:** rso user can see Payments, Members, Administrators, or any board-only page
 
 ---
 
@@ -334,11 +368,12 @@ The Admin Portal login now uses email + password and returns a role (board, mgt,
 ## Completion Criteria
 
 Scene 08 is **PASS** when:
-- All 8 status states show correct content and navigation visibility
+- All 9 status states show correct content and navigation visibility (including `lapsed`)
+- `lapsed` status shows purple badge, hides Application Status and Documents, shows Payment Verification
 - No status exposes pages/forms that should be hidden
 - Responsive design works at all three breakpoints
 - No horizontal scrolling at any width
 - Keyboard navigation functional
 - Admin Portal login requires email + password
-- Board sees all nav items; mgt sees only reservations/waitlist; rso sees only guest lists/applications/photos
+- Board sees all nav items (including Reservation Calendar); mgt sees Dashboard, Pending Reservations, Waitlist, and Reservation Calendar; rso sees only Guest Lists, Document Review, RSO Event Calendar, and RSO Approved Guests
 - Administrators page accessible to board role only

@@ -5701,14 +5701,14 @@ function submitPasswordResetRequest(event) {
     var s = appStatus || '';
 
     // Conditional visibility matrix (spec NMP.8):
-    // - 'payment'   → only when payment is due or already submitted, or for lapsed (inactive) members
+    // - 'payment'   → only when payment is due or already submitted, or for lapsed members
     // - 'status'    → only when there is an active application (not for lapsed members with no application)
     // - 'documents' → only when there is an active application (lapsed members renew via payment only)
     // - 'household' → always (members may still need to manage family/staff details)
     // - 'dashboard' and 'help' → always
-    var paymentVisible   = (s === 'approved_pending_payment' || s === 'payment_submitted' || s === 'inactive');
-    var appStatusVisible = (s !== 'inactive' && s !== '');
-    var docsVisible      = (s !== 'inactive' && s !== '');
+    var paymentVisible   = (s === 'approved_pending_payment' || s === 'payment_submitted' || s === 'lapsed');
+    var appStatusVisible = (s !== 'lapsed' && s !== '');
+    var docsVisible      = (s !== 'lapsed' && s !== '');
 
     var allItems = [
       { id: 'dashboard', label: 'Dashboard',            visible: true },
@@ -7106,7 +7106,7 @@ function submitPasswordResetRequest(event) {
     if (status === 'activated')                                                   return '#2E7D32'; // green
     if (status === 'rejected')                                                    return '#C62828'; // red
     if (status === 'approved_pending_payment' || status === 'payment_submitted')  return '#1565C0'; // blue
-    if (status === 'inactive')                                                    return '#6A1B9A'; // purple
+    if (status === 'lapsed')                                                      return '#6A1B9A'; // purple
     return '#E65100'; // amber — in-progress application
   }
 
@@ -7125,7 +7125,7 @@ function submitPasswordResetRequest(event) {
       approved_pending_payment:  'Application approved. Submit your payment verification to proceed.',
       payment_submitted:         'Payment submitted. Treasurer verification is in progress.',
       activated:                 'Membership activated. You now have full portal access.',
-      inactive:                  'Your membership has lapsed. Submit your annual dues payment to renew your membership.'
+      lapsed:                    'Your membership has lapsed. Submit your annual dues payment to renew your membership.'
     };
     return messages[status] || 'Membership application in progress.';
   }
@@ -7134,7 +7134,7 @@ function submitPasswordResetRequest(event) {
     if (status === 'awaiting_docs')            return 'Next step: upload all required documents, then confirm.';
     if (status === 'approved_pending_payment') return 'Next step: submit your payment verification details.';
     if (status === 'payment_submitted')        return 'Next step: wait for Treasurer to verify your payment (1–2 business days).';
-    if (status === 'inactive')                 return 'Next step: go to Payment Verification and submit your annual dues.';
+    if (status === 'lapsed')                   return 'Next step: go to Payment Verification and submit your annual dues.';
     return 'No immediate action required. We will email you when the next step is ready.';
   }
 

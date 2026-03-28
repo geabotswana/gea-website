@@ -2,7 +2,7 @@
 
 **Current Date:** March 28, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 28, 2026 — RES.2.7 ✅ COMPLETE (verified). RES.5.5 ✅ COMPLETE (interactive calendar). NMP.1 ✅ COMPLETE (routing + nav visibility matrix). All core reservations features (RES.2–5) and non-member portal (NMP.1–8) now complete. Remaining open work: NMP.9 (non-member portal testing), RES-PREP.3 (partial — some email templates missing), RES.6.1–6.2 (household member invites). Post-launch items unchanged.
+**Status:** Mar 28, 2026 — RES.2.7 ✅ COMPLETE (verified). RES.5.5 ✅ COMPLETE (interactive calendar). NMP.1 ✅ COMPLETE (routing + nav visibility + lapsed status fix v2.1.2). All core reservations features (RES.2–5) and non-member portal (NMP.1–8) now complete. Remaining open work: NMP.9 (non-member portal testing), RES-PREP.3 (partial — some email templates missing), RES.6.1–6.2 (household member invites). Post-launch items unchanged.
 
 ---
 
@@ -124,7 +124,7 @@ These items unblock critical testing paths and should be done first among active
 - Route accordingly: `if (active) showMemberPortal() else showNonMemberPortal()`
 - Reuse existing authentication (users already logged in)
 
-**Status:** ✅ COMPLETE (Mar 28, 2026) — Routing fully implemented. Backend (`AuthService.js`): denied/withdrawn applicants blocked from login; `household.active = false` OR non-activated `application_status` → `is_applicant: true` in login response. Frontend (`Portal.html`): `resolveApplicantPortalMode()` reads `is_applicant` from login payload (fast path), sessionStorage cache (reload path), and `application_status` probe (first-load fallback). Routes `is_applicant=true` → `loadApplicantPortal()`, else → `loadDashboard()`. Nav conditional visibility matrix implemented in `buildApplicantNav()`: Payment Verification only shown for `approved_pending_payment`, `payment_submitted`, `inactive`; Application Status and Documents hidden for `inactive` (lapsed member) since they have no active application. Status/action messages added for `inactive` and `under_review` states.
+**Status:** ✅ COMPLETE (Mar 28, 2026) — Routing fully implemented. Backend (`AuthService.js`): denied/withdrawn applicants blocked from login; `household.active = false` OR non-activated `application_status` → `is_applicant: true` in login response. Frontend (`Portal.html`): `resolveApplicantPortalMode()` reads `is_applicant` from login payload (fast path), sessionStorage cache (reload path), and `application_status` probe (first-load fallback). Routes `is_applicant=true` → `loadApplicantPortal()`, else → `loadDashboard()`. Nav conditional visibility matrix implemented in `buildApplicantNav()`: Payment Verification only shown for `approved_pending_payment`, `payment_submitted`, `lapsed`; Application Status and Documents hidden for `lapsed` (lapsed member) since they have no active application. Status/action messages added for `lapsed` and `under_review` states. Backend fix (v2.1.2): `checkExpiringMemberships()` now writes `application_status = "Lapsed"` alongside `active = false` at expiry, so lapsed members receive the unambiguous `"Lapsed"` status string rather than the stale `"Approved"` value from initial activation.
 
 **Prerequisite:** NMP.0 (spec review)
 

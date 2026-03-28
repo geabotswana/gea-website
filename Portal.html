@@ -5659,7 +5659,7 @@ function submitPasswordResetRequest(event) {
     applicantPortalState.activeSection = sectionName || 'dashboard';
     container.innerHTML = '';
     container.appendChild(buildApplicantPageHeader(app));
-    container.appendChild(buildApplicantNav(applicantPortalState.activeSection));
+    container.appendChild(buildApplicantNav(applicantPortalState.activeSection, app.status));
 
     if (applicantPortalState.activeSection === 'status') {
       container.appendChild(buildApplicantStatusSection(app));
@@ -5697,15 +5697,40 @@ function submitPasswordResetRequest(event) {
     return wrapper;
   }
 
-  function buildApplicantNav(activeSection) {
-    var navItems = [
-      { id: 'dashboard', label: 'Dashboard' },
-      { id: 'household', label: 'My Household' },
-      { id: 'status',    label: 'Application Status' },
-      { id: 'documents', label: 'Documents' },
-      { id: 'payment',   label: 'Payment Verification' },
-      { id: 'help',      label: 'Help & Contact' }
+  function buildApplicantNav(activeSection, appStatus) {
+    var s = appStatus || '';
+
+    // Conditional visibility matrix (spec NMP.8):
+    // - 'payment'   → only when payment is due or already submitted, or for lapsed (inactive) members
+    // - 'status'    → only when there is an active application (not for lapsed members with no application)
+    // - 'documents' → only when there is an active application (lapsed members renew via payment only)
+    // - 'household' → always (members may still need to manage family/staff details)
+    // - 'dashboard' and 'help' → always
+    var paymentVisible   = (s === 'approved_pending_payment' || s === 'payment_submitted' || s === 'inactive');
+    var appStatusVisible = (s !== 'inactive' && s !== '');
+    var docsVisible      = (s !== 'inactive' && s !== '');
+
+    var allItems = [
+      { id: 'dashboard', label: 'Dashboard',            visible: true },
+      { id: 'household', label: 'My Household',         visible: true },
+      { id: 'status',    label: 'Application Status',   visible: appStatusVisible },
+      { id: 'documents', label: 'Documents',            visible: docsVisible },
+      { id: 'payment',   label: 'Payment Verification', visible: paymentVisible },
+      { id: 'help',      label: 'Help & Contact',       visible: true }
     ];
+
+    // If the currently active section was hidden (e.g. user navigates to a status that
+    // no longer shows that nav item), fall back to dashboard rather than rendering a
+    // blank page. This can happen when app status changes between loads.
+    var isActiveSectionVisible = allItems.some(function(item) {
+      return item.id === activeSection && item.visible;
+    });
+    if (!isActiveSectionVisible) {
+      activeSection = 'dashboard';
+      applicantPortalState.activeSection = 'dashboard';
+    }
+
+    var navItems = allItems.filter(function(item) { return item.visible; });
 
     var activeLabel = 'Menu';
     for (var k = 0; k < navItems.length; k++) {
@@ -7078,10 +7103,11 @@ function submitPasswordResetRequest(event) {
   // ─── END NMP.6 ───────────────────────────────────────────────
 
   function getApplicantStatusBadgeColor(status) {
-    if (status === 'activated') return '#2E7D32';
-    if (status === 'rejected') return '#C62828';
-    if (status === 'approved_pending_payment' || status === 'payment_submitted') return '#1565C0';
-    return '#E65100';
+    if (status === 'activated')                                                   return '#2E7D32'; // green
+    if (status === 'rejected')                                                    return '#C62828'; // red
+    if (status === 'approved_pending_payment' || status === 'payment_submitted')  return '#1565C0'; // blue
+    if (status === 'inactive')                                                    return '#6A1B9A'; // purple
+    return '#E65100'; // amber — in-progress application
   }
 
   function formatApplicantStatusLabel(status) {
@@ -7090,23 +7116,26 @@ function submitPasswordResetRequest(event) {
 
   function getApplicantStatusMessage(status) {
     var messages = {
-      awaiting_docs: 'Upload required identity documents for each listed household member.',
-      docs_confirmed: 'Documents received. Your application is in review.',
-      board_initial_review: 'Application is currently in board review.',
-      rso_review: 'Application is in RSO review.',
-      board_final_review: 'Application is in final board review.',
-      approved_pending_payment: 'Application approved. Submit your payment verification to proceed.',
-      payment_submitted: 'Payment submitted. Treasurer verification is in progress.',
-      activated: 'Membership activated. You now have full portal access.'
+      awaiting_docs:             'Upload required identity documents for each listed household member.',
+      docs_confirmed:            'Documents received. Your application is in review.',
+      under_review:              'Your application is currently under review by the board.',
+      board_initial_review:      'Application is currently in board review.',
+      rso_review:                'Application is in RSO review.',
+      board_final_review:        'Application is in final board review.',
+      approved_pending_payment:  'Application approved. Submit your payment verification to proceed.',
+      payment_submitted:         'Payment submitted. Treasurer verification is in progress.',
+      activated:                 'Membership activated. You now have full portal access.',
+      inactive:                  'Your membership has lapsed. Submit your annual dues payment to renew your membership.'
     };
     return messages[status] || 'Membership application in progress.';
   }
 
   function getApplicantActionMessage(status) {
-    if (status === 'awaiting_docs') return 'Next step: upload all required documents, then confirm.';
-    if (status === 'approved_pending_payment') return 'Next step: submit payment verification details.';
-    if (status === 'payment_submitted') return 'Next step: wait for treasurer verification.';
-    return 'No immediate action required. We will email you for next steps.';
+    if (status === 'awaiting_docs')            return 'Next step: upload all required documents, then confirm.';
+    if (status === 'approved_pending_payment') return 'Next step: submit your payment verification details.';
+    if (status === 'payment_submitted')        return 'Next step: wait for Treasurer to verify your payment (1–2 business days).';
+    if (status === 'inactive')                 return 'Next step: go to Payment Verification and submit your annual dues.';
+    return 'No immediate action required. We will email you when the next step is ready.';
   }
 
   function _calculateAge(dateOfBirth) {

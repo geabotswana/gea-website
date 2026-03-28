@@ -849,12 +849,12 @@ var HOUSEHOLD_PHONE_SYNC_MINUTE = 0;      // Runs at :00 minutes past the hour
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.1.0";
+var SYSTEM_VERSION          = "2.1.1";
 var SYSTEM_BUILD_DATE       = "2026-03-28";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "RES.5.5: Interactive reservation calendar (month/week/day) in member and admin portals";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-28 20:40:04";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "NMP.1: Non-member portal nav conditional visibility + inactive/under_review status messages";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-28 20:57:03";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

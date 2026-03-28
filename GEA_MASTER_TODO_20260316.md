@@ -2,7 +2,7 @@
 
 **Current Date:** March 28, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 28, 2026 — RES.2.7 ✅ COMPLETE (verified). RES.5.5 ✅ COMPLETE (interactive calendar, member + admin portals). All core reservations features (RES.2–5) now complete. Remaining open work: NMP.9 (non-member portal testing), NMP.1 (partial — applicant routing), RES-PREP.3 (partial — some email templates still missing), RES.6.1–6.2 (household member invites). Post-launch items unchanged (PHASE-7.x, membership renewal, payment plans).
+**Status:** Mar 28, 2026 — RES.2.7 ✅ COMPLETE (verified). RES.5.5 ✅ COMPLETE (interactive calendar). NMP.1 ✅ COMPLETE (routing + nav visibility matrix). All core reservations features (RES.2–5) and non-member portal (NMP.1–8) now complete. Remaining open work: NMP.9 (non-member portal testing), RES-PREP.3 (partial — some email templates missing), RES.6.1–6.2 (household member invites). Post-launch items unchanged.
 
 ---
 
@@ -124,7 +124,7 @@ These items unblock critical testing paths and should be done first among active
 - Route accordingly: `if (active) showMemberPortal() else showNonMemberPortal()`
 - Reuse existing authentication (users already logged in)
 
-**Status:** 🟡 PARTIAL — applicant routing exists (`is_applicant` flow), but dedicated non-member portal routing/spec parity still pending
+**Status:** ✅ COMPLETE (Mar 28, 2026) — Routing fully implemented. Backend (`AuthService.js`): denied/withdrawn applicants blocked from login; `household.active = false` OR non-activated `application_status` → `is_applicant: true` in login response. Frontend (`Portal.html`): `resolveApplicantPortalMode()` reads `is_applicant` from login payload (fast path), sessionStorage cache (reload path), and `application_status` probe (first-load fallback). Routes `is_applicant=true` → `loadApplicantPortal()`, else → `loadDashboard()`. Nav conditional visibility matrix implemented in `buildApplicantNav()`: Payment Verification only shown for `approved_pending_payment`, `payment_submitted`, `inactive`; Application Status and Documents hidden for `inactive` (lapsed member) since they have no active application. Status/action messages added for `inactive` and `under_review` states.
 
 **Prerequisite:** NMP.0 (spec review)
 
@@ -469,7 +469,7 @@ Each Q&A is collapsible (click to expand)
 - 6 statuses × 5 sections = 30 visibility rules
 - See GEA_NonMemberPortal_Specification.md Section 8
 
-**Status:** 🟢 COMPLETE (Mar 19, 2026) — Responsive layout implemented: hamburger toggle nav (desktop pill row → tablet/mobile collapsible drawer with aria-expanded/aria-current), 2-column dashboard card grid (→ 1-column at ≤768px), max-width container, edge-to-edge cards at ≤480px. All buttons ≥44px. ARIA roles on nav element.
+**Status:** ✅ COMPLETE (Mar 19 + Mar 28, 2026) — Responsive layout implemented: hamburger toggle nav (desktop pill row → tablet/mobile collapsible drawer with aria-expanded/aria-current), 2-column dashboard card grid (→ 1-column at ≤768px), max-width container, edge-to-edge cards at ≤480px. All buttons ≥44px. ARIA roles on nav element. Conditional visibility matrix (the "30 visibility rules") completed Mar 28: Payment Verification nav item gated to `approved_pending_payment`/`payment_submitted`/`inactive`; Application Status and Documents hidden for `inactive` (lapsed members with no application); all other items always visible.
 
 **Prerequisite:** NMP.1-NMP.7 (all content pages)
 
@@ -1696,13 +1696,12 @@ These items are planned but not required for initial launch.
 **Session Priority (Recommended Order — updated Mar 28, 2026):**
 
 1. **NMP.9** — End-to-end testing of the non-member portal across all 6 applicant status paths. Prerequisite for marking the full non-member portal production-ready.
-2. **NMP.1** — Finish the dedicated non-member portal routing (spec parity). Currently partial — applicant `is_applicant` flow exists but full spec routing not complete.
-3. **RES-PREP.3** — Create remaining email templates that are still missing (management approved/denied, guest-list submitted to member, approval reminders — see partial status note in RES-PREP.3 above).
-4. **RES.6.1** — Household member email selection for calendar invites (prerequisites all met).
-5. **RES.6.2** — Invite other GEA members to events (depends on RES.6.1).
+2. **RES-PREP.3** — Create remaining email templates that are still missing (management approved/denied, guest-list submitted to member, approval reminders — see partial status note in RES-PREP.3 above).
+3. **RES.6.1** — Household member email selection for calendar invites (prerequisites all met).
+4. **RES.6.2** — Invite other GEA members to events (depends on RES.6.1).
 
 **Already complete (no action needed):**
-- All of D.0, NMP.2-8, AP.0-3, RES-PREP.1-2-4, RES.2.1-2.7, RES.3.1-3.3, RES.4.1-4.3, RES.5.1-5.5, SUP.1-4
+- All of D.0, NMP.1-8, AP.0-3, RES-PREP.1-2-4, RES.2.1-2.7, RES.3.1-3.3, RES.4.1-4.3, RES.5.1-5.5, SUP.1-4
 
 ---
 

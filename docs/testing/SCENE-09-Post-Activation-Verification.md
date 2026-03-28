@@ -119,12 +119,15 @@
 
 **Check:**
 - Reservations page loads without error
+- **List / Calendar toggle buttons visible** at the top of the page (List button active by default)
 - "Book a Facility" form or button visible
 - Facility options shown (Tennis/Basketball, Leobo, Gym, Playground)
 - No existing reservations (list is empty — correct for a new member)
 - Household usage stats show 0 hours used this week (Tennis), 0 reservations this month (Leobo)
+- Clicking "Calendar" toggle switches to month-grid view; clicking "List" switches back
+- Color-coded legend visible in calendar view (Tennis = blue, Leobo = purple)
 
-**Fail if:** Reservations page shows an error, or facility booking options are missing
+**Fail if:** Reservations page shows an error, facility booking options are missing, or List/Calendar toggle is absent
 
 ---
 

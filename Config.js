@@ -295,7 +295,9 @@ var LEOBO_MAX_HOURS             = 6;      // Max hours per leobo reservation
 var LEOBO_BUMP_WINDOW_DAYS      = 5;      // Business days before event: can be bumped
 
 // Guest list
-var GUEST_LIST_DEADLINE_DAYS    = 3;      // Business days before event for RSO notice
+var GUEST_LIST_DEADLINE_DAYS              = 4;  // Business days before event for RSO notice (matches Config sheet)
+var GUEST_LIST_FINAL_CALL_DAYS_BEFORE_DEADLINE = 1; // Days before deadline to send final-call reminder
+var RSO_APPROVAL_DEADLINE_DAYS            = 5;  // Business days RSO has to review a guest list
 
 // Board approval
 var BOARD_APPROVAL_HOURS        = 24;     // Expected turnaround for board approval (hours)
@@ -311,19 +313,30 @@ var STATUS_COMPLETED    = "Completed";    // Event date has passed
 var STATUS_WAITLISTED   = "Waitlisted";   // On waitlist for a taken slot
 
 // Facilities (must match facility column in Reservations tab)
-var FACILITY_TENNIS     = "Tennis Court";
-var FACILITY_LEOBO      = "Leobo";
+var FACILITY_TENNIS       = "Tennis Court";
+var FACILITY_LEOBO        = "Leobo";
+var FACILITY_PLAYGROUND   = "Playground";   // Walk-up only, no reservations
+var FACILITY_GYM          = "Fitness Center"; // Walk-up only, no reservations
 
 // All valid facility names (used for input validation)
 var ALL_FACILITIES = [
   FACILITY_TENNIS,
-  FACILITY_LEOBO
+  FACILITY_LEOBO,
+  FACILITY_PLAYGROUND,
+  FACILITY_GYM
 ];
 
 // Facilities that require board/MGT approval
 var FACILITIES_REQUIRING_APPROVAL = [
   FACILITY_LEOBO
 ];
+
+// Google Calendar event color IDs for reservation status
+// See: https://developers.google.com/apps-script/reference/calendar/event-color
+var CALENDAR_COLOR_PENDING  = CalendarApp.EventColor.YELLOW;  // Pending approval
+var CALENDAR_COLOR_APPROVED = CalendarApp.EventColor.GREEN;   // Approved / confirmed
+var CALENDAR_COLOR_DENIED   = CalendarApp.EventColor.RED;     // Denied
+var CALENDAR_COLOR_TENTATIVE = CalendarApp.EventColor.CYAN;   // Tentative (excess, bump window)
 
 
 // ============================================================
@@ -478,13 +491,15 @@ var RENEWAL_REMINDER_DAYS_2     = 7;     // Second reminder: 7 days before expir
 // RSO daily summary
 var RSO_SUMMARY_HOUR            = 6;     // Hour to send daily summary (6 = 6:00 AM)
 var RSO_SUMMARY_TIMEZONE        = "Africa/Gaborone";
+var REMINDER_TIME_MORNING       = 6;     // Hour (GMT+2) for morning approval reminder runs (matches rso_summary_hour)
 
 // Holiday calendar reminder
 var HOLIDAY_REMINDER_MONTH      = 11;    // Month to send reminder (11 = November)
 var HOLIDAY_REMINDER_DAY        = 1;     // Day of month to send reminder
 
 // Waitlist slot hold time
-var WAITLIST_HOLD_HOURS         = 24;    // Hours to hold a slot for waitlisted member
+var WAITLIST_HOLD_HOURS             = 24;    // Hours to hold a slot for waitlisted member
+var WAITLIST_AUTO_PROMOTION_ENABLED = true;  // Auto-promote waitlisted bookings when slot opens
 
 // Birthday notifications
 var BIRTHDAY_CHECK_HOUR         = 7;     // Hour to send birthday emails (7 = 7:00 AM)
@@ -834,12 +849,12 @@ var HOUSEHOLD_PHONE_SYNC_MINUTE = 0;      // Runs at :00 minutes past the hour
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.0.7";
-var SYSTEM_BUILD_DATE       = "2026-03-27";
+var SYSTEM_VERSION          = "2.0.8";
+var SYSTEM_BUILD_DATE       = "2026-03-28";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix forgot-password crash: in-flight guard + service account token caching";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-27 15:58:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "RES-PREP.2: Add missing reservation constants; fix guest list deadline (3->4 days)";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-28 18:27:17";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

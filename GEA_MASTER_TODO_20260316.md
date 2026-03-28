@@ -1,8 +1,8 @@
 # GEA Management System — Master To-Do List
 
-**Current Date:** March 20, 2026
+**Current Date:** March 28, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 20, 2026 — NMP.4 ✅ COMPLETE. NMP.6-8 ✅ COMPLETE. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE. RES.4 ✅ COMPLETE. RES.5.1-5.4 ✅ COMPLETE. SUP.1-4 ✅ COMPLETE. All 63 email templates verified. Comprehensive test suite updated (63 semantic names, reservation workflow, waitlist, guest list, monthly reports, email resend, admin handler tests). Schema fully aligned. xlsx snapshots removed from repo.
+**Status:** Mar 28, 2026 — RES.2.7 ✅ COMPLETE (verified). RES.5.5 ✅ COMPLETE (interactive calendar, member + admin portals). All core reservations features (RES.2–5) now complete. Remaining open work: NMP.9 (non-member portal testing), NMP.1 (partial — applicant routing), RES-PREP.3 (partial — some email templates still missing), RES.6.1–6.2 (household member invites). Post-launch items unchanged (PHASE-7.x, membership renewal, payment plans).
 
 ---
 
@@ -1693,22 +1693,16 @@ These items are planned but not required for initial launch.
 
 ## QUICK START FOR CLAUDE CODE
 
-**Session Priority (Recommended Order):**
+**Session Priority (Recommended Order — updated Mar 28, 2026):**
 
-1. **First:** Run D.0 (Discovery Task) to assess actual completion status
-2. **Immediate:** Complete PRIORITY-1 (Non-Member Portal, phases NMP.0-NMP.9)
-3. **Next:** Complete PRIORITY-2 (Admin Portal Polish, phases AP.0-AP.3)
-4. **Then:** Complete RES.PREP (Prep tasks for reservations system)
-5. **Then:** Build Reservations System (RES.2-6 backend, RES.3-4 guest lists, RES.5+ frontend)
-6. **Finally:** Support features (SUP.1+) and future enhancements
+1. **NMP.9** — End-to-end testing of the non-member portal across all 6 applicant status paths. Prerequisite for marking the full non-member portal production-ready.
+2. **NMP.1** — Finish the dedicated non-member portal routing (spec parity). Currently partial — applicant `is_applicant` flow exists but full spec routing not complete.
+3. **RES-PREP.3** — Create remaining email templates that are still missing (management approved/denied, guest-list submitted to member, approval reminders — see partial status note in RES-PREP.3 above).
+4. **RES.6.1** — Household member email selection for calendar invites (prerequisites all met).
+5. **RES.6.2** — Invite other GEA members to events (depends on RES.6.1).
 
-**Rationale:**
-- Discovery confirms what's actually done
-- Non-member portal unblocks testing of membership application
-- Admin portal polish improves usability
-- Reservations prep ensures schema/config/templates are ready
-- Reservations system is large and depends on all prep being complete
-- Support features are maintenance, can come after core features
+**Already complete (no action needed):**
+- All of D.0, NMP.2-8, AP.0-3, RES-PREP.1-2-4, RES.2.1-2.7, RES.3.1-3.3, RES.4.1-4.3, RES.5.1-5.5, SUP.1-4
 
 ---
 
@@ -1722,6 +1716,6 @@ These items are planned but not required for initial launch.
 
 ---
 
-**Last Updated:** March 16, 2026  
-**Status:** Discovery executed Mar 16, 2026; this document now updated with current implementation realities and remaining gaps  
+**Last Updated:** March 28, 2026
+**Status:** RES.2.7 verified complete; RES.5.5 (interactive calendar) implemented in member and admin portals. All core reservation and support features done. Open: NMP.9 testing, NMP.1 routing (partial), RES-PREP.3 templates (partial), RES.6.1–6.2 (household/member invites). Post-launch items deferred.
 **Contact:** Michael Raney (Treasurer)

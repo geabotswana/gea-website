@@ -778,7 +778,7 @@ Each Q&A is collapsible (click to expand)
 
 **Action:** Create/review Config.gs, add all constants, document their purpose
 
-**Status:** 🟡 PARTIAL — many reservation constants already exist in `Config.js`; some spec-specific constants/names still need reconciliation
+**Status:** ✅ COMPLETE (2026-03-28) — Full reconciliation done. Fixed `GUEST_LIST_DEADLINE_DAYS` 3→4 to match Configuration sheet. Added 8 missing constants: `FACILITY_PLAYGROUND` ("Playground"), `FACILITY_GYM` ("Fitness Center"), `RSO_APPROVAL_DEADLINE_DAYS` (5), `GUEST_LIST_FINAL_CALL_DAYS_BEFORE_DEADLINE` (1), `WAITLIST_AUTO_PROMOTION_ENABLED` (true), `REMINDER_TIME_MORNING` (6), `CALENDAR_COLOR_PENDING/APPROVED/DENIED/TENTATIVE` (CalendarApp.EventColor). Both walk-up facilities added to `ALL_FACILITIES` array. Also identified that `guest_list_deadline_days` and `guest_list_deadline_business_days` were duplicate sheet keys — removed the former; codebase uses only the `GUEST_LIST_DEADLINE_DAYS` constant (not a runtime sheet lookup). Configuration sheet cleaned of 3 duplicate rows. `docs/config/Configuration.csv` added to repo as read-only snapshot, updated nightly via `.github/workflows/export-configuration.yml`. Version bumped to 2.0.8.
 
 **Prerequisite:** RES-PREP.1 (schema verified)
 

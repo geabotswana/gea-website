@@ -2027,12 +2027,37 @@
         </div>
         
         <!-- Your Reservations -->
-        <h2 class="section-heading">Your Reservations</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+          <h2 class="section-heading" style="margin:0;">Your Reservations</h2>
+          <div style="display:flex; gap:4px;">
+            <button id="resViewListBtn"  class="btn btn-primary  btn-small" onclick="switchResView('list')">List</button>
+            <button id="resViewCalBtn"   class="btn btn-secondary btn-small" onclick="switchResView('calendar')">Calendar</button>
+          </div>
+        </div>
+
+        <!-- List view (default) -->
         <div id="reservationsList" class="card">
           <div class="empty-state">
             <div class="empty-state-icon">📋</div>
             <div class="empty-state-text">No reservations yet</div>
           </div>
+        </div>
+
+        <!-- Calendar view (hidden by default) -->
+        <div id="reservationsCalView" style="display:none;">
+          <!-- Month navigation -->
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-small" onclick="resPortalCalPrev()">&#8249; Prev</button>
+            <span id="resPortalCalLabel" style="font-weight:600; font-size:15px; min-width:120px; text-align:center;"></span>
+            <button class="btn btn-secondary btn-small" onclick="resPortalCalNext()">Next &#8250;</button>
+          </div>
+          <!-- Legend -->
+          <div style="display:flex; gap:12px; flex-wrap:wrap; font-size:12px; margin-bottom:10px; align-items:center;">
+            <span><span style="display:inline-block;width:10px;height:10px;background:#1565c0;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Tennis Court</span>
+            <span><span style="display:inline-block;width:10px;height:10px;background:#6a1b9a;border-radius:2px;margin-right:3px;vertical-align:middle;"></span>Leobo</span>
+            <span style="color:#999;">faded = Pending &nbsp; full = Confirmed</span>
+          </div>
+          <div id="resPortalCalGrid"></div>
         </div>
 
         <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
@@ -7368,6 +7393,11 @@ function submitPasswordResetRequest(event) {
       }
       
       var reservations = res.data.reservations || [];
+      // Cache for calendar view
+      _portalCalReservations = reservations;
+      // If calendar view is currently active, re-render it
+      var calEl = document.getElementById('reservationsCalView');
+      if (calEl && calEl.style.display !== 'none') { _renderPortalCalendar(); }
       var container = document.getElementById('reservationsList');
       container.innerHTML = '';
 
@@ -7556,6 +7586,161 @@ function submitPasswordResetRequest(event) {
     });
   }
   
+  // ============================================================
+  // RES.5.5 — MEMBER CALENDAR VIEW
+  // ============================================================
+
+  // Cached reservations data and calendar state
+  var _portalCalReservations = [];
+  var _portalCalYear  = new Date().getFullYear();
+  var _portalCalMonth = new Date().getMonth();  // 0-indexed
+
+  /**
+   * Switches between list view and calendar view in the Reservations page.
+   * @param {string} view 'list' or 'calendar'
+   */
+  function switchResView(view) {
+    var listEl  = document.getElementById('reservationsList');
+    var calEl   = document.getElementById('reservationsCalView');
+    var listBtn = document.getElementById('resViewListBtn');
+    var calBtn  = document.getElementById('resViewCalBtn');
+
+    if (view === 'calendar') {
+      listEl.style.display = 'none';
+      calEl.style.display  = '';
+      listBtn.className = 'btn btn-secondary btn-small';
+      calBtn.className  = 'btn btn-primary  btn-small';
+      _renderPortalCalendar();
+    } else {
+      listEl.style.display = '';
+      calEl.style.display  = 'none';
+      listBtn.className = 'btn btn-primary  btn-small';
+      calBtn.className  = 'btn btn-secondary btn-small';
+    }
+  }
+
+  /** Advance the member calendar one month. */
+  function resPortalCalNext() {
+    _portalCalMonth += 1;
+    if (_portalCalMonth > 11) { _portalCalMonth = 0; _portalCalYear += 1; }
+    _renderPortalCalendar();
+  }
+
+  /** Go back the member calendar one month. */
+  function resPortalCalPrev() {
+    _portalCalMonth -= 1;
+    if (_portalCalMonth < 0) { _portalCalMonth = 11; _portalCalYear -= 1; }
+    _renderPortalCalendar();
+  }
+
+  /**
+   * Renders a month-grid calendar from _portalCalReservations into #resPortalCalGrid.
+   * Called after loadReservations populates the cache, and on month navigation.
+   */
+  function _renderPortalCalendar() {
+    var label = document.getElementById('resPortalCalLabel');
+    if (label) {
+      label.textContent = new Date(_portalCalYear, _portalCalMonth, 1)
+        .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    var grid = document.getElementById('resPortalCalGrid');
+    if (!grid) return;
+    while (grid.firstChild) grid.removeChild(grid.firstChild);
+
+    // Index events by YYYY-MM-DD for the selected month
+    var byDate = {};
+    _portalCalReservations.forEach(function(res) {
+      var rawDate = res.reservation_date || res.event_date;
+      if (!rawDate) return;
+      var d = new Date(rawDate);
+      if (isNaN(d.getTime())) return;
+      if (d.getFullYear() !== _portalCalYear || d.getMonth() !== _portalCalMonth) return;
+      var key = d.getFullYear() + '-'
+              + String(d.getMonth() + 1).padStart(2, '0') + '-'
+              + String(d.getDate()).padStart(2, '0');
+      if (!byDate[key]) byDate[key] = [];
+      byDate[key].push(res);
+    });
+
+    var firstDay    = new Date(_portalCalYear, _portalCalMonth, 1).getDay();
+    var daysInMonth = new Date(_portalCalYear, _portalCalMonth + 1, 0).getDate();
+    var today = new Date();
+    var todayKey = today.getFullYear() + '-'
+                 + String(today.getMonth() + 1).padStart(2, '0') + '-'
+                 + String(today.getDate()).padStart(2, '0');
+
+    var calGrid = document.createElement('div');
+    calGrid.style.cssText = 'display:grid; grid-template-columns:repeat(7,1fr); gap:1px;'
+                          + ' background:#ddd; border:1px solid #ddd; border-radius:6px; overflow:hidden;';
+
+    // Day-of-week headers
+    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(function(day) {
+      var hdr = document.createElement('div');
+      hdr.style.cssText = 'background:#f3f3f3; padding:6px; text-align:center;'
+                        + ' font-size:11px; font-weight:700; color:#555; text-transform:uppercase;';
+      hdr.textContent = day;
+      calGrid.appendChild(hdr);
+    });
+
+    // Blank prefix cells
+    for (var b = 0; b < firstDay; b++) {
+      var blank = document.createElement('div');
+      blank.style.cssText = 'background:#fafafa; min-height:70px;';
+      calGrid.appendChild(blank);
+    }
+
+    // Day cells
+    for (var day = 1; day <= daysInMonth; day++) {
+      var dateKey = _portalCalYear + '-'
+                  + String(_portalCalMonth + 1).padStart(2, '0') + '-'
+                  + String(day).padStart(2, '0');
+
+      var cell = document.createElement('div');
+      cell.style.cssText = 'background:#fff; min-height:70px; padding:4px; vertical-align:top;'
+                         + (dateKey === todayKey ? ' outline:2px solid #1976d2;' : '');
+
+      var dayNum = document.createElement('div');
+      dayNum.style.cssText = 'font-size:11px; font-weight:600; color:#333; margin-bottom:3px;'
+                            + (dateKey === todayKey ? ' color:#1976d2;' : '');
+      dayNum.textContent = day;
+      cell.appendChild(dayNum);
+
+      var dayEvents = byDate[dateKey] || [];
+      dayEvents.forEach(function(res) {
+        var status = res.status || 'Pending';
+        var isFaded = status === 'Pending' || status === 'Waitlisted';
+        var isCancelled = status === 'Cancelled' || status === 'Completed';
+
+        var facility = res.facility || '';
+        var bgColor = facility.indexOf('Tennis') !== -1 || facility.indexOf('Basketball') !== -1
+                    ? '#1565c0'
+                    : facility === 'Leobo'
+                    ? '#6a1b9a'
+                    : '#e65100';
+
+        var pill = document.createElement('div');
+        pill.style.cssText = 'border-radius:3px; padding:2px 5px; margin-bottom:2px; font-size:10px;'
+                           + ' font-weight:500; color:#fff; overflow:hidden; text-overflow:ellipsis;'
+                           + ' white-space:nowrap; background:' + bgColor + ';'
+                           + (isFaded    ? ' opacity:0.55;' : '')
+                           + (isCancelled ? ' text-decoration:line-through; opacity:0.4;' : '');
+
+        var facShort = facility.indexOf('Tennis') !== -1 ? 'TC' : facility === 'Leobo' ? 'LB' : facility.substring(0, 2);
+        var pillText = document.createElement('span');
+        pillText.textContent = facShort + (res.event_name ? ' · ' + res.event_name : '');
+        pill.appendChild(pillText);
+
+        pill.title = [facility, res.event_name || '', 'Status: ' + status].filter(Boolean).join(' | ');
+        cell.appendChild(pill);
+      });
+
+      calGrid.appendChild(cell);
+    }
+
+    grid.appendChild(calGrid);
+  }
+
   /**
    * Submits a new reservation request.
    */

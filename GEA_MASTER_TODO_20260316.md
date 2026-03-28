@@ -1076,7 +1076,7 @@ submitted
 - Send reminder email to each approver
 - Log audit entries
 
-**Status:** 🟡 PARTIAL (Mar 19, 2026) — `processBumpWindowExpirations()` exists (promotes TENTATIVE→CONFIRMED when bump window passes). Daily approval reminders not yet implemented (deferred: needs `RES_APPROVAL_REMINDER_TO_BOARD` template and approval reminder function).
+**Status:** ✅ COMPLETE (Mar 28, 2026) — `sendReservationApprovalReminders()` in ReservationService.js (line 951) queries all STATUS_PENDING reservations and sends `RES_APPROVAL_REMINDER_TO_BOARD` digest to EMAIL_BOARD with PENDING_COUNT / PENDING_LIST / ADMIN_PORTAL_URL placeholders. Hooked into `runNightlyTasks()` as step 9. State machine: STATUS_PENDING is the single pending state; Leobo two-stage path (MGT → Board) tracked via `mgt_approved_by` field rather than separate status values. Template exists in Email_Templates_Sheet.csv and docs/email_templates/reservations/. All placeholders verified consistent.
 
 **Prerequisite:** RES.2.6 (approval interface)
 
@@ -1432,7 +1432,7 @@ submitted
 
 **Complexity:** Very High (calendar library integration, data sync)
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 28, 2026) — Interactive calendar implemented in both portals. Admin (board/mgt): new "Reservation Calendar" sidebar page with month/week/day views, color coding (Tennis=blue, Leobo=purple), facility and status filters, print button, and click-to-detail via existing `resDetailModal`. New `admin_calendar` backend route and `getAllReservationsForCalendar()` in ReservationService.js. Member portal: List/Calendar toggle on Reservations page; month-grid calendar from cached reservation data; faded=pending, strikethrough=cancelled.
 
 **Prerequisite:** RES.2-5 (all reservation features)
 

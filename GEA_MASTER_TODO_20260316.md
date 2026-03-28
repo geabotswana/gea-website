@@ -1,8 +1,8 @@
 # GEA Management System — Master To-Do List
 
-**Current Date:** March 20, 2026
+**Current Date:** March 28, 2026
 **Owner:** Michael Raney (Treasurer)
-**Status:** Mar 20, 2026 — NMP.4 ✅ COMPLETE. NMP.6-8 ✅ COMPLETE. RES.2 ✅ COMPLETE. RES.3 ✅ COMPLETE. RES.4 ✅ COMPLETE. RES.5.1-5.4 ✅ COMPLETE. SUP.1-4 ✅ COMPLETE. All 63 email templates verified. Comprehensive test suite updated (63 semantic names, reservation workflow, waitlist, guest list, monthly reports, email resend, admin handler tests). Schema fully aligned. xlsx snapshots removed from repo.
+**Status:** Mar 28, 2026 — RES.2.7 ✅ COMPLETE (verified). RES.5.5 ✅ COMPLETE (interactive calendar). NMP.1 ✅ COMPLETE (routing + nav visibility + lapsed status fix v2.1.2). All core reservations features (RES.2–5) and non-member portal (NMP.1–8) now complete. Remaining open work: NMP.9 (non-member portal testing), RES-PREP.3 (partial — some email templates missing), RES.6.1–6.2 (household member invites). Post-launch items unchanged.
 
 ---
 
@@ -124,7 +124,7 @@ These items unblock critical testing paths and should be done first among active
 - Route accordingly: `if (active) showMemberPortal() else showNonMemberPortal()`
 - Reuse existing authentication (users already logged in)
 
-**Status:** 🟡 PARTIAL — applicant routing exists (`is_applicant` flow), but dedicated non-member portal routing/spec parity still pending
+**Status:** ✅ COMPLETE (Mar 28, 2026) — Routing fully implemented. Backend (`AuthService.js`): denied/withdrawn applicants blocked from login; `household.active = false` OR non-activated `application_status` → `is_applicant: true` in login response. Frontend (`Portal.html`): `resolveApplicantPortalMode()` reads `is_applicant` from login payload (fast path), sessionStorage cache (reload path), and `application_status` probe (first-load fallback). Routes `is_applicant=true` → `loadApplicantPortal()`, else → `loadDashboard()`. Nav conditional visibility matrix implemented in `buildApplicantNav()`: Payment Verification only shown for `approved_pending_payment`, `payment_submitted`, `lapsed`; Application Status and Documents hidden for `lapsed` (lapsed member) since they have no active application. Status/action messages added for `lapsed` and `under_review` states. Backend fix (v2.1.2): `checkExpiringMemberships()` now writes `application_status = "Lapsed"` alongside `active = false` at expiry, so lapsed members receive the unambiguous `"Lapsed"` status string rather than the stale `"Approved"` value from initial activation.
 
 **Prerequisite:** NMP.0 (spec review)
 
@@ -469,7 +469,7 @@ Each Q&A is collapsible (click to expand)
 - 6 statuses × 5 sections = 30 visibility rules
 - See GEA_NonMemberPortal_Specification.md Section 8
 
-**Status:** 🟢 COMPLETE (Mar 19, 2026) — Responsive layout implemented: hamburger toggle nav (desktop pill row → tablet/mobile collapsible drawer with aria-expanded/aria-current), 2-column dashboard card grid (→ 1-column at ≤768px), max-width container, edge-to-edge cards at ≤480px. All buttons ≥44px. ARIA roles on nav element.
+**Status:** ✅ COMPLETE (Mar 19 + Mar 28, 2026) — Responsive layout implemented: hamburger toggle nav (desktop pill row → tablet/mobile collapsible drawer with aria-expanded/aria-current), 2-column dashboard card grid (→ 1-column at ≤768px), max-width container, edge-to-edge cards at ≤480px. All buttons ≥44px. ARIA roles on nav element. Conditional visibility matrix (the "30 visibility rules") completed Mar 28: Payment Verification nav item gated to `approved_pending_payment`/`payment_submitted`/`inactive`; Application Status and Documents hidden for `inactive` (lapsed members with no application); all other items always visible.
 
 **Prerequisite:** NMP.1-NMP.7 (all content pages)
 
@@ -1076,7 +1076,7 @@ submitted
 - Send reminder email to each approver
 - Log audit entries
 
-**Status:** 🟡 PARTIAL (Mar 19, 2026) — `processBumpWindowExpirations()` exists (promotes TENTATIVE→CONFIRMED when bump window passes). Daily approval reminders not yet implemented (deferred: needs `RES_APPROVAL_REMINDER_TO_BOARD` template and approval reminder function).
+**Status:** ✅ COMPLETE (Mar 28, 2026) — `sendReservationApprovalReminders()` in ReservationService.js (line 951) queries all STATUS_PENDING reservations and sends `RES_APPROVAL_REMINDER_TO_BOARD` digest to EMAIL_BOARD with PENDING_COUNT / PENDING_LIST / ADMIN_PORTAL_URL placeholders. Hooked into `runNightlyTasks()` as step 9. State machine: STATUS_PENDING is the single pending state; Leobo two-stage path (MGT → Board) tracked via `mgt_approved_by` field rather than separate status values. Template exists in Email_Templates_Sheet.csv and docs/email_templates/reservations/. All placeholders verified consistent.
 
 **Prerequisite:** RES.2.6 (approval interface)
 
@@ -1432,7 +1432,7 @@ submitted
 
 **Complexity:** Very High (calendar library integration, data sync)
 
-**Status:** 🟡 TODO
+**Status:** ✅ COMPLETE (Mar 28, 2026) — Interactive calendar implemented in both portals. Admin (board/mgt): new "Reservation Calendar" sidebar page with month/week/day views, color coding (Tennis=blue, Leobo=purple), facility and status filters, print button, and click-to-detail via existing `resDetailModal`. New `admin_calendar` backend route and `getAllReservationsForCalendar()` in ReservationService.js. Member portal: List/Calendar toggle on Reservations page; month-grid calendar from cached reservation data; faded=pending, strikethrough=cancelled.
 
 **Prerequisite:** RES.2-5 (all reservation features)
 
@@ -1693,22 +1693,15 @@ These items are planned but not required for initial launch.
 
 ## QUICK START FOR CLAUDE CODE
 
-**Session Priority (Recommended Order):**
+**Session Priority (Recommended Order — updated Mar 28, 2026):**
 
-1. **First:** Run D.0 (Discovery Task) to assess actual completion status
-2. **Immediate:** Complete PRIORITY-1 (Non-Member Portal, phases NMP.0-NMP.9)
-3. **Next:** Complete PRIORITY-2 (Admin Portal Polish, phases AP.0-AP.3)
-4. **Then:** Complete RES.PREP (Prep tasks for reservations system)
-5. **Then:** Build Reservations System (RES.2-6 backend, RES.3-4 guest lists, RES.5+ frontend)
-6. **Finally:** Support features (SUP.1+) and future enhancements
+1. **NMP.9** — End-to-end testing of the non-member portal across all 6 applicant status paths. Prerequisite for marking the full non-member portal production-ready.
+2. **RES-PREP.3** — Create remaining email templates that are still missing (management approved/denied, guest-list submitted to member, approval reminders — see partial status note in RES-PREP.3 above).
+3. **RES.6.1** — Household member email selection for calendar invites (prerequisites all met).
+4. **RES.6.2** — Invite other GEA members to events (depends on RES.6.1).
 
-**Rationale:**
-- Discovery confirms what's actually done
-- Non-member portal unblocks testing of membership application
-- Admin portal polish improves usability
-- Reservations prep ensures schema/config/templates are ready
-- Reservations system is large and depends on all prep being complete
-- Support features are maintenance, can come after core features
+**Already complete (no action needed):**
+- All of D.0, NMP.1-8, AP.0-3, RES-PREP.1-2-4, RES.2.1-2.7, RES.3.1-3.3, RES.4.1-4.3, RES.5.1-5.5, SUP.1-4
 
 ---
 
@@ -1722,6 +1715,6 @@ These items are planned but not required for initial launch.
 
 ---
 
-**Last Updated:** March 16, 2026  
-**Status:** Discovery executed Mar 16, 2026; this document now updated with current implementation realities and remaining gaps  
+**Last Updated:** March 28, 2026
+**Status:** RES.2.7 verified complete; RES.5.5 (interactive calendar) implemented in member and admin portals. All core reservation and support features done. Open: NMP.9 testing, NMP.1 routing (partial), RES-PREP.3 templates (partial), RES.6.1–6.2 (household/member invites). Post-launch items deferred.
 **Contact:** Michael Raney (Treasurer)

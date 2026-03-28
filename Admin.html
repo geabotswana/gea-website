@@ -1332,6 +1332,10 @@
         <span>Waitlist</span>
         <span id="waitlist-badge" class="badge" style="display:none;">0</span>
       </div>
+      <div class="nav-item" data-page="res-calendar" onclick="showPage('res-calendar', event)">
+        <span class="nav-icon">📅</span>
+        <span>Reservation Calendar</span>
+      </div>
       <div class="nav-item" data-page="members" onclick="showPage('members', event)">
         <span class="nav-icon">👥</span>
         <span>Members</span>
@@ -1784,6 +1788,62 @@
     </div>
   </div>
 </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: RESERVATION CALENDAR (RES.5.5)                       -->
+      <!-- Interactive month calendar for all board-visible reservations -->
+      <!-- ========================================================== -->
+      <div id="res-calendar" class="page">
+        <h1 class="page-title">Reservation Calendar</h1>
+
+        <!-- Controls row -->
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
+          <!-- Month navigation -->
+          <button class="btn btn-secondary btn-small" onclick="resCalPrevMonth()">&#8249; Prev</button>
+          <span id="resCalMonthLabel" style="font-weight:600; font-size:15px; min-width:120px; text-align:center;"></span>
+          <button class="btn btn-secondary btn-small" onclick="resCalNextMonth()">Next &#8250;</button>
+
+          <!-- View mode -->
+          <div style="display:flex; gap:4px; margin-left:10px;">
+            <button id="resCalViewMonth" class="btn btn-primary  btn-small" onclick="resCalSetView('month')">Month</button>
+            <button id="resCalViewWeek"  class="btn btn-secondary btn-small" onclick="resCalSetView('week')">Week</button>
+            <button id="resCalViewDay"   class="btn btn-secondary btn-small" onclick="resCalSetView('day')">Day</button>
+          </div>
+
+          <!-- Filters -->
+          <select id="resCalFacilityFilter" class="form-input" style="width:auto;" onchange="renderResCalendar()">
+            <option value="all">All Facilities</option>
+            <option value="Tennis Court">Tennis Court</option>
+            <option value="Leobo">Leobo</option>
+          </select>
+          <select id="resCalStatusFilter" class="form-input" style="width:auto;" onchange="renderResCalendar()">
+            <option value="all">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Tentative">Tentative</option>
+            <option value="Approved">Approved</option>
+            <option value="Waitlisted">Waitlisted</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Completed">Completed</option>
+          </select>
+
+          <!-- Print -->
+          <button class="btn btn-secondary btn-small" onclick="printResCalendar()" style="margin-left:auto;">&#128438; Print</button>
+        </div>
+
+        <!-- Legend -->
+        <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px; font-size:12px; align-items:center;">
+          <span><span style="display:inline-block;width:12px;height:12px;background:#1565c0;border-radius:3px;margin-right:4px;vertical-align:middle;"></span>Tennis Court</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#6a1b9a;border-radius:3px;margin-right:4px;vertical-align:middle;"></span>Leobo</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#e65100;border-radius:3px;margin-right:4px;vertical-align:middle;"></span>Other</span>
+          <span style="color:#999;">&#x25A1; faded = Pending/Waitlisted &nbsp; &#x25A0; full = Confirmed/Approved &nbsp; &#x2715; strikethrough = Cancelled</span>
+        </div>
+
+        <!-- Calendar container -->
+        <div id="resCalContent" style="min-height:300px;">
+          <p style="color:#aaa;">Loading...</p>
+        </div>
+      </div>
 
       <!-- ========================================================== -->
       <!-- PAGE: REPORTS (SUP.3)                                      -->
@@ -2517,6 +2577,7 @@
       'dashboard':           ['board', 'mgt'],                         // board + mgt only
       'reservations':        ['board', 'mgt'],
       'waitlist':            ['board', 'mgt'],
+      'res-calendar':        ['board', 'mgt'],
       'members':             ['board'],
       'applications':        ['board'],                                // board-only (requires board auth)
       'photos':              ['board'],                                // board-only (requires board auth)
@@ -2651,6 +2712,9 @@
         break;
       case 'waitlist':
         loadWaitlist();
+        break;
+      case 'res-calendar':
+        loadAdminResCalendar();
         break;
       case 'members':
         loadMembers();
@@ -3031,12 +3095,15 @@
       }
     }
 
-    // Show/hide action buttons based on current status
+    // Show/hide action buttons based on current status.
+    // Approve/Deny/Waitlist are only meaningful for Pending reservations.
+    // Bump is only for Waitlisted. Resend is for any non-cancelled confirmed state.
+    var isPending    = res && res.status === 'Pending';
     var isWaitlisted = res && res.status === 'Waitlisted';
-    var canResend = res && ['Approved','Confirmed','Tentative','Waitlisted'].indexOf(res.status) !== -1;
-    document.getElementById('resDenyBtn').style.display     = isWaitlisted ? 'none'  : '';
-    document.getElementById('resApproveBtn').style.display  = isWaitlisted ? 'none'  : '';
-    document.getElementById('resWaitlistBtn').style.display = isWaitlisted ? 'none'  : '';
+    var canResend    = res && ['Approved','Confirmed','Tentative','Waitlisted'].indexOf(res.status) !== -1;
+    document.getElementById('resDenyBtn').style.display     = isPending    ? ''      : 'none';
+    document.getElementById('resApproveBtn').style.display  = isPending    ? ''      : 'none';
+    document.getElementById('resWaitlistBtn').style.display = isPending    ? ''      : 'none';
     document.getElementById('resBumpBtn').style.display     = isWaitlisted ? ''      : 'none';
     document.getElementById('resResendBtn').style.display   = canResend    ? ''      : 'none';
 
@@ -3157,6 +3224,517 @@
       closeModal('resDetailModal');
       loadReservations();
     });
+  }
+
+  // ============================================================
+  // RES.5.5 — RESERVATION CALENDAR (board/mgt view)
+  // ============================================================
+
+  // State for the admin reservation calendar
+  var _resCalYear  = new Date().getFullYear();
+  var _resCalMonth = new Date().getMonth();   // 0-indexed
+  var _resCalView  = 'month';                 // 'month' | 'week' | 'day'
+  var _resCalEvents = [];                     // cached events array
+  // For week/day navigation within the selected month
+  var _resCalWeek  = 0;   // 0-indexed week within month
+  var _resCalDay   = 1;   // day-of-month
+
+  /**
+   * Loads the admin reservation calendar for the currently selected year/month.
+   * Fetches all reservations from backend and stores in _resCalEvents, then renders.
+   */
+  function loadAdminResCalendar() {
+    var label = document.getElementById('resCalMonthLabel');
+    var container = document.getElementById('resCalContent');
+    var monthStr = _resCalYear + '-' + String(_resCalMonth + 1).padStart(2, '0');
+
+    if (label) {
+      label.textContent = new Date(_resCalYear, _resCalMonth, 1)
+        .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
+
+    container.textContent = 'Loading…';
+
+    apiCall('admin_calendar', { month: monthStr }).then(function(res) {
+      if (!res.success) {
+        container.textContent = 'Error: ' + res.message;
+        return;
+      }
+      _resCalEvents = res.data.events || [];
+      // Merge into the reservation cache so openReservationDetail can show details
+      _resCalEvents.forEach(function(ev) {
+        if (ev.reservation_id && !_pendingReservations[ev.reservation_id]) {
+          _pendingReservations[ev.reservation_id] = ev;
+        }
+      });
+      renderResCalendar();
+    }).catch(function() {
+      container.textContent = 'Failed to load calendar.';
+    });
+  }
+
+  /** Advance one month and reload. */
+  function resCalNextMonth() {
+    _resCalMonth += 1;
+    if (_resCalMonth > 11) { _resCalMonth = 0; _resCalYear += 1; }
+    _resCalWeek = 0; _resCalDay = 1;
+    loadAdminResCalendar();
+  }
+
+  /** Go back one month and reload. */
+  function resCalPrevMonth() {
+    _resCalMonth -= 1;
+    if (_resCalMonth < 0) { _resCalMonth = 11; _resCalYear -= 1; }
+    _resCalWeek = 0; _resCalDay = 1;
+    loadAdminResCalendar();
+  }
+
+  /** Switch between month / week / day views and re-render cached events. */
+  function resCalSetView(view) {
+    _resCalView = view;
+    ['month', 'week', 'day'].forEach(function(v) {
+      var btn = document.getElementById('resCalView' + v.charAt(0).toUpperCase() + v.slice(1));
+      if (btn) {
+        btn.className = v === view ? 'btn btn-primary btn-small' : 'btn btn-secondary btn-small';
+      }
+    });
+    renderResCalendar();
+  }
+
+  /**
+   * Applies facility and status filters from the UI, then delegates to the
+   * appropriate view renderer (month / week / day).
+   */
+  function renderResCalendar() {
+    var facilityFilter = (document.getElementById('resCalFacilityFilter') || {}).value || 'all';
+    var statusFilter   = (document.getElementById('resCalStatusFilter')   || {}).value || 'all';
+
+    var filtered = _resCalEvents.filter(function(ev) {
+      if (facilityFilter !== 'all' && ev.facility !== facilityFilter) return false;
+      if (statusFilter   !== 'all' && ev.status   !== statusFilter)   return false;
+      return true;
+    });
+
+    if (_resCalView === 'month') {
+      _renderResCalMonthView(filtered);
+    } else if (_resCalView === 'week') {
+      _renderResCalWeekView(filtered);
+    } else {
+      _renderResCalDayView(filtered);
+    }
+  }
+
+  /**
+   * Returns CSS color string for a facility name.
+   * Tennis = blue, Leobo = purple, other = orange.
+   */
+  function _resCalFacilityColor(facility, faded) {
+    var base;
+    if (!facility) {
+      base = '#e65100';
+    } else if (facility.indexOf('Tennis') !== -1 || facility.indexOf('Basketball') !== -1) {
+      base = '#1565c0';
+    } else if (facility === 'Leobo') {
+      base = '#6a1b9a';
+    } else {
+      base = '#e65100';
+    }
+    return faded ? base + '55' : base;   // hex alpha for faded
+  }
+
+  /**
+   * Builds a single pill element for a reservation event.
+   * Pending/Waitlisted → faded; Cancelled → strikethrough; others → full color.
+   * Clicking opens the existing resDetailModal.
+   */
+  function _resCalBuildPill(ev) {
+    var status   = ev.status || 'Pending';
+    var isFaded  = (status === 'Pending' || status === 'Waitlisted');
+    var isCancelled = (status === 'Cancelled' || status === 'Completed');
+
+    var pill = document.createElement('div');
+    pill.style.cssText = [
+      'display:flex',
+      'align-items:center',
+      'gap:4px',
+      'border-radius:4px',
+      'padding:2px 6px',
+      'margin-bottom:2px',
+      'font-size:11px',
+      'font-weight:500',
+      'cursor:pointer',
+      'user-select:none',
+      'background:' + _resCalFacilityColor(ev.facility, isFaded),
+      'color:#fff',
+      isCancelled ? 'text-decoration:line-through; opacity:0.6;' : ''
+    ].join(';');
+
+    var nameSpan = document.createElement('span');
+    nameSpan.textContent = ev.household_name || ev.household_id || '—';
+
+    var facSpan = document.createElement('span');
+    facSpan.style.cssText = 'opacity:0.8; font-weight:400;';
+    var facShort = ev.facility === 'Leobo' ? 'LB'
+                 : ev.facility && ev.facility.indexOf('Tennis') !== -1 ? 'TC'
+                 : (ev.facility || '').substring(0, 2).toUpperCase();
+    facSpan.textContent = facShort;
+
+    pill.appendChild(facSpan);
+    pill.appendChild(nameSpan);
+
+    // Click → open existing reservation detail modal via cached data
+    pill.onclick = (function(resId) {
+      return function() { openReservationDetail(resId); };
+    })(ev.reservation_id);
+
+    pill.title = [
+      ev.facility,
+      ev.household_name,
+      ev.event_name || '',
+      'Status: ' + status,
+      ev.start_time && ev.end_time ? ev.start_time + '–' + ev.end_time : ''
+    ].filter(Boolean).join(' | ');
+
+    return pill;
+  }
+
+  /**
+   * Renders the month grid (7-column calendar) into #resCalContent.
+   * @param {Array} events  Filtered event objects from _resCalEvents.
+   */
+  function _renderResCalMonthView(events) {
+    var container = document.getElementById('resCalContent');
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    // Index events by YYYY-MM-DD
+    var byDate = {};
+    events.forEach(function(ev) {
+      var d = ev.event_date ? ev.event_date.substring(0, 10) : null;
+      if (!d) return;
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(ev);
+    });
+
+    var firstDay  = new Date(_resCalYear, _resCalMonth, 1).getDay();   // 0=Sun
+    var daysInMonth = new Date(_resCalYear, _resCalMonth + 1, 0).getDate();
+    var today = new Date();
+    var todayKey = today.getFullYear() + '-'
+                 + String(today.getMonth() + 1).padStart(2, '0') + '-'
+                 + String(today.getDate()).padStart(2, '0');
+
+    // Grid wrapper
+    var grid = document.createElement('div');
+    grid.style.cssText = 'display:grid; grid-template-columns:repeat(7,1fr); gap:1px;'
+                       + ' background:#ddd; border:1px solid #ddd; border-radius:6px; overflow:hidden;';
+
+    // Day-of-week headers
+    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(function(d) {
+      var hdr = document.createElement('div');
+      hdr.style.cssText = 'background:#f3f3f3; padding:6px; text-align:center;'
+                        + ' font-size:11px; font-weight:700; color:#555; text-transform:uppercase;';
+      hdr.textContent = d;
+      grid.appendChild(hdr);
+    });
+
+    // Blank cells before the 1st
+    for (var b = 0; b < firstDay; b++) {
+      var blank = document.createElement('div');
+      blank.style.cssText = 'background:#fafafa; min-height:90px;';
+      grid.appendChild(blank);
+    }
+
+    // Day cells
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateKey = _resCalYear + '-'
+                  + String(_resCalMonth + 1).padStart(2, '0') + '-'
+                  + String(d).padStart(2, '0');
+
+      var cell = document.createElement('div');
+      cell.style.cssText = 'background:#fff; min-height:90px; padding:4px; vertical-align:top;'
+                         + (dateKey === todayKey ? ' outline:2px solid #1976d2;' : '');
+
+      var dayNum = document.createElement('div');
+      dayNum.style.cssText = 'font-size:11px; font-weight:600; color:#333; margin-bottom:3px;'
+                            + (dateKey === todayKey ? ' color:#1976d2;' : '');
+      dayNum.textContent = d;
+
+      // Clicking a day number switches to day view for that day
+      dayNum.style.cursor = 'pointer';
+      dayNum.onclick = (function(day) {
+        return function() {
+          _resCalDay = day;
+          resCalSetView('day');
+        };
+      })(d);
+
+      cell.appendChild(dayNum);
+
+      // Event pills
+      var dayEvents = byDate[dateKey] || [];
+      dayEvents.forEach(function(ev) {
+        cell.appendChild(_resCalBuildPill(ev));
+      });
+
+      grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
+  }
+
+  /**
+   * Renders a week list view (all days in the selected week) into #resCalContent.
+   * "Week" is a 7-day window starting from _resCalWeek * 7 + 1 in the month.
+   * @param {Array} events  Filtered event objects.
+   */
+  function _renderResCalWeekView(events) {
+    var container = document.getElementById('resCalContent');
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    var daysInMonth = new Date(_resCalYear, _resCalMonth + 1, 0).getDate();
+    var weekStart = _resCalWeek * 7 + 1;
+    var weekEnd   = Math.min(weekStart + 6, daysInMonth);
+
+    // Week navigation
+    var nav = document.createElement('div');
+    nav.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:12px;';
+    var prevW = document.createElement('button');
+    prevW.className = 'btn btn-secondary btn-small';
+    prevW.textContent = '← Prev Week';
+    prevW.onclick = function() {
+      if (_resCalWeek > 0) { _resCalWeek -= 1; _renderResCalWeekView(events); }
+      else { resCalPrevMonth(); resCalSetView('week'); }
+    };
+    var nextW = document.createElement('button');
+    nextW.className = 'btn btn-secondary btn-small';
+    nextW.textContent = 'Next Week →';
+    nextW.onclick = function() {
+      if (weekEnd < daysInMonth) { _resCalWeek += 1; _renderResCalWeekView(events); }
+      else { resCalNextMonth(); resCalSetView('week'); }
+    };
+    var wLabel = document.createElement('span');
+    wLabel.style.fontWeight = '600';
+    wLabel.textContent = 'Days ' + weekStart + '–' + weekEnd;
+    nav.appendChild(prevW);
+    nav.appendChild(wLabel);
+    nav.appendChild(nextW);
+    container.appendChild(nav);
+
+    // Build date index
+    var byDate = {};
+    events.forEach(function(ev) {
+      var d = ev.event_date ? ev.event_date.substring(0, 10) : null;
+      if (!d) return;
+      if (!byDate[d]) byDate[d] = [];
+      byDate[d].push(ev);
+    });
+
+    for (var d = weekStart; d <= weekEnd; d++) {
+      var dateKey = _resCalYear + '-'
+                  + String(_resCalMonth + 1).padStart(2, '0') + '-'
+                  + String(d).padStart(2, '0');
+      var dayDate = new Date(_resCalYear, _resCalMonth, d);
+      var dayName = dayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+      var dayCard = document.createElement('div');
+      dayCard.style.cssText = 'border:1px solid #e0e0e0; border-radius:6px; margin-bottom:10px; overflow:hidden;';
+
+      var hdr = document.createElement('div');
+      hdr.style.cssText = 'background:#f5f5f5; padding:8px 14px; font-weight:600; font-size:13px; cursor:pointer;';
+      hdr.textContent = dayName;
+      hdr.onclick = (function(day) {
+        return function() { _resCalDay = day; resCalSetView('day'); };
+      })(d);
+      dayCard.appendChild(hdr);
+
+      var dayEvents = byDate[dateKey] || [];
+      if (dayEvents.length === 0) {
+        var noEv = document.createElement('div');
+        noEv.style.cssText = 'padding:8px 14px; color:#bbb; font-size:13px;';
+        noEv.textContent = 'No reservations';
+        dayCard.appendChild(noEv);
+      } else {
+        var list = document.createElement('div');
+        list.style.cssText = 'padding:8px 14px; display:flex; flex-wrap:wrap; gap:4px;';
+        dayEvents.forEach(function(ev) {
+          list.appendChild(_resCalBuildPill(ev));
+        });
+        dayCard.appendChild(list);
+      }
+
+      container.appendChild(dayCard);
+    }
+  }
+
+  /**
+   * Renders a single-day detail view for day _resCalDay of the selected month.
+   * @param {Array} events  Filtered event objects.
+   */
+  function _renderResCalDayView(events) {
+    var container = document.getElementById('resCalContent');
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    var daysInMonth = new Date(_resCalYear, _resCalMonth + 1, 0).getDate();
+    var dateKey = _resCalYear + '-'
+                + String(_resCalMonth + 1).padStart(2, '0') + '-'
+                + String(_resCalDay).padStart(2, '0');
+
+    // Day navigation
+    var nav = document.createElement('div');
+    nav.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:12px;';
+    var prevD = document.createElement('button');
+    prevD.className = 'btn btn-secondary btn-small';
+    prevD.textContent = '← Prev Day';
+    prevD.onclick = function() {
+      if (_resCalDay > 1) { _resCalDay -= 1; _renderResCalDayView(events); }
+      else { resCalPrevMonth(); _resCalDay = new Date(_resCalYear, _resCalMonth + 1, 0).getDate(); resCalSetView('day'); }
+    };
+    var nextD = document.createElement('button');
+    nextD.className = 'btn btn-secondary btn-small';
+    nextD.textContent = 'Next Day →';
+    nextD.onclick = function() {
+      if (_resCalDay < daysInMonth) { _resCalDay += 1; _renderResCalDayView(events); }
+      else { resCalNextMonth(); _resCalDay = 1; resCalSetView('day'); }
+    };
+    var dayDate = new Date(_resCalYear, _resCalMonth, _resCalDay);
+    var dLabel = document.createElement('span');
+    dLabel.style.fontWeight = '600';
+    dLabel.textContent = dayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    nav.appendChild(prevD);
+    nav.appendChild(dLabel);
+    nav.appendChild(nextD);
+    container.appendChild(nav);
+
+    var dayEvents = events.filter(function(ev) {
+      return ev.event_date && ev.event_date.substring(0, 10) === dateKey;
+    });
+
+    if (dayEvents.length === 0) {
+      var noEv = document.createElement('div');
+      noEv.className = 'empty-state';
+      var icon = document.createElement('div');
+      icon.className = 'empty-state-icon';
+      icon.textContent = '📅';
+      var txt = document.createElement('div');
+      txt.className = 'empty-state-text';
+      txt.textContent = 'No reservations on this day';
+      noEv.appendChild(icon);
+      noEv.appendChild(txt);
+      container.appendChild(noEv);
+      return;
+    }
+
+    // Sort by start_time
+    dayEvents.sort(function(a, b) {
+      return String(a.start_time) < String(b.start_time) ? -1 : 1;
+    });
+
+    var cards = document.createElement('div');
+    cards.style.cssText = 'display:flex; flex-direction:column; gap:10px;';
+
+    dayEvents.forEach(function(ev) {
+      var status  = ev.status || 'Pending';
+      var isFaded = status === 'Pending' || status === 'Waitlisted';
+      var isCancelled = status === 'Cancelled' || status === 'Completed';
+      var color   = _resCalFacilityColor(ev.facility, false);
+
+      var card = document.createElement('div');
+      card.style.cssText = 'border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; cursor:pointer;'
+                         + (isFaded ? 'opacity:0.65;' : '')
+                         + (isCancelled ? 'opacity:0.4;' : '');
+      card.onclick = (function(resId) {
+        return function() { openReservationDetail(resId); };
+      })(ev.reservation_id);
+
+      var strip = document.createElement('div');
+      strip.style.cssText = 'width:5px; position:absolute; top:0; bottom:0; left:0; background:' + color + ';';
+
+      var inner = document.createElement('div');
+      inner.style.cssText = 'display:flex; align-items:center; gap:16px; padding:10px 14px;'
+                           + 'border-left:5px solid ' + color + ';';
+
+      var timePart = document.createElement('div');
+      timePart.style.cssText = 'font-size:12px; font-weight:600; color:#555; min-width:80px; white-space:nowrap;';
+      if (ev.start_time && ev.end_time) {
+        var parseTime = function(ts) {
+          if (!ts) return '';
+          var d = new Date(ts);
+          return isNaN(d.getTime()) ? ts : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        };
+        timePart.textContent = parseTime(ev.start_time) + ' – ' + parseTime(ev.end_time);
+      } else {
+        timePart.textContent = 'All day';
+      }
+
+      var mainPart = document.createElement('div');
+      mainPart.style.cssText = 'flex:1;';
+
+      var hhName = document.createElement('div');
+      hhName.style.fontWeight = '600';
+      hhName.textContent = ev.household_name || ev.household_id || '—';
+      if (isCancelled) hhName.style.textDecoration = 'line-through';
+
+      var facName = document.createElement('div');
+      facName.style.cssText = 'font-size:12px; color:#777;';
+      facName.textContent = ev.facility + (ev.event_name ? ' · ' + ev.event_name : '');
+
+      var statusBadge = document.createElement('span');
+      var badgeColor = {
+        'Pending':   '#e67e22', 'Confirmed':  '#27ae60', 'Tentative': '#2980b9',
+        'Approved':  '#27ae60', 'Waitlisted': '#e67e22', 'Cancelled': '#c0392b',
+        'Completed': '#7f8c8d'
+      }[status] || '#7f8c8d';
+      statusBadge.style.cssText = 'display:inline-block; font-size:10px; font-weight:700; border-radius:3px;'
+                                 + ' padding:1px 6px; color:#fff; background:' + badgeColor + '; margin-top:3px;';
+      statusBadge.textContent = status;
+
+      mainPart.appendChild(hhName);
+      mainPart.appendChild(facName);
+      mainPart.appendChild(statusBadge);
+
+      if (ev.guest_count && Number(ev.guest_count) > 0) {
+        var guestSpan = document.createElement('div');
+        guestSpan.style.cssText = 'font-size:12px; color:#777; min-width:60px; text-align:right;';
+        guestSpan.textContent = ev.guest_count + ' guest' + (Number(ev.guest_count) !== 1 ? 's' : '');
+        inner.appendChild(timePart);
+        inner.appendChild(mainPart);
+        inner.appendChild(guestSpan);
+      } else {
+        inner.appendChild(timePart);
+        inner.appendChild(mainPart);
+      }
+
+      card.appendChild(inner);
+      cards.appendChild(card);
+    });
+
+    container.appendChild(cards);
+  }
+
+  /**
+   * Opens a print-friendly window showing the current calendar state.
+   * Pulls the rendered calendar HTML and injects minimal print styles.
+   */
+  function printResCalendar() {
+    var content = document.getElementById('resCalContent');
+    var monthLabel = document.getElementById('resCalMonthLabel');
+    var calHtml = content ? content.innerHTML : '';
+    var title   = (monthLabel ? monthLabel.textContent : 'Reservation Calendar');
+
+    var win = window.open('', '_blank');
+    if (!win) { alert('Please allow pop-ups to print.'); return; }
+    win.document.write(
+      '<!DOCTYPE html><html><head><title>' + title + '</title>' +
+      '<style>body{font-family:sans-serif;font-size:12px;padding:20px;}' +
+      'h1{font-size:16px;margin-bottom:16px;}' +
+      'div,span{max-width:100%;}' +
+      '@media print{button{display:none!important;}}' +
+      '</style></head><body>' +
+      '<h1>GEA Reservation Calendar — ' + title + '</h1>' +
+      calHtml +
+      '<script>window.onload=function(){window.print();window.close();}<\/script>' +
+      '</body></html>'
+    );
+    win.document.close();
   }
 
   // ============================================================

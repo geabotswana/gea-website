@@ -1966,6 +1966,66 @@ function getApprovedReservationsForCalendar(month, facility) {
 }
 
 /**
+ * Returns all reservations for the board calendar view.
+ * Optionally filtered by month (YYYY-MM), facility, and status.
+ * All statuses are returned by default (unlike getApprovedReservationsForCalendar
+ * which is restricted to RSO-visible approved-only records).
+ *
+ * @param {string|null} month     "YYYY-MM" or null for current month
+ * @param {string|null} facility  Facility name, "all", or null for all
+ * @param {string|null} status    Status filter ("Pending","Confirmed", etc.) or null for all
+ * @returns {Array<Object>}       Sorted by event_date asc
+ */
+function getAllReservationsForCalendar(month, facility, status) {
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    // Determine date window for the requested month
+    var refDate = month ? new Date(month + "-01") : new Date();
+    var start   = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+    var end     = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
+
+    var results = [];
+    for (var i = 1; i < data.length; i++) {
+      var obj = rowToObject(headers, data[i]);
+      if (!obj.reservation_id) continue;
+      if (!obj.event_date) continue;
+
+      var eventDate = new Date(obj.event_date);
+      if (isNaN(eventDate.getTime())) continue;
+      if (eventDate < start || eventDate > end) continue;
+
+      if (facility && facility !== "all" && obj.facility !== facility) continue;
+      if (status   && status   !== "all" && obj.status   !== status)   continue;
+
+      results.push({
+        reservation_id:      obj.reservation_id,
+        household_id:        obj.household_id,
+        household_name:      obj.household_name || obj.household_id || "",
+        submitted_by_email:  obj.submitted_by_email || "",
+        facility:            obj.facility,
+        event_date:          formatDate(eventDate, true),
+        start_time:          obj.start_time   ? String(obj.start_time)   : "",
+        end_time:            obj.end_time     ? String(obj.end_time)     : "",
+        event_name:          obj.event_name   || "",
+        guest_count:         obj.guest_count  || 0,
+        status:              obj.status       || STATUS_PENDING,
+        is_excess_reservation: obj.is_excess_reservation === true || obj.is_excess_reservation === "TRUE",
+        mgt_approved_by:     obj.mgt_approved_by || ""
+      });
+    }
+
+    results.sort(function(a, b) { return a.event_date < b.event_date ? -1 : 1; });
+    return results;
+  } catch (e) {
+    Logger.log("ERROR getAllReservationsForCalendar: " + e);
+    return [];
+  }
+}
+
+/**
  * Returns finalized guest lists for RSO notify reference view.
  * Optionally filtered by month (YYYY-MM) and facility.
  * Only includes guest lists with submission_status = "finalized".

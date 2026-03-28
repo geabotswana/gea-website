@@ -222,6 +222,7 @@ function _routeAction(action, params) {
     case "admin_rso_approve_document":     return _handleAdminRsoApproveDocument(params);
     case "admin_rso_approved_calendar":    return _handleAdminRsoApprovedCalendar(params);
     case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
+    case "admin_calendar":                 return _handleAdminCalendar(params);
     case "admin_members": return _handleAdminMembers(params);
     case "admin_photo":   return _handleAdminPhoto(params);
     case "admin_applications":       return _handleAdminApplications(params);
@@ -3559,6 +3560,38 @@ function _handleAdminRsoApprovedCalendar(p) {
   } catch (e) {
     Logger.log("ERROR _handleAdminRsoApprovedCalendar: " + e);
     return errorResponse("Could not load calendar.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminCalendar
+ * PURPOSE: Board/mgt calendar view of ALL reservations for a given month.
+ *          Unlike the RSO calendar (approved-only), this returns every status so
+ *          the board can see pending, confirmed, tentative, waitlisted, and cancelled
+ *          reservations on a single grid.
+ *
+ * AUTHENTICATION: board or mgt role required.
+ *
+ * OPTIONAL PARAMS:
+ *   month    — "YYYY-MM" string; defaults to current month
+ *   facility — facility name or "all"; defaults to all
+ *   status   — status value or "all"; defaults to all
+ *
+ * RETURNS: { success, data: { events: [...], count, month } }
+ */
+function _handleAdminCalendar(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  try {
+    var events = getAllReservationsForCalendar(
+      p.month    || null,
+      p.facility || null,
+      p.status   || null
+    );
+    return successResponse({ events: events, count: events.length, month: p.month || null });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminCalendar: " + e);
+    return errorResponse("Could not load reservation calendar.", "SERVER_ERROR");
   }
 }
 

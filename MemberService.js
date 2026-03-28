@@ -651,6 +651,7 @@ function checkExpiringMemberships() {
           PORTAL_URL:           URL_MEMBER_PORTAL
         });
         updateHouseholdField(hh.household_id, "active", false, "system");
+        updateHouseholdField(hh.household_id, "application_status", "Lapsed", "system");
         Logger.log("Expired + deactivated: " + hh.household_id);
       }
     }

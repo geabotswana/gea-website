@@ -2563,9 +2563,9 @@
   /**
    * Shows/hides sidebar nav items based on the logged-in admin's role.
    *   board       — sees everything
-   *   mgt         — Leobo reservations only (pending reservations, waitlist, dashboard, reports)
-   *   rso_approve — document review, guest lists, applications, photos, calendar, approved guest lists
-   *   rso_notify  — event calendar + approved guest lists (read-only)
+   *   mgt         — dashboard, pending reservations, waitlist, reservation calendar
+   *   rso_approve — guest lists, rso-documents (document review queue), rso-calendar, rso-approved-guests
+   *   rso_notify  — rso-calendar, rso-approved-guests (read-only)
    *   rso         — backward-compat alias for rso_approve
    */
   function _applyNavRoleFilter(role) {

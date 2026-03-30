@@ -335,7 +335,7 @@ This document catalogs **every function** in the codebase, organized by service 
 | Line | Function | Parameters | Returns | Purpose |
 |------|----------|-----------|---------|---------|
 | 465 | `listApplicationsForBoard(statusFilter)` | statusFilter: string (optional) | Array | Get all applications for board review (by status). |
-| 416 | `confirmDocumentsUploaded(applicationId, email)` | applicationId: string, email: string | {success, allDocumentsConfirmed} | Verify all required documents submitted. |
+| 416 | `confirmDocumentsUploaded(applicationId, email)` | applicationId: string, email: string | {success, message} | Confirm all required documents uploaded; advances application to board_initial_review. Verifies ownership via primary_applicant_email. |
 
 ### Application Workflow Steps
 

@@ -436,15 +436,34 @@ function confirmDocumentsUploaded(applicationId, email) {
     logAuditEntry(email, AUDIT_APPLICATION_DOCS_CONFIRMED, "Application", applicationId,
                   "Documents confirmed for review");
 
+    var applicantName      = application.primary_applicant_name || "";
+    var applicantFirstName = applicantName.split(" ")[0] || "Applicant";
+
     // Notify board
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
     sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_BOARD", boardEmail, {
       FIRST_NAME:      "Board",
-      APPLICANT_NAME:  application.first_name + " " + application.last_name,
+      APPLICANT_NAME:  applicantName,
       APPLICATION_ID:  applicationId,
       DOCUMENT_TYPES:  "Passport / Omang / Photo",
       SUBMISSION_DATE: formatDate(new Date()),
       RSO_CONTACT:     EMAIL_RSO_APPROVE
+    });
+
+    // Notify RSO to review documents
+    sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
+      FIRST_NAME:        "RSO Team",
+      APPLICANT_NAME:    applicantName,
+      APPLICATION_ID:    applicationId,
+      DOCUMENT_TYPES:    "Passport / Omang / Photo",
+      APPROVAL_DEADLINE: formatDate(addDays(new Date(), 5))
+    });
+
+    // Notify applicant that documents are under review
+    sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.primary_applicant_email, {
+      FIRST_NAME:      applicantFirstName,
+      DOCUMENT_TYPES:  "Passport / Omang / Photo",
+      SUBMISSION_DATE: formatDate(new Date())
     });
 
     return { success: true, message: "Documents confirmed for review." };
@@ -569,16 +588,18 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
 
       // Notify RSO and applicant
       var rsoEmail = EMAIL_RSO_APPROVE;
+      var _appName1      = application.primary_applicant_name || "";
+      var _appFirstName1 = _appName1.split(" ")[0] || "Applicant";
       sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", rsoEmail, {
         FIRST_NAME:       "RSO Team",
-        APPLICANT_NAME:   application.first_name + " " + application.last_name,
+        APPLICANT_NAME:   _appName1,
         APPLICATION_ID:   applicationId,
         DOCUMENT_TYPES:   "Passport / Omang / Photo",
         APPROVAL_DEADLINE: formatDate(addDays(new Date(), 5))
       });
 
-      sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.email, {
-        FIRST_NAME:      application.first_name,
+      sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.primary_applicant_email, {
+        FIRST_NAME:      _appFirstName1,
         DOCUMENT_TYPES:  "Passport / Omang / Photo",
         SUBMISSION_DATE: formatDate(new Date())
       });
@@ -599,8 +620,10 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Denied at initial review. Reason: " + (reason || ""));
 
       // Notify applicant
-      sendEmailFromTemplate("MEM_APPLICATION_DENIED_TO_APPLICANT", application.email, {
-        FIRST_NAME:    application.first_name,
+      var _appName2      = application.primary_applicant_name || "";
+      var _appFirstName2 = _appName2.split(" ")[0] || "Applicant";
+      sendEmailFromTemplate("MEM_APPLICATION_DENIED_TO_APPLICANT", application.primary_applicant_email, {
+        FIRST_NAME:    _appFirstName2,
         APPLICATION_ID: applicationId,
         DENIAL_REASON: reason || "Your application does not meet membership requirements at this time.",
         CONTACT_EMAIL: "board@geabotswana.org"
@@ -649,7 +672,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
       var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
       sendEmailFromTemplate("ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD", boardEmail, {
         FIRST_NAME:     "Board",
-        APPLICANT_NAME: application.first_name + " " + application.last_name,
+        APPLICANT_NAME: application.primary_applicant_name || "",
         APPLICATION_ID: applicationId,
         APPROVAL_DATE:  formatDate(new Date()),
         RSO_NEXT_STEPS: "RSO review and document verification complete. Ready for final board approval."
@@ -668,16 +691,18 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
       // Notify board and applicant
       var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+      var _appName3      = application.primary_applicant_name || "";
+      var _appFirstName3 = _appName3.split(" ")[0] || "Applicant";
       sendEmailFromTemplate("ADM_RSO_DOCUMENT_ISSUE_TO_BOARD", boardEmail, {
         FIRST_NAME:           "Board",
-        APPLICANT_NAME:       application.first_name + " " + application.last_name,
+        APPLICANT_NAME:       _appName3,
         APPLICATION_ID:       applicationId,
         ISSUE_DESCRIPTION:    privateNotes || "RSO identified issues with the submitted documents.",
         DEADLINE_TO_RESOLVE:  formatDate(addDays(new Date(), 7))
       });
 
-      sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_MEMBER", application.email, {
-        FIRST_NAME:        application.first_name,
+      sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_MEMBER", application.primary_applicant_email, {
+        FIRST_NAME:        _appFirstName3,
         DOCUMENT_TYPE:     "Document",
         REJECTION_REASON:  publicReason || "Your submitted documents did not meet our security requirements.",
         RESUBMIT_DEADLINE: formatDate(addDays(new Date(), 7)),
@@ -724,12 +749,15 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_BOARD_FINAL, "Application", applicationId, "Final approval granted - awaiting payment");
 
       // Generate payment reference and dues amount
-      var paymentRef = _generatePaymentReference(application.last_name);
+      var _appName4      = application.primary_applicant_name || "";
+      var _appFirstName4 = _appName4.split(" ")[0] || "Applicant";
+      var _appLastName4  = _appName4.split(" ").slice(-1)[0] || "";
+      var paymentRef = _generatePaymentReference(_appLastName4);
       var duesAmount = _calculateDuesAmount(applicationId);
 
       // Notify applicant with payment instructions
-      sendEmailFromTemplate("MEM_APPLICATION_APPROVED_TO_APPLICANT", application.email, {
-        FIRST_NAME:       application.first_name,
+      sendEmailFromTemplate("MEM_APPLICATION_APPROVED_TO_APPLICANT", application.primary_applicant_email, {
+        FIRST_NAME:       _appFirstName4,
         APPLICATION_ID:   applicationId,
         PAYMENT_AMOUNT:   duesAmount,
         PAYMENT_DEADLINE: formatDate(addDays(new Date(), 30)),
@@ -740,7 +768,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
       sendEmailFromTemplate("PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD", treasurerEmail, {
         FIRST_NAME:      "Treasurer",
-        MEMBER_NAME:     application.first_name + " " + application.last_name,
+        MEMBER_NAME:     _appName4,
         PAYMENT_ID:      paymentRef,
         AMOUNT:          duesAmount,
         CURRENCY:        "BWP",
@@ -764,8 +792,10 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Final denial. Reason: " + (reason || ""));
 
       // Notify applicant
-      sendEmailFromTemplate("MEM_APPLICATION_DENIED_TO_APPLICANT", application.email, {
-        FIRST_NAME:    application.first_name,
+      var _appName5      = application.primary_applicant_name || "";
+      var _appFirstName5 = _appName5.split(" ")[0] || "Applicant";
+      sendEmailFromTemplate("MEM_APPLICATION_DENIED_TO_APPLICANT", application.primary_applicant_email, {
+        FIRST_NAME:    _appFirstName5,
         APPLICATION_ID: applicationId,
         DENIAL_REASON: reason || "Your application was not approved for final membership.",
         CONTACT_EMAIL: "board@geabotswana.org"
@@ -838,8 +868,10 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
                   "Payment submitted: " + paymentMethod);
 
     // Notify applicant and treasurer
+    var _appName6      = application.primary_applicant_name || "";
+    var _appFirstName6 = _appName6.split(" ")[0] || "Applicant";
     sendEmailFromTemplate("PAY_PAYMENT_PROOF_RECEIVED_TO_MEMBER", email, {
-      FIRST_NAME:      application.first_name,
+      FIRST_NAME:      _appFirstName6,
       PAYMENT_ID:      paymentId,
       AMOUNT:          paymentData.amount_paid,
       SUBMISSION_DATE: formatDate(new Date()),
@@ -849,7 +881,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     var treasurerEmail = getConfigValue("TREASURER_EMAIL") || "treasurer@geabotswana.org";
     sendEmailFromTemplate("PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD", treasurerEmail, {
       FIRST_NAME:      "Treasurer",
-      MEMBER_NAME:     application.first_name + " " + application.last_name,
+      MEMBER_NAME:     _appName6,
       PAYMENT_ID:      paymentId,
       AMOUNT:          paymentData.amount_paid,
       CURRENCY:        "BWP",
@@ -936,15 +968,17 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
                   "Membership activated by Treasurer");
 
     // Send welcome emails
-    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+    var boardEmail     = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+    var _appName7      = application.primary_applicant_name || "";
+    var _appFirstName7 = _appName7.split(" ")[0] || "Applicant";
 
-    sendEmailFromTemplate("MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER", application.email, {
-      APPLICANT_NAME: application.first_name
+    sendEmailFromTemplate("MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER", application.primary_applicant_email, {
+      APPLICANT_NAME: _appFirstName7
     });
 
     sendEmailFromTemplate("ADM_BOARD_FINAL_APPROVAL_TO_BOARD", boardEmail, {
       FIRST_NAME:       "Board",
-      APPLICANT_NAME:   application.first_name + " " + application.last_name,
+      APPLICANT_NAME:   _appName7,
       APPLICATION_ID:   applicationId,
       MEMBERSHIP_TYPE:  application.membership_category + " – " + (application.household_type || ""),
       APPROVAL_DATE:    formatDate(new Date()),

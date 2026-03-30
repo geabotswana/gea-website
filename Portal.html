@@ -1139,6 +1139,11 @@
       color: #155724;
       border-left: 4px solid #28a745;
     }
+    .toast.toast-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
     .toast.toast-error {
       background: #f8d7da;
       color: #721c24;
@@ -3997,9 +4002,9 @@ function submitPasswordResetRequest(event) {
     }
 
     // Fill in Step 4: Family Members (if applicable)
+    var familyList = document.getElementById('familyMembersList');
+    familyList.innerHTML = ''; // Always clear to avoid stale divs from previous test loads
     if (householdType === 'Family') {
-      var familyList = document.getElementById('familyMembersList');
-      familyList.innerHTML = ''; // Clear existing
       applicationFormData.family_members.forEach(function(member) {
         var memberId = 'fam_' + Date.now() + '_' + Math.random();
 
@@ -4101,6 +4106,26 @@ function submitPasswordResetRequest(event) {
         });
 
         memberDiv.appendChild(citizenshipSelect);
+
+        // Date of birth input (required for Child relationship validation)
+        var dobContainer = document.createElement('div');
+        dobContainer.style.marginBottom = '8px';
+        var dobLabel = document.createElement('label');
+        dobLabel.style.fontSize = '12px';
+        dobLabel.style.color = '#555';
+        dobLabel.style.display = 'block';
+        dobLabel.style.marginBottom = '4px';
+        dobLabel.textContent = 'Date of Birth (required for children)';
+        dobContainer.appendChild(dobLabel);
+        var dobInput = document.createElement('input');
+        dobInput.type = 'date';
+        dobInput.className = 'form-input fam-date-of-birth';
+        dobInput.value = member.date_of_birth || '';
+        dobInput.style.padding = '8px';
+        dobInput.style.border = '1px solid #ddd';
+        dobInput.style.borderRadius = '4px';
+        dobContainer.appendChild(dobInput);
+        memberDiv.appendChild(dobContainer);
 
         // Remove button (safe event handler)
         var removeBtn = document.createElement('button');
@@ -4559,7 +4584,8 @@ function submitPasswordResetRequest(event) {
         familyElements.forEach(function(el) {
           var relationship = el.querySelector('input[type="radio"]:checked');
           if (relationship && relationship.value === 'Child') {
-            var dateOfBirth = el.querySelector('.fam-date-of-birth').value;
+            var dobEl = el.querySelector('.fam-date-of-birth');
+            var dateOfBirth = dobEl ? dobEl.value : '';
             if (!dateOfBirth) {
               hasError = true;
             }
@@ -4673,7 +4699,8 @@ function submitPasswordResetRequest(event) {
           var lastName = el.querySelector('.fam-last-name').value;
           var relationship = el.querySelector('input[type="radio"]:checked');
           var citizenship = el.querySelector('.fam-citizenship').value;
-          var dateOfBirth = el.querySelector('.fam-date-of-birth').value;
+          var dobEl = el.querySelector('.fam-date-of-birth');
+          var dateOfBirth = dobEl ? dobEl.value : '';
           if (firstName && lastName && relationship) {
             applicationFormData.family_members.push({
               first_name: capitalizeName(firstName),
@@ -4885,7 +4912,7 @@ function submitPasswordResetRequest(event) {
         console.log('[DEBUG] Submit response:', response);
         if (response.success) {
           // Show confirmation
-          document.getElementById('appStep6').style.display = 'none';
+          document.getElementById('appStep7').style.display = 'none';
           document.getElementById('appConfirmation').style.display = 'block';
 
           // Reset form data

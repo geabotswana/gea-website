@@ -60,16 +60,19 @@ function runNightlyTasks() {
   // 7b. Clean up expired password reset tokens
   purgeExpiredResetTokens();
 
-  // 8. Update exchange rate from API
+  // 8. Cache rules document for failover (used when Rules sheet unavailable)
+  cacheRulesDocument();
+
+  // 9. Update exchange rate from API
   fetchAndUpdateExchangeRate();
 
-  // 9. Reservation approval reminders: email board any still-pending bookings
+  // 10. Reservation approval reminders: email board any still-pending bookings
   sendReservationApprovalReminders();
 
-  // 10. Expire waitlist positions whose event is within WAITLIST_HOLD_HOURS
+  // 11. Expire waitlist positions whose event is within WAITLIST_HOLD_HOURS
   expireWaitlistPositions();
 
-  // 11 & 12. Monthly board reports: collections + reservations analytics.
+  // 12 & 13. Monthly board reports: collections + reservations analytics.
   //           Run on the last Monday of the month (ready for Tuesday board meeting).
   try {
     if (_isLastMondayOfMonth_(new Date())) {
@@ -419,6 +422,28 @@ function sendPhotoReminders() {
       Logger.log("Photo reminder sent: " + m.email);
     }
   } catch (e) { Logger.log("ERROR sendPhotoReminders: " + e); }
+}
+
+
+/**
+ * Cache the Rules & Regulations document for failover.
+ * Called nightly to ensure rules are always available even if sheet access fails.
+ * Stores cached HTML in a global variable via PropertiesService.
+ */
+function cacheRulesDocument() {
+  try {
+    var rulesHtml = getRulesHTMLDisplay();
+    if (rulesHtml) {
+      // Store in PropertiesService so it persists across script executions
+      var properties = PropertiesService.getScriptProperties();
+      properties.setProperty('CACHED_RULES_HTML', rulesHtml);
+      properties.setProperty('CACHED_RULES_TIMESTAMP', new Date().toISOString());
+      Logger.log("Rules document cached successfully at " + new Date().toISOString());
+    }
+  } catch (error) {
+    Logger.log("ERROR caching rules document: " + error.message);
+    // Don't fail nightly tasks if caching fails; system has hardcoded fallback
+  }
 }
 
 

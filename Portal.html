@@ -4216,13 +4216,20 @@ function submitPasswordResetRequest(event) {
     var rulesContainer = document.getElementById('appRulesDisplay');
     if (!rulesContainer) return;
 
-    try {
-      var rulesHtml = getRulesHTMLDisplay();
-      rulesContainer.innerHTML = rulesHtml;
-    } catch (error) {
-      console.error('Error displaying rules:', error);
-      rulesContainer.innerHTML = '<p style="color: #C62828;">Unable to load rules. Please try again.</p>';
-    }
+    // Call backend to fetch rules via API
+    google.script.run
+      .withSuccessHandler(function(response) {
+        if (response.success && response.data && response.data.rules_html) {
+          rulesContainer.innerHTML = response.data.rules_html;
+        } else {
+          rulesContainer.innerHTML = '<p style="color: #C62828;">Unable to load rules. Please refresh and try again.</p>';
+        }
+      })
+      .withFailureHandler(function(error) {
+        console.error('Error loading rules:', error);
+        rulesContainer.innerHTML = '<p style="color: #C62828;">Unable to load rules. Please refresh and try again.</p>';
+      })
+      .handlePortalApi("get_rules", {});
   }
 
   /**
@@ -8690,22 +8697,26 @@ function submitPasswordResetRequest(event) {
   }
   /**
    * Load and display GEA Rules & Regulations for members.
-   * Uses getRulesHTMLDisplay() from RulesService.js
+   * Fetches rules via backend API from RulesService.js
    */
   function loadRules() {
-    try {
-      var rulesHtml = getRulesHTMLDisplay();
-      var container = document.getElementById('portalRulesContent');
-      if (container) {
-        container.innerHTML = rulesHtml;
-      }
-    } catch (error) {
-      console.error('Error loading rules:', error);
-      var container = document.getElementById('portalRulesContent');
-      if (container) {
-        container.innerHTML = '<p style="color: #C62828; text-align: center; padding: 20px;">Unable to load rules. Please try again later.</p>';
-      }
-    }
+    var container = document.getElementById('portalRulesContent');
+    if (!container) return;
+
+    // Call backend to fetch rules via API
+    google.script.run
+      .withSuccessHandler(function(response) {
+        if (response.success && response.data && response.data.rules_html) {
+          container.innerHTML = response.data.rules_html;
+        } else {
+          container.innerHTML = '<p style="color: #C62828; text-align: center; padding: 20px;">Unable to load rules. Please refresh and try again.</p>';
+        }
+      })
+      .withFailureHandler(function(error) {
+        console.error('Error loading rules:', error);
+        container.innerHTML = '<p style="color: #C62828; text-align: center; padding: 20px;">Unable to load rules. Please refresh and try again.</p>';
+      })
+      .handlePortalApi("get_rules", {});
   }
 
   /**

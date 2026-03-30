@@ -19,7 +19,7 @@
 /**
  * Get the full text of GEA Rules & Regulations
  * Reads from Rules sheet in Member Directory
- * Returns a structured object with sections for rendering
+ * Falls back to cached rules, then hardcoded rules if sheet is unavailable
  * @returns {Object} Rules with sections array
  */
 function getRulesText() {
@@ -29,8 +29,8 @@ function getRulesText() {
     var data = rulesSheet.getDataRange().getValues();
 
     if (data.length < 2) {
-      // No rules found, return empty structure
-      return { title: "RULES & REGULATIONS", sections: [] };
+      // No rules found, return cached or hardcoded
+      return getCachedOrDefaultRules();
     }
 
     // Parse header row (skip first row which is headers)
@@ -115,14 +115,31 @@ function getRulesText() {
     };
   } catch (error) {
     Logger.log("ERROR in getRulesText: " + error);
-    // Fallback to hardcoded rules if spreadsheet access fails
-    return getDefaultRulesText();
+    // Fallback to cached or hardcoded rules if spreadsheet access fails
+    return getCachedOrDefaultRules();
   }
 }
 
 /**
+ * Get cached rules or fallback to hardcoded defaults
+ * Called when Rules sheet is unavailable
+ * @returns {Object} Rules with sections array
+ */
+function getCachedOrDefaultRules() {
+  // If a cached version exists in Config.js, use it
+  if (typeof DEFAULT_RULES_SECTIONS !== 'undefined' && DEFAULT_RULES_SECTIONS && DEFAULT_RULES_SECTIONS.length > 0) {
+    return {
+      title: "RULES & REGULATIONS",
+      sections: DEFAULT_RULES_SECTIONS
+    };
+  }
+  // Otherwise return hardcoded defaults
+  return getDefaultRulesText();
+}
+
+/**
  * Get default (hardcoded) rules as fallback
- * Used if Rules sheet is not accessible
+ * Used if Rules sheet is not accessible and cache is not available
  * @returns {Object} Rules with sections array
  */
 function getDefaultRulesText() {

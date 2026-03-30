@@ -844,6 +844,108 @@ var HOUSEHOLD_PHONE_SYNC_MINUTE = 0;      // Runs at :00 minutes past the hour
 // ============================================================
 // SECTION 20: SYSTEM METADATA
 // ============================================================
+// SECTION 20: STATIC RULES CACHE
+// ============================================================
+// Fallback rules document cached at startup.
+// Used when Rules sheet is inaccessible (network issues, sheet deleted, etc.)
+// Cache is created nightly via notificationService.runNightlyTasks()
+// ============================================================
+
+var CACHED_RULES_HTML = null; // Set during runtime; fallback to hardcoded if null
+var CACHED_RULES_TIMESTAMP = null; // When cache was last updated
+
+// Default hardcoded rules (used if cache cannot be populated)
+// This ensures users can always see rules even if spreadsheet is completely down
+var DEFAULT_RULES_SECTIONS = [
+  {
+    number: "1",
+    title: "General Membership Rules",
+    content: [
+      "An active membership is required to access GEA facilities and events.",
+      "Members must follow all posted rules and conduct themselves respectfully.",
+      "Guests must be accompanied by a GEA member and adhere to all guidelines. Guests may not be left at the facility in the absence of an active member escort.",
+      "The GEA Board reserves the right to modify rules and revoke access for violations."
+    ]
+  },
+  {
+    number: "2",
+    title: "Recreation Center Rules",
+    content: [
+      "Open to members and registered guests only, and only during the hours of 7am to 8pm. Everyone must depart by 8pm.",
+      "Children under 14 must be supervised by an adult.",
+      "Respect noise levels, shared spaces, and dispose of trash properly.",
+      "Report any damage, maintenance needs, or safety concerns to board@geabotswana.org."
+    ],
+    subsections: [
+      {
+        title: "Leobo & Event Space",
+        content: [
+          "Members may reserve the space once per month for up to 6 hours.",
+          "Official Embassy events take precedence over GEA member reservations.",
+          "Leobo reservations are subject to approval by the Embassy and may be cancelled at any time.",
+          "Reservations must include setup and cleanup time (these count toward your 6-hour maximum).",
+          "Events must maintain respectful noise levels and conclude by 8pm to respect neighboring residents.",
+          "No fundraising is allowed at the Rec Center.",
+          "Guest lists must be submitted 3 business days in advance to board@geabotswana.org. For large events (30+ people), guest lists should be submitted 5 business days in advance.",
+          "Parking inside is limited and subject to security directives; guest parking is outside."
+        ]
+      },
+      {
+        title: "Basketball & Tennis Courts",
+        content: [
+          "Reservations are limited to 2 hours per day per member-family.",
+          "No food is allowed on the courts (water and sports drinks are permitted).",
+          "Members must clean up after use and follow supervision rules for minors."
+        ]
+      }
+    ]
+  },
+  {
+    number: "3",
+    title: "Fitness Center Rules",
+    content: [
+      "Use at your own risk – GEA and the U.S. Embassy are not liable for injuries or accidents.",
+      "Minimum age for use: 15 years old.",
+      "No children under 10 are allowed inside the fitness center; children 11-14 may enter under supervision but may not use the equipment.",
+      "The door code is for members only – do not share it.",
+      "Personal trainers are allowed, but the code must not be disclosed.",
+      "Wipe down equipment after use and return it to its place.",
+      "Limit electronic equipment use (treadmills, ellipticals, etc.) to 30 minutes when others are waiting.",
+      "Turn off air conditioning, lights, and unplug machines before leaving and close the door securely.",
+      "No alcohol, drugs, or smoking allowed in the Fitness Center.",
+      "Report equipment issues to board@geabotswana.org."
+    ],
+    subsections: [
+      {
+        title: "Fitness Center Liability Waiver",
+        content: [
+          "By using the Fitness Center, you acknowledge that physical activity involves inherent risks. The Gaborone Employee Association (GEA) and the U.S. Embassy Gaborone assume no responsibility for injuries, accidents, or loss of property. Members agree to use the facilities at their own risk and waive all claims against GEA and its affiliates."
+        ]
+      }
+    ]
+  },
+  {
+    number: "4",
+    title: "Events & Conduct",
+    content: [
+      "RSVP is required for some events; fees are non-refundable unless stated otherwise.",
+      "Guests may attend certain events — guidelines will be provided.",
+      "Children must be supervised by an adult at all times.",
+      "Disruptive behavior may result in removal from events and facility restrictions."
+    ]
+  },
+  {
+    number: "5",
+    title: "Compliance & Enforcement",
+    content: [
+      "Failure to comply with these rules may result in suspension or termination of membership privileges. The GEA Board reserves the right to enforce all policies to maintain a safe and welcoming environment.",
+      "These rules and regulations are subject to change by agreement of the Board of Directors. Members will be notified of any changes.",
+      "For questions, reservations, or concerns, contact board@geabotswana.org."
+    ]
+  }
+];
+
+// ============================================================
 // Information about the system itself.
 // Useful for troubleshooting and documentation.
 // ============================================================

@@ -3633,6 +3633,210 @@ function submitPasswordResetRequest(event) {
   var currentApplicationStep = 1;
 
   /**
+   * Generate comprehensive test data for all 11 category-type combinations.
+   * Returns unique applicant data with spouses, children, and household staff where appropriate.
+   */
+  function _generateCategoryTestData(category, householdType) {
+    var baseEmail = 'testapp+' + category.toLowerCase() + householdType.toLowerCase() + Math.floor(Math.random() * 100000) + '@example.com';
+    var data = {
+      membership_category: category,
+      household_type: householdType,
+      country_code_primary: 'BW',
+      phone_primary_whatsapp: true,
+      citizenship_country: 'US',
+      sponsor_name: '',
+      sponsor_email: '',
+      family_members: [],
+      has_staff: false,
+      staff_first_name: '',
+      staff_last_name: '',
+      staff_citizenship: 'BW'
+    };
+
+    // Comprehensive test data for all 11 combos
+    switch(category + '-' + householdType) {
+
+      // FULL MEMBERSHIP
+      case 'Full-Individual':
+        data.first_name = 'James';
+        data.last_name = 'Morrison';
+        data.email = baseEmail;
+        data.phone_primary = '71234501';
+        data.citizenship_country = 'US';
+        data.employment_office = 'U.S. Embassy Gaborone';
+        data.employment_job_title = 'Economic Officer';
+        data.employment_posting_date = '2023-08-20';
+        break;
+
+      case 'Full-Family':
+        data.first_name = 'William';
+        data.last_name = 'Peterson';
+        data.email = baseEmail;
+        data.phone_primary = '71234502';
+        data.citizenship_country = 'US';
+        data.employment_office = 'U.S. Embassy Gaborone';
+        data.employment_job_title = 'Consular Officer';
+        data.employment_posting_date = '2022-06-15';
+        data.family_members = [
+          { first_name: 'Sarah', last_name: 'Peterson', relationship_to_primary: 'Spouse', citizenship_country: 'US' },
+          { first_name: 'Emma', last_name: 'Peterson', relationship_to_primary: 'Child', citizenship_country: 'US' },
+          { first_name: 'Lucas', last_name: 'Peterson', relationship_to_primary: 'Child', citizenship_country: 'US' }
+        ];
+        data.has_staff = true;
+        data.staff_first_name = 'Thabo';
+        data.staff_last_name = 'Motswana';
+        data.staff_citizenship = 'BW';
+        break;
+
+      // ASSOCIATE MEMBERSHIP
+      case 'Associate-Individual':
+        data.first_name = 'David';
+        data.last_name = 'Chen';
+        data.email = baseEmail;
+        data.phone_primary = '71234503';
+        data.citizenship_country = 'SG';
+        data.employment_office = 'Infosys Gaborone';
+        data.employment_job_title = 'Senior Systems Architect';
+        data.employment_posting_date = '2024-02-01';
+        break;
+
+      case 'Associate-Family':
+        data.first_name = 'Michael';
+        data.last_name = 'Thompson';
+        data.email = baseEmail;
+        data.phone_primary = '71234504';
+        data.citizenship_country = 'CA';
+        data.employment_office = 'Deloitte Consulting';
+        data.employment_job_title = 'Senior Management Consultant';
+        data.employment_posting_date = '2023-03-10';
+        data.family_members = [
+          { first_name: 'Rebecca', last_name: 'Thompson', relationship_to_primary: 'Spouse', citizenship_country: 'CA' },
+          { first_name: 'Oliver', last_name: 'Thompson', relationship_to_primary: 'Child', citizenship_country: 'CA' }
+        ];
+        data.has_staff = true;
+        data.staff_first_name = 'Lerato';
+        data.staff_last_name = 'Mthembu';
+        data.staff_citizenship = 'BW';
+        break;
+
+      // AFFILIATE MEMBERSHIP
+      case 'Affiliate-Individual':
+        data.first_name = 'Boitumelo';
+        data.last_name = 'Lekgotho';
+        data.email = baseEmail;
+        data.phone_primary = '71234505';
+        data.citizenship_country = 'BW';
+        data.employment_office = 'Botswana Institute for Development Policy Analysis';
+        data.employment_job_title = 'Senior Research Officer';
+        data.employment_posting_date = '2021-01-15';
+        break;
+
+      case 'Affiliate-Family':
+        data.first_name = 'Kgosiemang';
+        data.last_name = 'Sekhosana';
+        data.email = baseEmail;
+        data.phone_primary = '71234506';
+        data.citizenship_country = 'BW';
+        data.employment_office = 'Ministry of Education';
+        data.employment_job_title = 'Policy Director';
+        data.employment_posting_date = '2020-05-01';
+        data.family_members = [
+          { first_name: 'Naledi', last_name: 'Sekhosana', relationship_to_primary: 'Spouse', citizenship_country: 'BW' },
+          { first_name: 'Mpilo', last_name: 'Sekhosana', relationship_to_primary: 'Child', citizenship_country: 'BW' },
+          { first_name: 'Zama', last_name: 'Sekhosana', relationship_to_primary: 'Child', citizenship_country: 'BW' }
+        ];
+        data.has_staff = true;
+        data.staff_first_name = 'Boago';
+        data.staff_last_name = 'Sechele';
+        data.staff_citizenship = 'BW';
+        break;
+
+      // DIPLOMATIC MEMBERSHIP
+      case 'Diplomatic-Individual':
+        data.first_name = 'Jean-Pierre';
+        data.last_name = 'Dupont';
+        data.email = baseEmail;
+        data.phone_primary = '71234507';
+        data.citizenship_country = 'FR';
+        data.employment_office = 'Ministry of Foreign Affairs';
+        data.employment_job_title = 'Ambassador';
+        data.employment_posting_date = '2021-09-01';
+        data.employment_departure_date = '2027-08-31';
+        break;
+
+      case 'Diplomatic-Family':
+        data.first_name = 'Carlos';
+        data.last_name = 'Rodriguez';
+        data.email = baseEmail;
+        data.phone_primary = '71234508';
+        data.citizenship_country = 'ES';
+        data.employment_office = 'Ministry of Foreign Affairs';
+        data.employment_job_title = 'Minister Plenipotentiary';
+        data.employment_posting_date = '2022-01-15';
+        data.employment_departure_date = '2026-12-31';
+        data.family_members = [
+          { first_name: 'Isabel', last_name: 'Rodriguez', relationship_to_primary: 'Spouse', citizenship_country: 'ES' },
+          { first_name: 'Miguel', last_name: 'Rodriguez', relationship_to_primary: 'Child', citizenship_country: 'ES' }
+        ];
+        data.has_staff = true;
+        data.staff_first_name = 'Palesa';
+        data.staff_last_name = 'Diako';
+        data.staff_citizenship = 'BW';
+        break;
+
+      // TEMPORARY MEMBERSHIP (Individual only)
+      case 'Temporary-Individual':
+        data.first_name = 'Patricia';
+        data.last_name = 'Anderson';
+        data.email = baseEmail;
+        data.phone_primary = '71234509';
+        data.citizenship_country = 'US';
+        data.employment_office = 'U.S. State Department';
+        data.employment_job_title = 'Temporary Assignment Officer';
+        data.employment_posting_date = '2026-02-01';
+        data.employment_departure_date = '2026-08-31';
+        break;
+
+      // COMMUNITY/GUEST MEMBERSHIP
+      case 'Community-Individual':
+        data.first_name = 'George';
+        data.last_name = 'Makgawe';
+        data.email = baseEmail;
+        data.phone_primary = '71234510';
+        data.citizenship_country = 'BW';
+        data.employment_office = 'Pula Capital Partners';
+        data.employment_job_title = 'Managing Director';
+        data.employment_posting_date = '2019-06-01';
+        data.sponsor_name = 'Ambassador James Morrison';
+        data.sponsor_email = 'morrison@example.com';
+        break;
+
+      case 'Community-Family':
+        data.first_name = 'Nelson';
+        data.last_name = 'Kabelo';
+        data.email = baseEmail;
+        data.phone_primary = '71234511';
+        data.citizenship_country = 'BW';
+        data.employment_office = 'Kabelo Solutions Ltd';
+        data.employment_job_title = 'Chief Executive Officer';
+        data.employment_posting_date = '2018-01-15';
+        data.family_members = [
+          { first_name: 'Ayanda', last_name: 'Kabelo', relationship_to_primary: 'Spouse', citizenship_country: 'ZA' },
+          { first_name: 'Tsotso', last_name: 'Kabelo', relationship_to_primary: 'Child', citizenship_country: 'BW' }
+        ];
+        data.has_staff = true;
+        data.staff_first_name = 'Busisiwe';
+        data.staff_last_name = 'Nkosi';
+        data.staff_citizenship = 'BW';
+        data.sponsor_name = 'Consular Officer Sarah Thompson';
+        data.sponsor_email = 'sthompson@example.com';
+        break;
+    }
+
+    return data;
+  }
+
+  /**
    * Show dialog to select membership category and household type for test data
    */
   function showTestDataSelector() {
@@ -3695,90 +3899,13 @@ function submitPasswordResetRequest(event) {
   }
 
   /**
-   * Load test data based on selected category and household type
+   * Load test data based on selected category and household type.
+   * Creates unique, realistic test data for all 11 category-type combinations.
    */
   function loadTestDataWithSelection(category, householdType) {
-    // Base test data (common to all categories)
-    applicationFormData = {
-      membership_category: category,
-      household_type: householdType,
-      first_name: 'Test',
-      last_name: 'User',
-      email: 'michael+test' + Math.floor(Math.random() * 10000) + '@raneyworld.com',
-      country_code_primary: 'BW',
-      phone_primary: '71234567',
-      phone_primary_whatsapp: true,
-      citizenship_country: 'US',
-      sponsor_name: '',
-      sponsor_email: '',
-      family_members: [],
-      has_staff: false,
-      staff_first_name: '',
-      staff_last_name: '',
-      staff_citizenship: 'BW'
-    };
-
-    // Category-specific test data
-    switch(category) {
-      case 'Full':
-        applicationFormData.employment_office = 'U.S. Embassy Gaborone';
-        applicationFormData.employment_job_title = 'Project Manager';
-        applicationFormData.employment_posting_date = '2024-01-15';
-        applicationFormData.employment_departure_date = ''; // Optional for Full
-        break;
-      case 'Associate':
-        applicationFormData.employment_office = 'ABC Company';
-        applicationFormData.employment_job_title = 'Software Engineer';
-        applicationFormData.employment_posting_date = '2023-06-01';
-        applicationFormData.employment_departure_date = '';
-        applicationFormData.citizenship_country = 'BW';
-        break;
-      case 'Diplomatic':
-        applicationFormData.employment_office = 'Ministry of Foreign Affairs';
-        applicationFormData.employment_job_title = 'Diplomat';
-        applicationFormData.employment_posting_date = '2023-01-01';
-        applicationFormData.employment_departure_date = '2027-12-31';
-        applicationFormData.citizenship_country = 'ZA'; // Different country
-        break;
-      case 'Temporary':
-        applicationFormData.employment_office = 'Consulting Group';
-        applicationFormData.employment_job_title = 'Consultant';
-        applicationFormData.employment_posting_date = '2025-11-01';
-        applicationFormData.employment_departure_date = '2026-05-31';
-        break;
-      case 'Affiliate':
-        applicationFormData.employment_job_title = 'Retired Executive';
-        break;
-      case 'Community':
-        applicationFormData.employment_office = 'Local Business';
-        applicationFormData.employment_job_title = 'Business Owner';
-        applicationFormData.sponsor_name = 'John Sponsor';
-        applicationFormData.sponsor_email = 'sponsor@example.com';
-        applicationFormData.citizenship_country = 'BW';
-        break;
-    }
-
-    // Household type specific data
-    if (householdType === 'Family') {
-      applicationFormData.family_members = [
-        {
-          first_name: 'Spouse',
-          last_name: 'User',
-          relationship_to_primary: 'Spouse',
-          citizenship_country: 'US'
-        },
-        {
-          first_name: 'Child',
-          last_name: 'User',
-          relationship_to_primary: 'Child',
-          citizenship_country: 'US'
-        }
-      ];
-      applicationFormData.has_staff = true;
-      applicationFormData.staff_first_name = 'Maria';
-      applicationFormData.staff_last_name = 'Helper';
-      applicationFormData.staff_citizenship = 'BW';
-    }
+    // Generate test data based on category + household type combination
+    var testDataSet = _generateCategoryTestData(category, householdType);
+    applicationFormData = testDataSet;
 
     // Go to step 1 and show form
     currentApplicationStep = 1;

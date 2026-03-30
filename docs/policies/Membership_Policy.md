@@ -7,7 +7,7 @@ This policy establishes membership categories, eligibility requirements, sponsor
 ## 2. Membership Categories
 GEA offers six membership categories. Each category has different eligibility, sponsorship, dues, and access rights:
 **Full Members: **U.S. Government direct-hire employees and their household members
-**Associate Members: **U.S. Government-funded employees and contractors, and their household members
+**Associate Members: **U.S. Government-funded employees and contractors (minimum 51% USG funding), and their household members
 **Affiliate Members: **Embassy locally-hired employees and their household members
 **Diplomatic Members: **Personnel with official diplomatic or international organization status and their household members
 **Temporary Members: **U.S. Government employees on temporary duty (TDY) or temporary assignment (maximum 6 months)
@@ -16,7 +16,7 @@ GEA offers six membership categories. Each category has different eligibility, s
 ## 3. Membership Eligibility
 Eligibility for each category is determined by employment status or official capacity:
 **Full Members: **Direct U.S. Government employment; verified by employment letter, pay stub, or embassy ID
-**Associate Members: **U.S. Government funding or employment (contractor, grantee); verified by employment letter or contract
+**Associate Members: **Minimum 51% U.S. Government funding or employment (contractor, grantee); verified by employment letter or contract. Applicants with less than 51% USG funding must apply as Community members.
 **Affiliate Members: **Embassy employment (any status); verified by embassy employment verification letter
 **Diplomatic Members: **Official diplomatic status or international organization personnel; verified by diplomatic passport or accreditation letter
 **Temporary Members: **TDY or temporary assignment status; verified by official TDY orders or assignment letter

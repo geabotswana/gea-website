@@ -160,7 +160,7 @@ Under Review
 - `status` cannot be "Approved" or "Denied" without `reviewed_by` and `review_date`
 - `assigned_to` must be a valid board member email
 - `membership_category` must match one of: Full, Affiliate, Associate, Diplomatic, Community, Temporary
-- If `membership_category` requires sponsor (Affiliate, Associate, etc.):
+- If `membership_category` is Community (only category requiring sponsor):
   - `sponsor_name` is required
   - `sponsor_email` is required
   - `sponsor_verified` is required before approval

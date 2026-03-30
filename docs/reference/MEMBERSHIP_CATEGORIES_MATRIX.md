@@ -17,9 +17,9 @@ GEA has six membership categories determined by a sequential eligibility questio
 | Category | Eligibility | Sponsor? | Dues | Vote? | Board? | Full Access? |
 |----------|-----------|----------|------|-------|--------|-------------|
 | **Full** | Direct-hire USG; PSCs from outside | No | $50/$100 | Yes | Yes | Yes |
-| **Associate** | USG contractors; from outside | Yes (Full) | $50/$100 | No | No | Yes |
-| **Affiliate** | Host country nationals; local hire | Yes (Full) | $50/$100 | No | No | Board disc. |
-| **Diplomatic** | Registered diplomats; intl orgs | Yes (Full) | $75/$150 | No | No | Board disc. |
+| **Associate** | ≥51% USG-funded contractors; from outside | No | $50/$100 | No | No | Yes |
+| **Affiliate** | Host country nationals; local hire | No | $50/$100 | No | No | Board disc. |
+| **Diplomatic** | Registered diplomats; intl orgs | No | $75/$150 | No | No | Board disc. |
 | **Temporary** | USG TDY/official visitor (max 6mo) | No | $20/period | No | No | Board disc. |
 | **Community/Guest** | Local nationals; non-USG visitors | Yes (Full) | $75/$150 | No | No | Board disc. |
 
@@ -43,9 +43,9 @@ GEA has six membership categories determined by a sequential eligibility questio
 
 ## Associate Membership
 
-**Eligibility:** USG contractors; federally-funded program staff; embassy employees recruited from outside Botswana
+**Eligibility:** Minimum 51% U.S. Government funding or employment (contractors, federally-funded program staff, embassy employees recruited from outside Botswana). Applicants with less than 51% USG funding do not qualify for Associate status and must apply as Community members.
 
-**Sponsorship:** Yes – must be Full member (active, paid)
+**Sponsorship:** Not required
 
 **Annual Dues:** $50 individual / $100 family
 
@@ -61,7 +61,7 @@ GEA has six membership categories determined by a sequential eligibility questio
 
 **Eligibility:** Host country nationals; TCNs recruited locally in Botswana
 
-**Sponsorship:** Yes – must be Full member (active, paid)
+**Sponsorship:** Not required
 
 **Annual Dues:** $50 individual / $100 family
 
@@ -77,15 +77,13 @@ GEA has six membership categories determined by a sequential eligibility questio
 
 **Eligibility:** Registered diplomats; international organization staff
 
-**Sponsorship:** Yes – must be Full member (per By-Laws; 6 FAM 545(b) says no sponsor)
+**Sponsorship:** Not required
 
 **Annual Dues:** $75 individual / $150 family
 
 **Rights:** Specified facilities (Board discretion); NO voting or Board
 
 **Regulatory Basis:** 6 FAM 545; By-Laws §7(D)
-
-**Note:** Sponsor requirement may change per regulatory clarification
 
 **Application:** ~10 days
 

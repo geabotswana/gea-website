@@ -80,7 +80,7 @@ Use this checklist after each major stage to ensure data integrity.
 - [ ] `rso_reviewed_by`, `rso_review_date` = NULL (not reviewed yet)
 - [ ] `gea_reviewed_by`, `gea_review_date` = NULL
 
-**Membership Applications Tab (System Backend):**
+**Membership Applications Tab (GEA Member Directory):**
 - [ ] `documents_confirmed_date` = today
 - [ ] `status` = "docs_confirmed" or "board_initial_review"
 - [ ] `board_initial_status` = NULL (board hasn't decided yet)
@@ -183,7 +183,7 @@ Use this checklist after each major stage to ensure data integrity.
 | `is_current` | Boolean | TRUE for most recent approved submission of type |
 | `cloud_storage_path` | Text | GCS path for approved photos; NULL otherwise |
 
-### Membership Applications Sheet (System Backend)
+### Membership Applications Sheet (GEA Member Directory)
 
 | Field | Expected Type | Validation Rules |
 |---|---|---|

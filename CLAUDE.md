@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **GEA Management System** is a Google Apps Script web application for the Gaborone Employee Association. It manages memberships, facility reservations, payments, document verification, and member communications. The system consists of:
 
-- **Backend:** Google Apps Script (V8) with 9 service modules
+- **Backend:** Google Apps Script (V8) with 11 service modules
 - **Frontend:** Four responsive HTML interfaces:
   - **Authenticated:** Portal.html (member), Admin.html (board)
   - **Public:** index.html (informational website)
@@ -43,9 +43,9 @@ node scripts/update-deploy-timestamp.js
 #   - SYSTEM_LAST_FEATURE: Describe the feature/change in one line
 #
 # Example:
-#   var SYSTEM_VERSION      = "2.0.5";
-#   var SYSTEM_BUILD_DATE   = "2026-03-27";
-#   var SYSTEM_LAST_FEATURE = "Styled password reset modal to match login screen";
+#   var SYSTEM_VERSION      = "2.1.3";
+#   var SYSTEM_BUILD_DATE   = "2026-03-30";
+#   var SYSTEM_LAST_FEATURE = "Added membership application test data loader with 11 test identities";
 
 # Step 3: Commit and push
 git add .
@@ -99,7 +99,7 @@ _routeAction(action, params)
   ├─→ Applicant routes: application_status, confirm_documents, upload_document, submit_payment_proof
   └─→ Board routes: admin_pending, admin_approve, admin_deny, admin_members, admin_photo, admin_pending_payments, admin_approve_payment, admin_reject_payment, admin_clarify_payment, admin_payment_report, admin_applications, admin_approve_file, admin_reject_file
   ↓
-Service modules (AuthService, MemberService, ReservationService, PaymentService, FileSubmissionService, ApplicationService, EmailService, NotificationService)
+Service modules (AuthService, MemberService, ReservationService, PaymentService, FileSubmissionService, EmailService, NotificationService, ApplicationService, RulesService, Utilities, Tests)
   ↓
 Google Sheets API calls
   ↓
@@ -195,6 +195,7 @@ container.appendChild(div);
 | Households | Membership units (individual or family) | `household_id` or `primary_member_id` |
 | Individuals | People (adults & children) | `individual_id` or `email` for auth |
 | File Submissions | Document & photo uploads w/ workflow | `submission_id`, filtered by `individual_id` + `document_type` |
+| Membership Applications | New member application workflow | `application_id`, status progression |
 | Membership Levels | Reference table (12 types) | `level_id` (key joins to Households) |
 
 ### Reservations (RESERVATIONS_ID)
@@ -210,8 +211,8 @@ container.appendChild(div);
 | Configuration | All business rules & thresholds | `config_key` (cached at runtime) |
 | Email Templates | 69 notification templates | `semantic_name` (e.g. ADM_*, DOC_*, MEM_*, PAY_*, RES_*, SYS_*) |
 | Sessions | Active user sessions | `token` (lookup on every request) |
+| Administrators | Admin accounts (board, rso_approve, rso_notify, mgt roles) | `email` for auth |
 | Audit Log | Compliance trail (1000s of rows) | timestamp, user_email, action_type |
-| Membership Applications | New member application workflow | `application_id`, status progression |
 | Holiday Calendar | US Federal & Botswana public holidays | For business day calculations |
 
 ### Payment Tracking (PAYMENT_TRACKING_ID)
@@ -223,43 +224,44 @@ container.appendChild(div);
 
 ## Service Modules & Responsibilities
 
-**Code.js** (1,503 lines)
+**Code.js** (3,629 lines)
 - Entry point: doGet(e), handlePortalApi(action, params)
-- Router: _routeAction() dispatches to specific handlers
-- 15+ action handlers for member & board operations
+- Router: _routeAction() dispatches to 78 specific handlers for members, applicants, and board
 - Image proxy: _handleImageProxy() serves Drive files as binary
+- Request flow: Validates session → authorizes role → executes handler → returns JSON response
 
-**AuthService.js** (546 lines)
+**AuthService.js** (1,893 lines)
 - login(email, password) → session creation & token generation
 - logout(token) → session termination
 - requireAuth(token, role?) → permission check (used by all protected routes)
 - validateSession(token) → lookup & verify token still valid
-- Password validation: SHA256 hash comparison (simple equality, see security notes below)
+- Password validation: SHA256 hash comparison with constant-time comparison
+- Admin account authentication (board, mgt, rso_approve, rso_notify roles)
 
-**MemberService.js** (622 lines)
+**MemberService.js** (690 lines)
 - Member CRUD: getMemberByEmail(), getMemberById(), updateMember(), createMember()
 - Household CRUD: getHouseholdById(), getHouseholdByMemberId(), updateHousehold()
 - Derived fields: Recalculate voting_eligible, fitness_center_eligible, office_eligible
 - Safe views: _safePublicMember(), _safePublicHousehold() (exclude password_hash, etc.)
 
-**ReservationService.js** (797 lines)
+**ReservationService.js** (2,089 lines)
 - Booking logic: createReservation() checks limits (Tennis 3hrs/week, Leobo 1/month)
 - Bumping logic: Tennis 1-day window, Leobo 5 business days
 - Cancellation: cancelReservation(), refund logic, calendar event cleanup
 - Usage tracking: getWeeklyUsage(), getMonthlyUsage(), calculateNextWeekStart()
 - Limit enforcement: Excess bookings flag as pending for board approval
+- Guest list management: submitGuestList(), getGuestList(), approveGuestList()
 
-**PaymentService.js** (600+ lines - Phase 1 & Phase 2)
-- Phase 1: Payment submission, verification workflow, treasurer approval/rejection/clarification
+**PaymentService.js** (851 lines)
+- Payment submission, verification workflow, treasurer approval/rejection/clarification
   - submitPaymentVerification() — Member submits payment proof with file upload
   - listPendingPaymentVerifications() — List all unverified payments
   - approvePaymentVerification(), rejectPaymentVerification(), requestPaymentClarification()
   - calculateProratedDues() — Calculate quarterly dues
-- Phase 2: Exchange rates and reporting
-  - fetchAndUpdateExchangeRate() (via API nightly), getExchangeRate() (fallback to default)
-  - getPaymentReport(filters) — Generate payment history with optional membership_year/status filters
+- Exchange rate management: fetchAndUpdateExchangeRate() (via API nightly), getExchangeRate()
+- Payment reporting: getPaymentReport(filters) — Generate payment history with filters
 
-**FileSubmissionService.js** (400+ lines - Document & Photo Uploads)
+**FileSubmissionService.js** (598 lines)
 - File submission workflow: Documents (passport/omang), photos, employment verification
 - Two-tier document approval: RSO review → GEA admin review
 - One-tier photo approval: GEA admin only → Cloud Storage transfer
@@ -268,15 +270,16 @@ container.appendChild(div);
 - Cloud Storage integration: Transfer approved photos to gs://gea-member-data/
 - Audit trail: Track all uploads, reviews, approvals, rejections with timestamps
 
-**EmailService.js** (336 lines)
+**EmailService.js** (926 lines)
 - sendEmail(templateId, recipient, variables) → Core email dispatcher
-- Fetches template from sheet, replaces placeholders, wraps in HTML
+- Fetches template from sheet, replaces placeholders ({{FIELD}} format), wraps in HTML
 - From: "Gaborone Employee Association", Reply-to: board@geabotswana.org
-- 30+ template IDs for all communications
+- 69 email templates across 6 categories (ADM, DOC, MEM, PAY, RES, SYS)
+- Supports conditional blocks: {{IF_FAMILY}}...{{END_IF}}, {{IF_TEMPORARY}}...{{END_IF}}
 
-**NotificationService.js** (400+ lines)
+**NotificationService.js** (746 lines)
 - runNightlyTasks() → Daily at 2:00 AM GMT+2
-  - Membership renewals (30-day, 7-day warnings)
+  - Membership renewals (30-day, 7-day warnings before July 31)
   - Document expiration alerts (6-month passport warnings)
   - Guest list deadline reminders
   - Session purge (delete expired sessions)
@@ -285,24 +288,45 @@ container.appendChild(div);
 - triggerRsoDailySummary() → Daily at 6:00 AM (RSO gets daily event list)
 - sendHolidayCalReminder() → Yearly on Nov 1 (board reminder)
 
-**Utilities.js** (517 lines)
+**ApplicationService.js** (1,276 lines)
+- Membership application workflow: 11-step lifecycle from submission through activation
+- submitApplication() → Create new household + individuals with temp password
+- getApplicationStatus() → Track applicant through approval workflow
+- Document submission: confirmDocumentsUploaded(), uploadDocument()
+- Payment submission: submitPaymentProof(), getPaymentStatus()
+- Board & RSO workflows: Application moves through 11 steps with role-based approvals
+- Category assignment: Automatic routing based on eligibility questionnaire responses
+- Sponsorship verification: Validate sponsor relationships for Community members
+
+**RulesService.js** (403 lines)
+- Eligibility rules engine: Membership category determination from questionnaire
+- 6 category rules: Full, Associate, Affiliate, Diplomatic, Temporary, Community
+- Rule logic: Embassy employment, USG funding (51% minimum for Associate), visa type, posting dates
+- Sponsor validation: Verify sponsor exists and has active Full membership
+- Fallback rules: <51% USG funding routes to Community, not Associate
+- Questionnaire integration: Q1-Q5 responses determine eligibility path
+
+**Utilities.js** (586 lines)
 - Date math: addDaysExcludingWeekends(), isBusinessDay(), getDayOfWeek()
 - Hashing: hashPassword() (SHA256), validatePassword()
 - Validation: isValidEmail(), isValidPhone(), validateLength()
 - Audit logging: logAuditEntry()
 - Safe guards: sanitizeInput() (no injection attacks)
 - Lookups: getConfigValue(), getCellValue(), findRowByColumn()
+- Constants-time comparison: Used for all security-sensitive equality checks
 
-**Config.js** (649 lines)
-- Section 1: Spreadsheet IDs (4 main spreadsheets)
+**Config.js** (865 lines)
+- Section 1: Spreadsheet IDs (4 main spreadsheets + folders)
 - Section 2: Tab names (exact sheet names)
-- Section 3: Folder IDs (Google Drive folders for documents, photos)
-- Section 4-17: Logo URLs, brand colors, email addresses, business rules, facility limits, age thresholds, payment methods, notification config, etc.
+- Section 3: Folder IDs (Google Drive folders for documents, photos, cloud storage)
+- Section 4-17: Logo URLs, brand colors, email addresses, business rules, facility limits, age thresholds, payment methods, notification config, membership categories
+- Updated: March 28, 2026
 
-**Tests.js** (665 lines)
-- Test utilities: testGetMembers(), testCreateReservation(), testEmailSending()
-- Diagnostics: runDiagnostics(), checkAllSheets(), validateSchemaIntegrity()
-- Used for QA and development
+**Tests.js** (2,494 lines)
+- Test utilities: testGetMembers(), testCreateReservation(), testEmailSending(), testMembershipApplication()
+- Diagnostics: runDiagnostics(), checkAllSheets(), validateSchemaIntegrity(), checkMembershipApplications()
+- 40+ test functions for QA and development
+- Used for debugging spreadsheet connections and data integrity
 
 ---
 
@@ -600,8 +624,9 @@ GEA Admin reviews & approves
 
 **Test Data Available:**
 - Test household: HSH-2026-TEST01 (Johnson Family)
-- Test individual: IND-2026-TEST01 (Jane Johnson) - email: jane@example.com, password: TestPass123!
+- Test individual: IND-2026-TEST01 (Jane Johnson) - email: jane@example.com, password: JanePassword2026!
 - Test member for admin: board@geabotswana.org (role=board)
+- 11 membership test identities available: James Morrison, William Peterson, David Chen, Michael Thompson, Boitumelo Lekgotho, Kgosiemang Sekhosana, Jean-Pierre Dupont, Carlos Rodriguez, Patricia Anderson, George Makgawe, Nelson Kabelo
 - **Delete before production go-live**
 
 **Debugging Strategies:**
@@ -625,15 +650,21 @@ GEA Admin reviews & approves
 
 | File | Lines | When to Edit | Key Functions |
 |------|-------|-------------|----------------|
-| Config.js | 649 | Business rule changes | All config_* variables |
-| AuthService.js | 546 | Auth/password changes | login(), requireAuth(), validateSession() |
-| MemberService.js | 622 | Member data structure | getMemberById(), updateMember() |
-| ReservationService.js | 797 | Booking logic | createReservation(), cancelReservation() |
-| EmailService.js | 336 | Email design/templates | sendEmail() (reads templates from sheet) |
-| Code.js | 1,503 | API routes/handlers | _routeAction(), all action handlers |
-| Portal.html | 1,926 | Member UI | loadProfile(), loadDashboard(), submitLogin() |
-| Admin.html | 2,142 | Admin UI | approveReservation(), rejectPhoto() |
-| Utilities.js | 517 | Shared helpers | Utilities used by all modules |
+| Code.js | 3,629 | API routes/handlers | _routeAction(), 78 action handlers |
+| AuthService.js | 1,893 | Auth/password changes | login(), requireAuth(), validateSession() |
+| ApplicationService.js | 1,276 | Membership applications | submitApplication(), getApplicationStatus() |
+| ReservationService.js | 2,089 | Booking logic | createReservation(), cancelReservation() |
+| Tests.js | 2,494 | Test functions & diagnostics | runDiagnostics(), 40+ test functions |
+| Config.js | 865 | Business rule changes | All config_* variables |
+| EmailService.js | 926 | Email design/templates | sendEmail(), 69 templates |
+| RulesService.js | 403 | Membership eligibility rules | Category assignment, sponsor validation |
+| PaymentService.js | 851 | Payment verification | submitPaymentVerification(), payment reporting |
+| FileSubmissionService.js | 598 | Document/photo workflows | submitFile(), approveSubmission() |
+| MemberService.js | 690 | Member data structure | getMemberById(), updateMember() |
+| NotificationService.js | 746 | Nightly tasks & notifications | runNightlyTasks(), email triggers |
+| Utilities.js | 586 | Shared helpers | Date math, hashing, validation |
+| Portal.html | 8,799 | Member UI | loadProfile(), loadDashboard(), submitLogin(), loadApplicationPage() |
+| Admin.html | 6,255 | Admin UI | approveReservation(), rejectPhoto(), admin_pending_payments |
 | GEA_System_Schema.md | 35KB | Understand data model | Read before major changes |
 
 ---
@@ -701,4 +732,4 @@ Points to production versioned deployment: `AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3
 - **Production Portal:** https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec
 - **Public Website:** https://geabotswana.org
 - **GitHub Repository:** https://github.com/geabotswana/gea-website
-- **Last Updated:** v1.1.0 - March 26, 2026
+- **Last Updated:** v2.1.2 - March 30, 2026

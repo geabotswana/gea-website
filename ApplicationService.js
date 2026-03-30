@@ -421,7 +421,7 @@ function confirmDocumentsUploaded(applicationId, email) {
     }
 
     // Verify ownership
-    if (application.email !== email) {
+    if (application.primary_applicant_email !== email) {
       return { success: false, message: "Unauthorized." };
     }
 
@@ -798,7 +798,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       return { success: false, message: "Application not found." };
     }
 
-    if (application.email !== email) {
+    if (application.primary_applicant_email !== email) {
       return { success: false, message: "Unauthorized." };
     }
 

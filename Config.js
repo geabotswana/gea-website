@@ -951,12 +951,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.1.5";
+var SYSTEM_VERSION          = "2.1.6";
 var SYSTEM_BUILD_DATE       = "2026-03-30";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fixed I Agree & Continue crash: stale family member divs missing date-of-birth input causing null.value TypeError in saveApplicationStepData";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-30 20:35:24";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed applicant portal: Unauthorized on confirm documents (wrong field name), invisible upload toast (missing toast-info CSS)";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-30 20:53:23";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

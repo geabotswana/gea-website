@@ -78,10 +78,10 @@ These columns are actively used in the system and critical for core functionalit
 These columns support non-critical but useful features.
 
 #### `sponsor_name` (Text)
-- **Used:** Dashboard display for non-Full members
-- **Argument FOR:** Shows sponsorship context; required for Affiliate/Associate/Community member types
+- **Used:** Dashboard display for Community members only
+- **Argument FOR:** Shows sponsorship context; required only for Community member type
 - **Argument AGAINST:** Could be looked up from application data
-- **Status:** KEEP - Improves UX for sponsored member types
+- **Status:** KEEP - Improves UX for Community member type
 
 #### `sponsor_verified` (Boolean)
 - **Used:** Dashboard badge display

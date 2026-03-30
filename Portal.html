@@ -3698,6 +3698,9 @@ function submitPasswordResetRequest(event) {
         data.employment_office = 'Infosys Gaborone';
         data.employment_job_title = 'Senior Systems Architect';
         data.employment_posting_date = '2024-02-01';
+        // No sponsor for Associate
+        data.sponsor_name = '';
+        data.sponsor_email = '';
         break;
 
       case 'Associate-Family':
@@ -3717,18 +3720,24 @@ function submitPasswordResetRequest(event) {
         data.staff_first_name = 'Lerato';
         data.staff_last_name = 'Mthembu';
         data.staff_citizenship = 'BW';
+        // No sponsor for Associate
+        data.sponsor_name = '';
+        data.sponsor_email = '';
         break;
 
-      // AFFILIATE MEMBERSHIP
+      // AFFILIATE MEMBERSHIP (Embassy employee, locally hired)
       case 'Affiliate-Individual':
         data.first_name = 'Boitumelo';
         data.last_name = 'Lekgotho';
         data.email = baseEmail;
         data.phone_primary = '71234505';
         data.citizenship_country = 'BW';
-        data.employment_office = 'Botswana Institute for Development Policy Analysis';
-        data.employment_job_title = 'Senior Research Officer';
+        data.employment_office = 'U.S. Embassy Gaborone';
+        data.employment_job_title = 'Local Hire - Administrative Assistant';
         data.employment_posting_date = '2021-01-15';
+        // No sponsor for Affiliate
+        data.sponsor_name = '';
+        data.sponsor_email = '';
         break;
 
       case 'Affiliate-Family':
@@ -3737,8 +3746,8 @@ function submitPasswordResetRequest(event) {
         data.email = baseEmail;
         data.phone_primary = '71234506';
         data.citizenship_country = 'BW';
-        data.employment_office = 'Ministry of Education';
-        data.employment_job_title = 'Policy Director';
+        data.employment_office = 'U.S. Embassy Gaborone';
+        data.employment_job_title = 'Local Hire - Program Officer';
         data.employment_posting_date = '2020-05-01';
         data.family_members = [
           { first_name: 'Naledi', last_name: 'Sekhosana', relationship_to_primary: 'Spouse', citizenship_country: 'BW' },
@@ -3749,6 +3758,9 @@ function submitPasswordResetRequest(event) {
         data.staff_first_name = 'Boago';
         data.staff_last_name = 'Sechele';
         data.staff_citizenship = 'BW';
+        // No sponsor for Affiliate
+        data.sponsor_name = '';
+        data.sponsor_email = '';
         break;
 
       // DIPLOMATIC MEMBERSHIP
@@ -3762,6 +3774,9 @@ function submitPasswordResetRequest(event) {
         data.employment_job_title = 'Ambassador';
         data.employment_posting_date = '2021-09-01';
         data.employment_departure_date = '2027-08-31';
+        // No sponsor for Diplomatic
+        data.sponsor_name = '';
+        data.sponsor_email = '';
         break;
 
       case 'Diplomatic-Family':
@@ -3782,6 +3797,9 @@ function submitPasswordResetRequest(event) {
         data.staff_first_name = 'Palesa';
         data.staff_last_name = 'Diako';
         data.staff_citizenship = 'BW';
+        // No sponsor for Diplomatic
+        data.sponsor_name = '';
+        data.sponsor_email = '';
         break;
 
       // TEMPORARY MEMBERSHIP (Individual only)

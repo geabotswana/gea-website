@@ -146,11 +146,11 @@ The form will auto-populate with all required fields including:
 | **Phone** | +267 71 234505 |
 | **Country** | Botswana |
 | **Citizenship** | Botswana |
-| **Employment Office** | Botswana Institute for Development Policy Analysis |
-| **Job Title** | Senior Research Officer |
+| **Employment Office** | U.S. Embassy Gaborone |
+| **Job Title** | Local Hire - Administrative Assistant |
 | **Posting Date** | 2021-01-15 |
 | **Household Type** | Individual |
-| **Requires Sponsor** | **YES** – Requires Full member sponsor |
+| **Requires Sponsor** | No |
 | **ID Document** | `Boitumelo_Lekgotho_omang.png` (Botswana citizen uses Omang) |
 | **Photo** | `Boitumelo_Lekgotho_photo.png` |
 | **Annual Dues (USD)** | $50 |
@@ -167,14 +167,14 @@ The form will auto-populate with all required fields including:
 | **Phone** | +267 71 234506 |
 | **Country** | Botswana |
 | **Citizenship** | Botswana |
-| **Employment Office** | Ministry of Education |
-| **Job Title** | Policy Director |
+| **Employment Office** | U.S. Embassy Gaborone |
+| **Job Title** | Local Hire - Program Officer |
 | **Posting Date** | 2020-05-01 |
 | **Household Type** | Family |
 | **Spouse** | Naledi Sekhosana (Botswana) |
 | **Children** | Mpilo Sekhosana (Botswana), Zama Sekhosana (Botswana) |
 | **Household Staff** | Boago Sechele (Botswana) |
-| **Requires Sponsor** | **YES** |
+| **Requires Sponsor** | No |
 | **Documents** | Omang for all adults, passport optional for children |
 | **Annual Dues (USD)** | $100 |
 | **Test Scenario** | SCENE-03 (Category Routing) |
@@ -195,7 +195,7 @@ The form will auto-populate with all required fields including:
 | **Posting Date** | 2021-09-01 |
 | **Departure Date** | 2027-08-31 |
 | **Household Type** | Individual |
-| **Requires Sponsor** | **YES** – Requires Full member sponsor (per By-Laws) |
+| **Requires Sponsor** | No |
 | **ID Document** | `Jean-Pierre_Dupont_passport.png` |
 | **Photo** | `Jean-Pierre_Dupont_photo.png` |
 | **Annual Dues (USD)** | $75 (higher rate for diplomatic) |
@@ -220,7 +220,7 @@ The form will auto-populate with all required fields including:
 | **Spouse** | Isabel Rodriguez (Spain) |
 | **Child** | Miguel Rodriguez (Spain) |
 | **Household Staff** | Palesa Diako (Botswana) |
-| **Requires Sponsor** | **YES** |
+| **Requires Sponsor** | No |
 | **Documents** | Passports for all |
 | **Annual Dues (USD)** | $150 (family diplomatic rate) |
 | **Test Scenario** | SCENE-03 (Category Routing) |
@@ -308,8 +308,8 @@ Use this table to find which test identity to use for each scene:
 | **02** | Full Family Happy Path | William Peterson | testapp+full-family@example.com | Large household; activation cascade test |
 | **03A** | Category Routing — Full | James Morrison (above) or Alice Thornton | Use test data loader | Questionnaire to Full, Individual |
 | **03B** | Category Routing — Temporary | Patricia Anderson | testapp+temporary-individual@example.com | Test Q1b branch (TDY route) |
-| **03C** | Category Routing — Associate | David Chen | testapp+associate-individual@example.com | Sponsor requirement check |
-| **03D** | Category Routing — Affiliate | Boitumelo Lekgotho | testapp+affiliate-individual@example.com | Local-hire category |
+| **03C** | Category Routing — Associate | David Chen | testapp+associate-individual@example.com | No sponsor required |
+| **03D** | Category Routing — Affiliate | Boitumelo Lekgotho | testapp+affiliate-individual@example.com | Embassy local-hire category |
 | **03E** | Category Routing — Diplomatic | Jean-Pierre Dupont | testapp+diplomatic-individual@example.com | Diplomat category with dates |
 | **03F** | Category Routing — Community | George Makgawe | testapp+community-individual@example.com | Sponsor requirement (only community) |
 | **04** | Board Denial Scenarios | Use 03A or 03C (any applicant) | Any from 03 | Test denial at both board stages |

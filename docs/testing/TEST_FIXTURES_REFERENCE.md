@@ -47,7 +47,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Applicant Name** | James Morrison |
-| **Email** | `testapp+full-individual@example.com` |
+| **Email** | `michael+fullindividual@raneyworld.com` |
 | **Phone** | +267 71 234501 |
 | **Country** | Botswana (country code: BW) |
 | **Citizenship** | United States |
@@ -71,7 +71,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Primary Applicant** | William Peterson |
-| **Email** | `testapp+full-family@example.com` |
+| **Email** | `michael+fullfamily@raneyworld.com` |
 | **Phone** | +267 71 234502 |
 | **Country** | Botswana |
 | **Citizenship** | United States |
@@ -98,7 +98,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Applicant Name** | David Chen |
-| **Email** | `testapp+associate-individual@example.com` |
+| **Email** | `michael+associateindividual@raneyworld.com` |
 | **Phone** | +267 71 234503 |
 | **Country** | Botswana |
 | **Citizenship** | Singapore |
@@ -119,7 +119,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Primary Applicant** | Michael Thompson |
-| **Email** | `testapp+associate-family@example.com` |
+| **Email** | `michael+associatefamily@raneyworld.com` |
 | **Phone** | +267 71 234504 |
 | **Country** | Botswana |
 | **Citizenship** | Canada |
@@ -142,7 +142,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Applicant Name** | Boitumelo Lekgotho |
-| **Email** | `testapp+affiliate-individual@example.com` |
+| **Email** | `michael+affiliateindividual@raneyworld.com` |
 | **Phone** | +267 71 234505 |
 | **Country** | Botswana |
 | **Citizenship** | Botswana |
@@ -163,7 +163,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Primary Applicant** | Kgosiemang Sekhosana |
-| **Email** | `testapp+affiliate-family@example.com` |
+| **Email** | `michael+affiliatefamily@raneyworld.com` |
 | **Phone** | +267 71 234506 |
 | **Country** | Botswana |
 | **Citizenship** | Botswana |
@@ -186,7 +186,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Applicant Name** | Jean-Pierre Dupont |
-| **Email** | `testapp+diplomatic-individual@example.com` |
+| **Email** | `michael+diplomaticindividual@raneyworld.com` |
 | **Phone** | +267 71 234507 |
 | **Country** | Botswana |
 | **Citizenship** | France |
@@ -208,7 +208,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Primary Applicant** | Carlos Rodriguez |
-| **Email** | `testapp+diplomatic-family@example.com` |
+| **Email** | `michael+diplomaticfamily@raneyworld.com` |
 | **Phone** | +267 71 234508 |
 | **Country** | Botswana |
 | **Citizenship** | Spain |
@@ -232,7 +232,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Applicant Name** | Patricia Anderson |
-| **Email** | `testapp+temporary-individual@example.com` |
+| **Email** | `michael+temporaryindividual@raneyworld.com` |
 | **Phone** | +267 71 234509 |
 | **Country** | Botswana |
 | **Citizenship** | United States |
@@ -255,7 +255,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Applicant Name** | George Makgawe |
-| **Email** | `testapp+community-individual@example.com` |
+| **Email** | `michael+communityindividual@raneyworld.com` |
 | **Phone** | +267 71 234510 |
 | **Country** | Botswana |
 | **Citizenship** | Botswana |
@@ -278,7 +278,7 @@ The form will auto-populate with all required fields including:
 | Field | Value |
 |-------|-------|
 | **Primary Applicant** | Nelson Kabelo |
-| **Email** | `testapp+community-family@example.com` |
+| **Email** | `michael+communityfamily@raneyworld.com` |
 | **Phone** | +267 71 234511 |
 | **Country** | Botswana |
 | **Citizenship** | Botswana |
@@ -304,23 +304,23 @@ Use this table to find which test identity to use for each scene:
 
 | Scene | Title | Test Identity | Email | Notes |
 |-------|-------|---------------|-------|-------|
-| **01** | Full Individual Happy Path | James Morrison | testapp+full-individual@example.com | Baseline; creates household HSH-XXXX-TEST01 |
-| **02** | Full Family Happy Path | William Peterson | testapp+full-family@example.com | Large household; activation cascade test |
+| **01** | Full Individual Happy Path | James Morrison | michael+fullindividual@raneyworld.com | Baseline; creates household HSH-XXXX-TEST01 |
+| **02** | Full Family Happy Path | William Peterson | michael+fullfamily@raneyworld.com | Large household; activation cascade test |
 | **03A** | Category Routing — Full | James Morrison (above) or Alice Thornton | Use test data loader | Questionnaire to Full, Individual |
-| **03B** | Category Routing — Temporary | Patricia Anderson | testapp+temporary-individual@example.com | Test Q1b branch (TDY route) |
-| **03C** | Category Routing — Associate | David Chen | testapp+associate-individual@example.com | No sponsor required |
-| **03D** | Category Routing — Affiliate | Boitumelo Lekgotho | testapp+affiliate-individual@example.com | Embassy local-hire category |
-| **03E** | Category Routing — Diplomatic | Jean-Pierre Dupont | testapp+diplomatic-individual@example.com | Diplomat category with dates |
-| **03F** | Category Routing — Community | George Makgawe | testapp+community-individual@example.com | Sponsor requirement (only community) |
+| **03B** | Category Routing — Temporary | Patricia Anderson | michael+temporaryindividual@raneyworld.com | Test Q1b branch (TDY route) |
+| **03C** | Category Routing — Associate | David Chen | michael+associateindividual@raneyworld.com | No sponsor required |
+| **03D** | Category Routing — Affiliate | Boitumelo Lekgotho | michael+affiliateindividual@raneyworld.com | Embassy local-hire category |
+| **03E** | Category Routing — Diplomatic | Jean-Pierre Dupont | michael+diplomaticindividual@raneyworld.com | Diplomat category with dates |
+| **03F** | Category Routing — Community | George Makgawe | michael+communityindividual@raneyworld.com | Sponsor requirement (only community) |
 | **04** | Board Denial Scenarios | Use 03A or 03C (any applicant) | Any from 03 | Test denial at both board stages |
-| **05** | RSO Document Rejection | Use 01 (James Morrison) | testapp+full-individual@example.com | Resubmit documents after RSO rejection |
+| **05** | RSO Document Rejection | Use 01 (James Morrison) | michael+fullindividual@raneyworld.com | Resubmit documents after RSO rejection |
 | **06A** | Payment — BWP Wiggle Room | Use 01 or 02 (after board approval) | From 01 or 02 | BWP payment with tolerance |
-| **06B** | Payment — Clarification Request | New applicant | testapp+payment-clarify@example.com | Treasurer asks for more info |
-| **06C** | Payment — Rejection & Resubmit | New applicant | testapp+payment-reject@example.com | Member resubmits corrected payment |
-| **06D** | Payment — SDFCU Member2Member | New applicant | testapp+payment-sdfcu@example.com | Alternative payment method |
-| **07** | Household Management | Use 02 (William Peterson) | testapp+full-family@example.com | Add/edit/remove family members |
+| **06B** | Payment — Clarification Request | New applicant | michael+paymentclarify@raneyworld.com | Treasurer asks for more info |
+| **06C** | Payment — Rejection & Resubmit | New applicant | michael+paymentreject@raneyworld.com | Member resubmits corrected payment |
+| **06D** | Payment — SDFCU Member2Member | New applicant | michael+paymentsdfcu@raneyworld.com | Alternative payment method |
+| **07** | Household Management | Use 02 (William Peterson) | michael+fullfamily@raneyworld.com | Add/edit/remove family members |
 | **08** | Portal UI — All Status States | Mixed (one per status) | Various | Responsive design & accessibility |
-| **09** | Post-Activation Verification | Use 01 & 02 (after activation) | testapp+full-individual@example.com, testapp+full-family@example.com | Verify active features (card, profile, etc.) |
+| **09** | Post-Activation Verification | Use 01 & 02 (after activation) | michael+fullindividual@raneyworld.com, michael+fullfamily@raneyworld.com | Verify active features (card, profile, etc.) |
 | **10** | Admin Account Management | Board & Treasurer | board@geabotswana.org, treasurer@geabotswana.org | Admin portal testing; credentials in Administrators sheet |
 
 ---
@@ -383,9 +383,9 @@ testapp+{category}{household-type}@example.com
 ```
 
 Examples:
-- `testapp+full-individual@example.com` → Full Individual (Scene 01)
-- `testapp+associate-family@example.com` → Associate Family (Scene 03C)
-- `testapp+community-individual@example.com` → Community Individual (Scene 03F)
+- `michael+fullindividual@raneyworld.com` → Full Individual (Scene 01)
+- `michael+associatefamily@raneyworld.com` → Associate Family (Scene 03C)
+- `michael+communityindividual@raneyworld.com` → Community Individual (Scene 03F)
 
 **Note:** For real testing, replace `@example.com` with a real email address you control (e.g. `testapp+full-individual@gmail.com` if using Gmail aliases).
 

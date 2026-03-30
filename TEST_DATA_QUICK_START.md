@@ -188,18 +188,18 @@ The test data should NOT be deployed to production.
 
 ## Quick Reference: Email Format
 
-Test emails use a consistent format for easy organization:
+All test emails use:
 
 ```
-testapp+{category}{type}@example.com
+michael+{category}{type}{random}@raneyworld.com
 ```
 
 Examples:
-- `testapp+full-individual@example.com` → Full Individual
-- `testapp+associate-family@example.com` → Associate Family
-- `testapp+temporary-individual@example.com` → Temporary Individual
+- `michael+fullindividual12345@raneyworld.com` → Full Individual
+- `michael+associatefamily67890@raneyworld.com` → Associate Family
+- `michael+temporaryindividual54321@raneyworld.com` → Temporary Individual
 
-**For real testing:** Replace `@example.com` with your actual test inbox (e.g., `testapp+full-individual@gmail.com` if using Gmail aliases).
+You'll receive all test emails at your michael@raneyworld.com inbox (Gmail-style aliases).
 
 ---
 

@@ -214,10 +214,10 @@ This requires Python 3 and the Pillow library (`pip install Pillow`).
 
 ## Notes for Testing
 
-1. **Email Addresses:** Test emails are generated with format `testapp+{category}{type}{random}@example.com`
+1. **Email Addresses:** Test emails are generated with format `michael+{category}{type}{random}@raneyworld.com` — all arrive at michael@raneyworld.com inbox
 2. **Phone Numbers:** Test phone numbers use Botswana format (71234501-71234511)
 3. **Citizenship:** Mixed (US, ZA, SG, CA, ES, FR, BW) to test different scenarios
-4. **Sponsors:** For categories requiring sponsors, emails use placeholder format (`sponsor@example.com`)
+4. **Sponsors:** For Community membership, sponsors use placeholder format (e.g., `morrison@example.com`)
 5. **Family Names:** Realistically reflect member countries (English for US/CA, Spanish for ES, French for FR, etc.)
 
 ## Testing Checklist

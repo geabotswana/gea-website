@@ -849,12 +849,12 @@ var HOUSEHOLD_PHONE_SYNC_MINUTE = 0;      // Runs at :00 minutes past the hour
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.1.2";
-var SYSTEM_BUILD_DATE       = "2026-03-28";
+var SYSTEM_VERSION          = "2.1.3";
+var SYSTEM_BUILD_DATE       = "2026-03-30";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "NMP.1 fix: set application_status=Lapsed on expiry; frontend handles lapsed renewal path";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-28 21:14:27";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Re-enabled membership application test data loader with 11 test scenarios and uncommented dev button";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-30 12:39:01";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

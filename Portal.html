@@ -3605,6 +3605,31 @@ function submitPasswordResetRequest(event) {
     return result.join("");
   }
 
+  function validateRulesAgreement(fullName) {
+    var name = String(fullName).trim();
+
+    // Check minimum length
+    if (name.length < 2) {
+      return {
+        valid: false,
+        message: 'Please enter a full name (at least 2 characters).'
+      };
+    }
+
+    // Check that it contains at least one space (first and last name)
+    if (name.indexOf(' ') === -1) {
+      return {
+        valid: false,
+        message: 'Please enter your full name (first and last name).'
+      };
+    }
+
+    return {
+      valid: true,
+      message: ''
+    };
+  }
+
   var applicationFormData = {
     membership_category: '',
     first_name: '',

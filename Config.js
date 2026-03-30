@@ -951,12 +951,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.1.3";
+var SYSTEM_VERSION          = "2.1.4";
 var SYSTEM_BUILD_DATE       = "2026-03-30";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Re-enabled membership application test data loader with 11 test scenarios and uncommented dev button";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-30 12:39:01";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed missing validateRulesAgreement function for membership application rules agreement step";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-30 16:22:32";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

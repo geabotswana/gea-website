@@ -29,6 +29,21 @@
     window.GEA_SYSTEM_VERSION = '<?= GEA_SYSTEM_VERSION ?>';
     window.GEA_DEPLOYMENT_ID = '<?= GEA_DEPLOYMENT_ID ?>';
     window.GEA_BUILD_ID = '<?= GEA_BUILD_ID ?>';
+
+    // Admin Portal Link Handler
+    // Navigate to Admin portal using full GAS URL (fixes relative URL issue in iframe)
+    document.addEventListener('DOMContentLoaded', function() {
+      var adminLink = document.getElementById('adminPortalLink');
+      if (adminLink && window.GEA_DEPLOYMENT_ID) {
+        var adminUrl = 'https://script.google.com/macros/s/' + window.GEA_DEPLOYMENT_ID + '/exec?action=serve_admin';
+        adminLink.href = adminUrl;
+        adminLink.onclick = function(e) {
+          e.preventDefault();
+          window.location.href = adminUrl;
+          return false;
+        };
+      }
+    });
   </script>
 
   <style>
@@ -1222,7 +1237,7 @@
       <button type="button" class="btn btn-secondary" onclick="showApplicationForm();" style="width: 100%;">Apply for Membership →</button>
     </div>
     <div style="text-align: center; margin-top: 16px;">
-      <a href="?action=serve_admin" style="font-size: 12px; color: #999; text-decoration: none;">Board/Admin Portal →</a>
+      <a id="adminPortalLink" href="#" style="font-size: 12px; color: #999; text-decoration: none;">Board/Admin Portal →</a>
     </div>
   </div>
 </div>

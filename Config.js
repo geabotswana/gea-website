@@ -951,12 +951,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.2.3";
+var SYSTEM_VERSION          = "2.2.4";
 var SYSTEM_BUILD_DATE       = "2026-03-31";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add admin_pending_photos API handler and formatDate function for Photo Review and Payments tabs";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-31 11:00:30";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed applicant names in membership applications list table - use primary_applicant_name instead of first_name/last_name";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-31 11:28:01";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

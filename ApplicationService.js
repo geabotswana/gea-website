@@ -497,7 +497,7 @@ function listApplicationsForBoard(statusFilter) {
 
       applications.push({
         application_id: app.application_id,
-        applicant_name: app.first_name + " " + app.last_name,
+        applicant_name: app.primary_applicant_name || "Applicant",
         email: app.email,
         membership_category: app.membership_category,
         household_type: app.household_type,

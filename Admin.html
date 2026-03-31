@@ -1147,27 +1147,6 @@
 <body>
 
 <!-- ============================================================ -->
-<!-- FAILSAFE: Ensure login screen displays even if JS fails      -->
-<!-- ============================================================ -->
-<script>
-  // Immediate inline script to ensure login screen is visible
-  // This runs before any other JS and ensures the page displays
-  document.addEventListener('DOMContentLoaded', function() {
-    var loginScreen = document.getElementById('loginScreen');
-    if (loginScreen && !loginScreen.classList.contains('show')) {
-      loginScreen.classList.add('show');
-    }
-  });
-  // Also run on page load as backup
-  window.addEventListener('load', function() {
-    var loginScreen = document.getElementById('loginScreen');
-    if (loginScreen && !loginScreen.classList.contains('show')) {
-      loginScreen.classList.add('show');
-    }
-  });
-</script>
-
-<!-- ============================================================ -->
 <!-- APP STRUCTURE                                                -->
 <!-- Main container for login screen and authenticated app        -->
 <!-- ============================================================ -->
@@ -2263,22 +2242,12 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
-    try {
-      initializeEnvironmentBox();
-    } catch (e) {
-      console.error('Error initializing environment box:', e);
-    }
+    initializeEnvironmentBox();
 
     if (currentToken) {
       // User has a valid session token — show authenticated UI
-      try {
-        showAuthenticatedUI();
-        loadDashboard();
-      } catch (e) {
-        console.error('Error showing authenticated UI:', e);
-        // Fallback: ensure login screen is shown if error occurs
-        document.getElementById('loginScreen').classList.add('show');
-      }
+      showAuthenticatedUI();
+      loadDashboard();
     } else {
       // No token found — keep login screen visible
       document.getElementById('loginScreen').classList.add('show');
@@ -2688,21 +2657,13 @@
     params = params || {};
     params.action = action;
     params.token = currentToken || '';
-
-    // Validate PORTAL_API_URL is properly set (template evaluation succeeded)
-    if (!PORTAL_API_URL || PORTAL_API_URL.indexOf('<?=') !== -1) {
-      return Promise.reject(new Error('PORTAL_API_URL not initialized - GAS template may not have evaluated'));
-    }
-
+    
     // Construct the URL with query parameters
     var url = PORTAL_API_URL + '?' + new URLSearchParams(params).toString();
-
+    
     // Make the fetch request to the backend
     return fetch(url).then(function(r) {
       return r.json();
-    }).catch(function(e) {
-      console.error('API call failed for action=' + action, e);
-      throw e;
     });
   }
   

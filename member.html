@@ -298,7 +298,11 @@
         delete window[callbackName];
       }
       if (script && script.parentNode) {
-        script.parentNode.removeChild(script);
+        try {
+          script.parentNode.removeChild(script);
+        } catch (e) {
+          // Script may have already been removed
+        }
       }
     }
 
@@ -467,7 +471,13 @@
       if (callbackInvoked) return;
       callbackInvoked = true;
       delete window[callbackName];
-      if (script && script.parentNode) script.removeChild(script);
+      if (script && script.parentNode) {
+        try {
+          script.parentNode.removeChild(script);
+        } catch (e) {
+          // Script may have already been removed
+        }
+      }
       clearTimeout(statusTimeout);
 
       var reportedEnv = data.deploymentId === DEPLOYMENTS.prod.deploymentId ? 'prod' :
@@ -492,7 +502,13 @@
       if (callbackInvoked) return;
       callbackInvoked = true;
       delete window[callbackName];
-      if (script && script.parentNode) script.removeChild(script);
+      if (script && script.parentNode) {
+        try {
+          script.parentNode.removeChild(script);
+        } catch (e) {
+          // Script may have already been removed
+        }
+      }
       clearTimeout(statusTimeout);
       showTimeoutStatus();
     };
@@ -507,7 +523,13 @@
       if (!callbackInvoked && window[callbackName]) {
         callbackInvoked = true;
         delete window[callbackName];
-        if (script && script.parentNode) script.removeChild(script);
+        if (script && script.parentNode) {
+          try {
+            script.parentNode.removeChild(script);
+          } catch (e) {
+            // Script may have already been removed
+          }
+        }
         showTimeoutStatus();
       }
     }, STATUS_TIMEOUT_MS);

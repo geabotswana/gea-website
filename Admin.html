@@ -515,7 +515,15 @@
       letter-spacing: 1px;
       font-weight: 600;
     }
-    
+
+    .stat-subtext {
+      font-size: 11px;
+      color: #999999;
+      margin-top: 6px;
+      font-weight: 400;
+      font-style: italic;
+    }
+
     /* ============================================================ */
     /* TABLES                                                       */
     /* Searchable, sortable list views                              */
@@ -1403,7 +1411,8 @@
         <div class="grid-3">
           <div class="stat-card">
             <div class="stat-number" id="dashPendingCount">—</div>
-            <div class="stat-label">Pending Reservations</div>
+            <div class="stat-label">Pending Applications</div>
+            <div class="stat-subtext" id="dashPendingSubCount"></div>
           </div>
           <div class="stat-card">
             <div class="stat-number" id="dashPhotoCount">—</div>
@@ -2883,11 +2892,31 @@
    * Updates the stat cards and lists on the dashboard page.
    */
   function loadDashboard() {
-    // Load pending count
-    apiCall('admin_pending', {}).then(function(res) {
+    // Load dashboard statistics from backend
+    apiCall('admin_dashboard_stats', {}).then(function(res) {
       if (res.success && res.data) {
-        var pending = res.data.reservations || [];
-        document.getElementById('dashPendingCount').textContent = pending.length;
+        var data = res.data;
+        // Pending Applications (main number: total pending, sub-number: board pending)
+        var appCount = document.getElementById('dashPendingCount');
+        if (appCount) {
+          appCount.textContent = data.pending_applications || 0;
+        }
+        var boardPending = document.getElementById('dashPendingSubCount');
+        if (boardPending) {
+          boardPending.textContent = '(' + (data.board_pending_applications || 0) + ' awaiting board)';
+        }
+
+        // Photo submissions pending
+        document.getElementById('dashPhotoCount').textContent = data.pending_photos || '0';
+
+        // Unverified payments
+        document.getElementById('dashPaymentCount').textContent = data.unverified_payments || 0;
+
+        // Active members
+        document.getElementById('dashMemberCount').textContent = data.active_members || 0;
+
+        // Reservations today
+        document.getElementById('dashTodayCount').textContent = data.reservations_today || 0;
       }
     });
 
@@ -2902,18 +2931,11 @@
         }
       }
     });
-    
-    // For now, show placeholder data
-    // In production, these would come from the backend
-    document.getElementById('dashPhotoCount').textContent = '3';
-    document.getElementById('dashPaymentCount').textContent = '2';
-    document.getElementById('dashMemberCount').textContent = '47';
-    document.getElementById('dashTodayCount').textContent = '0';
-    
+
     // Populate upcoming reservations list
     var upcomingHtml = '<p style="text-align: center; color: #999; padding: 20px;">Loading upcoming reservations...</p>';
     document.getElementById('dashUpcomingList').innerHTML = upcomingHtml;
-    
+
     // In production, fetch from backend and render upcoming reservations here
   }
   

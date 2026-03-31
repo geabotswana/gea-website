@@ -30,6 +30,66 @@ Complete implementation guide for the membership application system, including 1
 
 ---
 
+## Status Values Reference
+
+The membership application workflow uses three separate status tracking systems. Developers must understand which status applies to which sheet:
+
+### 1. Application Status Values (Membership Applications Sheet)
+
+Controls the overall progress of an application through the 11-step workflow.
+
+| Status | Meaning | Set When | Next Transition |
+|--------|---------|----------|-----------------|
+| `awaiting_docs` | Application created, awaiting document uploads | Application submitted (Step 3) | → `docs_confirmed` |
+| `docs_confirmed` | Applicant confirmed all documents uploaded | Applicant confirms documents (Step 5) | → `board_initial_review` |
+| `board_initial_review` | Waiting for board initial review | RSO rejects documents (loops back) | → `rso_review` or `denied` |
+| `rso_review` | Documents sent to RSO for verification | Board approves initial (Step 6) | → `board_final_review` or `board_initial_review` |
+| `board_final_review` | RSO approved; awaiting board final decision | RSO approves documents (Step 7) | → `approved_pending_payment` or `denied` |
+| `approved_pending_payment` | Board approved; applicant can submit payment | Board approves final (Step 9) | → `payment_submitted` |
+| `payment_submitted` | Payment proof submitted, awaiting treasurer verification | Applicant submits payment proof (Step 8) | → `activated` |
+| `activated` | Membership activated, all features unlocked | Treasurer verifies payment (Step 10) | ✅ Terminal |
+| `denied` | Application denied at initial or final board review | Board rejects at any stage (Steps 6, 9) | ✅ Terminal |
+| `withdrawn` | Application withdrawn by applicant | Applicant clicks Withdraw (see Section 3) | ✅ Terminal |
+
+**Implementation Note:** Status values are defined as constants in Config.js (lines 666-676):
+```javascript
+var APP_STATUS_AWAITING_DOCS = "awaiting_docs";
+var APP_STATUS_DOCS_CONFIRMED = "docs_confirmed";
+// ... etc.
+```
+
+### 2. File Submission Status Values (File Submissions Sheet)
+
+Tracks document (passport, omang) and photo approval workflows independently from application status.
+
+| Status | Document Type | Meaning | Set When | Next Transition |
+|--------|---|---------|----------|-----------------|
+| `submitted` | Passport/Omang/Photo/Employment | Uploaded, awaiting review | Member uploads file (Step 5) | → `rso_rejected` or `gea_pending` |
+| `rso_rejected` | Passport/Omang | RSO rejected the document | RSO rejects via portal (Step 7) | Loops to `submitted` (resubmit) |
+| `gea_pending` | Passport/Omang | RSO approved; awaiting GEA admin | RSO approves (Step 7) | → `verified` or `gea_rejected` |
+| `gea_rejected` | Any document | GEA admin rejected | GEA admin rejects (Step 9) | Loops to `submitted` (resubmit) |
+| `verified` | Passport/Omang | Document verified and finalized | GEA admin approves (Step 9) | ✅ Terminal (ready for membership) |
+| `approved` | Photo/Employment | Photo/employment verified, transferred to Cloud Storage | GEA admin approves (Step 9) | ✅ Terminal (member portal unlocked) |
+
+**Important:** File Submission statuses are **separate** from Application statuses. A single application may have multiple file submissions in different states (e.g., passport `verified`, photo `submitted`, omang `gea_rejected`).
+
+**Implementation Note:** Status values are assigned directly in FileSubmissionService.js (lines 51, 190, 309, 310, 579). There are no Config.js constants for file submission statuses.
+
+### 3. Payment Verification Status (Payments Sheet)
+
+Tracks payment verification independently from application status. Unlike Applications and File Submissions, **Payments use a date-based model** rather than explicit status values.
+
+| Field | Meaning | Set When | Indicates |
+|-------|---------|----------|-----------|
+| `payment_verified_date` empty | Payment unverified | Payment submitted (Step 8) | Awaiting treasurer review |
+| `payment_verified_date` populated | Payment verified | Treasurer approves (Step 10) | Ready for membership activation |
+
+**Related Field:** The Application record also stores `payment_status` (text field: "submitted" or "verified") to reflect the payment state within the application workflow. This is separate from the Payments sheet's `payment_verified_date`.
+
+**Implementation Note:** Dashboard counts unverified payments by checking `!pay.payment_verified_date` (Code.js line 3555).
+
+---
+
 ## Application Lifecycle (11 Steps)
 
 ### STEP 1: Applicant Accesses Application Form

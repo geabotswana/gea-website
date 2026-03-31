@@ -631,6 +631,7 @@ var AUDIT_APPLICATION_BOARD_FINAL         = "APPLICATION_BOARD_FINAL";
 var AUDIT_APPLICATION_PAYMENT_SUBMITTED   = "APPLICATION_PAYMENT_SUBMITTED";
 var AUDIT_APPLICATION_ACTIVATED           = "APPLICATION_ACTIVATED";
 var AUDIT_APPLICATION_DENIED              = "APPLICATION_DENIED";
+var AUDIT_APPLICATION_WITHDRAWN           = "APPLICATION_WITHDRAWN";
 var AUDIT_FILE_SUBMISSION_CREATED         = "FILE_SUBMISSION_CREATED";
 var AUDIT_FILE_SUBMISSION_RSO_APPROVED    = "FILE_SUBMISSION_RSO_APPROVED";
 var AUDIT_FILE_SUBMISSION_RSO_REJECTED    = "FILE_SUBMISSION_RSO_REJECTED";
@@ -951,12 +952,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.2.6";
+var SYSTEM_VERSION          = "2.2.7";
 var SYSTEM_BUILD_DATE       = "2026-03-31";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Create comprehensive status alignment audit documenting File Submission and Payment tracking models";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-31 12:27:40";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Implement Application withdrawal feature; fix dashboard payment count; document File Submission and Payment status models";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-31 12:50:18";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

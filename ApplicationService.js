@@ -1008,6 +1008,74 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
 }
 
 
+/**
+ * FUNCTION: withdrawApplication
+ * PURPOSE: Applicant withdraws their membership application.
+ *
+ * STEPS:
+ * 1. Validate application exists and is in withdrawable state (not activated/denied)
+ * 2. Update application status to withdrawn
+ * 3. Send confirmation email to applicant
+ * 4. Send notification email to board
+ * 5. Log audit entry
+ *
+ * @param {string} applicationId Application ID
+ * @param {string} applicantEmail Email of applicant withdrawing
+ * @param {string} withdrawalReason Optional reason for withdrawal
+ * @returns {Object} { success, message }
+ */
+function withdrawApplication(applicationId, applicantEmail, withdrawalReason) {
+  try {
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { success: false, message: "Application not found." };
+    }
+
+    // Check if application is in a terminal state (already decided)
+    if (application.status === APP_STATUS_ACTIVATED ||
+        application.status === APP_STATUS_DENIED ||
+        application.status === APP_STATUS_WITHDRAWN) {
+      return { success: false, message: "This application cannot be withdrawn (already " + application.status + ")." };
+    }
+
+    // Update application status to withdrawn
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appRow = _findApplicationRow(applicationId);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_WITHDRAWN);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "withdrawal_date")).setValue(new Date());
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "withdrawal_reason")).setValue(withdrawalReason || "");
+
+    logAuditEntry(applicantEmail, AUDIT_APPLICATION_WITHDRAWN, "Application", applicationId,
+                  "Application withdrawn by applicant" + (withdrawalReason ? ": " + withdrawalReason : ""));
+
+    // Send confirmation to applicant
+    var _appName = application.primary_applicant_name || "";
+    var _appFirstName = _appName.split(" ")[0] || "Applicant";
+
+    sendEmailFromTemplate("MEM_APPLICATION_WITHDRAWN_TO_MEMBER", application.primary_applicant_email, {
+      APPLICANT_NAME: _appFirstName,
+      APPLICATION_ID: applicationId,
+      WITHDRAWAL_DATE: formatDate(new Date()),
+      WITHDRAWAL_REASON: withdrawalReason || "No reason provided"
+    });
+
+    // Send notification to board
+    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+    sendEmailFromTemplate("ADM_APPLICATION_WITHDRAWN_TO_BOARD", boardEmail, {
+      APPLICANT_NAME: _appName,
+      APPLICATION_ID: applicationId,
+      WITHDRAWAL_DATE: formatDate(new Date()),
+      WITHDRAWAL_REASON: withdrawalReason || "No reason provided"
+    });
+
+    return { success: true, message: "Application withdrawn successfully." };
+
+  } catch (e) {
+    return { success: false, message: "Error withdrawing application: " + e.toString() };
+  }
+}
+
+
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================

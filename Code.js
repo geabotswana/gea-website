@@ -187,6 +187,7 @@ function _routeAction(action, params) {
 
     // Applicant routes (pending membership)
     case "application_status":  return _handleApplicationStatus(params);
+    case "withdraw_application": return _handleWithdrawApplication(params);
     case "confirm_documents":   return _handleConfirmDocuments(params);
     case "upload_document":     return _handleUploadDocument(params);
     case "remove_document":     return _handleRemoveDocument(params);
@@ -1839,6 +1840,30 @@ function _handleApplicationStatus(p) {
     }
   } catch (e) {
     return errorResponse("Error retrieving application status.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleWithdrawApplication
+ * PURPOSE: Applicant withdraws their membership application
+ */
+function _handleWithdrawApplication(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.ok) return auth.response;
+
+    if (!p.application_id) {
+      return errorResponse("application_id is required.", "INVALID_PARAM");
+    }
+
+    var result = withdrawApplication(p.application_id, auth.session.email, p.reason || "");
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error withdrawing application: " + e.toString(), "SERVER_ERROR");
   }
 }
 
@@ -3545,14 +3570,14 @@ function _handleAdminDashboardStats(p) {
       }
     }
 
-    // Count unverified payments (status = "submitted")
+    // Count unverified payments (payment_verified_date is empty)
     var unverifiedPayments = 0;
     var paySheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
     var payData = paySheet.getDataRange().getValues();
     var payHeaders = payData[0];
     for (var i = 1; i < payData.length; i++) {
       var pay = rowToObject(payHeaders, payData[i]);
-      if (pay.payment_id && pay.status === "submitted") {
+      if (pay.payment_id && !pay.payment_verified_date) {
         unverifiedPayments++;
       }
     }

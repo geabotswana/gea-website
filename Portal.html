@@ -5905,6 +5905,8 @@ function submitPasswordResetRequest(event) {
     p.style.color = '#666';
     p.textContent = 'Track your application, upload documents, and complete payment verification.';
     wrapper.appendChild(p);
+
+    // Status badge
     var badge = document.createElement('span');
     badge.className = 'badge';
     badge.style.display = 'inline-block';
@@ -5913,6 +5915,27 @@ function submitPasswordResetRequest(event) {
     badge.style.color = '#fff';
     badge.textContent = 'Status: ' + formatApplicantStatusLabel(app.status);
     wrapper.appendChild(badge);
+
+    // Withdraw button (only shown if application is not in terminal state)
+    if (app.status !== 'activated' && app.status !== 'denied' && app.status !== 'withdrawn') {
+      var withdrawBtn = document.createElement('button');
+      withdrawBtn.textContent = 'Withdraw Application';
+      withdrawBtn.style.display = 'block';
+      withdrawBtn.style.marginTop = '12px';
+      withdrawBtn.style.padding = '8px 16px';
+      withdrawBtn.style.background = '#d32f2f';
+      withdrawBtn.style.color = '#fff';
+      withdrawBtn.style.border = 'none';
+      withdrawBtn.style.borderRadius = '4px';
+      withdrawBtn.style.cursor = 'pointer';
+      withdrawBtn.style.fontSize = '14px';
+      withdrawBtn.onclick = function(e) {
+        e.preventDefault();
+        showWithdrawDialog(app.application_id);
+      };
+      wrapper.appendChild(withdrawBtn);
+    }
+
     return wrapper;
   }
 
@@ -7412,6 +7435,114 @@ function submitPasswordResetRequest(event) {
     }).catch(function(err) {
       showError('Error: ' + err.message);
     });
+  }
+
+  function showWithdrawDialog(applicationId) {
+    // Create modal overlay
+    var overlay = document.createElement('div');
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '9999';
+
+    var modal = document.createElement('div');
+    modal.style.backgroundColor = '#fff';
+    modal.style.borderRadius = '6px';
+    modal.style.padding = '24px';
+    modal.style.maxWidth = '500px';
+    modal.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+
+    var title = document.createElement('h2');
+    title.style.marginTop = '0';
+    title.textContent = 'Withdraw Application?';
+    modal.appendChild(title);
+
+    var msg = document.createElement('p');
+    msg.style.color = '#666';
+    msg.style.lineHeight = '1.6';
+    msg.innerHTML = 'Are you sure you want to withdraw your membership application? This action cannot be undone.<br><br>You can provide an optional reason for your withdrawal below.';
+    modal.appendChild(msg);
+
+    var reasonLabel = document.createElement('label');
+    reasonLabel.textContent = 'Reason (optional):';
+    reasonLabel.style.display = 'block';
+    reasonLabel.style.marginTop = '16px';
+    reasonLabel.style.marginBottom = '8px';
+    reasonLabel.style.fontWeight = 'bold';
+    modal.appendChild(reasonLabel);
+
+    var reasonInput = document.createElement('textarea');
+    reasonInput.placeholder = 'e.g., "Relocating out of Botswana" or "Will apply again later"';
+    reasonInput.style.width = '100%';
+    reasonInput.style.padding = '10px';
+    reasonInput.style.border = '1px solid #ddd';
+    reasonInput.style.borderRadius = '4px';
+    reasonInput.style.fontFamily = 'Arial, sans-serif';
+    reasonInput.style.fontSize = '14px';
+    reasonInput.style.boxSizing = 'border-box';
+    reasonInput.style.minHeight = '80px';
+    reasonInput.style.marginBottom = '20px';
+    modal.appendChild(reasonInput);
+
+    // Buttons
+    var btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '10px';
+    btnContainer.style.justifyContent = 'flex-end';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.style.padding = '10px 20px';
+    cancelBtn.style.border = '1px solid #ddd';
+    cancelBtn.style.borderRadius = '4px';
+    cancelBtn.style.background = '#f5f5f5';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.style.fontSize = '14px';
+    cancelBtn.onclick = function() { overlay.remove(); };
+    btnContainer.appendChild(cancelBtn);
+
+    var withdrawBtn = document.createElement('button');
+    withdrawBtn.textContent = 'Withdraw Application';
+    withdrawBtn.style.padding = '10px 20px';
+    withdrawBtn.style.background = '#d32f2f';
+    withdrawBtn.style.color = '#fff';
+    withdrawBtn.style.border = 'none';
+    withdrawBtn.style.borderRadius = '4px';
+    withdrawBtn.style.cursor = 'pointer';
+    withdrawBtn.style.fontSize = '14px';
+    withdrawBtn.onclick = function() {
+      withdrawBtn.disabled = true;
+      withdrawBtn.textContent = 'Withdrawing...';
+      var reason = reasonInput.value.trim();
+      apiCall('withdraw_application', { application_id: applicationId, reason: reason })
+        .then(function(res) {
+          if (res.success) {
+            showToast('Application withdrawn successfully.', 'success');
+            overlay.remove();
+            loadApplicantPortal();
+          } else {
+            showToast(res.message || 'Could not withdraw application.', 'error');
+            withdrawBtn.disabled = false;
+            withdrawBtn.textContent = 'Withdraw Application';
+          }
+        })
+        .catch(function(err) {
+          showToast('Error: ' + err.message, 'error');
+          withdrawBtn.disabled = false;
+          withdrawBtn.textContent = 'Withdraw Application';
+        });
+    };
+    btnContainer.appendChild(withdrawBtn);
+
+    modal.appendChild(btnContainer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
   }
 
   function removeDocument(individualId, docType, triggerBtn) {

@@ -2928,6 +2928,13 @@
           boardPending.textContent = '(' + (data.board_pending_applications || 0) + ' awaiting board)';
         }
 
+        // Update Applications badge in sidebar
+        var appBadge = document.getElementById('applications-badge');
+        if (appBadge) {
+          appBadge.textContent = data.pending_applications || 0;
+          appBadge.style.display = (data.pending_applications > 0) ? '' : 'none';
+        }
+
         // Photo submissions pending
         document.getElementById('dashPhotoCount').textContent = data.pending_photos || '0';
 

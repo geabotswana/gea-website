@@ -952,12 +952,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.3.0";
+var SYSTEM_VERSION          = "2.3.1";
 var SYSTEM_BUILD_DATE       = "2026-03-31";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: First-login password change now properly enforced for both members and admins";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-31 15:11:44";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: Email subject lines with special characters (em-dashes, accents) now display correctly";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-31 15:23:03";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -17,6 +17,35 @@
 
 
 // ============================================================
+// ENCODING HELPERS
+// ============================================================
+
+/**
+ * Encodes subject line using RFC 2047 format for non-ASCII characters.
+ * This prevents special characters (em-dashes, accents, etc.) from being
+ * replaced with question marks in email clients.
+ *
+ * @param {string} subject  The subject line to encode
+ * @returns {string}        RFC 2047 encoded subject, or original if ASCII-only
+ */
+function encodeSubjectLine(subject) {
+  if (!subject) return "";
+
+  // Check if the string contains only ASCII characters (0-127)
+  var isAsciiOnly = /^[\x00-\x7F]*$/.test(subject);
+  if (isAsciiOnly) {
+    return subject;  // No encoding needed for pure ASCII
+  }
+
+  // Convert string to UTF-8 bytes and base64 encode
+  var utf8Bytes = Utilities.newBlob(subject).getBytes();
+  var base64Encoded = Utilities.base64Encode(utf8Bytes);
+
+  // Return in RFC 2047 format: =?UTF-8?B?<base64>?=
+  return "=?UTF-8?B?" + base64Encoded + "?=";
+}
+
+// ============================================================
 // PRIMARY ENTRY POINT
 // ============================================================
 
@@ -45,9 +74,12 @@ function sendEmail(templateId, recipient, variables, replyTo) {
     var plainBody = replacePlaceholders(template.body, variables);
     var htmlBody  = buildHtmlEmail(subject, plainBody);
 
+    // RFC 2047 encode subject line to handle special characters (em-dashes, etc.)
+    var encodedSubject = encodeSubjectLine(subject);
+
     var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
     var replyToAddr = replyTo || EMAIL_BOARD;  // Default to board email if not specified
-    GmailApp.sendEmail(to, subject, plainBody, {
+    GmailApp.sendEmail(to, encodedSubject, plainBody, {
       htmlBody: htmlBody,
       name:     EMAIL_SENDER_NAME,
       replyTo:  replyToAddr,

@@ -956,8 +956,8 @@ var SYSTEM_VERSION          = "2.2.9";
 var SYSTEM_BUILD_DATE       = "2026-03-31";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix email template rendering: UTF-8 charset for em dashes, Outlook text spacing for key-value pairs";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-31 14:41:32";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix email templates (UTF-8 charset, Outlook spacing) and application workflow routing (board → RSO not direct)";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-31 15:02:13";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

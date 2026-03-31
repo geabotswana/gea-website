@@ -236,15 +236,7 @@
     'https://script.googleusercontent.com': true
   };
 
-  var STATUS_TIMEOUT_MS = 5000;
-  var CONFIG_TIMEOUT_MS = 5000;
-  var DEVPROD_CONFIG_KEY = 'show_devprod_box';
-
   var selectedEnv = localStorage.getItem('gea_env') || 'prod';
-  var statusTimeout = null;
-  var devProdControlEnabled = true;
-
-  console.log('TEST: member.html initialized. selectedEnv:', selectedEnv);
 
   // ================================================================
   // HELPER FUNCTIONS
@@ -273,170 +265,6 @@
   }
 
 
-  function parseBooleanConfigValue(value, defaultValue) {
-    if (value === null || value === undefined || value === '') return defaultValue;
-    if (typeof value === 'boolean') return value;
-    var normalized = String(value).trim().toLowerCase();
-    if (['true', '1', 'yes', 'y'].indexOf(normalized) !== -1) return true;
-    if (['false', '0', 'no', 'n'].indexOf(normalized) !== -1) return false;
-    return defaultValue;
-  }
-
-  function setEnvironmentControlVisibility(isVisible) {
-    var panel = document.getElementById('envControlPanel');
-    if (!panel) return;
-    panel.style.display = isVisible ? 'flex' : 'none';
-  }
-
-  function requestConfigValue(key, callback) {
-    var callbackName = 'geaConfigValueCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    var script = document.createElement('script');
-    var callbackInvoked = false;
-
-    function cleanup() {
-      if (!callbackInvoked && window[callbackName]) {
-        delete window[callbackName];
-      }
-      if (script && script.parentNode) {
-        try {
-          script.parentNode.removeChild(script);
-        } catch (e) {
-          // Script may have already been removed
-        }
-      }
-    }
-
-    var timeoutId = setTimeout(function() {
-      if (!callbackInvoked) {
-        callbackInvoked = true;
-        cleanup();
-        callback(new Error('Config JSONP timeout'));
-      }
-    }, CONFIG_TIMEOUT_MS);
-
-    // Define callback BEFORE setting src, with protection against double-invoke
-    window[callbackName] = function(payload) {
-      if (callbackInvoked) return;
-      callbackInvoked = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      callback(null, payload);
-    };
-
-    script.onerror = function() {
-      if (!callbackInvoked) {
-        callbackInvoked = true;
-        clearTimeout(timeoutId);
-        cleanup();
-        callback(new Error('Config JSONP request failed'));
-      }
-    };
-
-    script.onload = function() {
-      // Timeout if callback wasn't invoked within 100ms of load
-      setTimeout(function() {
-        if (!callbackInvoked) {
-          if (!callbackInvoked) {
-            callbackInvoked = true;
-            clearTimeout(timeoutId);
-            cleanup();
-            callback(new Error('Config JSONP callback not invoked'));
-          }
-        }
-      }, 100);
-    };
-
-    var url = new URL(DEPLOYMENTS.prod.execUrl);
-    url.searchParams.set('action', 'config_value_jsonp');
-    url.searchParams.set('callback', callbackName);
-    url.searchParams.set('key', key);
-    script.src = url.toString();
-    script.async = true;
-    document.head.appendChild(script);
-  }
-
-  function initializeEnvironmentSelection() {
-    requestConfigValue(DEVPROD_CONFIG_KEY, function(err, payload) {
-      if (!err && payload && payload.success) {
-        devProdControlEnabled = parseBooleanConfigValue(payload.value, true);
-      }
-
-      if (!devProdControlEnabled) {
-        selectedEnv = 'prod';
-        saveSelectedEnv('prod');
-        setEnvironmentControlVisibility(false);
-        loadPortal('prod');
-        return;
-      }
-
-      selectedEnv = loadSelectedEnv();
-      setEnvironmentControlVisibility(true);
-      loadPortal(selectedEnv);
-    });
-  }
-
-  // ================================================================
-  // STATUS RENDERING
-  // ================================================================
-
-  function renderStatus(state) {
-    var root = document.getElementById('deploymentStatus');
-    if (!root) return;
-    var selectedPill = document.getElementById('selectedEnvPill');
-    var reportedPill = document.getElementById('reportedEnvPill');
-    var badge = document.getElementById('statusBadge');
-    var timestamp = document.getElementById('statusTimestamp');
-    var version = document.getElementById('statusVersion');
-    var auth = document.getElementById('statusAuth');
-    var warning = document.getElementById('statusWarning');
-
-    root.className = 'deployment-status ' + state.statusClass;
-    if (selectedPill) selectedPill.textContent = (state.selectedEnv || 'unknown').toUpperCase();
-    if (reportedPill) reportedPill.textContent = (state.reportedEnv || 'unknown').toUpperCase();
-    if (badge) badge.textContent = state.badgeText;
-    if (timestamp) timestamp.textContent = 'Build: ' + (state.timestamp || '—');
-    if (version) version.textContent = 'Version: ' + (state.version || '—') + ' | ID: ' + (state.buildId || '—');
-    if (auth) auth.textContent = state.authenticated ? 'Signed in' : 'Not signed in';
-
-    if (warning) {
-      if (state.warning) {
-        warning.hidden = false;
-        warning.textContent = state.warning;
-      } else {
-        warning.hidden = true;
-        warning.textContent = '';
-      }
-    }
-  }
-
-  function showLoadingStatus() {
-    renderStatus({
-      statusClass: 'status-loading',
-      badgeText: 'Loading',
-      selectedEnv: selectedEnv,
-      reportedEnv: 'unknown',
-      timestamp: '—',
-      version: '—',
-      buildId: '—',
-      authenticated: false,
-      warning: ''
-    });
-  }
-
-  function showTimeoutStatus() {
-    renderStatus({
-      statusClass: 'status-timeout',
-      badgeText: 'No Metadata',
-      selectedEnv: selectedEnv,
-      reportedEnv: 'unknown',
-      timestamp: '—',
-      version: '—',
-      buildId: '—',
-      authenticated: false,
-      warning: 'No deployment metadata received from portal.'
-    });
-  }
-
   // ================================================================
   // LOAD PORTAL
   // ================================================================
@@ -448,135 +276,19 @@
 
     // Load iframe
     document.getElementById('portalFrame').src = buildIframeUrl(env);
-
-    // Query deployment metadata separately
-    requestDeploymentInfo(env);
   }
 
-  // ================================================================
-  // DEPLOYMENT METADATA QUERY (JSONP)
-  // ================================================================
-  // Query selected deployment for metadata without relying on postMessage
-  // (GAS sandbox blocks postMessage from iframe to external parent)
-
-  function requestDeploymentInfo(env) {
-    clearTimeout(statusTimeout);
-    showLoadingStatus();
-
-    var callbackName = 'geaDeploymentInfoCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    var script = document.createElement('script');
-    var callbackInvoked = false;
-
-    window[callbackName] = function(data) {
-      if (callbackInvoked) return;
-      callbackInvoked = true;
-      delete window[callbackName];
-      if (script && script.parentNode) {
-        try {
-          script.parentNode.removeChild(script);
-        } catch (e) {
-          // Script may have already been removed
-        }
-      }
-      clearTimeout(statusTimeout);
-
-      var reportedEnv = data.deploymentId === DEPLOYMENTS.prod.deploymentId ? 'prod' :
-                        data.deploymentId === DEPLOYMENTS.dev.deploymentId ? 'dev' : 'unknown';
-      var mismatch = env !== reportedEnv;
-      var readyClass = reportedEnv === 'prod' ? 'status-ready-prod' : 'status-ready-dev';
-
-      renderStatus({
-        statusClass: mismatch ? 'status-mismatch' : readyClass,
-        badgeText: mismatch ? 'Mismatch' : 'Loaded',
-        selectedEnv: env,
-        reportedEnv: reportedEnv,
-        timestamp: data.timestamp || '—',
-        version: data.version || '—',
-        buildId: data.buildId || '—',
-        authenticated: false,
-        warning: mismatch ? 'Loaded deployment does not match selected environment.' : ''
-      });
-    };
-
-    script.onerror = function() {
-      if (callbackInvoked) return;
-      callbackInvoked = true;
-      delete window[callbackName];
-      if (script && script.parentNode) {
-        try {
-          script.parentNode.removeChild(script);
-        } catch (e) {
-          // Script may have already been removed
-        }
-      }
-      clearTimeout(statusTimeout);
-      showTimeoutStatus();
-    };
-
-    var url = new URL(DEPLOYMENTS[env].execUrl);
-    url.searchParams.set('action', 'deployment_info_jsonp');
-    url.searchParams.set('callback', callbackName);
-    script.src = url.toString();
-    script.async = true;
-
-    statusTimeout = setTimeout(function() {
-      if (!callbackInvoked && window[callbackName]) {
-        callbackInvoked = true;
-        delete window[callbackName];
-        if (script && script.parentNode) {
-          try {
-            script.parentNode.removeChild(script);
-          } catch (e) {
-            // Script may have already been removed
-          }
-        }
-        showTimeoutStatus();
-      }
-    }, STATUS_TIMEOUT_MS);
-
-    document.head.appendChild(script);
+  function initializeEnvironmentSelection() {
+    // Load portal directly (env toggle UI is commented out in HTML)
+    selectedEnv = loadSelectedEnv();
+    loadPortal(selectedEnv);
   }
 
   // ================================================================
   // EVENT LISTENERS
   // ================================================================
 
-  console.log('About to attach DOMContentLoaded listener');
-
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded fired');
-    var devBtn = document.getElementById('envBtnDev');
-    var prodBtn = document.getElementById('envBtnProd');
-    console.log('Button refs:', { devBtn: !!devBtn, prodBtn: !!prodBtn });
-
-    if (devBtn && prodBtn) {
-      devBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log('DEV button clicked. Current env:', selectedEnv);
-        if (!devProdControlEnabled) { return; }
-        if (selectedEnv !== 'dev') {
-          console.log('Switching to DEV...');
-          loadPortal('dev');
-        } else {
-          console.log('Already in DEV, no action needed');
-        }
-      });
-
-      prodBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log('PROD button clicked. Current env:', selectedEnv);
-        if (!devProdControlEnabled) { return; }
-        if (selectedEnv !== 'prod') {
-          console.log('Switching to PROD...');
-          loadPortal('prod');
-        } else {
-          console.log('Already in PROD, no action needed');
-        }
-      });
-
-      console.log('Environment buttons wired. Starting with:', selectedEnv);
-    }
-
     initializeEnvironmentSelection();
   });
 </script>

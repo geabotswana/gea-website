@@ -951,12 +951,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.1.7";
-var SYSTEM_BUILD_DATE       = "2026-03-30";
+var SYSTEM_VERSION          = "2.1.8";
+var SYSTEM_BUILD_DATE       = "2026-03-31";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fixed applicant name/email undefined in all notification emails; added missing RSO and applicant emails on document submission";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-30 21:19:04";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed JSONP callback race condition in member.html and Admin page initialization error handling";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-31 08:48:48";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

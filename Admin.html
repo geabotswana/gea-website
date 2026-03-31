@@ -2242,12 +2242,22 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
-    initializeEnvironmentBox();
+    try {
+      initializeEnvironmentBox();
+    } catch (e) {
+      console.error('Error initializing environment box:', e);
+    }
 
     if (currentToken) {
       // User has a valid session token — show authenticated UI
-      showAuthenticatedUI();
-      loadDashboard();
+      try {
+        showAuthenticatedUI();
+        loadDashboard();
+      } catch (e) {
+        console.error('Error showing authenticated UI:', e);
+        // Fallback: ensure login screen is shown if error occurs
+        document.getElementById('loginScreen').classList.add('show');
+      }
     } else {
       // No token found — keep login screen visible
       document.getElementById('loginScreen').classList.add('show');

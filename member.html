@@ -289,29 +289,57 @@
   }
 
   function requestConfigValue(key, callback) {
-    var callbackName = 'geaConfigValueCallback_' + Date.now();
+    var callbackName = 'geaConfigValueCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     var script = document.createElement('script');
+    var callbackInvoked = false;
 
     function cleanup() {
-      if (window[callbackName]) delete window[callbackName];
-      if (script && script.parentNode) script.parentNode.removeChild(script);
+      if (!callbackInvoked && window[callbackName]) {
+        delete window[callbackName];
+      }
+      if (script && script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
     }
 
     var timeoutId = setTimeout(function() {
-      cleanup();
-      callback(new Error('Config JSONP timeout'));
+      if (!callbackInvoked) {
+        callbackInvoked = true;
+        cleanup();
+        callback(new Error('Config JSONP timeout'));
+      }
     }, CONFIG_TIMEOUT_MS);
 
+    // Define callback BEFORE setting src, with protection against double-invoke
     window[callbackName] = function(payload) {
+      if (callbackInvoked) return;
+      callbackInvoked = true;
       clearTimeout(timeoutId);
       cleanup();
       callback(null, payload);
     };
 
     script.onerror = function() {
-      clearTimeout(timeoutId);
-      cleanup();
-      callback(new Error('Config JSONP request failed'));
+      if (!callbackInvoked) {
+        callbackInvoked = true;
+        clearTimeout(timeoutId);
+        cleanup();
+        callback(new Error('Config JSONP request failed'));
+      }
+    };
+
+    script.onload = function() {
+      // Timeout if callback wasn't invoked within 100ms of load
+      setTimeout(function() {
+        if (!callbackInvoked) {
+          if (!callbackInvoked) {
+            callbackInvoked = true;
+            clearTimeout(timeoutId);
+            cleanup();
+            callback(new Error('Config JSONP callback not invoked'));
+          }
+        }
+      }, 100);
     };
 
     var url = new URL(DEPLOYMENTS.prod.execUrl);
@@ -431,12 +459,15 @@
     clearTimeout(statusTimeout);
     showLoadingStatus();
 
-    var callbackName = 'geaDeploymentInfoCallback_' + Date.now();
+    var callbackName = 'geaDeploymentInfoCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     var script = document.createElement('script');
+    var callbackInvoked = false;
 
     window[callbackName] = function(data) {
+      if (callbackInvoked) return;
+      callbackInvoked = true;
       delete window[callbackName];
-      script.remove();
+      if (script && script.parentNode) script.removeChild(script);
       clearTimeout(statusTimeout);
 
       var reportedEnv = data.deploymentId === DEPLOYMENTS.prod.deploymentId ? 'prod' :
@@ -458,8 +489,10 @@
     };
 
     script.onerror = function() {
+      if (callbackInvoked) return;
+      callbackInvoked = true;
       delete window[callbackName];
-      script.remove();
+      if (script && script.parentNode) script.removeChild(script);
       clearTimeout(statusTimeout);
       showTimeoutStatus();
     };
@@ -471,9 +504,10 @@
     script.async = true;
 
     statusTimeout = setTimeout(function() {
-      if (window[callbackName]) {
+      if (!callbackInvoked && window[callbackName]) {
+        callbackInvoked = true;
         delete window[callbackName];
-        script.remove();
+        if (script && script.parentNode) script.removeChild(script);
         showTimeoutStatus();
       }
     }, STATUS_TIMEOUT_MS);

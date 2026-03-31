@@ -219,6 +219,8 @@ function createApplicationRecord(formData, createdBy) {
       household_id: householdId,
       primary_individual_id: individualId,
       primary_applicant_name: primaryApplicantName,
+      primary_applicant_first_name: capitalizeName(formData.first_name),
+      primary_applicant_last_name: capitalizeName(formData.last_name),
       primary_applicant_email: formData.email,
       country_code_primary: formData.country_code_primary || "BW",
       phone_primary: formData.phone_primary || "",
@@ -495,9 +497,22 @@ function listApplicationsForBoard(statusFilter) {
       if (!app.application_id) continue;
       if (statusFilter && app.status !== statusFilter) continue;
 
+      // Build applicant name from first_name and last_name fields (new schema)
+      // with fallback to primary_applicant_name (old schema) for backward compatibility
+      var applicantName;
+      if (app.primary_applicant_first_name && app.primary_applicant_last_name) {
+        applicantName = app.primary_applicant_first_name + " " + app.primary_applicant_last_name;
+      } else if (app.primary_applicant_name) {
+        applicantName = app.primary_applicant_name;
+      } else {
+        applicantName = "Applicant";
+      }
+
       applications.push({
         application_id: app.application_id,
-        applicant_name: app.primary_applicant_name || "Applicant",
+        applicant_name: applicantName,
+        first_name: app.primary_applicant_first_name || "",
+        last_name: app.primary_applicant_last_name || "",
         email: app.email,
         membership_category: app.membership_category,
         household_type: app.household_type,

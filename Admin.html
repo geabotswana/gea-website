@@ -4820,8 +4820,10 @@
       members.forEach(function(household) {
         var row = document.createElement('tr');
 
-        // Determine membership type badge
-        var typeClass = household.membership_type === 'ACTIVE' ? 'badge-approved' : 'badge-cancelled';
+        // Determine active status badge
+        var isActive = household.active === true || household.active === 'true' || household.active === 'TRUE';
+        var statusClass = isActive ? 'badge-approved' : 'badge-cancelled';
+        var statusText = isActive ? 'ACTIVE' : 'INACTIVE';
 
         // Build row safely using DOM methods to prevent XSS
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.household_name || 'Unknown'; return td; })());
@@ -4829,8 +4831,8 @@
 
         var badgeTd = document.createElement('td');
         var badgeSpan = document.createElement('span');
-        badgeSpan.className = 'badge ' + typeClass;
-        badgeSpan.textContent = household.status || 'Active';
+        badgeSpan.className = 'badge ' + statusClass;
+        badgeSpan.textContent = statusText;
         badgeTd.appendChild(badgeSpan);
         row.appendChild(badgeTd);
 
@@ -5540,7 +5542,7 @@
         header.className = 'modal-header';
 
         var title = document.createElement('h2');
-        title.textContent = (app.first_name || '') + ' ' + (app.last_name || '');
+        title.textContent = app.primary_applicant_name || 'Applicant';
         header.appendChild(title);
 
         var closeBtn = document.createElement('button');
@@ -5674,7 +5676,9 @@
 
         content.appendChild(actionsDiv);
         container.appendChild(content);
-        document.getElementById('appDetailModal').style.display = 'block';
+        var modal = document.getElementById('appDetailModal');
+        modal.classList.add('show');
+        modal.style.display = 'flex';
       }
     }).catch(function(err) {
       showError('Error loading application details: ' + err.message);
@@ -5773,7 +5777,9 @@
   }
 
   function closeModal() {
-    document.getElementById('appDetailModal').style.display = 'none';
+    var modal = document.getElementById('appDetailModal');
+    modal.classList.remove('show');
+    modal.style.display = 'none';
   }
 
   function showNotification(message) {

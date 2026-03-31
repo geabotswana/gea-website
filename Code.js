@@ -3472,7 +3472,7 @@ function _handleAdminDashboardStats(p) {
     var indHeaders = indData[0];
     for (var i = 1; i < indData.length; i++) {
       var member = rowToObject(indHeaders, indData[i]);
-      if (member.individual_id && member.active === TRUE) {
+      if (member.individual_id && member.active === true) {
         activeMembers++;
       }
     }

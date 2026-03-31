@@ -1767,13 +1767,28 @@ function getImageConstants() {
  */
 function _safePublicHousehold(hh) {
   if (!hh) return null;
+
+  // Get primary member's email
+  var primaryEmail = "";
+  if (hh.primary_member_id) {
+    try {
+      var member = getMemberById(hh.primary_member_id);
+      if (member) {
+        primaryEmail = member.email || "";
+      }
+    } catch (e) {
+      Logger.log("Warning: Could not fetch primary member email for household " + hh.household_id);
+    }
+  }
+
   return {
     household_id:               hh.household_id,
     household_name:             hh.household_name,
-    household_type:             hh.membership_type,
+    household_type:             hh.household_type || "",
     membership_type:            hh.membership_type,
     application_status:         hh.application_status,
     active:                     hh.active,
+    email:                      primaryEmail,
     membership_expiration_date: hh.membership_expiration_date
                                 ? formatDate(new Date(hh.membership_expiration_date)) : "",
     membership_start_date:      hh.membership_start_date

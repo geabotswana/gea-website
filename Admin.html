@@ -4856,7 +4856,10 @@
 
         // Build row safely using DOM methods to prevent XSS
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.household_name || 'Unknown'; return td; })());
-        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.membership_type || 'Unknown'; return td; })());
+
+        // Member Type: combine category (membership_type) with household type (Individual/Family)
+        var memberTypeText = (household.membership_type || 'Unknown') + ' ' + (household.household_type || 'Unknown');
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = memberTypeText; return td; })());
 
         var badgeTd = document.createElement('td');
         var badgeSpan = document.createElement('span');
@@ -4865,10 +4868,12 @@
         badgeTd.appendChild(badgeSpan);
         row.appendChild(badgeTd);
 
+        // Expiration date from membership_expiration_date field (already formatted by backend)
         var dateTd = document.createElement('td');
-        dateTd.textContent = household.expiration_date ? new Date(household.expiration_date).toLocaleDateString() : 'N/A';
+        dateTd.textContent = household.membership_expiration_date || 'N/A';
         row.appendChild(dateTd);
 
+        // Email from primary member
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.email || ''; return td; })());
 
         var actionTd = document.createElement('td');

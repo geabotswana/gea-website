@@ -2661,6 +2661,28 @@
    *     renderReservations(res.data.reservations);
    *   });
    */
+
+  /**
+   * Format a date for display in the UI
+   * @param {Date} date - The date to format
+   * @param {boolean} forStorage - If true, returns YYYY-MM-DD format; if false, returns "Monday, January 15, 2026"
+   * @returns {string} Formatted date string
+   */
+  function formatDate(date, forStorage) {
+    if (!date) return "";
+    var d = new Date(date);
+    if (forStorage) {
+      return d.getFullYear() + "-" +
+             String(d.getMonth() + 1).padStart(2, "0") + "-" +
+             String(d.getDate()).padStart(2, "0");
+    }
+    var DAYS   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    var MONTHS = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
+    return DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " +
+           d.getDate() + ", " + d.getFullYear();
+  }
+
   function apiCall(action, params) {
     // Add action and token to parameters
     params = params || {};
@@ -5015,8 +5037,8 @@
   function loadPhotos() {
     var photoGrid = document.getElementById('photoGrid');
     photoGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">Loading photos...</p>';
-    
-    apiCall('admin_photo', { action: 'list' }).then(function(res) {
+
+    apiCall('admin_pending_photos', {}).then(function(res) {
       if (!res.success) {
         showError('Failed to load photos: ' + res.message);
         return;

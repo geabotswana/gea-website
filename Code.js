@@ -225,6 +225,7 @@ function _routeAction(action, params) {
     case "admin_calendar":                 return _handleAdminCalendar(params);
     case "admin_members": return _handleAdminMembers(params);
     case "admin_photo":   return _handleAdminPhoto(params);
+    case "admin_pending_photos": return _handleAdminPendingPhotos(params);
     case "admin_applications":       return _handleAdminApplications(params);
     case "admin_application_detail": return _handleAdminApplicationDetail(params);
     case "admin_approve_application": return _handleAdminApproveApplication(params);
@@ -1303,6 +1304,49 @@ function _handleAdminPhoto(p) {
   return successResponse({}, "Photo " + p.decision + ".");
 }
 
+
+/**
+ * HANDLER: _handleAdminPendingPhotos
+ * Returns list of photos pending board approval (status = "submitted")
+ */
+function _handleAdminPendingPhotos(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var fileSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+    var fileData = fileSheet.getDataRange().getValues();
+    var fileHeaders = fileData[0];
+    var photos = [];
+
+    for (var i = 1; i < fileData.length; i++) {
+      var file = rowToObject(fileHeaders, fileData[i]);
+      // Only include photos with status = "submitted"
+      if (file.submission_id && file.document_type === "photo" && file.status === "submitted") {
+        var individual = getMemberById(file.individual_id);
+        if (individual) {
+          photos.push({
+            submission_id: file.submission_id,
+            individual_id: file.individual_id,
+            individual_name: individual.first_name + " " + individual.last_name,
+            household_id: individual.household_id,
+            submitted_date: file.submitted_date,
+            status: file.status
+          });
+        }
+      }
+    }
+
+    return successResponse({
+      photos: photos,
+      count: photos.length
+    });
+
+  } catch (e) {
+    Logger.log("ERROR _handleAdminPendingPhotos: " + e);
+    return errorResponse("Could not load photos.", "SERVER_ERROR");
+  }
+}
 
 // ============================================================
 // SHARED PRIVATE HELPERS

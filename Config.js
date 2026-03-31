@@ -951,12 +951,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.2.0";
+var SYSTEM_VERSION          = "2.2.1";
 var SYSTEM_BUILD_DATE       = "2026-03-31";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Removed broken JSONP implementation from member.html wrapper; portal now loads directly";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-31 10:01:29";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed Admin Portal Dashboard: Pending Applications card with board-pending sub-count, accurate active members and unverified payments";
+var DEPLOYMENT_TIMESTAMP    = "2026-03-31 10:31:40";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

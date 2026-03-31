@@ -235,6 +235,7 @@ function _routeAction(action, params) {
     case "admin_reject_payment": return _handleAdminRejectPayment(params);
     case "admin_clarify_payment": return _handleAdminClarifyPayment(params);
     case "admin_payment_report": return _handleAdminPaymentReport(params);
+    case "admin_dashboard_stats": return _handleAdminDashboardStats(params);
     case "admin_reservations_report": return _handleAdminReservationsReport(params);
     case "admin_resend_email":        return _handleAdminResendEmail(params);
 
@@ -3448,6 +3449,117 @@ function _handleAdminDeleteRule(p) {
   } catch (error) {
     Logger.log("ERROR in _handleAdminDeleteRule: " + error);
     return errorResponse("Failed to delete rule: " + error.message, "SERVER_ERROR");
+  }
+}
+
+// ============================================================
+// HANDLER: _handleAdminDashboardStats
+// ============================================================
+/**
+ * Returns dashboard statistics for the admin panel.
+ * Counts: pending applications (total and board-pending), active members,
+ * unverified payments, and today's reservations.
+ */
+function _handleAdminDashboardStats(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.ok) return auth.response;
+
+    // Count active members (individuals with active=TRUE)
+    var activeMembers = 0;
+    var indSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_INDIVIDUALS);
+    var indData = indSheet.getDataRange().getValues();
+    var indHeaders = indData[0];
+    for (var i = 1; i < indData.length; i++) {
+      var member = rowToObject(indHeaders, indData[i]);
+      if (member.individual_id && member.active === TRUE) {
+        activeMembers++;
+      }
+    }
+
+    // Count pending applications (not activated, denied, or withdrawn)
+    var pendingApps = 0;
+    var boardPendingApps = 0;
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appData = appSheet.getDataRange().getValues();
+    var appHeaders = appData[0];
+    for (var i = 1; i < appData.length; i++) {
+      var app = rowToObject(appHeaders, appData[i]);
+      if (!app.application_id) continue;
+
+      // Pending = not in terminal states
+      if (app.status !== APP_STATUS_ACTIVATED &&
+          app.status !== APP_STATUS_DENIED &&
+          app.status !== APP_STATUS_WITHDRAWN) {
+        pendingApps++;
+
+        // Board-pending = awaiting board decision at initial or final stage
+        if (app.status === APP_STATUS_BOARD_INITIAL_REVIEW ||
+            app.status === APP_STATUS_BOARD_FINAL_REVIEW) {
+          boardPendingApps++;
+        }
+      }
+    }
+
+    // Count unverified payments (status = "submitted")
+    var unverifiedPayments = 0;
+    var paySheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
+    var payData = paySheet.getDataRange().getValues();
+    var payHeaders = payData[0];
+    for (var i = 1; i < payData.length; i++) {
+      var pay = rowToObject(payHeaders, payData[i]);
+      if (pay.payment_id && pay.status === "submitted") {
+        unverifiedPayments++;
+      }
+    }
+
+    // Count today's reservations
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    var todayReservations = 0;
+    var resSheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var resData = resSheet.getDataRange().getValues();
+    var resHeaders = resData[0];
+    for (var i = 1; i < resData.length; i++) {
+      var res = rowToObject(resHeaders, resData[i]);
+      if (!res.reservation_id || res.status === "Cancelled") continue;
+
+      var eventDate = res.event_date ? new Date(res.event_date) : null;
+      if (eventDate) {
+        eventDate.setHours(0, 0, 0, 0);
+        if (eventDate.getTime() === today.getTime()) {
+          todayReservations++;
+        }
+      }
+    }
+
+    // Count pending photos (status = "submitted")
+    var pendingPhotos = 0;
+    var fileSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+    var fileData = fileSheet.getDataRange().getValues();
+    var fileHeaders = fileData[0];
+    for (var i = 1; i < fileData.length; i++) {
+      var file = rowToObject(fileHeaders, fileData[i]);
+      if (file.submission_id && file.document_type === "photo" && file.status === "submitted") {
+        pendingPhotos++;
+      }
+    }
+
+    return successResponse({
+      pending_applications: pendingApps,
+      board_pending_applications: boardPendingApps,
+      active_members: activeMembers,
+      unverified_payments: unverifiedPayments,
+      reservations_today: todayReservations,
+      pending_photos: pendingPhotos
+    });
+
+  } catch (e) {
+    Logger.log("ERROR in _handleAdminDashboardStats: " + e);
+    return errorResponse("Error retrieving dashboard stats: " + e.toString(), "SERVER_ERROR");
   }
 }
 

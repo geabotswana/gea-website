@@ -138,8 +138,11 @@ function login(email, password) {
   var role   = _getRoleForEmail(email);
   var token  = _createSession(email, role);
 
+  // Check if this is first login BEFORE updating the field
+  var isFirstLogin = !member.first_login_date;
+
   // Send first-login welcome email if this is their first portal login
-  if (!member.first_login_date) {
+  if (isFirstLogin) {
     _sendFirstLoginWelcome(member);
     updateMemberField(member.individual_id, "first_login_date", new Date(), "system");
   }
@@ -175,7 +178,7 @@ function login(email, password) {
   }
 
   // Flag if user needs to change their temporary password on first login
-  if (!member.first_login_date) {
+  if (isFirstLogin) {
     response.require_password_change = true;
   }
 
@@ -386,11 +389,16 @@ function changePassword(email, currentPassword, newPassword, userType) {
     var userId = normalizedUserType === "member" ? user.individual_id : user.admin_id;
     if (normalizedUserType === "member") {
       updateMemberField(userId, "password_hash", newPasswordHash, "system");
-      // Clear the first_login_date to allow future reference to first login
-      // but mark that password has been changed
-      updateMemberField(userId, "password_changed_on_date", new Date(), "system");
+      // Mark that password has been changed (if not already set, set it now)
+      if (!user.password_changed_on_date) {
+        updateMemberField(userId, "password_changed_on_date", new Date(), "system");
+      }
     } else {
       _updateAdminField(userId, "password_hash", newPasswordHash);
+      // Mark that password has been changed by setting first_login_date (if not already set)
+      if (!user.first_login_date) {
+        _updateAdminField(userId, "first_login_date", new Date());
+      }
     }
 
     // Invalidate all existing sessions for this user (force re-authentication)
@@ -1579,6 +1587,14 @@ function adminLogin(email, password) {
     var role  = adminRow[colIdx.role];
     var token = _createSession(email, role);
 
+    // Check if this is first login BEFORE updating the field
+    var isFirstLogin = !adminRow[colIdx.first_login_date];
+
+    // Record first login date if this is the first login
+    if (isFirstLogin) {
+      sheet.getRange(rowIdx, colIdx.first_login_date + 1).setValue(new Date());
+    }
+
     logAuditEntry(email, AUDIT_ADMIN_LOGIN, "Administrator", adminRow[colIdx.admin_id],
                   "Admin login successful (role: " + role + ")");
 
@@ -1586,6 +1602,7 @@ function adminLogin(email, password) {
       success:    true,
       token:      token,
       role:       role,
+      require_password_change: isFirstLogin,
       admin: {
         admin_id:   adminRow[colIdx.admin_id],
         email:      adminRow[colIdx.email],
@@ -1785,7 +1802,7 @@ function bootstrapAdminAccounts() {
 function _adminColMap(headers) {
   var map = {};
   var cols = ["admin_id","email","first_name","last_name","role","active",
-              "password_hash","created_by","created_date","deactivated_by","deactivated_date"];
+              "password_hash","first_login_date","created_by","created_date","deactivated_by","deactivated_date"];
   cols.forEach(function(col) { map[col] = headers.indexOf(col); });
   return map;
 }

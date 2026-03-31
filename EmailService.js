@@ -50,7 +50,8 @@ function sendEmail(templateId, recipient, variables, replyTo) {
     GmailApp.sendEmail(to, subject, plainBody, {
       htmlBody: htmlBody,
       name:     EMAIL_SENDER_NAME,
-      replyTo:  replyToAddr
+      replyTo:  replyToAddr,
+      charset:  "UTF-8"
     });
 
     Logger.log("Email sent: " + templateId + " → " + to);
@@ -644,8 +645,15 @@ function plainTextToHtml(plainText) {
   var html    = "";
   var inList  = false;
   var inKv    = false;
+  var skipNext = false;
 
   for (var i = 0; i < lines.length; i++) {
+    // Skip lines that were paired with previous line as key-value
+    if (skipNext) {
+      skipNext = false;
+      continue;
+    }
+
     var raw     = lines[i];
     var trimmed = raw.trim();
 
@@ -696,11 +704,45 @@ function plainTextToHtml(plainText) {
       continue;
     }
 
+    // IMPROVED: Detect implicit key-value pairs (label on one line, value on next)
+    // Pattern: Short line (likely a label) followed by a longer value line
+    // Examples: "Application ID" + "APP-2026-00006" OR "Submission Date" + "2026-03-30"
+    if (i + 1 < lines.length && trimmed.length <= 35 &&
+        !trimmed.match(/^(http|www)/i) && !trimmed.match(/^[\-•\[\]]/)) {
+      var nextRaw = lines[i + 1];
+      var nextTrimmed = nextRaw.trim();
+
+      // Check if next line is non-empty and looks like a value (not a header, not a bullet)
+      if (nextTrimmed !== "" &&
+          !(nextTrimmed.length >= 3 && nextTrimmed === nextTrimmed.toUpperCase()) &&
+          !nextTrimmed.match(/^(http|www)/i) &&
+          !nextTrimmed.match(/^[\-•\[\]]/)) {
+
+        // Look for indicators this is a label-value pair:
+        // - Current line is short and reads like a label
+        // - Next line is different length (likely value) or contains dates/numbers
+        var isLabel = (trimmed.length < 35 &&
+                       (trimmed.match(/[A-Z][a-z]/) || trimmed.match(/[A-Z]\s[A-Z]/)) &&
+                       !trimmed.match(/^[-•]/));
+        var isValue = (nextTrimmed.length !== trimmed.length &&
+                       nextTrimmed.match(/\d{4}|^[A-Z]{3,}|^[A-Z][A-Z]+-/));
+
+        if (isLabel && isValue) {
+          if (inKv) { html += "</div>"; inKv = false; }
+          if (!inKv) { html += '<div>'; inKv = true; }
+          html += '<div class="kv"><span class="kk">' + escapeHtml(trimmed) + '</span>' +
+                  '<span class="kv2">' + escapeHtml(nextTrimmed) + '</span></div>';
+          skipNext = true;
+          continue;
+        }
+      }
+    }
+
     // Close kv block before regular paragraph
     if (inKv) { html += "</div>"; inKv = false; }
 
-    // Regular paragraph
-    html += '<p>' + escapeHtml(trimmed) + '</p>';
+    // Regular paragraph with improved spacing for Outlook
+    html += '<p style="margin:0 0 8px 0;line-height:1.6;">' + escapeHtml(trimmed) + '</p>';
   }
 
   if (inList) html += "</ul>";

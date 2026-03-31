@@ -427,22 +427,22 @@ function confirmDocumentsUploaded(applicationId, email) {
       return { success: false, message: "Unauthorized." };
     }
 
-    // Update application
+    // Update application status to board_initial_review (board must review before RSO)
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
     if (appRow > 0) {
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "documents_confirmed_date")).setValue(new Date());
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_DOCS_CONFIRMED);
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_INITIAL_REVIEW);
     }
 
     logAuditEntry(email, AUDIT_APPLICATION_DOCS_CONFIRMED, "Application", applicationId,
-                  "Documents confirmed for review");
+                  "Documents confirmed and ready for board review");
 
     var applicantName      = application.primary_applicant_name || "";
     var applicantFirstName = applicantName.split(" ")[0] || "Applicant";
-
-    // Notify board
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+
+    // Notify board that documents are ready for their review (board reviews BEFORE RSO)
     sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_BOARD", boardEmail, {
       FIRST_NAME:      "Board",
       APPLICANT_NAME:  applicantName,
@@ -452,23 +452,14 @@ function confirmDocumentsUploaded(applicationId, email) {
       RSO_CONTACT:     EMAIL_RSO_APPROVE
     });
 
-    // Notify RSO to review documents
-    sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
-      FIRST_NAME:        "RSO Team",
-      APPLICANT_NAME:    applicantName,
-      APPLICATION_ID:    applicationId,
-      DOCUMENT_TYPES:    "Passport / Omang / Photo",
-      APPROVAL_DEADLINE: formatDate(addDays(new Date(), 5))
-    });
-
-    // Notify applicant that documents are under review
+    // Notify applicant that documents have been confirmed and are under board review
     sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.primary_applicant_email, {
       FIRST_NAME:      applicantFirstName,
       DOCUMENT_TYPES:  "Passport / Omang / Photo",
       SUBMISSION_DATE: formatDate(new Date())
     });
 
-    return { success: true, message: "Documents confirmed for review." };
+    return { success: true, message: "Documents confirmed and sent to board for review." };
 
   } catch (e) {
     return { success: false, message: "Error confirming documents." };

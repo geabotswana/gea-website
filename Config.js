@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.1";
+var SYSTEM_VERSION          = "2.4.2";
 var SYSTEM_BUILD_DATE       = "2026-04-01";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Member portal accounts available only for age 17+; added Section 6 (Portal & Reservations) to Rules";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-01 10:22:42";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed birthday milestone emails: addressed to parents (third-person child references); age 17 email requests portal account creation";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-01 11:59:54";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

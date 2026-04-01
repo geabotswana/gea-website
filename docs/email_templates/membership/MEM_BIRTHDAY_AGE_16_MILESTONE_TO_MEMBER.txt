@@ -1,19 +1,17 @@
 ﻿Hi {{FIRST_NAME}},
 
-🎉 HAPPY 16TH BIRTHDAY!
+🎉 {{CHILD_FIRST_NAME}} HAS TURNED 16!
 
-Today is your special day! You're officially 16 years old!
+Happy birthday to {{CHILD_FIRST_NAME}}! They are now 16 years old.
 
-YOUR GEA EXPERIENCE:
-You're well established in our GEA community, enjoying full access to the Recreation Center and Fitness Center with complete independence. You can participate in all member activities and events!
+MILESTONE APPROACHING:
+{{CHILD_FIRST_NAME}} is fully enjoying GEA's Recreation Center and Fitness Center with complete independence, and is an active participant in all member events.
 
-COMING NEXT YEAR:
-Next year, at age 17, you'll reach full adult membership status! You'll get your own member portal account, allowing you to make your own facility reservations, vote in member elections, and be eligible to serve on the GEA Board of Directors.
+NEXT YEAR AT 17:
+Next year, {{CHILD_FIRST_NAME}} will reach full adult membership status! At that time, you can request a member portal account for them, which will enable them to make their own facility reservations, participate in GEA voting, and be eligible for board positions.
 
 THANK YOU:
-Thank you for being an active member of our community. We appreciate your participation and look forward to having you grow with GEA!
-
-Have an amazing birthday! 🎂
+We appreciate {{CHILD_FIRST_NAME}}'s participation in our community. We're looking forward to their continued growth with GEA!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -1,25 +1,22 @@
 ﻿Hi {{FIRST_NAME}},
 
-🎉 HAPPY 15TH BIRTHDAY!
+🎉 {{CHILD_FIRST_NAME}} HAS TURNED 15!
 
-Today is your day! You're officially 15, and you've reached an important milestone at GEA!
+Congratulations! {{CHILD_FIRST_NAME}} has reached an important milestone at GEA.
 
-YOUR NEW FITNESS CENTER PRIVILEGE:
-You've reached age 15 — the age when you can now use all Fitness Center equipment completely on your own, without supervision!
+NEW FITNESS CENTER PRIVILEGE AT AGE 15:
+{{CHILD_FIRST_NAME}} can now use all Fitness Center equipment independently, without supervision!
 
-WHAT YOU CAN NOW DO:
-- Use all fitness center equipment independently (treadmills, weights, etc.)
-- Access the gym anytime during member hours
-- Continue your independent recreation center access
-- Enjoy all GEA facilities and member events
+WHAT THIS MEANS:
+- Full independent access to Fitness Center equipment (treadmills, weights, etc.)
+- Can visit the gym anytime during member hours
+- Continued independent access to Recreation Center (tennis, basketball, leobo)
+- Full participation in all GEA facilities and member events
 
-YOUR PATH TO ADULT STATUS:
-At age 17, you'll reach full adult membership status with your own member portal account (for making reservations), voting rights, and eligibility for board positions.
+THE NEXT MILESTONE:
+At age 17, {{CHILD_FIRST_NAME}} will be eligible for their own member portal account (enabling independent facility reservations), voting rights in GEA elections, and eligibility for board positions.
 
-ENJOY YOUR DAY:
-You're growing into a more independent member of our GEA community! We hope to see you more often at the gym and at member events.
-
-Happy Birthday! 🎂
+We're pleased to see {{CHILD_FIRST_NAME}} growing with GEA!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

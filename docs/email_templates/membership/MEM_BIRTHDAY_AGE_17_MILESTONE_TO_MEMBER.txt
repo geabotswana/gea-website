@@ -1,34 +1,30 @@
 Hi {{FIRST_NAME}},
 
-🎉 HAPPY 17TH BIRTHDAY!
+🎉 {{CHILD_FIRST_NAME}} HAS TURNED 17!
 
-Today marks a major milestone — you're now 17 years old and officially eligible for full adult membership status at GEA!
+Major milestone! {{CHILD_FIRST_NAME}} is now 17 years old and eligible for full adult membership status at GEA.
 
-YOUR MEMBER PORTAL ACCOUNT:
-Congratulations! You're now eligible for your own GEA member portal account. Contact the board at board@geabotswana.org to request activation. Once approved, you'll be able to:
-- Make facility reservations in your own name
-- Book tennis (3 hours/week limit per household)
-- Reserve Leobo (1/month limit per household)
-- View your membership details and participation history
-- Download your digital membership card
+NEW ADULT MEMBERSHIP ELIGIBILITY:
+{{CHILD_FIRST_NAME}} is now eligible for:
 
-YOUR NEW VOTING & LEADERSHIP RIGHTS:
-- Voting rights in GEA elections and member decisions
-- Eligibility to serve on the GEA Board of Directors (if you're a Full member)
+MEMBER PORTAL ACCOUNT:
+If you'd like {{CHILD_FIRST_NAME}} to have their own member portal account, please contact the board at board@geabotswana.org to request activation. Once created, they'll be able to:
+- Make facility reservations independently (tennis 3 hrs/week, Leobo 1/month)
+- View their membership details and participation history
+- Download their digital membership card
+
+VOTING & LEADERSHIP RIGHTS:
+{{CHILD_FIRST_NAME}} is now eligible to:
+- Vote in GEA elections and member decisions
+- Serve on the GEA Board of Directors (if you have Full membership status)
 - Participate in community governance and decision-making
 
-YOUR FULL FACILITY ACCESS:
-- Complete independent access to all GEA facilities (Recreation Center, Fitness Center, Tennis, Leobo, Playground)
+FULL FACILITY INDEPENDENCE:
+- Complete independent access to all GEA facilities
 - Full participation in all member activities and events
 - Member discounts and benefits
 
-GET INVOLVED:
-If you're interested in serving on the Board or getting more involved in GEA leadership, please reach out to board@geabotswana.org. We'd love to have you as part of our community leadership!
-
-ENJOY YOUR DAY:
-You've grown into a full member of the GEA family. Welcome to independent membership! We look forward to your continued participation and contributions to our community.
-
-Happy Birthday! 🎂
+We're pleased to welcome {{CHILD_FIRST_NAME}} as a full adult member of the GEA family. If they're interested in board service or deeper involvement, encourage them to reach out to board@geabotswana.org!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

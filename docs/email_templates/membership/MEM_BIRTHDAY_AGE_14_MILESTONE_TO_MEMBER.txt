@@ -1,28 +1,22 @@
 Hi {{FIRST_NAME}},
 
-🎉 HAPPY 14TH BIRTHDAY!
+🎉 {{CHILD_FIRST_NAME}} HAS TURNED 14!
 
-Today marks a major milestone for you at GEA — you're officially 14!
+Great news! {{CHILD_FIRST_NAME}} has reached an important milestone at GEA.
 
-YOUR NEW MILESTONE:
-You've reached age 14 — the age when you can enjoy GEA's Recreation Center (tennis, leobo, playground) completely on your own, without a parent or adult supervision!
+NEW INDEPENDENCE AT AGE 14:
+{{CHILD_FIRST_NAME}} can now enjoy GEA's Recreation Center independently, without adult supervision!
 
-WHAT'S NOW AVAILABLE:
+WHAT THIS MEANS:
 - Independent access to Recreation Center during member hours (7am-8pm)
-- Play tennis and basketball unaccompanied
-- Reserve Leobo for events with household members
-- Enjoy all recreation facilities freely
+- Can play tennis and basketball unaccompanied
+- Can participate in all recreation facilities on their own
+- Continued facility enjoyment at Gym (with supervision, no equipment usage yet)
 
-FITNESS CENTER ACCESS:
-You can also visit the Fitness Center, but equipment usage requires you to be at least 15 years old. For now, you can familiarize yourself with the facility with a parent or household member.
+NEXT MILESTONE:
+At age 15, {{CHILD_FIRST_NAME}} will be able to use all Fitness Center equipment independently.
 
-NEXT YEAR AT 15:
-At your next birthday, you'll be able to use all fitness center equipment on your own!
-
-GET INVOLVED:
-Check out our member events and activities — we'd love to see you more at GEA!
-
-Happy Birthday! 🎂
+We're glad {{CHILD_FIRST_NAME}} is growing with GEA! We hope to see them more often at our facilities and member events.
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

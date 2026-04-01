@@ -6,6 +6,9 @@ on:
     - cron: '0 1 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   export-csv:
     runs-on: ubuntu-latest
@@ -24,8 +27,6 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git config --global credential.helper store
-          echo "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
 
       - name: Export and commit CSV
         env:
@@ -81,12 +82,14 @@ jobs:
           PYTHON_EOF
 
       - name: Commit and push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if git diff --quiet docs/email_templates/Email_Templates_Sheet.csv; then
             echo "No changes to commit"
           else
             git add docs/email_templates/Email_Templates_Sheet.csv
             git commit -m "Nightly export: Email Templates CSV from spreadsheet" -m "Automated daily export of Email Templates sheet to CSV. Spreadsheet is the source of truth."
-            git push origin main
+            git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git main
             echo "✅ CSV updated and pushed"
           fi

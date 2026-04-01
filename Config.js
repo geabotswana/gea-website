@@ -956,6 +956,16 @@ var DEFAULT_RULES_SECTIONS = [
       "These rules and regulations are subject to change by agreement of the Board of Directors. Members will be notified of any changes.",
       "For questions, reservations, or concerns, contact board@geabotswana.org."
     ]
+  },
+  {
+    number: "6",
+    title: "Member Portal Accounts & Reservations",
+    content: [
+      "Member portal accounts are available to members age 17 and older.",
+      "Household members under age 17 may not have their own portal account. Reservations for younger members are made by their household guardian through the guardian's portal account.",
+      "At age 17, eligible household members may request a portal account from the board. Once activated, they can make their own reservations and manage their member profile independently.",
+      "Portal account credentials (email and password) are the account holder's responsibility. Sharing credentials with minors is not recommended."
+    ]
   }
 ];
 
@@ -965,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.0";
+var SYSTEM_VERSION          = "2.4.1";
 var SYSTEM_BUILD_DATE       = "2026-04-01";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Membership age stages: aligned bylaws (17=voting/office), updated email milestones (ages 14, 15, 16, 17)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-01 10:03:33";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Member portal accounts available only for age 17+; added Section 6 (Portal & Reservations) to Rules";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-01 10:22:42";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

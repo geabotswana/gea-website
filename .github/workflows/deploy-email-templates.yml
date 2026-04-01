@@ -219,7 +219,8 @@ jobs:
 
               # Then query Drive for any files we didn't just create
               for semantic_name in template_map.keys():
-                  if template_map[semantic_name]['drive_file_id'] == '':  # Only if empty
+                  drive_file_id = template_map[semantic_name]['drive_file_id']
+                  if drive_file_id in ('', 'TBD', 'N/A'):  # Only if empty or placeholder
                       query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
                       results = drive_service.files().list(
                           q=query,

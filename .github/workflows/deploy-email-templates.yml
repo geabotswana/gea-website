@@ -30,6 +30,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Configure git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
       - name: Deploy Email Templates
         env:
           SERVICE_ACCOUNT_JSON: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
@@ -265,6 +270,20 @@ jobs:
                   print(f"✅ Rebuilt spreadsheet with all {len(template_map)} templates!")
               else:
                   print(f"✅ Updated {len(updates)} template file IDs in spreadsheet!")
+
+          # Update CSV file in git with new file IDs
+          if (updates or REBUILD_SPREADSHEET) and not DRY_RUN:
+              print(f"\n📝 Updating CSV with new file IDs...\n")
+
+              # Write updated CSV with pipe delimiters
+              with open(csv_path, 'w') as f:
+                  f.write('semantic_name|display_name|subject|drive_file_id|placeholders|active|notes\n')
+                  for semantic_name in sorted(template_map.keys()):
+                      data = template_map[semantic_name]
+                      line = f"{semantic_name}|{data['display_name']}|{data['subject']}|{data['drive_file_id']}|{data['placeholders']}|{data['active']}|{data['notes']}\n"
+                      f.write(line)
+
+              print(f"  ✅ CSV updated with {len([s for s in template_map.keys() if template_map[s]['drive_file_id']])} file IDs")
           elif DRY_RUN:
               action = "rebuild" if REBUILD_SPREADSHEET else "update"
               count = len(template_map) if REBUILD_SPREADSHEET else len(updates)
@@ -273,3 +292,19 @@ jobs:
 
           print(f"\n{'✨ Deployment complete!' if not DRY_RUN else '✅ Dry run complete!'}")
           PYTHON_EOF
+
+      - name: Commit and push CSV updates
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if git diff --quiet docs/email_templates/Email_Templates_Sheet.csv; then
+            echo "No CSV changes to commit"
+          else
+            git add docs/email_templates/Email_Templates_Sheet.csv
+            git commit -m "Update email template file IDs from Drive deployment
+
+Automated update of file IDs after email template deployment to Shared Drive.
+
+https://claude.ai/code/session_01RomWyDxnTLLA3TAm47azif"
+            git push origin main
+            echo "✅ CSV updated and pushed to main"
+          fi

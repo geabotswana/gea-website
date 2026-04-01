@@ -341,11 +341,7 @@ jobs:
             echo "No CSV changes to commit"
           else
             git add docs/email_templates/Email_Templates_Sheet.csv
-            git commit -m "Update email template file IDs from Drive deployment
-
-Automated update of file IDs after email template deployment to Shared Drive.
-
-https://claude.ai/code/session_01RomWyDxnTLLA3TAm47azif"
+            git commit -m "Update email template file IDs from Drive deployment" -m "Automated update of file IDs after email template deployment to Shared Drive."
             git push origin main
             echo "✅ CSV updated and pushed to main"
           fi

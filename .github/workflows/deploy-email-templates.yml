@@ -217,38 +217,8 @@ jobs:
                   template_map[semantic_name]['drive_file_id'] = file_id
                   print(f"  Synced: {semantic_name} → {file_id}")
 
-              # Then query Drive for any files we didn't just create
-              for semantic_name in template_map.keys():
-                  drive_file_id = template_map[semantic_name]['drive_file_id']
-                  if drive_file_id in ('', 'TBD', 'N/A'):  # Only if empty or placeholder
-                      query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
-                      results = drive_service.files().list(
-                          q=query,
-                          spaces='drive',
-                          fields='files(id, createdTime)',
-                          pageSize=10,  # Get all matches
-                          supportsTeamDrives=True
-                      ).execute()
-                      files = results.get('files', [])
-                      if files:
-                          # Use the most recently created file
-                          latest_file = max(files, key=lambda x: x['createdTime'])
-                          file_id = latest_file['id']
-                          template_map[semantic_name]['drive_file_id'] = file_id
-                          print(f"  Found: {semantic_name} → {file_id}")
-
-                          # Optionally delete other duplicates
-                          for f in files:
-                              if f['id'] != file_id:
-                                  try:
-                                      drive_service.files().delete(fileId=f['id'], supportsTeamDrives=True).execute()
-                                      print(f"    Deleted duplicate: {f['id']}")
-                                  except:
-                                      pass  # Ignore errors
-                      else:
-                          print(f"  Missing: {semantic_name} (no file in Drive)")
           else:
-              # Normal mode: update only files that were just created/updated
+              # Normal mode: update template_map with files that were just created/updated
               for semantic_name, file_id in updates.items():
                   if semantic_name in template_map:
                       template_map[semantic_name]['drive_file_id'] = file_id
@@ -326,11 +296,11 @@ jobs:
               else:
                   print(f"✅ Updated {len(updates)} template file IDs in spreadsheet!")
 
-          # Update CSV file in git with new file IDs
-          if (updates or REBUILD_SPREADSHEET) and not DRY_RUN:
-              print(f"\n📝 Updating CSV with new file IDs...\n")
+          # Update CSV file in git with all current file IDs
+          if (updates or REBUILD_SPREADSHEET or CLEANUP_DUPLICATES) and not DRY_RUN:
+              print(f"\n📝 Updating CSV with all file IDs...\n")
 
-              # Write updated CSV with pipe delimiters
+              # Write entire CSV with all current data
               with open(csv_path, 'w') as f:
                   f.write('semantic_name|display_name|subject|drive_file_id|placeholders|active|notes\n')
                   for semantic_name in sorted(template_map.keys()):
@@ -338,7 +308,8 @@ jobs:
                       line = f"{semantic_name}|{data['display_name']}|{data['subject']}|{data['drive_file_id']}|{data['placeholders']}|{data['active']}|{data['notes']}\n"
                       f.write(line)
 
-              print(f"  ✅ CSV updated with {len([s for s in template_map.keys() if template_map[s]['drive_file_id']])} file IDs")
+              file_ids_count = len([s for s in template_map.keys() if template_map[s]['drive_file_id'] not in ('', 'TBD', 'N/A')])
+              print(f"  ✅ CSV updated: {file_ids_count} templates with file IDs")
           elif DRY_RUN:
               action = "rebuild" if REBUILD_SPREADSHEET else "update"
               count = len(template_map) if REBUILD_SPREADSHEET else len(updates)

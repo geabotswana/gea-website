@@ -1,0 +1,92 @@
+name: Export Email Templates CSV
+
+on:
+  schedule:
+    # Run daily at 3:00 AM GMT+2 (1:00 AM UTC)
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  export-csv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install google-auth-oauthlib google-auth-httplib2 google-api-python-client
+
+      - name: Configure git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Export and commit CSV
+        env:
+          SERVICE_ACCOUNT_JSON: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
+          SPREADSHEET_ID: "1WvN4xU_ZxElwpkXQVdt0HlUkjXcCA_ZaImklSLvuzeI"
+          SHEET_NAME: "Email Templates"
+          ADMIN_EMAIL: "treasurer@geabotswana.org"
+        run: |
+          python - <<'PYTHON_EOF'
+          import os
+          import json
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+
+          # Configuration
+          SERVICE_ACCOUNT_JSON = os.environ['SERVICE_ACCOUNT_JSON']
+          SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+          SHEET_NAME = os.environ['SHEET_NAME']
+          ADMIN_EMAIL = os.environ['ADMIN_EMAIL']
+
+          # Authenticate
+          info = json.loads(SERVICE_ACCOUNT_JSON)
+          creds = service_account.Credentials.from_service_account_info(
+              info,
+              scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+          ).with_subject(ADMIN_EMAIL)
+          sheets_service = build('sheets', 'v4', credentials=creds)
+
+          # Read the sheet
+          result = sheets_service.spreadsheets().values().get(
+              spreadsheetId=SPREADSHEET_ID,
+              range=f"'{SHEET_NAME}'!A1:G"
+          ).execute()
+
+          rows = result.get('values', [])
+
+          if not rows:
+              print("Error: No data found in sheet")
+              exit(1)
+
+          # Write CSV with pipe delimiters
+          csv_path = 'docs/email_templates/Email_Templates_Sheet.csv'
+          with open(csv_path, 'w') as f:
+              for row in rows:
+                  # Pad row to 7 columns if needed
+                  while len(row) < 7:
+                      row.append('')
+                  line = '|'.join(row[:7]) + '\n'
+                  f.write(line)
+
+          print(f"✅ Exported {len(rows) - 1} templates to CSV")
+
+          PYTHON_EOF
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet docs/email_templates/Email_Templates_Sheet.csv; then
+            echo "No changes to commit"
+          else
+            git add docs/email_templates/Email_Templates_Sheet.csv
+            git commit -m "Nightly export: Email Templates CSV from spreadsheet
+
+Automated daily export of Email Templates sheet to CSV. Spreadsheet is the source of truth."
+            git push origin main
+            echo "✅ CSV updated and pushed"
+          fi

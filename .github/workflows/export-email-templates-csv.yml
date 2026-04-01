@@ -84,9 +84,7 @@ jobs:
             echo "No changes to commit"
           else
             git add docs/email_templates/Email_Templates_Sheet.csv
-            git commit -m "Nightly export: Email Templates CSV from spreadsheet
-
-Automated daily export of Email Templates sheet to CSV. Spreadsheet is the source of truth."
+            git commit -m "Nightly export: Email Templates CSV from spreadsheet" -m "Automated daily export of Email Templates sheet to CSV. Spreadsheet is the source of truth."
             git push origin main
             echo "✅ CSV updated and pushed"
           fi

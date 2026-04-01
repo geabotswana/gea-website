@@ -14,7 +14,7 @@ WHAT THIS MEANS:
 - Full participation in all GEA facilities and member events
 
 THE NEXT MILESTONE:
-At age 17, {{CHILD_FIRST_NAME}} will be eligible for their own member portal account (enabling independent facility reservations), voting rights in GEA elections, and eligibility for board positions.
+At age 17, {{CHILD_FIRST_NAME}} will be eligible for their own member portal account (enabling independent facility reservations). Note: Voting rights in GEA elections and board eligibility are available ONLY to members with Full membership status.
 
 We're pleased to see {{CHILD_FIRST_NAME}} growing with GEA!
 

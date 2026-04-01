@@ -8,7 +8,10 @@ MILESTONE APPROACHING:
 {{CHILD_FIRST_NAME}} is fully enjoying GEA's Recreation Center and Fitness Center with complete independence, and is an active participant in all member events.
 
 NEXT YEAR AT 17:
-Next year, {{CHILD_FIRST_NAME}} will reach full adult membership status! At that time, you can request a member portal account for them, which will enable them to make their own facility reservations, participate in GEA voting, and be eligible for board positions.
+Next year, {{CHILD_FIRST_NAME}} will reach full adult membership status! At that time, you can request a member portal account for them, which will enable them to make their own facility reservations.
+
+NOTE ON VOTING & BOARD POSITIONS:
+Voting rights in GEA elections and eligibility for the Board of Directors are available ONLY to members with Full membership status. Other membership types (Associate, Affiliate, Diplomatic, Temporary, Community) do not have voting or board eligibility.
 
 THANK YOU:
 We appreciate {{CHILD_FIRST_NAME}}'s participation in our community. We're looking forward to their continued growth with GEA!

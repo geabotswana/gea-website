@@ -13,11 +13,15 @@ If you'd like {{CHILD_FIRST_NAME}} to have their own member portal account, plea
 - View their membership details and participation history
 - Download their digital membership card
 
-VOTING & LEADERSHIP RIGHTS:
-{{CHILD_FIRST_NAME}} is now eligible to:
+VOTING & LEADERSHIP RIGHTS (Full Members Only):
+Important: Voting rights in GEA elections and eligibility for the Board of Directors are ONLY available to members with Full membership status.
+
+If {{CHILD_FIRST_NAME}} has Full membership status, they are now eligible to:
 - Vote in GEA elections and member decisions
-- Serve on the GEA Board of Directors (if you have Full membership status)
+- Serve on the GEA Board of Directors
 - Participate in community governance and decision-making
+
+Other membership types (Associate, Affiliate, Diplomatic, Temporary, Community) do not have voting or board eligibility, regardless of age.
 
 FULL FACILITY INDEPENDENCE:
 - Complete independent access to all GEA facilities

@@ -1,0 +1,34 @@
+Hi {{FIRST_NAME}},
+
+🎉 {{CHILD_FIRST_NAME}} HAS TURNED 17!
+
+Major milestone! {{CHILD_FIRST_NAME}} is now 17 years old and eligible for full adult membership status at GEA.
+
+NEW ADULT MEMBERSHIP ELIGIBILITY:
+{{CHILD_FIRST_NAME}} is now eligible for:
+
+MEMBER PORTAL ACCOUNT:
+If you'd like {{CHILD_FIRST_NAME}} to have their own member portal account, please contact the board at board@geabotswana.org to request activation. Once created, they'll be able to:
+- Make facility reservations independently (tennis 3 hrs/week, Leobo 1/month)
+- View their membership details and participation history
+- Download their digital membership card
+
+VOTING & LEADERSHIP RIGHTS (Full Members Only):
+Important: Voting rights in GEA elections and eligibility for the Board of Directors are ONLY available to members with Full membership status.
+
+If {{CHILD_FIRST_NAME}} has Full membership status, they are now eligible to:
+- Vote in GEA elections and member decisions
+- Serve on the GEA Board of Directors
+- Participate in community governance and decision-making
+
+Other membership types (Associate, Affiliate, Diplomatic, Temporary, Community) do not have voting or board eligibility, regardless of age.
+
+FULL FACILITY INDEPENDENCE:
+- Complete independent access to all GEA facilities
+- Full participation in all member activities and events
+- Member discounts and benefits
+
+We're pleased to welcome {{CHILD_FIRST_NAME}} as a full adult member of the GEA family. If they're interested in board service or deeper involvement, encourage them to reach out to board@geabotswana.org!
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -1,33 +1,20 @@
 ﻿Hi {{FIRST_NAME}},
 
-🎉 HAPPY 16TH BIRTHDAY!
+🎉 {{CHILD_FIRST_NAME}} HAS TURNED 16!
 
-Congratulations! You're now 16 and eligible for full adult membership with all GEA privileges and benefits!
+Happy birthday to {{CHILD_FIRST_NAME}}! They are now 16 years old.
 
-YOUR MEMBERSHIP UPGRADE:
-{{ADULT_MEMBERSHIP_INFO}}
+MILESTONE APPROACHING:
+{{CHILD_FIRST_NAME}} is fully enjoying GEA's Recreation Center and Fitness Center with complete independence, and is an active participant in all member events.
 
-UPGRADE YOUR MEMBERSHIP:
-Visit your member portal to complete your transition to adult status: {{PORTAL_URL}}
+NEXT YEAR AT 17:
+Next year, {{CHILD_FIRST_NAME}} will reach full adult membership status! At that time, you can request a member portal account for them, which will enable them to make their own facility reservations.
 
-WHAT YOU CAN NOW DO:
-- Make your own facility reservations
-- Book tennis (3 hours/week)
-- Reserve Leobo (1/month)
-- Attend member events independently
-- Access all GEA activities
+NOTE ON VOTING & BOARD POSITIONS:
+Voting rights in GEA elections and eligibility for the Board of Directors are available ONLY to members with Full membership status. Other membership types (Associate, Affiliate, Diplomatic, Temporary, Community) do not have voting or board eligibility.
 
-YOUR NEW PRIVILEGES:
-- Independent reservations in your name
-- Full facility access
-- Member discounts
-- Digital membership card
-- Voting eligibility (when 18)
-
-COMPLETE YOUR UPGRADE:
-Visit your portal and update your membership status to adult. Questions? Contact board@geabotswana.org
-
-Have an amazing birthday and welcome to adult membership! 🎂
+THANK YOU:
+We appreciate {{CHILD_FIRST_NAME}}'s participation in our community. We're looking forward to their continued growth with GEA!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

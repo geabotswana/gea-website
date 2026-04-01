@@ -1,0 +1,22 @@
+Hi {{FIRST_NAME}},
+
+🎉 {{CHILD_FIRST_NAME}} HAS TURNED 14!
+
+Great news! {{CHILD_FIRST_NAME}} has reached an important milestone at GEA.
+
+NEW INDEPENDENCE AT AGE 14:
+{{CHILD_FIRST_NAME}} can now enjoy GEA's Recreation Center independently, without adult supervision!
+
+WHAT THIS MEANS:
+- Independent access to Recreation Center during member hours (7am-8pm)
+- Can play tennis and basketball unaccompanied
+- Can participate in all recreation facilities on their own
+- Continued facility enjoyment at Gym (with supervision, no equipment usage yet)
+
+NEXT MILESTONE:
+At age 15, {{CHILD_FIRST_NAME}} will be able to use all Fitness Center equipment independently.
+
+We're glad {{CHILD_FIRST_NAME}} is growing with GEA! We hope to see them more often at our facilities and member events.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

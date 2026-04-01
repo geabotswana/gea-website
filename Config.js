@@ -269,12 +269,23 @@ var SPONSOR_MUST_BE_ACTIVE    = true;    // Sponsor membership must be active (n
 // GEA System Backend spreadsheet.
 // ============================================================
 
-var AGE_UNACCOMPANIED_ACCESS  = 15;  // Minimum age: unaccompanied rec center access
-var AGE_FITNESS_CENTER        = 15;  // Minimum age: fitness center use
-var AGE_VOTING                = 16;  // Minimum age: vote in elections
-var AGE_OFFICE_ELIGIBLE       = 16;  // Minimum age: hold board position
-var AGE_DOCUMENT_REQUIRED     = 16;  // Minimum age: passport/ID upload required
-                                     // (under-16 policy pending board review)
+// ============================================================
+// MEMBERSHIP AGE STAGES
+// ============================================================
+// GEA membership access levels determined by age (per bylaws)
+// Stages are: Youth (0-13), Transition (14-16), Adult (17+)
+
+var AGE_STAGE_YOUTH_MAX        = 13;   // Max age for Youth stage
+var AGE_STAGE_TRANSITION_MIN   = 14;   // Min age for Transition stage
+var AGE_STAGE_TRANSITION_MAX   = 16;   // Max age for Transition stage
+var AGE_STAGE_ADULT_MIN        = 17;   // Min age for Adult stage
+
+// Facility access rules by age
+var AGE_REC_CENTER_UNACCOMPANIED = 14;  // Min age: unaccompanied rec center access
+var AGE_GYM_USAGE               = 15;   // Min age: gym equipment usage (access from age 11)
+var AGE_VOTING                  = 17;   // Min age: vote in elections
+var AGE_OFFICE_ELIGIBLE         = 17;   // Min age: hold board position
+var AGE_DOCUMENT_REQUIRED       = 16;   // Min age: passport/ID upload required
 
 
 // ============================================================
@@ -873,7 +884,8 @@ var DEFAULT_RULES_SECTIONS = [
     title: "Recreation Center Rules",
     content: [
       "Open to members and registered guests only, and only during the hours of 7am to 8pm. Everyone must depart by 8pm.",
-      "Children under 14 must be supervised by an adult.",
+      "Age 13 and younger: Must be supervised by an adult or household staff member.",
+      "Age 14 and older: May access facilities unaccompanied.",
       "Respect noise levels, shared spaces, and dispose of trash properly.",
       "Report any damage, maintenance needs, or safety concerns to board@geabotswana.org."
     ],
@@ -906,8 +918,9 @@ var DEFAULT_RULES_SECTIONS = [
     title: "Fitness Center Rules",
     content: [
       "Use at your own risk – GEA and the U.S. Embassy are not liable for injuries or accidents.",
-      "Minimum age for use: 15 years old.",
-      "No children under 10 are allowed inside the fitness center; children 11-14 may enter under supervision but may not use the equipment.",
+      "Age 14 and younger: Access to gym only with parent or household staff supervision; equipment use not permitted.",
+      "Age 15-16: Access to gym unaccompanied; full equipment usage permitted.",
+      "Age 17 and older: Full independent access and usage.",
       "The door code is for members only – do not share it.",
       "Personal trainers are allowed, but the code must not be disclosed.",
       "Wipe down equipment after use and return it to its place.",
@@ -943,6 +956,16 @@ var DEFAULT_RULES_SECTIONS = [
       "These rules and regulations are subject to change by agreement of the Board of Directors. Members will be notified of any changes.",
       "For questions, reservations, or concerns, contact board@geabotswana.org."
     ]
+  },
+  {
+    number: "6",
+    title: "Member Portal Accounts & Reservations",
+    content: [
+      "Member portal accounts are available to members age 17 and older.",
+      "Household members under age 17 may not have their own portal account. Reservations for younger members are made by their household guardian through the guardian's portal account.",
+      "At age 17, eligible household members may request a portal account from the board. Once activated, they can make their own reservations and manage their member profile independently.",
+      "Portal account credentials (email and password) are the account holder's responsibility. Sharing credentials with minors is not recommended."
+    ]
   }
 ];
 
@@ -952,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.3.1";
-var SYSTEM_BUILD_DATE       = "2026-03-31";
+var SYSTEM_VERSION          = "2.4.2";
+var SYSTEM_BUILD_DATE       = "2026-04-01";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: Email subject lines with special characters (em-dashes, accents) now display correctly";
-var DEPLOYMENT_TIMESTAMP    = "2026-03-31 15:23:03";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fixed birthday milestone emails: addressed to parents (third-person child references); age 17 email requests portal account creation";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-01 13:07:42";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

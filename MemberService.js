@@ -506,8 +506,11 @@ function updatePhotoStatus(individualId, status, decidedBy, rejectionReason) {
 
 /**
  * Checks for birthdays today and sends the appropriate email.
- * Standard birthday for most. Special email for members
- * turning AGE_UNACCOMPANIED_ACCESS (15) or AGE_VOTING (16).
+ * Standard birthday for most. Special milestone emails for:
+ *   - Age 14: Recreation center independence
+ *   - Age 15: Fitness center equipment usage
+ *   - Age 16: Transition stage (generic greeting)
+ *   - Age 17: Adult membership with voting rights (AGE_VOTING)
  * Triggered nightly at BIRTHDAY_CHECK_HOUR.
  */
 function checkBirthdays() {
@@ -525,33 +528,52 @@ function checkBirthdays() {
       if (!isBirthdayToday(m.date_of_birth)) continue;
 
       var age = calculateAge(m.date_of_birth);
-      var hh  = getHouseholdById(m.household_id);
+      var primaryEmail = _getPrimaryEmail(m.household_id);
+      var primaryFirstName = _getPrimaryFirstName(m.household_id);
 
-      if (age === AGE_UNACCOMPANIED_ACCESS) {
-        var parentEmail = _getPrimaryEmail(m.household_id);
-        var recipients  = parentEmail && parentEmail !== m.email
-                          ? [m.email, parentEmail] : [m.email];
-        sendEmailFromTemplate("MEM_BIRTHDAY_AGE_15_MILESTONE_TO_MEMBER", recipients, {
-          FIRST_NAME:           m.first_name,
-          BIRTHDAY_DATE:        formatDate(new Date(m.date_of_birth)),
-          ADULT_MEMBERSHIP_SOON: "In one year, at age 16, they will be eligible to apply for adult membership"
+      // Determine recipients: send to primary member's email
+      // (for child milestones, primary member makes decisions like portal account creation)
+      var recipients = primaryEmail ? [primaryEmail] : [m.email];
+
+      // Age 14: Recreation center independence milestone
+      if (age === AGE_REC_CENTER_UNACCOMPANIED) {
+        sendEmailFromTemplate("MEM_BIRTHDAY_AGE_14_MILESTONE_TO_MEMBER", recipients, {
+          FIRST_NAME:        primaryFirstName,
+          CHILD_FIRST_NAME:  m.first_name,
+          BIRTHDAY_DATE:     formatDate(new Date(m.date_of_birth))
         });
 
-      } else if (age === AGE_VOTING && hh && hh.membership_type === CATEGORY_FULL) {
-        sendEmailFromTemplate("MEM_BIRTHDAY_AGE_16_MILESTONE_TO_MEMBER", m.email, {
-          FIRST_NAME:            m.first_name,
-          BIRTHDAY_DATE:         formatDate(new Date(m.date_of_birth)),
-          ADULT_MEMBERSHIP_INFO: "You are now eligible to apply for full adult membership.",
-          PORTAL_URL:            URL_MEMBER_PORTAL
+      // Age 15: Fitness center equipment usage milestone
+      } else if (age === AGE_GYM_USAGE) {
+        sendEmailFromTemplate("MEM_BIRTHDAY_AGE_15_MILESTONE_TO_MEMBER", recipients, {
+          FIRST_NAME:        primaryFirstName,
+          CHILD_FIRST_NAME:  m.first_name,
+          BIRTHDAY_DATE:     formatDate(new Date(m.date_of_birth))
+        });
+
+      // Age 16: Transition stage - generic birthday greeting
+      } else if (age === 16) {
+        sendEmailFromTemplate("MEM_BIRTHDAY_AGE_16_MILESTONE_TO_MEMBER", recipients, {
+          FIRST_NAME:        primaryFirstName,
+          CHILD_FIRST_NAME:  m.first_name,
+          BIRTHDAY_DATE:     formatDate(new Date(m.date_of_birth))
+        });
+
+      // Age 17: Adult membership with voting rights
+      } else if (age === AGE_VOTING) {
+        sendEmailFromTemplate("MEM_BIRTHDAY_AGE_17_MILESTONE_TO_MEMBER", recipients, {
+          FIRST_NAME:        primaryFirstName,
+          CHILD_FIRST_NAME:  m.first_name,
+          BIRTHDAY_DATE:     formatDate(new Date(m.date_of_birth))
         });
 
       } else {
-        sendEmailFromTemplate("MEM_BIRTHDAY_GREETING_TO_MEMBER", m.email, {
+        sendEmailFromTemplate("MEM_BIRTHDAY_GREETING_TO_MEMBER", recipients, {
           FIRST_NAME:    m.first_name,
           BIRTHDAY_DATE: formatDate(new Date(m.date_of_birth))
         });
       }
-      Logger.log("Birthday email sent: " + m.email + " (age " + age + ")");
+      Logger.log("Birthday email sent: " + recipients.join(",") + " (age " + age + ")");
     }
   } catch (e) { Logger.log("ERROR checkBirthdays: " + e); }
 }

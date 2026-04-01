@@ -132,6 +132,10 @@ jobs:
               # 1. First check if CSV has a file ID (most reliable)
               existing_file_id = template_map.get(semantic_name, {}).get('drive_file_id', '')
 
+              # Skip if file ID is empty or placeholder
+              if existing_file_id in ('', 'TBD', 'N/A'):
+                  existing_file_id = ''
+
               # 2. If not in CSV, query Drive by name
               if not existing_file_id:
                   query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"

@@ -128,17 +128,24 @@ jobs:
               with open(file_path, 'r', encoding='utf-8') as f:
                   content = f.read()
 
-              # Check if file exists in Drive by name
-              query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
-              results = drive_service.files().list(
-                  q=query,
-                  spaces='drive',
-                  fields='files(id, name)',
-                  pageSize=1,
-                  supportsTeamDrives=True
-              ).execute()
+              # Try to find existing file using multiple methods:
+              # 1. First check if CSV has a file ID (most reliable)
+              existing_file_id = template_map.get(semantic_name, {}).get('drive_file_id', '')
 
-              existing_file = results.get('files', [])
+              # 2. If not in CSV, query Drive by name
+              if not existing_file_id:
+                  query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
+                  results = drive_service.files().list(
+                      q=query,
+                      spaces='drive',
+                      fields='files(id, name)',
+                      pageSize=1,
+                      supportsTeamDrives=True
+                  ).execute()
+                  files = results.get('files', [])
+                  existing_file_id = files[0]['id'] if files else ''
+
+              existing_file = [{'id': existing_file_id}] if existing_file_id else []
 
               if not DRY_RUN:
                   if existing_file and not FORCE_REDEPLOY:

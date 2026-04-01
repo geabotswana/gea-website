@@ -257,6 +257,7 @@ jobs:
           if CLEANUP_DUPLICATES and not DRY_RUN:
               print(f"\n🧹 Cleaning up duplicate files...\n")
               deleted_count = 0
+              found_duplicates = 0
 
               for semantic_name in template_map.keys():
                   query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
@@ -270,6 +271,7 @@ jobs:
                   files = results.get('files', [])
 
                   if len(files) > 1:
+                      found_duplicates += 1
                       # Sort by creation time, keep most recent
                       sorted_files = sorted(files, key=lambda x: x['createdTime'], reverse=True)
                       keep_id = sorted_files[0]['id']
@@ -284,7 +286,7 @@ jobs:
                           except Exception as e:
                               print(f"  ⚠️  Failed to delete {f['id']}: {str(e)}")
 
-              print(f"\n✅ Deleted {deleted_count} duplicate files!")
+              print(f"\n✅ Found {found_duplicates} templates with duplicates, deleted {deleted_count} files!")
           elif CLEANUP_DUPLICATES and DRY_RUN:
               print(f"\n[DRY RUN] Would scan and delete duplicate files")
 

@@ -733,7 +733,7 @@ var ERR_EMERGENCY_CONTACT   = "Your emergency contact cannot be a member of your
                               "Please provide a contact outside your household.";
 var ERR_INVALID_DURATION    = "Temporary membership duration must be between 1 and " +
                               MAX_TEMPORARY_MONTHS + " months.";
-var ERR_YOUTH_UNACCOMPANIED = "Members under age " + AGE_UNACCOMPANIED_ACCESS +
+var ERR_YOUTH_UNACCOMPANIED = "Members under age " + AGE_REC_CENTER_UNACCOMPANIED +
                               " must be accompanied by an adult household member to access GEA facilities.";
 
 
@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.2";
-var SYSTEM_BUILD_DATE       = "2026-04-01";
+var SYSTEM_VERSION          = "2.4.3";
+var SYSTEM_BUILD_DATE       = "2026-04-05";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fixed birthday milestone emails: addressed to parents (third-person child references); age 17 email requests portal account creation";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-01 13:31:13";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix nightly task crash: update ERR_YOUTH_UNACCOMPANIED to use renamed AGE_REC_CENTER_UNACCOMPANIED constant";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-05 21:58:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -714,6 +714,7 @@
       color: var(--color-white);
       padding: 20px 24px;
       border-bottom: 4px solid var(--color-accent);
+      position: relative;
     }
     
     .modal-title {
@@ -5591,77 +5592,58 @@
     apiCall('admin_application_detail', { application_id: applicationId }).then(function(res) {
       if (res.success && res.data) {
         var app = res.data.application;
+        var individuals = res.data.individuals || [];
+        var documents = res.data.documents || {};
         var container = document.getElementById('appDetailContent');
         container.innerHTML = ''; // Clear existing content
 
-        // Modal Header
+        // Modal Header with proper positioning
         var header = document.createElement('div');
         header.className = 'modal-header';
 
         var title = document.createElement('h2');
+        title.className = 'modal-title';
         title.textContent = app.primary_applicant_name || 'Applicant';
         header.appendChild(title);
 
         var closeBtn = document.createElement('button');
         closeBtn.className = 'modal-close';
-        closeBtn.textContent = '✕';
-        closeBtn.onclick = closeModal;
+        closeBtn.textContent = '×';
+        closeBtn.onclick = function() { closeModal('appDetailModal'); };
+        closeBtn.type = 'button';
         header.appendChild(closeBtn);
 
         container.appendChild(header);
 
         // Content wrapper
         var content = document.createElement('div');
-        content.style.padding = '20px';
-        content.style.maxHeight = '600px';
-        content.style.overflowY = 'auto';
+        content.className = 'modal-body';
 
         // Application Info
         var infoDiv = document.createElement('div');
         infoDiv.style.marginBottom = '20px';
-        infoDiv.innerHTML = '<strong>Category:</strong> '; // Safe: no user data
-        infoDiv.appendChild((() => {
-          var span = document.createElement('span');
-          span.textContent = app.membership_category || '';
-          return span;
-        })());
-        infoDiv.appendChild(document.createTextNode(' | '));
-        infoDiv.appendChild((() => {
-          var strong = document.createElement('strong');
-          strong.textContent = 'Type:';
-          return strong;
-        })());
-        infoDiv.appendChild(document.createTextNode(' '));
-        infoDiv.appendChild((() => {
-          var span = document.createElement('span');
-          span.textContent = app.household_type || '';
-          return span;
-        })());
+        var categoryLabel = document.createElement('strong');
+        categoryLabel.textContent = 'Category:';
+        infoDiv.appendChild(categoryLabel);
+        infoDiv.appendChild(document.createTextNode(' ' + (app.membership_category || '') + ' | '));
+        var typeLabel = document.createElement('strong');
+        typeLabel.textContent = 'Type:';
+        infoDiv.appendChild(typeLabel);
+        infoDiv.appendChild(document.createTextNode(' ' + (app.household_type || '')));
         content.appendChild(infoDiv);
 
         // Contact Info
         var contactDiv = document.createElement('div');
         contactDiv.style.marginBottom = '20px';
-
         var emailLabel = document.createElement('strong');
         emailLabel.textContent = 'Email:';
         contactDiv.appendChild(emailLabel);
-        contactDiv.appendChild(document.createTextNode(' '));
-        var emailSpan = document.createElement('span');
-        emailSpan.textContent = app.email || '';
-        contactDiv.appendChild(emailSpan);
-
-        var br = document.createElement('br');
-        contactDiv.appendChild(br);
-
+        contactDiv.appendChild(document.createTextNode(' ' + (app.email || '')));
+        contactDiv.appendChild(document.createElement('br'));
         var phoneLabel = document.createElement('strong');
         phoneLabel.textContent = 'Phone:';
         contactDiv.appendChild(phoneLabel);
-        contactDiv.appendChild(document.createTextNode(' '));
-        var phoneSpan = document.createElement('span');
-        phoneSpan.textContent = app.phone_number || '';
-        contactDiv.appendChild(phoneSpan);
-
+        contactDiv.appendChild(document.createTextNode(' ' + (app.phone_number || '')));
         content.appendChild(contactDiv);
 
         // Status Section
@@ -5670,21 +5652,76 @@
         statusDiv.style.padding = '12px';
         statusDiv.style.background = '#f0f4ff';
         statusDiv.style.borderRadius = '6px';
-
         var statusLabel = document.createElement('strong');
         statusLabel.textContent = 'Status:';
         statusDiv.appendChild(statusLabel);
         statusDiv.appendChild(document.createTextNode(' ' + _formatStatus(app.status) + ' '));
-
-        var statusBr = document.createElement('br');
-        statusDiv.appendChild(statusBr);
-
+        statusDiv.appendChild(document.createElement('br'));
         var submittedLabel = document.createElement('strong');
         submittedLabel.textContent = 'Submitted:';
         statusDiv.appendChild(submittedLabel);
         statusDiv.appendChild(document.createTextNode(' ' + new Date(app.submitted_date).toLocaleDateString()));
-
         content.appendChild(statusDiv);
+
+        // Documents Section
+        if (individuals.length > 0) {
+          var docsHeading = document.createElement('h3');
+          docsHeading.style.marginTop = '20px';
+          docsHeading.style.marginBottom = '10px';
+          docsHeading.style.fontSize = '14px';
+          docsHeading.style.fontWeight = '600';
+          docsHeading.style.color = '#0A3161';
+          docsHeading.textContent = 'Submitted Documents';
+          content.appendChild(docsHeading);
+
+          individuals.forEach(function(ind) {
+            var indDocs = documents[ind.individual_id] || [];
+            if (indDocs.length > 0) {
+              var indSection = document.createElement('div');
+              indSection.style.marginBottom = '15px';
+              indSection.style.padding = '10px';
+              indSection.style.background = '#f9f9f9';
+              indSection.style.borderRadius = '4px';
+              indSection.style.borderLeft = '4px solid #0A3161';
+
+              var indName = document.createElement('div');
+              indName.style.fontWeight = '600';
+              indName.style.fontSize = '13px';
+              indName.style.marginBottom = '8px';
+              indName.textContent = ind.first_name + ' ' + ind.last_name;
+              indSection.appendChild(indName);
+
+              indDocs.forEach(function(doc) {
+                var docItem = document.createElement('div');
+                docItem.style.marginBottom = '6px';
+                docItem.style.fontSize = '12px';
+
+                var docType = document.createElement('strong');
+                docType.textContent = (doc.document_type || 'File').toUpperCase() + ':';
+                docItem.appendChild(docType);
+                docItem.appendChild(document.createTextNode(' '));
+
+                var docStatus = document.createElement('span');
+                var statusColor = '#666';
+                if (doc.status === 'rso_approved') statusColor = '#2E7D32';
+                if (doc.status === 'verified') statusColor = '#2E7D32';
+                if (doc.status === 'rso_rejected') statusColor = '#C62828';
+                if (doc.status === 'gea_rejected') statusColor = '#C62828';
+                docStatus.style.color = statusColor;
+                docStatus.textContent = (doc.status || 'submitted');
+                docItem.appendChild(docStatus);
+
+                if (doc.submission_date) {
+                  docItem.appendChild(document.createTextNode(' — ' + new Date(doc.submission_date).toLocaleDateString()));
+                }
+
+                indSection.appendChild(docItem);
+              });
+
+              content.appendChild(indSection);
+            }
+          });
+        }
 
         // Review Actions
         var actionsDiv = document.createElement('div');
@@ -5693,7 +5730,7 @@
         actionsDiv.style.gap = '10px';
         actionsDiv.style.flexWrap = 'wrap';
 
-        if (app.status === 'docs_confirmed') {
+        if (app.status === 'docs_confirmed' || app.status === 'board_initial_review') {
           var approveBtn = document.createElement('button');
           approveBtn.className = 'btn btn-primary';
           approveBtn.textContent = 'Approve for RSO Review';
@@ -5754,7 +5791,7 @@
       notes: notes || ''
     }).then(function(res) {
       if (res.success) {
-        closeModal();
+        closeModal('appDetailModal');
         loadApplications(currentApplicationStatusFilter);
         showNotification('Application approved!');
       } else {
@@ -5776,7 +5813,7 @@
       notes: ''
     }).then(function(res) {
       if (res.success) {
-        closeModal();
+        closeModal('appDetailModal');
         loadApplications(currentApplicationStatusFilter);
         showNotification('Application denied');
       } else {
@@ -5791,7 +5828,7 @@
     if (confirm('Verify payment and activate membership?')) {
       apiCall('admin_verify_payment', { application_id: applicationId }).then(function(res) {
         if (res.success) {
-          closeModal();
+          closeModal('appDetailModal');
           loadApplications(currentApplicationStatusFilter);
           showNotification('Membership activated!');
         } else {
@@ -5833,10 +5870,13 @@
     return statusLabels[status] || status;
   }
 
-  function closeModal() {
-    var modal = document.getElementById('appDetailModal');
-    modal.classList.remove('show');
-    modal.style.display = 'none';
+  function closeModal(modalId) {
+    modalId = modalId || 'appDetailModal';
+    var modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.remove('show');
+      modal.style.display = 'none';
+    }
   }
 
   function showNotification(message) {

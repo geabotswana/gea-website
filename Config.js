@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.4";
+var SYSTEM_VERSION          = "2.4.5";
 var SYSTEM_BUILD_DATE       = "2026-04-06";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix submit button freeze: cache sheet headers and email template data to reduce API calls during application submission";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-06 14:42:43";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix email key-value layout: add inline styles and colon separator so labels show correctly in Gmail";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-06 14:47:00";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -740,8 +740,11 @@ function plainTextToHtml(plainText) {
       var key   = trimmed.substring(0, colon);
       var val   = trimmed.substring(colon + 2);
       if (!inKv) { html += '<div>'; inKv = true; }
-      html += '<div class="kv"><span class="kk">' + escapeHtml(key) + '</span>' +
-              '<span class="kv2">' + escapeHtml(val) + '</span></div>';
+      // Inline styles ensure key: value separation works in Gmail and other
+      // email clients that strip <style> blocks and ignore class-based CSS.
+      html += '<div class="kv" style="padding:4px 0;border-bottom:1px solid #F0F0F0;font-size:13px;">' +
+              '<strong class="kk" style="color:#555;font-weight:bold;">' + escapeHtml(key) + ':</strong> ' +
+              '<span class="kv2" style="color:#212121;">' + escapeHtml(val) + '</span></div>';
       continue;
     }
 
@@ -771,8 +774,9 @@ function plainTextToHtml(plainText) {
         if (isLabel && isValue) {
           if (inKv) { html += "</div>"; inKv = false; }
           if (!inKv) { html += '<div>'; inKv = true; }
-          html += '<div class="kv"><span class="kk">' + escapeHtml(trimmed) + '</span>' +
-                  '<span class="kv2">' + escapeHtml(nextTrimmed) + '</span></div>';
+          html += '<div class="kv" style="padding:4px 0;border-bottom:1px solid #F0F0F0;font-size:13px;">' +
+                  '<strong class="kk" style="color:#555;font-weight:bold;">' + escapeHtml(trimmed) + ':</strong> ' +
+                  '<span class="kv2" style="color:#212121;">' + escapeHtml(nextTrimmed) + '</span></div>';
           skipNext = true;
           continue;
         }

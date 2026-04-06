@@ -1892,6 +1892,7 @@
         <!-- Add Admin Form (hidden by default) -->
         <div id="addAdminForm" style="display:none; background:#f8f9fa; border:1px solid #e0e0e0; border-radius:8px; padding:20px; margin-bottom:24px;">
           <h3 style="margin:0 0 16px 0; font-size:16px;">New Admin Account</h3>
+          <form onsubmit="createAdmin(); return false;" autocomplete="off">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
             <div class="form-group">
               <label class="form-label">First Name</label>
@@ -1921,9 +1922,10 @@
           </div>
           <div id="addAdminError" style="color:#c0392b; margin-bottom:8px; display:none;"></div>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-primary" onclick="createAdmin();">Create Account</button>
-            <button class="btn btn-secondary" onclick="hideAddAdminForm();">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Account</button>
+            <button type="button" class="btn btn-secondary" onclick="hideAddAdminForm();">Cancel</button>
           </div>
+          </form>
         </div>
 
         <!-- Admin Accounts Table -->
@@ -2188,6 +2190,7 @@
       <h2 class="modal-title">Reset Password</h2>
       <button class="modal-close" onclick="closeModal('resetAdminPasswordModal');">×</button>
     </div>
+    <form onsubmit="confirmResetAdminPassword(); return false;" autocomplete="off">
     <div class="modal-body">
       <p id="resetAdminPasswordTarget" style="color:#666; margin-bottom:12px;"></p>
       <div class="form-group">
@@ -2197,9 +2200,10 @@
       <div id="resetAdminPasswordError" style="color:#c0392b; margin-top:8px; display:none;"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" onclick="closeModal('resetAdminPasswordModal');">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmResetAdminPassword();">Reset Password</button>
+      <button type="button" class="btn btn-secondary" onclick="closeModal('resetAdminPasswordModal');">Cancel</button>
+      <button type="submit" class="btn btn-primary">Reset Password</button>
     </div>
+    </form>
   </div>
 </div>
 

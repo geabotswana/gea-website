@@ -5592,6 +5592,7 @@
     apiCall('admin_application_detail', { application_id: applicationId }).then(function(res) {
       if (res.success && res.data) {
         var app = res.data.application;
+        var household = res.data.household;
         var individuals = res.data.individuals || [];
         var documents = res.data.documents || {};
         var container = document.getElementById('appDetailContent');
@@ -5619,31 +5620,56 @@
         var content = document.createElement('div');
         content.className = 'modal-body';
 
-        // Application Info
-        var infoDiv = document.createElement('div');
-        infoDiv.style.marginBottom = '20px';
-        var categoryLabel = document.createElement('strong');
-        categoryLabel.textContent = 'Category:';
-        infoDiv.appendChild(categoryLabel);
-        infoDiv.appendChild(document.createTextNode(' ' + (app.membership_category || '') + ' | '));
-        var typeLabel = document.createElement('strong');
-        typeLabel.textContent = 'Type:';
-        infoDiv.appendChild(typeLabel);
-        infoDiv.appendChild(document.createTextNode(' ' + (app.household_type || '')));
-        content.appendChild(infoDiv);
+        // Category and Type
+        var headerInfo = document.createElement('div');
+        headerInfo.style.marginBottom = '20px';
+        var catSpan = document.createElement('span');
+        catSpan.style.fontWeight = '600';
+        catSpan.style.color = '#0A3161';
+        catSpan.textContent = 'Category: ';
+        headerInfo.appendChild(catSpan);
+        headerInfo.appendChild(document.createTextNode((app.membership_category || '') + ' | '));
+        var typeSpan = document.createElement('span');
+        typeSpan.style.fontWeight = '600';
+        typeSpan.style.color = '#0A3161';
+        typeSpan.textContent = 'Type: ';
+        headerInfo.appendChild(typeSpan);
+        headerInfo.appendChild(document.createTextNode(app.household_type || ''));
+        content.appendChild(headerInfo);
 
-        // Contact Info
+        // Contact Information Section
         var contactDiv = document.createElement('div');
         contactDiv.style.marginBottom = '20px';
-        var emailLabel = document.createElement('strong');
-        emailLabel.textContent = 'Email:';
-        contactDiv.appendChild(emailLabel);
-        contactDiv.appendChild(document.createTextNode(' ' + (app.email || '')));
-        contactDiv.appendChild(document.createElement('br'));
-        var phoneLabel = document.createElement('strong');
-        phoneLabel.textContent = 'Phone:';
-        contactDiv.appendChild(phoneLabel);
-        contactDiv.appendChild(document.createTextNode(' ' + (app.phone_number || '')));
+        contactDiv.style.padding = '12px';
+        contactDiv.style.background = '#f9f9f9';
+        contactDiv.style.borderRadius = '4px';
+
+        var contactTitle = document.createElement('div');
+        contactTitle.style.fontWeight = '600';
+        contactTitle.style.marginBottom = '8px';
+        contactTitle.style.fontSize = '13px';
+        contactTitle.style.color = '#0A3161';
+        contactTitle.textContent = 'Contact Information';
+        contactDiv.appendChild(contactTitle);
+
+        var emailLine = document.createElement('div');
+        emailLine.style.fontSize = '13px';
+        emailLine.style.marginBottom = '4px';
+        emailLine.appendChild(document.createTextNode('Email: '));
+        var emailLink = document.createElement('a');
+        emailLink.href = 'mailto:' + (app.email || '');
+        emailLink.textContent = app.email || '(Not provided)';
+        emailLink.style.color = '#1565C0';
+        emailLink.style.textDecoration = 'none';
+        emailLine.appendChild(emailLink);
+        contactDiv.appendChild(emailLine);
+
+        var phoneLine = document.createElement('div');
+        phoneLine.style.fontSize = '13px';
+        phoneLine.appendChild(document.createTextNode('Phone: '));
+        phoneLine.appendChild(document.createTextNode(app.phone_number || '(Not provided)'));
+        contactDiv.appendChild(phoneLine);
+
         content.appendChild(contactDiv);
 
         // Status Section
@@ -5653,74 +5679,131 @@
         statusDiv.style.background = '#f0f4ff';
         statusDiv.style.borderRadius = '6px';
         var statusLabel = document.createElement('strong');
-        statusLabel.textContent = 'Status:';
+        statusLabel.textContent = 'Status: ';
         statusDiv.appendChild(statusLabel);
-        statusDiv.appendChild(document.createTextNode(' ' + _formatStatus(app.status) + ' '));
-        statusDiv.appendChild(document.createElement('br'));
+        statusDiv.appendChild(document.createTextNode(_formatStatus(app.status) + ' | '));
         var submittedLabel = document.createElement('strong');
-        submittedLabel.textContent = 'Submitted:';
+        submittedLabel.textContent = 'Submitted: ';
         statusDiv.appendChild(submittedLabel);
-        statusDiv.appendChild(document.createTextNode(' ' + new Date(app.submitted_date).toLocaleDateString()));
+        statusDiv.appendChild(document.createTextNode(new Date(app.submitted_date).toLocaleDateString()));
         content.appendChild(statusDiv);
 
-        // Documents Section
-        if (individuals.length > 0) {
-          var docsHeading = document.createElement('h3');
-          docsHeading.style.marginTop = '20px';
-          docsHeading.style.marginBottom = '10px';
-          docsHeading.style.fontSize = '14px';
-          docsHeading.style.fontWeight = '600';
-          docsHeading.style.color = '#0A3161';
-          docsHeading.textContent = 'Submitted Documents';
-          content.appendChild(docsHeading);
+        // Household Members Section (if family membership)
+        if (individuals.length > 1 || app.household_type === 'Family') {
+          var membersHeading = document.createElement('h3');
+          membersHeading.style.marginTop = '20px';
+          membersHeading.style.marginBottom = '12px';
+          membersHeading.style.fontSize = '14px';
+          membersHeading.style.fontWeight = '600';
+          membersHeading.style.color = '#0A3161';
+          membersHeading.textContent = 'Household Members';
+          content.appendChild(membersHeading);
 
           individuals.forEach(function(ind) {
-            var indDocs = documents[ind.individual_id] || [];
-            if (indDocs.length > 0) {
-              var indSection = document.createElement('div');
-              indSection.style.marginBottom = '15px';
-              indSection.style.padding = '10px';
-              indSection.style.background = '#f9f9f9';
-              indSection.style.borderRadius = '4px';
-              indSection.style.borderLeft = '4px solid #0A3161';
+            var memberCard = document.createElement('div');
+            memberCard.style.marginBottom = '12px';
+            memberCard.style.padding = '10px';
+            memberCard.style.background = '#f9f9f9';
+            memberCard.style.borderRadius = '4px';
+            memberCard.style.borderLeft = '4px solid #0A3161';
 
-              var indName = document.createElement('div');
-              indName.style.fontWeight = '600';
-              indName.style.fontSize = '13px';
-              indName.style.marginBottom = '8px';
-              indName.textContent = ind.first_name + ' ' + ind.last_name;
-              indSection.appendChild(indName);
+            var memberName = document.createElement('div');
+            memberName.style.fontWeight = '600';
+            memberName.style.fontSize = '13px';
+            memberName.style.marginBottom = '6px';
+            memberName.textContent = ind.first_name + ' ' + ind.last_name;
+            memberCard.appendChild(memberName);
 
-              indDocs.forEach(function(doc) {
-                var docItem = document.createElement('div');
-                docItem.style.marginBottom = '6px';
-                docItem.style.fontSize = '12px';
+            var relationship = document.createElement('div');
+            relationship.style.fontSize = '12px';
+            relationship.style.color = '#666';
+            relationship.textContent = 'Relationship: ' + (ind.relationship || 'Primary');
+            memberCard.appendChild(relationship);
 
-                var docType = document.createElement('strong');
-                docType.textContent = (doc.document_type || 'File').toUpperCase() + ':';
-                docItem.appendChild(docType);
-                docItem.appendChild(document.createTextNode(' '));
-
-                var docStatus = document.createElement('span');
-                var statusColor = '#666';
-                if (doc.status === 'rso_approved') statusColor = '#2E7D32';
-                if (doc.status === 'verified') statusColor = '#2E7D32';
-                if (doc.status === 'rso_rejected') statusColor = '#C62828';
-                if (doc.status === 'gea_rejected') statusColor = '#C62828';
-                docStatus.style.color = statusColor;
-                docStatus.textContent = (doc.status || 'submitted');
-                docItem.appendChild(docStatus);
-
-                if (doc.submission_date) {
-                  docItem.appendChild(document.createTextNode(' — ' + new Date(doc.submission_date).toLocaleDateString()));
-                }
-
-                indSection.appendChild(docItem);
-              });
-
-              content.appendChild(indSection);
-            }
+            content.appendChild(memberCard);
           });
+        }
+
+        // Documents Section
+        var docsHeading = document.createElement('h3');
+        docsHeading.style.marginTop = '20px';
+        docsHeading.style.marginBottom = '12px';
+        docsHeading.style.fontSize = '14px';
+        docsHeading.style.fontWeight = '600';
+        docsHeading.style.color = '#0A3161';
+        docsHeading.textContent = 'Submitted Documents';
+        content.appendChild(docsHeading);
+
+        var hasDocuments = false;
+        individuals.forEach(function(ind) {
+          var indDocs = documents[ind.individual_id] || [];
+          if (indDocs.length > 0) {
+            hasDocuments = true;
+            var indSection = document.createElement('div');
+            indSection.style.marginBottom = '12px';
+            indSection.style.padding = '10px';
+            indSection.style.background = '#f9f9f9';
+            indSection.style.borderRadius = '4px';
+
+            var indName = document.createElement('div');
+            indName.style.fontWeight = '600';
+            indName.style.fontSize = '13px';
+            indName.style.marginBottom = '8px';
+            indName.textContent = ind.first_name + ' ' + ind.last_name;
+            indSection.appendChild(indName);
+
+            indDocs.forEach(function(doc) {
+              var docItem = document.createElement('div');
+              docItem.style.marginBottom = '6px';
+              docItem.style.fontSize = '12px';
+              docItem.style.display = 'flex';
+              docItem.style.justifyContent = 'space-between';
+              docItem.style.alignItems = 'center';
+
+              var docInfo = document.createElement('span');
+              var docType = document.createElement('strong');
+              docType.textContent = (doc.document_type || 'File').toUpperCase();
+              docInfo.appendChild(docType);
+              docInfo.appendChild(document.createTextNode(' - '));
+
+              var docStatus = document.createElement('span');
+              var statusColor = '#666';
+              if (doc.status === 'rso_approved' || doc.status === 'verified') statusColor = '#2E7D32';
+              if (doc.status === 'rso_rejected' || doc.status === 'gea_rejected') statusColor = '#C62828';
+              docStatus.style.color = statusColor;
+              docStatus.textContent = doc.status || 'submitted';
+              docInfo.appendChild(docStatus);
+
+              docItem.appendChild(docInfo);
+
+              // View Link (if document has a file_id or submission_id)
+              if (doc.file_id || doc.submission_id) {
+                var viewBtn = document.createElement('button');
+                viewBtn.className = 'btn btn-small';
+                viewBtn.style.padding = '4px 8px';
+                viewBtn.style.fontSize = '11px';
+                viewBtn.textContent = 'View';
+                viewBtn.onclick = (function(fileId, subId) {
+                  return function() {
+                    viewDocument(fileId || subId);
+                  };
+                })(doc.file_id, doc.submission_id);
+                docItem.appendChild(viewBtn);
+              }
+
+              indSection.appendChild(docItem);
+            });
+
+            content.appendChild(indSection);
+          }
+        });
+
+        if (!hasDocuments) {
+          var noDocsMsg = document.createElement('p');
+          noDocsMsg.style.fontSize = '12px';
+          noDocsMsg.style.color = '#666';
+          noDocsMsg.textContent = 'No documents submitted yet';
+          content.appendChild(noDocsMsg);
         }
 
         // Review Actions
@@ -5746,6 +5829,7 @@
           var p = document.createElement('p');
           p.style.color = '#666';
           p.style.fontSize = '13px';
+          p.style.margin = '0';
           p.textContent = 'Documents sent to RSO for review. Awaiting RSO decision.';
           actionsDiv.appendChild(p);
         } else if (app.status === 'board_final_review') {
@@ -5777,6 +5861,16 @@
     }).catch(function(err) {
       showError('Error loading application details: ' + err.message);
     });
+  }
+
+  function viewDocument(documentId) {
+    if (!documentId) {
+      showError('Document ID not available');
+      return;
+    }
+    // Open document in a new tab or preview
+    var imageProxyUrl = PORTAL_API_URL + '?action=image_proxy&file_id=' + encodeURIComponent(documentId);
+    window.open(imageProxyUrl, '_blank');
   }
 
   function filterApplications(status) {

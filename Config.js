@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.8";
+var SYSTEM_VERSION          = "2.4.9";
 var SYSTEM_BUILD_DATE       = "2026-04-06";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Wrap orphaned password fields in forms to fix browser DOM warnings";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-06 17:13:10";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Replace document.write in print calendar with safe DOM construction";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-06 18:43:27";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

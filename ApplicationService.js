@@ -438,17 +438,16 @@ function confirmDocumentsUploaded(applicationId, email) {
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
 
     // Notify board that documents are ready for their review (board reviews BEFORE RSO)
-    sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_BOARD", boardEmail, {
+    sendEmailFromTemplate("ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_BOARD", boardEmail, {
       FIRST_NAME:      "Board",
       APPLICANT_NAME:  applicantName,
       APPLICATION_ID:  applicationId,
       DOCUMENT_TYPES:  "Passport / Omang / Photo",
-      SUBMISSION_DATE: formatDate(new Date()),
-      RSO_CONTACT:     EMAIL_RSO_APPROVE
+      SUBMISSION_DATE: formatDate(new Date())
     });
 
     // Notify applicant that documents have been confirmed and are under board review
-    sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.primary_applicant_email, {
+    sendEmailFromTemplate("ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_MEMBER", application.primary_applicant_email, {
       FIRST_NAME:      applicantFirstName,
       DOCUMENT_TYPES:  "Passport / Omang / Photo",
       SUBMISSION_DATE: formatDate(new Date())

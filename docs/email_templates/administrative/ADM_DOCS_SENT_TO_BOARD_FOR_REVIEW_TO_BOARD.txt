@@ -1,0 +1,33 @@
+Hi Board,
+
+APPLICATION DOCUMENTS READY FOR REVIEW
+
+Membership application documents have been received and are now ready for your initial review.
+
+APPLICATION DETAILS:
+Applicant: {{APPLICANT_NAME}}
+Application ID: {{APPLICATION_ID}}
+Documents Submitted: {{DOCUMENT_TYPES}}
+Submission Date: {{SUBMISSION_DATE}}
+
+WHAT YOU NEED TO DO:
+Review the applicant's submitted documents in the Admin Portal under "Applications" → "Board Review". Check for completeness and compliance with GEA membership requirements.
+
+APPROVAL OPTIONS:
+1. Approve for RSO Review — Documents meet initial requirements and will proceed to the Regional Security Officer for security verification
+2. Request Additional Documents — Ask the applicant to resubmit missing or unclear documents
+3. Deny Application — Reject the application if it does not meet membership criteria
+
+EXPECTED TIMELINE:
+Please complete your initial review within 3 business days.
+
+NEXT STEPS:
+- If approved: Application automatically advances to RSO (Regional Security Officer) for security document verification
+- If additional docs needed: Applicant will be contacted with specific requests
+- If denied: Applicant will be notified and application ends
+
+QUESTIONS?
+Contact board@geabotswana.org for assistance with the review process.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

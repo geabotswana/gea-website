@@ -1,10 +1,10 @@
 # Email Templates Manifest
 
-Complete index of all 69 GEA email templates. Each entry shows the semantic name (used in code), recipient, and required variables.
+Complete index of all 71 GEA email templates. Each entry shows the semantic name (used in code), recipient, and required variables.
 
 ---
 
-## Administrative (14 templates)
+## Administrative (16 templates)
 
 | Semantic Name | Recipient | Variables |
 |---------------|-----------|-----------|
@@ -16,6 +16,8 @@ Complete index of all 69 GEA email templates. Each entry shows the semantic name
 | ADM_DAILY_SUMMARY_TO_RSO_NOTIFY | RSO | RESERVATIONS_BLOCK, TODAY_DATE, TOTAL_GUESTS, TOTAL_MEMBERS, TOTAL_RESERVATIONS |
 | ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE | RSO | APPLICANT_NAME, APPLICATION_ID, APPROVAL_DEADLINE, DOCUMENT_TYPES |
 | ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER | Member | APPROVAL_DATE, DOCUMENT_TYPE, FIRST_NAME |
+| ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_BOARD | Board | APPLICANT_NAME, APPLICATION_ID, DOCUMENT_TYPES, SUBMISSION_DATE |
+| ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_MEMBER | Member | DOCUMENT_TYPES, FIRST_NAME, SUBMISSION_DATE |
 | ADM_DOCS_SENT_TO_RSO_TO_BOARD | Board | APPLICANT_NAME, APPLICATION_ID, DOCUMENT_TYPES, RSO_CONTACT, SUBMISSION_DATE |
 | ADM_DOCS_SENT_TO_RSO_TO_MEMBER | Member | DOCUMENT_TYPES, FIRST_NAME, SUBMISSION_DATE |
 | ADM_MGT_APPROVAL_REQUEST_TO_MGT | Mgmt Officer | APPROVAL_DEADLINE, BOARD_ITEM_TYPE, MEMBER_NAME, REQUEST_ID, REQUEST_SUMMARY |

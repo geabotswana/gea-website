@@ -979,8 +979,8 @@ var SYSTEM_VERSION          = "2.4.7";
 var SYSTEM_BUILD_DATE       = "2026-04-06";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Rename document confirm button to Submit All Documents for Review with Submitting... loading state";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-06 17:07:02";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add autocomplete attributes to all password fields in Admin portal";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-06 17:11:51";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -5670,6 +5670,15 @@
         contactTitle.textContent = 'Contact Information';
         contactDiv.appendChild(contactTitle);
 
+        // Find primary applicant (the one with empty or "Primary" relationship)
+        var primaryIndividual = null;
+        for (var i = 0; i < individuals.length; i++) {
+          if (!individuals[i].relationship || individuals[i].relationship === 'Primary') {
+            primaryIndividual = individuals[i];
+            break;
+          }
+        }
+
         var emailLine = document.createElement('div');
         emailLine.style.fontSize = '13px';
         emailLine.style.marginBottom = '4px';
@@ -5684,8 +5693,8 @@
 
         var phoneLine = document.createElement('div');
         phoneLine.style.fontSize = '13px';
-        phoneLine.appendChild(document.createTextNode('Phone: '));
-        phoneLine.appendChild(document.createTextNode(app.phone_number || '(Not provided)'));
+        var primaryPhone = (primaryIndividual && primaryIndividual.phone_primary) ? primaryIndividual.phone_primary : '(Not provided)';
+        phoneLine.appendChild(document.createTextNode('Phone: ' + primaryPhone));
         contactDiv.appendChild(phoneLine);
 
         content.appendChild(contactDiv);
@@ -5886,8 +5895,8 @@
       showError('Document ID not available');
       return;
     }
-    // Open document in a new tab or preview
-    var imageProxyUrl = PORTAL_API_URL + '?action=image_proxy&file_id=' + encodeURIComponent(documentId);
+    // Open document in a new tab using image proxy
+    var imageProxyUrl = PORTAL_API_URL + '?action=img&id=' + encodeURIComponent(documentId);
     window.open(imageProxyUrl, '_blank');
   }
 

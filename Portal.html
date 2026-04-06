@@ -6268,8 +6268,8 @@ function submitPasswordResetRequest(event) {
       confirm.className = 'btn btn-primary';
       confirm.style.marginTop = '12px';
       confirm.style.width = '100%';
-      confirm.textContent = 'All Documents Uploaded';
-      confirm.onclick = function() { confirmDocuments(app.application_id); };
+      confirm.textContent = 'Submit All Documents for Review';
+      confirm.onclick = (function(btn) { return function() { confirmDocuments(app.application_id, btn); }; })(confirm);
       card.appendChild(confirm);
     }
 
@@ -7424,15 +7424,18 @@ function submitPasswordResetRequest(event) {
     return submittedCount + ' of ' + requiredCount + ' required uploads submitted.';
   }
 
-  function confirmDocuments(applicationId) {
+  function confirmDocuments(applicationId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
     apiCall('confirm_documents', { application_id: applicationId }).then(function(res) {
       if (res.success) {
         showError('Documents confirmed! Board will review your application.', 'success');
         loadApplicantPortal();
       } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Submit All Documents for Review'; }
         showError('Error: ' + res.message);
       }
     }).catch(function(err) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit All Documents for Review'; }
       showError('Error: ' + err.message);
     });
   }

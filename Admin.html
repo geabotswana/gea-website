@@ -2228,6 +2228,60 @@
   }
 
   // ============================================================ //
+  // SECTION: PHONE FORMATTING HELPERS                            //
+  // ============================================================ //
+
+  /**
+   * Maps country codes to international dial codes.
+   * Used for formatting phone numbers with country context.
+   */
+  var COUNTRY_DIAL_CODES = {
+    'BW': '267', 'ZA': '27', 'US': '1', 'GB': '44', 'DE': '49', 'FR': '33',
+    'AU': '61', 'CA': '1', 'IN': '91', 'JP': '81', 'CN': '86', 'BR': '55',
+    'MX': '52', 'SG': '65', 'HK': '852', 'AE': '971', 'KE': '254', 'NG': '234'
+  };
+
+  /**
+   * Gets the international dial code for a country code.
+   * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
+   * @returns {string} Dial code (e.g., '267' for Botswana, '1' for USA) or empty string if unknown
+   */
+  function getDialCode(countryCode) {
+    if (!countryCode) return '';
+    return COUNTRY_DIAL_CODES[countryCode.toUpperCase()] || '';
+  }
+
+  /**
+   * Format phone number for display: combines country code and phone into +[dialcode] [phone] format
+   * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
+   * @param {string} phoneNumber - Phone number
+   * @returns {string} Formatted phone like "+267 71234567" or empty string if invalid
+   */
+  function formatPhoneNumber(countryCode, phoneNumber) {
+    if (!countryCode || !phoneNumber) return '';
+    var dialCode = getDialCode(countryCode);
+    if (!dialCode || dialCode === countryCode) return '';
+    return '+' + dialCode + ' ' + phoneNumber;
+  }
+
+  /**
+   * Format phone number with WhatsApp indicator
+   * @param {string} countryCode - Two-letter ISO country code (BW, US, etc.)
+   * @param {string} phoneNumber - Phone number
+   * @param {boolean} hasWhatsApp - Whether this number is available on WhatsApp
+   * @returns {string} Formatted phone with WhatsApp indicator if applicable
+   */
+  function formatPhoneWithWhatsApp(countryCode, phoneNumber, hasWhatsApp) {
+    var formatted = formatPhoneNumber(countryCode, phoneNumber);
+    if (!formatted) return '';
+    if (hasWhatsApp) {
+      formatted += ' <i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;margin-left:4px;vertical-align:middle;" title="Available on WhatsApp"></i>';
+    }
+    return formatted;
+  }
+
+
+  // ============================================================ //
   // SECTION: INITIALIZATION AND STATE                            //
   // ============================================================ //
   // Global variables, API configuration, and page load handlers   //
@@ -5693,8 +5747,17 @@
 
         var phoneLine = document.createElement('div');
         phoneLine.style.fontSize = '13px';
-        var primaryPhone = (primaryIndividual && primaryIndividual.phone_primary) ? primaryIndividual.phone_primary : '(Not provided)';
-        phoneLine.appendChild(document.createTextNode('Phone: ' + primaryPhone));
+        var primaryPhone = '(Not provided)';
+        if (primaryIndividual && primaryIndividual.phone_primary) {
+          var formatted = formatPhoneWithWhatsApp(primaryIndividual.country_code_primary, primaryIndividual.phone_primary, primaryIndividual.phone_primary_whatsapp);
+          if (formatted) {
+            phoneLine.innerHTML = 'Phone: ' + formatted; // Safe: formatted uses hardcoded icon only
+          } else {
+            phoneLine.textContent = 'Phone: ' + primaryIndividual.phone_primary;
+          }
+        } else {
+          phoneLine.textContent = 'Phone: ' + primaryPhone;
+        }
         contactDiv.appendChild(phoneLine);
 
         content.appendChild(contactDiv);

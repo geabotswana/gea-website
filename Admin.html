@@ -2261,9 +2261,27 @@
     initializeEnvironmentBox();
 
     if (currentToken) {
-      // User has a valid session token — show authenticated UI
-      showAuthenticatedUI();
-      loadDashboard();
+      // User has a valid session token — fetch admin data and show authenticated UI
+      apiCall('admin_session', {}).then(function(res) {
+        if (res.success && res.data) {
+          currentUser = { admin: res.data.admin, role: res.data.role };
+          showAuthenticatedUI();
+          loadDashboard();
+        } else {
+          // Token invalid, clear and show login
+          sessionStorage.removeItem('gea_token');
+          currentToken = null;
+          currentUser = null;
+          document.getElementById('loginScreen').classList.add('show');
+        }
+      }).catch(function(err) {
+        // On error, clear session and show login
+        console.error('Admin session error:', err);
+        sessionStorage.removeItem('gea_token');
+        currentToken = null;
+        currentUser = null;
+        document.getElementById('loginScreen').classList.add('show');
+      });
     } else {
       // No token found — keep login screen visible
       document.getElementById('loginScreen').classList.add('show');

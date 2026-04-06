@@ -1675,6 +1675,60 @@ function adminLogin(email, password) {
 }
 
 /**
+ * Gets admin account data from a valid session token.
+ * Used when the page refreshes with an existing token to restore the user's name in the header.
+ *
+ * @param {string} token  The session token
+ * @returns {Object}  { success: true, admin: { admin_id, email, first_name, last_name, role }, role: "board"|"mgt"|"rso_approve"|"rso_notify" }
+ *                    OR { success: false, message: "..." }
+ */
+function getAdminByToken(token) {
+  if (!token) {
+    return { success: false, message: "No session token provided." };
+  }
+
+  try {
+    // Validate the session token
+    var sessionData = validateSession(token);
+    if (!sessionData.valid) {
+      return { success: false, message: sessionData.message };
+    }
+
+    var email = sessionData.email;
+    var role  = sessionData.role;
+
+    // Get the admin account details from the Administrators sheet
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx  = _adminColMap(headers);
+
+    var normalizedEmail = email.toLowerCase().trim();
+    for (var i = 1; i < data.length; i++) {
+      if ((data[i][colIdx.email] || "").toLowerCase().trim() === normalizedEmail) {
+        var adminRow = data[i];
+        return {
+          success: true,
+          admin: {
+            admin_id:   adminRow[colIdx.admin_id],
+            email:      adminRow[colIdx.email],
+            first_name: adminRow[colIdx.first_name],
+            last_name:  adminRow[colIdx.last_name],
+            role:       role
+          },
+          role: role
+        };
+      }
+    }
+
+    return { success: false, message: "Admin account not found." };
+  } catch (e) {
+    Logger.log("ERROR getAdminByToken: " + e);
+    return { success: false, message: "An error occurred. Please try again." };
+  }
+}
+
+/**
  * Returns all admin accounts (board-only).
  * @param {string} callerEmail  For audit logging
  * @returns {Array}  Array of admin objects (password_hash stripped)

@@ -6148,7 +6148,7 @@ function submitPasswordResetRequest(event) {
         var uploadPass = document.createElement('button');
         uploadPass.className = 'btn btn-small';
         uploadPass.textContent = passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport';
-        uploadPass.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'passport'); }; })(ind.individual_id);
+        uploadPass.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'passport', b); }; })(ind.individual_id, uploadPass);
         uploadDiv.appendChild(uploadPass);
         if (passportSubs.some(function(s) { return s.status === 'submitted'; })) {
           var removePass = document.createElement('button');
@@ -6160,7 +6160,7 @@ function submitPasswordResetRequest(event) {
         var uploadOmang = document.createElement('button');
         uploadOmang.className = 'btn btn-small';
         uploadOmang.textContent = omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang';
-        uploadOmang.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'omang'); }; })(ind.individual_id);
+        uploadOmang.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'omang', b); }; })(ind.individual_id, uploadOmang);
         uploadDiv.appendChild(uploadOmang);
         if (omangSubs.some(function(s) { return s.status === 'submitted'; })) {
           var removeOmang = document.createElement('button');
@@ -6189,7 +6189,7 @@ function submitPasswordResetRequest(event) {
         var photoUpload = document.createElement('button');
         photoUpload.className = 'btn btn-small';
         photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
-        photoUpload.onclick = function() { triggerDocumentUpload(ind.individual_id, 'photo'); };
+        photoUpload.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, photoUpload);
         photoUploadDiv.appendChild(photoUpload);
         if (photoSubs.some(function(s) { return s.status === 'submitted'; })) {
           var removePhoto = document.createElement('button');
@@ -6218,7 +6218,7 @@ function submitPasswordResetRequest(event) {
         var photoUpload = document.createElement('button');
         photoUpload.className = 'btn btn-small';
         photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
-        photoUpload.onclick = function() { triggerDocumentUpload(ind.individual_id, 'photo'); };
+        photoUpload.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, photoUpload);
         photoUploadDiv.appendChild(photoUpload);
         if (photoSubs.some(function(s) { return s.status === 'submitted'; })) {
           var removePhoto = document.createElement('button');
@@ -6247,7 +6247,7 @@ function submitPasswordResetRequest(event) {
           var upload = document.createElement('button');
           upload.className = 'btn btn-small';
           upload.textContent = submissions.length > 0 ? 'Replace' : 'Upload';
-          upload.onclick = (function(id, dt) { return function() { triggerDocumentUpload(id, dt); }; })(ind.individual_id, docType);
+          upload.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, upload);
           btnDiv.appendChild(upload);
           if (submissions.some(function(s) { return s.status === 'submitted'; })) {
             var removeBtn = document.createElement('button');
@@ -7579,7 +7579,7 @@ function submitPasswordResetRequest(event) {
     triggerBtn.parentNode.insertBefore(confirmSpan, triggerBtn.nextSibling);
   }
 
-  function triggerDocumentUpload(individualId, docType) {
+  function triggerDocumentUpload(individualId, docType, btn) {
     // Create a temporary file input and trigger it
     var input = document.createElement('input');
     input.type = 'file';
@@ -7588,7 +7588,8 @@ function submitPasswordResetRequest(event) {
       var file = e.target.files[0];
       if (!file) return;
 
-      showToast('Upload starting...', 'info');
+      var originalText = btn ? btn.textContent : null;
+      if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
 
       var reader = new FileReader();
       reader.onload = function(evt) {
@@ -7603,9 +7604,11 @@ function submitPasswordResetRequest(event) {
             showError('Document uploaded successfully!', 'success');
             loadApplicantPortal();
           } else {
+            if (btn) { btn.disabled = false; btn.textContent = originalText; }
             showError('Error uploading document: ' + res.message);
           }
         }).catch(function(err) {
+          if (btn) { btn.disabled = false; btn.textContent = originalText; }
           showError('Error: ' + err.message);
         });
       };

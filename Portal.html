@@ -1258,6 +1258,7 @@
     </p>
     <div id="passwordChangeError" class="alert alert-danger" style="display: none; margin-bottom: 20px;"></div>
     <form onsubmit="submitPasswordChange(event, true)">
+      <input type="hidden" id="passwordChangeUsername" autocomplete="username">
       <div class="form-group">
         <label class="form-label">Current Password</label>
         <input type="password" id="currentPassword" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="current-password">
@@ -1292,6 +1293,7 @@
     </div>
     <div id="passwordChangeFormError" class="alert alert-danger" style="display: none; margin-bottom: 20px;"></div>
     <form onsubmit="submitPasswordChange(event, false)">
+      <input type="hidden" id="passwordChangeFormUsername" autocomplete="username">
       <div class="form-group">
         <label class="form-label">Current Password</label>
         <input type="password" id="currentPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="current-password">
@@ -2946,6 +2948,7 @@ function submitLogin(event) {
       // Hide login screen and show password change modal
       document.getElementById('loginScreen').classList.remove('show');
       document.getElementById('passwordChangeModal').style.display = 'flex';
+      document.getElementById('passwordChangeUsername').value = email;
       document.getElementById('currentPassword').focus();
       return;
     }
@@ -3127,6 +3130,7 @@ function closePasswordChangeForm() {
  */
 function openPasswordChangeForm() {
   document.getElementById('passwordChangeFormModal').style.display = 'flex';
+  document.getElementById('passwordChangeFormUsername').value = (currentUser && currentUser.member) ? currentUser.member.email : '';
   document.getElementById('currentPasswordForm').focus();
 }
 

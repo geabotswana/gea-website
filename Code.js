@@ -163,6 +163,7 @@ function _routeAction(action, params) {
     // ── PUBLIC ──────────────────────────────────────────────
     case "login":       return _handleLogin(params);
     case "admin_login": return _handleAdminLogin(params);
+    case "admin_session": return _handleAdminSession(params);
     case "logout":      return _handleLogout(params);
     case "password_reset_request": return _handlePasswordResetRequest(params);
     case "password_reset_complete": return _handlePasswordResetComplete(params);
@@ -449,6 +450,21 @@ function _handleAdminLogin(p) {
   if (!result.success) return errorResponse(result.message, "AUTH_FAILED");
 
   return successResponse({ token: result.token, role: result.role, admin: result.admin });
+}
+
+/**
+ * Retrieves admin account data from a valid session token.
+ * Used when the admin portal refreshes to restore the user's name in the header.
+ */
+function _handleAdminSession(p) {
+  if (!p.token) return errorResponse("No session token provided.", "MISSING_PARAM");
+
+  var result = getAdminByToken(p.token);
+  if (!result.success) {
+    return errorResponse(result.message, "AUTH_FAILED");
+  }
+
+  return successResponse({ admin: result.admin, role: result.role });
 }
 
 /**

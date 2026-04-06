@@ -130,14 +130,18 @@ jobs:
 
               # Try to find existing file using multiple methods:
               # 1. First check if CSV has a file ID (most reliable)
-              existing_file_id = template_map.get(semantic_name, {}).get('drive_file_id', '')
-
-              # Skip if file ID is empty or placeholder
-              if existing_file_id in ('', 'TBD', 'N/A', 'PLACEHOLDER_UPLOAD_TO_DRIVE'):
+              # BUT: if force_redeploy is true, ignore CSV IDs (they may be stale/deleted)
+              if FORCE_REDEPLOY:
                   existing_file_id = ''
+              else:
+                  existing_file_id = template_map.get(semantic_name, {}).get('drive_file_id', '')
 
-              # 2. If not in CSV, query Drive by name
-              if not existing_file_id:
+                  # Skip if file ID is empty or placeholder
+                  if existing_file_id in ('', 'TBD', 'N/A', 'PLACEHOLDER_UPLOAD_TO_DRIVE'):
+                      existing_file_id = ''
+
+              # 2. Query Drive by name (always, to find what actually exists)
+              if not existing_file_id or FORCE_REDEPLOY:
                   query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
                   results = drive_service.files().list(
                       q=query,
@@ -208,32 +212,37 @@ jobs:
                   else:
                       print(f"  [DRY RUN] Would create new file in Drive")
 
-          # Handle rebuild_spreadsheet: query Drive to get all file IDs
+          # Handle rebuild_spreadsheet: sync all file IDs from this run
           if REBUILD_SPREADSHEET and not DRY_RUN:
-              print(f"\n🔄 Rebuild mode: querying Drive for all file IDs...\n")
+              print(f"\n🔄 Rebuild mode: syncing all file IDs...\n")
 
-              # Query Drive for ALL files (both newly created and existing)
-              for semantic_name in template_map.keys():
-                  query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
-                  results = drive_service.files().list(
-                      q=query,
-                      spaces='drive',
-                      fields='files(id)',
-                      pageSize=1,
-                      supportsTeamDrives=True
-                  ).execute()
-                  files = results.get('files', [])
-
-                  if files:
-                      # Use the most recent file (first result)
-                      file_id = files[0]['id']
+              if FORCE_REDEPLOY:
+                  # Force redeploy: all files were just created/updated
+                  for semantic_name, file_id in updates.items():
                       template_map[semantic_name]['drive_file_id'] = file_id
                       print(f"  Synced: {semantic_name} → {file_id}")
-                  else:
-                      # File not found in Drive, leave blank
-                      template_map[semantic_name]['drive_file_id'] = ''
-                      print(f"  Not found in Drive: {semantic_name}")
+              else:
+                  # Normal rebuild: query Drive for ALL files (newly created and existing)
+                  for semantic_name in template_map.keys():
+                      query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
+                      results = drive_service.files().list(
+                          q=query,
+                          spaces='drive',
+                          fields='files(id)',
+                          pageSize=1,
+                          supportsTeamDrives=True
+                      ).execute()
+                      files = results.get('files', [])
 
+                      if files:
+                          # Use the most recent file (first result)
+                          file_id = files[0]['id']
+                          template_map[semantic_name]['drive_file_id'] = file_id
+                          print(f"  Synced: {semantic_name} → {file_id}")
+                      else:
+                          # File not found in Drive, leave blank
+                          template_map[semantic_name]['drive_file_id'] = ''
+                          print(f"  Not found in Drive: {semantic_name}")
           else:
               # Normal mode: update template_map with files that were just created/updated
               for semantic_name, file_id in updates.items():

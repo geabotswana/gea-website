@@ -204,6 +204,23 @@
       display: flex;
     }
 
+    #passwordResetConfirmScreen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-blue) 100%);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    #passwordResetConfirmScreen.show {
+      display: flex;
+    }
+
     .login-card {
       background: var(--color-white);
       border-radius: 8px;
@@ -1334,6 +1351,37 @@
         <input type="email" id="resetEmail" class="form-input" placeholder="you@state.gov" required autocomplete="username">
       </div>
       <button type="submit" class="btn btn-primary" style="width: 100%;">Send Reset Link</button>
+    </form>
+    <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+      <button type="button" class="btn btn-link" onclick="showLoginScreen();" style="font-size: 12px; color: #0A3161; text-decoration: none; background: none; border: none; cursor: pointer; padding: 0;">← Back to Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- PASSWORD RESET CONFIRMATION SCREEN                            -->
+<!-- Reset password with token from email link                     -->
+<!-- ============================================================ -->
+
+<div id="passwordResetConfirmScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+    </div>
+    <h1 class="login-title">Create New Password</h1>
+    <p class="login-subtitle">Enter your new password below</p>
+    <div class="login-error" id="resetConfirmError"></div>
+    <form class="login-form" onsubmit="submitPasswordReset(event)">
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="password" id="resetNewPassword" class="form-input" placeholder="Enter new password" required autocomplete="new-password">
+        <div style="font-size: 12px; color: #666; margin-top: 4px;">Must be at least 12 characters</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" id="resetConfirmPassword" class="form-input" placeholder="Confirm password" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Reset Password</button>
     </form>
     <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
       <button type="button" class="btn btn-link" onclick="showLoginScreen();" style="font-size: 12px; color: #0A3161; text-decoration: none; background: none; border: none; cursor: pointer; padding: 0;">← Back to Login</button>
@@ -2480,6 +2528,19 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
+    // Check for password reset token in URL
+    var resetToken = new URLSearchParams(window.location.search).get('token');
+    var action = new URLSearchParams(window.location.search).get('action');
+
+    if (action === 'reset_password' && resetToken) {
+      // Show password reset form, hide login/auth UI
+      document.getElementById('passwordResetConfirmScreen').classList.add('show');
+      document.getElementById('resetNewPassword').focus();
+      // Store token for submission
+      window.resetToken = resetToken;
+      return;
+    }
+
     if (currentToken) {
       // Re-resolve portal mode on refresh in case sessionStorage flag is stale.
       resolveApplicantPortalMode().then(function(isApplicant) {
@@ -3009,6 +3070,7 @@ function showPasswordResetRequest() {
  */
 function showLoginScreen() {
   document.getElementById('passwordResetRequestScreen').classList.remove('show');
+  document.getElementById('passwordResetConfirmScreen').classList.remove('show');
   document.getElementById('loginScreen').classList.add('show');
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginEmail').value = '';
@@ -3197,6 +3259,88 @@ function submitPasswordResetRequest(event) {
     _resetPasswordRequestInFlight = false;
     submitBtn.disabled = false;
     submitBtn.textContent = 'Send Reset Link';
+    errorDiv.textContent = 'Connection error. Please try again.';
+    errorDiv.classList.add('show');
+    console.error('Password reset error:', err);
+  });
+}
+
+/**
+ * Submits a password reset confirmation with token from email link.
+ * User enters new password and it's validated/set using the reset token.
+ */
+function submitPasswordReset(event) {
+  event.preventDefault();
+
+  var newPassword = document.getElementById('resetNewPassword').value;
+  var confirmPassword = document.getElementById('resetConfirmPassword').value;
+  var errorDiv = document.getElementById('resetConfirmError');
+
+  // Clear previous errors
+  errorDiv.textContent = '';
+  errorDiv.classList.remove('show');
+
+  // Validate passwords
+  if (!newPassword || !confirmPassword) {
+    errorDiv.textContent = 'Please enter and confirm your new password.';
+    errorDiv.classList.add('show');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    errorDiv.textContent = 'Passwords do not match.';
+    errorDiv.classList.add('show');
+    return;
+  }
+
+  if (newPassword.length < 12) {
+    errorDiv.textContent = 'Password must be at least 12 characters.';
+    errorDiv.classList.add('show');
+    return;
+  }
+
+  var submitBtn = event.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Resetting...';
+
+  // Call backend to confirm password reset with token
+  apiCall('password_reset_confirm', {
+    token: window.resetToken,
+    new_password: newPassword
+  }).then(function(res) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Reset Password';
+
+    if (!res.success) {
+      errorDiv.textContent = res.message || 'Error resetting password. Link may have expired.';
+      errorDiv.classList.add('show');
+      return;
+    }
+
+    // Show success message
+    var card = document.querySelector('#passwordResetConfirmScreen .login-card');
+    var successHtml = document.createElement('div');
+    successHtml.style.textAlign = 'center';
+    successHtml.style.padding = '24px';
+    successHtml.style.backgroundColor = '#E8F5E9';
+    successHtml.style.borderRadius = '4px';
+    successHtml.style.marginBottom = '20px';
+    successHtml.innerHTML = '<p style="color: #2E7D32; font-weight: 600; margin: 0;">Password Reset Successful</p>' +
+                            '<p style="color: #558B2F; font-size: 13px; margin: 8px 0 0 0;">You can now log in with your new password.</p>';
+
+    var form = card.querySelector('form');
+    form.parentNode.insertBefore(successHtml, form);
+    form.style.display = 'none';
+
+    // Auto-return to login after 3 seconds
+    setTimeout(function() {
+      showLoginScreen();
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }, 3000);
+  }).catch(function(err) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Reset Password';
     errorDiv.textContent = 'Connection error. Please try again.';
     errorDiv.classList.add('show');
     console.error('Password reset error:', err);

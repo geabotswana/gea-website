@@ -787,6 +787,63 @@ function purgeExpiredResetTokens() {
  *   { valid: true, token_id: "RST-...", user_type: "member", ... } or
  *   { valid: false, message: "Error reason" }
  */
+/**
+ * INTERNAL: Looks up email from a reset token.
+ * Used when confirming password reset from email link.
+ *
+ * @param {string} token Reset token
+ * @returns {string|null} Email address if found and valid, null otherwise
+ */
+function _getEmailFromResetToken(token) {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_PASSWORD_RESET_TOKENS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var tokenHashCol = headers.indexOf("token_hash");
+    var emailCol = headers.indexOf("email");
+    var expiryCol = headers.indexOf("expiry_timestamp");
+    var usedCol = headers.indexOf("used_timestamp");
+
+    // Hash the presented token for comparison
+    var presentedHash = _hashToken(token);
+    if (!presentedHash) {
+      return null;
+    }
+
+    var now = new Date();
+
+    // Find matching token record
+    for (var i = 1; i < data.length; i++) {
+      if (constantTimeCompare(data[i][tokenHashCol], presentedHash)) {
+        // Check if not expired
+        if (data[i][expiryCol]) {
+          var expiryTime = new Date(data[i][expiryCol]);
+          if (now > expiryTime) {
+            return null; // Token expired
+          }
+        }
+
+        // Check if not already used
+        if (data[i][usedCol] && data[i][usedCol] !== "") {
+          return null; // Token already used
+        }
+
+        // Return the email for this token
+        return data[i][emailCol];
+      }
+    }
+
+    return null; // Token not found
+  } catch (e) {
+    Logger.log("Error looking up email from reset token: " + e);
+    return null;
+  }
+}
+
 function _validateResetToken(token, email) {
   if (!token || !email) {
     return { valid: false, message: "Missing token or email." };

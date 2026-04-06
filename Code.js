@@ -166,6 +166,7 @@ function _routeAction(action, params) {
     case "logout":      return _handleLogout(params);
     case "password_reset_request": return _handlePasswordResetRequest(params);
     case "password_reset_complete": return _handlePasswordResetComplete(params);
+    case "password_reset_confirm": return _handlePasswordResetConfirm(params);
     case "change_password": return _handleChangePassword(params);
     case "deployment_info": return _handleDeploymentInfo();
     case "get_config_value": return _handleGetConfigValue(params);
@@ -504,6 +505,41 @@ function _handlePasswordResetComplete(p) {
   }
 
   var result = completePasswordReset(p.token, p.email, p.password);
+  if (!result.success) {
+    return errorResponse(result.message, "PASSWORD_RESET_FAILED");
+  }
+
+  return successResponse({ message: result.message }, result.message);
+}
+
+/**
+ * HANDLER: _handlePasswordResetConfirm
+ * PURPOSE: Confirm password reset using only the token (from email link).
+ *          Looks up the email from the token, then completes the reset.
+ *
+ * CALLED BY: Portal.html password reset form (when user clicks email link)
+ *
+ * PARAMETERS:
+ * - token: Password reset token from email
+ * - new_password: User's new password
+ *
+ * RETURNS:
+ * - Success: { success: true, message: "..." }
+ * - Failure: { success: false, message: "Error reason" }
+ */
+function _handlePasswordResetConfirm(p) {
+  if (!p.token || !p.new_password) {
+    return errorResponse("Token and new password are required.", "MISSING_PARAM");
+  }
+
+  // Look up email from reset token
+  var email = _getEmailFromResetToken(p.token);
+  if (!email) {
+    return errorResponse("Invalid or expired reset link. Request a new one.", "INVALID_TOKEN");
+  }
+
+  // Use existing completePasswordReset function
+  var result = completePasswordReset(p.token, email, p.new_password);
   if (!result.success) {
     return errorResponse(result.message, "PASSWORD_RESET_FAILED");
   }

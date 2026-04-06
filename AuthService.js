@@ -1648,7 +1648,7 @@ function adminLogin(email, password) {
     var isFirstLogin = !adminRow[colIdx.first_login_date];
 
     // Record first login date if this is the first login
-    if (isFirstLogin) {
+    if (isFirstLogin && colIdx.first_login_date >= 0) {
       sheet.getRange(rowIdx, colIdx.first_login_date + 1).setValue(new Date());
     }
 
@@ -1885,16 +1885,24 @@ function _setAdminActiveFlag(adminId, active, callerEmail) {
 
         if (!active) {
           // Record deactivation details
-          sheet.getRange(i + 1, colIdx.deactivated_by + 1).setValue(callerEmail);
-          sheet.getRange(i + 1, colIdx.deactivated_date + 1).setValue(now);
+          if (colIdx.deactivated_by >= 0) {
+            sheet.getRange(i + 1, colIdx.deactivated_by + 1).setValue(callerEmail);
+          }
+          if (colIdx.deactivated_date >= 0) {
+            sheet.getRange(i + 1, colIdx.deactivated_date + 1).setValue(now);
+          }
           // Invalidate all active sessions for this admin
           _invalidateSessionsForEmail(data[i][colIdx.email]);
           logAuditEntry(callerEmail, AUDIT_ADMIN_DEACTIVATED, "Administrator", adminId,
                         "Admin account deactivated: " + data[i][colIdx.email]);
         } else {
           // Clear deactivation fields on reactivation
-          sheet.getRange(i + 1, colIdx.deactivated_by + 1).setValue("");
-          sheet.getRange(i + 1, colIdx.deactivated_date + 1).setValue("");
+          if (colIdx.deactivated_by >= 0) {
+            sheet.getRange(i + 1, colIdx.deactivated_by + 1).setValue("");
+          }
+          if (colIdx.deactivated_date >= 0) {
+            sheet.getRange(i + 1, colIdx.deactivated_date + 1).setValue("");
+          }
           logAuditEntry(callerEmail, AUDIT_ADMIN_REACTIVATED, "Administrator", adminId,
                         "Admin account reactivated: " + data[i][colIdx.email]);
         }

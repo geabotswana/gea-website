@@ -15,6 +15,7 @@
   <!-- FONTS: Source Sans 3 for UI, Roboto Mono for data display   -->
   <!-- ============================================================ -->
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/6df704a041.js" crossorigin="anonymous"></script>
 
   <style>
     /* ============================================================ */
@@ -5771,8 +5772,10 @@
         emailLine.style.marginBottom = '4px';
         emailLine.appendChild(document.createTextNode('Email: '));
         var emailLink = document.createElement('a');
-        emailLink.href = 'mailto:' + (app.email || '');
-        emailLink.textContent = app.email || '(Not provided)';
+        // Use primary_applicant_email from application, or fall back to primary individual's email
+        var primaryEmail = app.primary_applicant_email || (primaryIndividual && primaryIndividual.email) || '';
+        emailLink.href = 'mailto:' + primaryEmail;
+        emailLink.textContent = primaryEmail || '(Not provided)';
         emailLink.style.color = '#1565C0';
         emailLink.style.textDecoration = 'none';
         emailLine.appendChild(emailLink);
@@ -5782,7 +5785,11 @@
         phoneLine.style.fontSize = '13px';
         var primaryPhone = '(Not provided)';
         if (primaryIndividual && primaryIndividual.phone_primary) {
-          var formatted = formatPhoneWithWhatsApp(primaryIndividual.country_code_primary, primaryIndividual.phone_primary, primaryIndividual.phone_primary_whatsapp);
+          var formatted = formatPhoneWithWhatsApp(
+            primaryIndividual.country_code_primary || 'BW',
+            primaryIndividual.phone_primary,
+            primaryIndividual.phone_primary_whatsapp === true  // Explicit true check
+          );
           if (formatted) {
             phoneLine.innerHTML = 'Phone: ' + formatted; // Safe: formatted uses hardcoded icon only
           } else {
@@ -5899,18 +5906,18 @@
 
               docItem.appendChild(docInfo);
 
-              // View Link (if document has a file_id or submission_id)
-              if (doc.file_id || doc.submission_id) {
+              // View Link (if document has a file_id - the Google Drive file ID)
+              if (doc.file_id) {
                 var viewBtn = document.createElement('button');
                 viewBtn.className = 'btn btn-small';
                 viewBtn.style.padding = '4px 8px';
                 viewBtn.style.fontSize = '11px';
                 viewBtn.textContent = 'View';
-                viewBtn.onclick = (function(fileId, subId) {
+                viewBtn.onclick = (function(fileId) {
                   return function() {
-                    viewDocument(fileId || subId);
+                    viewDocument(fileId);
                   };
-                })(doc.file_id, doc.submission_id);
+                })(doc.file_id);
                 docItem.appendChild(viewBtn);
               }
 

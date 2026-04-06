@@ -2692,17 +2692,29 @@
   }
 
   function apiCall(action, params) {
-    // Add action and token to parameters
     params = params || {};
     params.action = action;
     params.token = currentToken || '';
-    
-    // Construct the URL with query parameters
-    var url = PORTAL_API_URL + '?' + new URLSearchParams(params).toString();
-    
-    // Make the fetch request to the backend
-    return fetch(url).then(function(r) {
-      return r.json();
+
+    // Return a promise that uses google.script.run
+    return new Promise(function(resolve, reject) {
+      google.script.run
+        .withSuccessHandler(function(response) {
+          // Parse the response if it's a string (should be JSON)
+          if (typeof response === 'string') {
+            try {
+              resolve(JSON.parse(response));
+            } catch (e) {
+              reject(new Error('Invalid JSON response: ' + response));
+            }
+          } else {
+            resolve(response);
+          }
+        })
+        .withFailureHandler(function(error) {
+          reject(new Error('Server error: ' + error));
+        })
+        .handlePortalApi(action, params);
     });
   }
   

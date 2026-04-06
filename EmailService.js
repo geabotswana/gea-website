@@ -224,6 +224,10 @@ function getEmailTemplateById(templateId) {
  * Key: semantic_name, Value: { subject, body, placeholders, name }
  */
 var _driveTemplateCache = {};
+// Caches the raw Email Templates sheet rows for the current execution so
+// getEmailTemplate() only reads the sheet once, regardless of how many
+// different templates are loaded during the same request.
+var _emailTemplateSheetData = null;
 
 /**
  * Fetches a template from the Email Templates tab with Drive-based plain text bodies.
@@ -243,9 +247,14 @@ function getEmailTemplate(templateName) {
   }
 
   try {
-    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
-                  .getSheetByName(TAB_EMAIL_TEMPLATES);
-    var data = sheet.getDataRange().getValues();
+    // Cache the full sheet data for this execution to avoid re-reading on each
+    // template lookup (submit_application loads 3 different templates).
+    if (!_emailTemplateSheetData) {
+      _emailTemplateSheetData = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
+                                  .getSheetByName(TAB_EMAIL_TEMPLATES)
+                                  .getDataRange().getValues();
+    }
+    var data = _emailTemplateSheetData;
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
@@ -731,8 +740,11 @@ function plainTextToHtml(plainText) {
       var key   = trimmed.substring(0, colon);
       var val   = trimmed.substring(colon + 2);
       if (!inKv) { html += '<div>'; inKv = true; }
-      html += '<div class="kv"><span class="kk">' + escapeHtml(key) + '</span>' +
-              '<span class="kv2">' + escapeHtml(val) + '</span></div>';
+      // Inline styles ensure key: value separation works in Gmail and other
+      // email clients that strip <style> blocks and ignore class-based CSS.
+      html += '<div class="kv" style="padding:4px 0;border-bottom:1px solid #F0F0F0;font-size:13px;">' +
+              '<strong class="kk" style="color:#555;font-weight:bold;">' + escapeHtml(key) + ':</strong> ' +
+              '<span class="kv2" style="color:#212121;">' + escapeHtml(val) + '</span></div>';
       continue;
     }
 
@@ -762,8 +774,9 @@ function plainTextToHtml(plainText) {
         if (isLabel && isValue) {
           if (inKv) { html += "</div>"; inKv = false; }
           if (!inKv) { html += '<div>'; inKv = true; }
-          html += '<div class="kv"><span class="kk">' + escapeHtml(trimmed) + '</span>' +
-                  '<span class="kv2">' + escapeHtml(nextTrimmed) + '</span></div>';
+          html += '<div class="kv" style="padding:4px 0;border-bottom:1px solid #F0F0F0;font-size:13px;">' +
+                  '<strong class="kk" style="color:#555;font-weight:bold;">' + escapeHtml(trimmed) + ':</strong> ' +
+                  '<span class="kv2" style="color:#212121;">' + escapeHtml(nextTrimmed) + '</span></div>';
           skipNext = true;
           continue;
         }

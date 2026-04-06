@@ -175,8 +175,6 @@ function createApplicationRecord(formData, createdBy) {
         created_by: createdBy
       };
       individualSheet.appendRow(_objectToRow(staffIndividualData, TAB_INDIVIDUALS));
-      logAuditEntry(createdBy, AUDIT_APPLICATION_CREATED, "Household Staff", staffIndividualId,
-                    "Household staff member added: " + formData.staff_first_name + " " + formData.staff_last_name);
     }
 
     // Create family member individuals if provided
@@ -207,9 +205,6 @@ function createApplicationRecord(formData, createdBy) {
           created_by: createdBy
         };
         individualSheet.appendRow(_objectToRow(familyIndividualData, TAB_INDIVIDUALS));
-        logAuditEntry(createdBy, AUDIT_APPLICATION_CREATED, "Family Member", familyIndividualId,
-                      "Family member added: " + familyMember.first_name + " " + familyMember.last_name +
-                      " (" + familyMember.relationship_to_primary + ")");
       });
     }
 
@@ -1352,6 +1347,11 @@ function _getColumnIndex(tabName, columnName) {
   return -1;
 }
 
+// Caches sheet header rows within a single execution so _objectToRow does not
+// re-read headers from the API on every call (submit_application calls it 3–8+
+// times, many on the same Individuals sheet).
+var _objectToRowHeaderCache = {};
+
 function _objectToRow(obj, tabName) {
   // Convert object to array row, maintaining column order from sheet
   var sheet;
@@ -1367,7 +1367,10 @@ function _objectToRow(obj, tabName) {
 
   if (!sheet) return [];
 
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  if (!_objectToRowHeaderCache[tabName]) {
+    _objectToRowHeaderCache[tabName] = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  }
+  var headers = _objectToRowHeaderCache[tabName];
   var row = [];
   for (var i = 0; i < headers.length; i++) {
     row.push(obj[headers[i]] || "");

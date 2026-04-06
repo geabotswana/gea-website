@@ -1,14 +1,15 @@
 # Email Templates Manifest
 
-Complete index of all 71 GEA email templates. Each entry shows the semantic name (used in code), recipient, and required variables.
+Complete index of all 72 GEA email templates. Each entry shows the semantic name (used in code), recipient, and required variables.
 
 ---
 
-## Administrative (16 templates)
+## Administrative (17 templates)
 
 | Semantic Name | Recipient | Variables |
 |---------------|-----------|-----------|
 | ADM_BOARD_APPROVAL_REQUEST_TO_BOARD | Board | APPLICANT_NAME, APPLICATION_ID, APPROVAL_DEADLINE, BOARD_ITEM_TYPE, REQUEST_SUMMARY |
+| ADM_BOARD_INITIAL_APPROVAL_TO_BOARD | Board | APPLICANT_NAME, APPLICATION_ID, APPROVED_BY_NAME, APPROVAL_DATE |
 | ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD | Board | APPLICANT_NAME, APPLICATION_ID, APPROVAL_DATE, RSO_NEXT_STEPS |
 | ADM_BOARD_FINAL_APPROVAL_TO_BOARD | Board | ACTIVATION_DATE, APPLICANT_NAME, APPLICATION_ID, APPROVAL_DATE, MEMBERSHIP_TYPE |
 | ADM_BOARD_FINAL_DENIED_TO_BOARD | Board | APPEAL_PROCESS, APPLICANT_NAME, APPLICATION_ID, DENIAL_DATE, DENIAL_REASON |

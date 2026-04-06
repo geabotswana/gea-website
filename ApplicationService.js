@@ -586,6 +586,17 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_BOARD_INITIAL, "Application", applicationId, "Approved for RSO review");
 
+      // Notify board (all members get informed of the approval)
+      var _boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+      var _appName0      = application.primary_applicant_name || "";
+      sendEmailFromTemplate("ADM_BOARD_INITIAL_APPROVAL_TO_BOARD", _boardEmail, {
+        FIRST_NAME:       "Board",
+        APPLICANT_NAME:   _appName0,
+        APPLICATION_ID:   applicationId,
+        APPROVED_BY_NAME: boardEmail,
+        APPROVAL_DATE:    formatDate(new Date())
+      });
+
       // Notify RSO and applicant
       var rsoEmail = EMAIL_RSO_APPROVE;
       var _appName1      = application.primary_applicant_name || "";

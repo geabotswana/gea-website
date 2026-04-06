@@ -1,7 +1,7 @@
 # GEA Email Templates Reference
 
 **Last Updated:** 2026-04-06
-**Total Templates:** 71
+**Total Templates:** 72
 
 All templates share standardized greeting, signature, and footer blocks:
 - **Greeting:** `Dear {{FIRST_NAME}},` (member-facing) or role-appropriate salutation
@@ -12,13 +12,14 @@ Template variables are listed in [_MANIFEST.md](../email_templates/_MANIFEST.md)
 
 ---
 
-## Administrative (16 templates)
+## Administrative (17 templates)
 
 Notifications to board, management, and RSO about application workflow and document review actions.
 
 | Semantic Name | Recipient | Subject | Notes |
 |---------------|-----------|---------|-------|
 | ADM_BOARD_APPROVAL_REQUEST_TO_BOARD | Board | Action Required: `{{BOARD_ITEM_TYPE}}` Approval Needed | Board notification requiring decision on pending item |
+| ADM_BOARD_INITIAL_APPROVAL_TO_BOARD | Board | Application Approved — `{{APPLICANT_NAME}}` — Moving to RSO Review | All board members notified when initial approval is granted; application moving to RSO for document verification |
 | ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD | Board | Board Approved: `{{APPLICANT_NAME}}` Ready for RSO Processing | Board notified that application has cleared initial review and is moving to RSO stage |
 | ADM_BOARD_FINAL_APPROVAL_TO_BOARD | Board | Membership Activated: `{{APPLICANT_NAME}}` (`{{APPLICATION_ID}}`) | Final board approval notification; member is now active |
 | ADM_BOARD_FINAL_DENIED_TO_BOARD | Board | Application Denied: `{{APPLICANT_NAME}}` (`{{APPLICATION_ID}}`) | Final rejection from board; appeal process communicated |

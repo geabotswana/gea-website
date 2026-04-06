@@ -1218,11 +1218,11 @@
     <form class="login-form" onsubmit="submitLogin(event)">
       <div class="form-group">
         <label class="form-label">Email Address</label>
-        <input type="email" id="loginEmail" class="form-input" placeholder="you@state.gov" required>
+        <input type="email" id="loginEmail" class="form-input" placeholder="you@state.gov" required autocomplete="username">
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input type="password" id="loginPassword" class="form-input" placeholder="••••••••••••" required minlength="12">
+        <input type="password" id="loginPassword" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="current-password">
       </div>
       <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
     </form>
@@ -1260,15 +1260,15 @@
     <form onsubmit="submitPasswordChange(event, true)">
       <div class="form-group">
         <label class="form-label">Current Password</label>
-        <input type="password" id="currentPassword" class="form-input" placeholder="••••••••••••" required minlength="12">
+        <input type="password" id="currentPassword" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="current-password">
       </div>
       <div class="form-group">
         <label class="form-label">New Password</label>
-        <input type="password" id="newPassword" class="form-input" placeholder="••••••••••••" required minlength="12">
+        <input type="password" id="newPassword" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="new-password">
       </div>
       <div class="form-group">
         <label class="form-label">Confirm New Password</label>
-        <input type="password" id="confirmPassword" class="form-input" placeholder="••••••••••••" required minlength="12">
+        <input type="password" id="confirmPassword" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="new-password">
       </div>
       <p style="font-size: 12px; color: #999; margin-bottom: 16px;">
         Passwords must be at least 12 characters.
@@ -1294,15 +1294,15 @@
     <form onsubmit="submitPasswordChange(event, false)">
       <div class="form-group">
         <label class="form-label">Current Password</label>
-        <input type="password" id="currentPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12">
+        <input type="password" id="currentPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="current-password">
       </div>
       <div class="form-group">
         <label class="form-label">New Password</label>
-        <input type="password" id="newPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12">
+        <input type="password" id="newPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="new-password">
       </div>
       <div class="form-group">
         <label class="form-label">Confirm New Password</label>
-        <input type="password" id="confirmPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12">
+        <input type="password" id="confirmPasswordForm" class="form-input" placeholder="••••••••••••" required minlength="12" autocomplete="new-password">
       </div>
       <p style="font-size: 12px; color: #999; margin-bottom: 16px;">
         Passwords must be at least 12 characters.

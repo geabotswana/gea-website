@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.17";
+var SYSTEM_VERSION          = "2.4.20";
 var SYSTEM_BUILD_DATE       = "2026-04-06";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix admin portal username display on page refresh";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-06 22:51:35";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add comprehensive country code mapping for phone formatting";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-06 23:08:45";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

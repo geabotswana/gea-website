@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.13";
+var SYSTEM_VERSION          = "2.4.14";
 var SYSTEM_BUILD_DATE       = "2026-04-06";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix admin login CORS error by replacing fetch() with google.script.run";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-06 20:58:54";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Implement password reset form with token validation for email links";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-06 21:06:12";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

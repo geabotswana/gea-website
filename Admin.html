@@ -3777,19 +3777,22 @@
 
     var win = window.open('', '_blank');
     if (!win) { alert('Please allow pop-ups to print.'); return; }
-    win.document.write(
-      '<!DOCTYPE html><html><head><title>' + title + '</title>' +
-      '<style>body{font-family:sans-serif;font-size:12px;padding:20px;}' +
+    win.document.title = title;
+    var style = win.document.createElement('style');
+    style.textContent = 'body{font-family:sans-serif;font-size:12px;padding:20px;}' +
       'h1{font-size:16px;margin-bottom:16px;}' +
       'div,span{max-width:100%;}' +
-      '@media print{button{display:none!important;}}' +
-      '</style></head><body>' +
-      '<h1>GEA Reservation Calendar — ' + title + '</h1>' +
-      calHtml +
-      '<script>window.onload=function(){window.print();window.close();}<\/script>' +
-      '</body></html>'
-    );
-    win.document.close();
+      '@media print{button{display:none!important;}}';
+    win.document.head.appendChild(style);
+    var h1 = win.document.createElement('h1');
+    h1.textContent = 'GEA Reservation Calendar \u2014 ' + title;
+    win.document.body.appendChild(h1);
+    var container = win.document.createElement('div');
+    container.innerHTML = calHtml;
+    win.document.body.appendChild(container);
+    var script = win.document.createElement('script');
+    script.textContent = 'window.onload=function(){window.print();window.close();}';
+    win.document.body.appendChild(script);
   }
 
   // ============================================================

@@ -210,12 +210,29 @@ jobs:
 
           # Handle rebuild_spreadsheet: query Drive to get all file IDs
           if REBUILD_SPREADSHEET and not DRY_RUN:
-              print(f"\n🔄 Rebuild mode: syncing file IDs...\n")
+              print(f"\n🔄 Rebuild mode: querying Drive for all file IDs...\n")
 
-              # First, use any files we just created/updated
-              for semantic_name, file_id in updates.items():
-                  template_map[semantic_name]['drive_file_id'] = file_id
-                  print(f"  Synced: {semantic_name} → {file_id}")
+              # Query Drive for ALL files (both newly created and existing)
+              for semantic_name in template_map.keys():
+                  query = f"name='{semantic_name}' and '{DRIVE_FOLDER_ID}' in parents and trashed=false"
+                  results = drive_service.files().list(
+                      q=query,
+                      spaces='drive',
+                      fields='files(id)',
+                      pageSize=1,
+                      supportsTeamDrives=True
+                  ).execute()
+                  files = results.get('files', [])
+
+                  if files:
+                      # Use the most recent file (first result)
+                      file_id = files[0]['id']
+                      template_map[semantic_name]['drive_file_id'] = file_id
+                      print(f"  Synced: {semantic_name} → {file_id}")
+                  else:
+                      # File not found in Drive, leave blank
+                      template_map[semantic_name]['drive_file_id'] = ''
+                      print(f"  Not found in Drive: {semantic_name}")
 
           else:
               # Normal mode: update template_map with files that were just created/updated

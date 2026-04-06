@@ -1,7 +1,7 @@
 # GEA Email Templates Reference
 
-**Last Updated:** 2026-03-27
-**Total Templates:** 69
+**Last Updated:** 2026-04-06
+**Total Templates:** 72
 
 All templates share standardized greeting, signature, and footer blocks:
 - **Greeting:** `Dear {{FIRST_NAME}},` (member-facing) or role-appropriate salutation
@@ -12,13 +12,14 @@ Template variables are listed in [_MANIFEST.md](../email_templates/_MANIFEST.md)
 
 ---
 
-## Administrative (14 templates)
+## Administrative (17 templates)
 
 Notifications to board, management, and RSO about application workflow and document review actions.
 
 | Semantic Name | Recipient | Subject | Notes |
 |---------------|-----------|---------|-------|
 | ADM_BOARD_APPROVAL_REQUEST_TO_BOARD | Board | Action Required: `{{BOARD_ITEM_TYPE}}` Approval Needed | Board notification requiring decision on pending item |
+| ADM_BOARD_INITIAL_APPROVAL_TO_BOARD | Board | Application Approved — `{{APPLICANT_NAME}}` — Moving to RSO Review | All board members notified when initial approval is granted; application moving to RSO for document verification |
 | ADM_BOARD_APPROVED_FOR_RSO_TO_BOARD | Board | Board Approved: `{{APPLICANT_NAME}}` Ready for RSO Processing | Board notified that application has cleared initial review and is moving to RSO stage |
 | ADM_BOARD_FINAL_APPROVAL_TO_BOARD | Board | Membership Activated: `{{APPLICANT_NAME}}` (`{{APPLICATION_ID}}`) | Final board approval notification; member is now active |
 | ADM_BOARD_FINAL_DENIED_TO_BOARD | Board | Application Denied: `{{APPLICANT_NAME}}` (`{{APPLICATION_ID}}`) | Final rejection from board; appeal process communicated |
@@ -26,8 +27,10 @@ Notifications to board, management, and RSO about application workflow and docum
 | ADM_DAILY_SUMMARY_TO_RSO_NOTIFY | RSO | GEA Daily RSO Summary - `{{TODAY_DATE}}` | Daily operational report sent to RSO with all events scheduled for today |
 | ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE | RSO | Action Required: Document Review for `{{APPLICANT_NAME}}` | RSO notified that applicant documents are ready for review |
 | ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER | Member | GEA: Your Document Has Been Approved | Member notified that RSO has approved their document |
-| ADM_DOCS_SENT_TO_RSO_TO_BOARD | Board | Documents Forwarded to RSO: `{{APPLICANT_NAME}}` | Board notification that applicant documents have been sent to RSO for review |
-| ADM_DOCS_SENT_TO_RSO_TO_MEMBER | Member | GEA: Your Documents Have Been Forwarded for Review | Member notified that their submitted documents have been forwarded to RSO for validation |
+| ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_BOARD | Board | Documents Ready for Your Review: `{{APPLICANT_NAME}}` | Board notification that applicant documents are ready for initial board review (sent when applicant confirms documents) |
+| ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_MEMBER | Member | GEA: Your Documents Are Under Board Review | Member notified that their documents are being reviewed by the board (sent when applicant confirms documents) |
+| ADM_DOCS_SENT_TO_RSO_TO_BOARD | Board | Documents Forwarded to RSO: `{{APPLICANT_NAME}}` | Board notification that applicant documents have been sent to RSO for review (sent AFTER board approves) |
+| ADM_DOCS_SENT_TO_RSO_TO_MEMBER | Member | GEA: Your Documents Have Been Forwarded for Review | Member notified that their submitted documents have been forwarded to RSO for validation (sent AFTER board approves) |
 | ADM_MGT_APPROVAL_REQUEST_TO_MGT | Mgmt Officer | Action Required: `{{BOARD_ITEM_TYPE}}` Needs Management Approval | Management notification for items requiring their sign-off |
 | ADM_NEW_APPLICATION_BOARD_TO_BOARD | Board | New Application: `{{APPLICANT_NAME}}` — Review by `{{BOARD_REVIEW_DEADLINE}}` | Board notification when a new membership application is submitted; includes review deadline |
 | ADM_READY_FOR_FINAL_APPROVAL_TO_MEMBER | Applicant | Your GEA Application is Ready for Final Approval | Notifies applicant that final approval stage has been reached |

@@ -287,38 +287,33 @@ function _routeAction(action, params) {
    */
   function _handleImageProxy(p) {
     if (!p || !p.id) {
-      return ContentService
-        .createTextOutput("Missing required parameter: id")
-        .setMimeType(ContentService.MimeType.TEXT);
+      return HtmlService.createHtmlOutput('<p style="font-family:sans-serif;padding:20px;color:#c00;">Missing required parameter: id</p>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     }
-  
+
     try {
       var file = DriveApp.getFileById(String(p.id).trim());
       var blob = file.getBlob();
-      var bytes = blob.getBytes(); // byte[]
-  
-      return ContentService
-        // Apps Script accepts byte[] here; it returns raw bytes with the selected mime type.
-        .createTextOutput(bytes)
-        .setMimeType(_mimeTypeEnumFromContentType_(blob.getContentType()));
+      var contentType = blob.getContentType() || 'image/jpeg';
+      var base64 = Utilities.base64Encode(blob.getBytes());
+      var dataUrl = 'data:' + contentType + ';base64,' + base64;
+
+      var isPdf = contentType.indexOf('pdf') >= 0;
+      var bodyContent = isPdf
+        ? '<embed src="' + dataUrl + '" type="application/pdf" style="width:100%;height:100vh;border:none;">'
+        : '<img src="' + dataUrl + '" style="max-width:100%;height:auto;display:block;margin:auto;border-radius:4px;">';
+
+      var html = '<!DOCTYPE html><html><head><style>'
+        + 'body{margin:0;background:#1a1a1a;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:16px;box-sizing:border-box;}'
+        + '</style></head><body>' + bodyContent + '</body></html>';
+
+      return HtmlService.createHtmlOutput(html)
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     } catch (e) {
       Logger.log("ERROR _handleImageProxy (id=" + p.id + "): " + e);
-      return ContentService
-        .createTextOutput("Could not load image for id=" + p.id)
-        .setMimeType(ContentService.MimeType.TEXT);
+      return HtmlService.createHtmlOutput('<p style="font-family:sans-serif;padding:20px;color:#c00;">Could not load document. The file may not be accessible.</p>')
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
     }
-  }
-  
-  /**
-   * Maps a blob Content-Type string to a ContentService.MimeType enum.
-   * ContentService supports only a small set, so we collapse to PNG/JPEG/GIF.
-   */
-  function _mimeTypeEnumFromContentType_(contentType) {
-    var ct = String(contentType || "").toLowerCase();
-    if (ct.indexOf("jpeg") >= 0 || ct.indexOf("jpg") >= 0) return ContentService.MimeType.JPEG;
-    if (ct.indexOf("gif")  >= 0) return ContentService.MimeType.GIF;
-    // default/fallback (includes png, svg, webp, etc.)
-    return ContentService.MimeType.PNG;
   }
   
   /**

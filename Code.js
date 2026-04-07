@@ -326,7 +326,7 @@ function _routeAction(action, params) {
    */
   function _handleGetFileData(p) {
     var auth = requireAuth(p.token);
-    if (!auth.success) return auth;
+    if (!auth.ok) return auth.response;
 
     if (!p.file_id) return errorResponse("Missing file_id", "INVALID_PARAM");
 

@@ -2439,6 +2439,20 @@
   </div>
 </div>
 
+<!-- Reusable Confirmation Dialog -->
+<div id="portalConfirmDialog" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="max-width:400px;">
+    <div id="portalConfirmHeader" style="background:var(--color-primary); color:#fff; padding:16px 20px; border-radius:8px 8px 0 0; margin:-20px -20px 20px -20px;">
+      <h2 id="portalConfirmTitle" style="margin:0; font-size:17px; font-weight:600;"></h2>
+    </div>
+    <p id="portalConfirmMessage" style="color:#444; margin-bottom:20px; line-height:1.5; font-size:14px;"></p>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="_closePortalConfirm()">Cancel</button>
+      <button id="portalConfirmOkBtn" class="btn btn-primary">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // ============================================================ //
   // SECTION: INITIALIZATION AND STATE                            //
@@ -4351,10 +4365,17 @@ function submitPasswordReset(event) {
   }
 
   function cancelApplication() {
-    if (confirm('Cancel membership application? Any entered data will be lost.')) {
-      showLoginScreen();
-      applicationFormData = {};
-    }
+    showPortalConfirm({
+      title: 'Cancel Application',
+      message: 'Cancel membership application? Any data you have entered will be lost.',
+      confirmText: 'Yes, Cancel',
+      confirmClass: 'btn-danger',
+      headerColor: '#B71C1C',
+      onConfirm: function() {
+        showLoginScreen();
+        applicationFormData = {};
+      }
+    });
   }
 
   function updateApplicationStep() {
@@ -5818,11 +5839,7 @@ function submitPasswordReset(event) {
         cancelBtn.className = 'cancel-btn-small';
         cancelBtn.textContent = 'Cancel';
         cancelBtn.onclick = (function(reservationId) {
-          return function() {
-            if (confirm('Cancel this reservation?')) {
-              cancelReservation(reservationId);
-            }
-          };
+          return function() { cancelReservation(reservationId); };
         })(res.reservation_id);
         actionTd.appendChild(cancelBtn);
       }
@@ -8331,16 +8348,22 @@ function submitPasswordReset(event) {
    * Cancels a reservation.
    */
   function cancelReservation(resId) {
-    if (!confirm('Cancel this reservation?')) return;
-    
-    apiCall('cancel', { reservation_id: resId }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to cancel: ' + res.message);
-        return;
+    showPortalConfirm({
+      title: 'Cancel Reservation',
+      message: 'Are you sure you want to cancel this reservation? This cannot be undone.',
+      confirmText: 'Cancel Reservation',
+      confirmClass: 'btn-danger',
+      headerColor: '#B71C1C',
+      onConfirm: function() {
+        apiCall('cancel', { reservation_id: resId }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to cancel: ' + res.message);
+            return;
+          }
+          showToast('Reservation cancelled', 'success');
+          loadReservations();
+        });
       }
-      
-      showToast('Reservation cancelled', 'success');
-      loadReservations();
     });
   }
   
@@ -9136,7 +9159,37 @@ function submitPasswordReset(event) {
   // ============================================================ //
   // SECTION: UTILITIES                                           //
   // ============================================================ //
-  
+
+  /**
+   * Show a styled confirmation dialog (replaces native confirm()).
+   * @param {object} opts  title, message, confirmText, confirmClass, headerColor, onConfirm
+   */
+  function showPortalConfirm(opts) {
+    var titleEl  = document.getElementById('portalConfirmTitle');
+    var msgEl    = document.getElementById('portalConfirmMessage');
+    var okBtn    = document.getElementById('portalConfirmOkBtn');
+    var header   = document.getElementById('portalConfirmHeader');
+    var dialog   = document.getElementById('portalConfirmDialog');
+
+    titleEl.textContent  = opts.title   || 'Confirm';
+    msgEl.textContent    = opts.message || '';
+    okBtn.textContent    = opts.confirmText  || 'Confirm';
+    okBtn.className      = 'btn ' + (opts.confirmClass || 'btn-primary');
+    header.style.background = opts.headerColor || 'var(--color-primary)';
+
+    okBtn.onclick = function() {
+      _closePortalConfirm();
+      (opts.onConfirm || function() {})();
+    };
+    dialog.style.display = 'flex';
+  }
+
+  function _closePortalConfirm() {
+    var dialog = document.getElementById('portalConfirmDialog');
+    dialog.style.display = 'none';
+    document.getElementById('portalConfirmOkBtn').onclick = null;
+  }
+
   /**
    * Shows a toast notification. type is 'error' (default) or 'success'.
    */

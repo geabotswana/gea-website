@@ -531,9 +531,16 @@ function getDocumentsForRsoReview(documentTypeFilter) {
 
       // Get applicant name from Individuals sheet
       var individual = getMemberById(obj.individual_id);
+      // Look up application_id via household so RSO can load full application context
+      var applicationId = "";
+      if (individual && individual.household_id) {
+        var app = _getApplicationByHouseholdId(individual.household_id);
+        if (app) applicationId = app.application_id || "";
+      }
       results.push({
         submission_id:   obj.submission_id,
         individual_id:   obj.individual_id,
+        application_id:  applicationId,
         applicant_name:  individual ? (individual.first_name + " " + individual.last_name) : "(unknown)",
         applicant_email: individual ? individual.email : "",
         document_type:   obj.document_type,

@@ -5854,6 +5854,26 @@
         }
         contactDiv.appendChild(phoneLine);
 
+        if (primaryIndividual && primaryIndividual.employment_office) {
+          var orgLine = document.createElement('div');
+          orgLine.style.fontSize = '13px';
+          orgLine.style.marginBottom = '4px';
+          var orgLabel = document.createElement('strong');
+          orgLabel.textContent = 'Organization: ';
+          orgLine.appendChild(orgLabel);
+          orgLine.appendChild(document.createTextNode(primaryIndividual.employment_office));
+          contactDiv.appendChild(orgLine);
+        }
+        if (primaryIndividual && primaryIndividual.employment_job_title) {
+          var titleLine = document.createElement('div');
+          titleLine.style.fontSize = '13px';
+          var titleLabel = document.createElement('strong');
+          titleLabel.textContent = 'Job Title: ';
+          titleLine.appendChild(titleLabel);
+          titleLine.appendChild(document.createTextNode(primaryIndividual.employment_job_title));
+          contactDiv.appendChild(titleLine);
+        }
+
         content.appendChild(contactDiv);
 
         // Status Section
@@ -5903,6 +5923,29 @@
             relationship.style.color = '#666';
             relationship.textContent = 'Relationship: ' + (ind.relationship || 'Primary');
             memberCard.appendChild(relationship);
+
+            if (ind.employment_office) {
+              var indOrgLine = document.createElement('div');
+              indOrgLine.style.fontSize = '12px';
+              indOrgLine.style.color = '#666';
+              indOrgLine.style.marginTop = '2px';
+              var indOrgLabel = document.createElement('strong');
+              indOrgLabel.textContent = 'Org: ';
+              indOrgLine.appendChild(indOrgLabel);
+              indOrgLine.appendChild(document.createTextNode(ind.employment_office));
+              memberCard.appendChild(indOrgLine);
+            }
+            if (ind.employment_job_title) {
+              var indTitleLine = document.createElement('div');
+              indTitleLine.style.fontSize = '12px';
+              indTitleLine.style.color = '#666';
+              indTitleLine.style.marginTop = '2px';
+              var indTitleLabel = document.createElement('strong');
+              indTitleLabel.textContent = 'Title: ';
+              indTitleLine.appendChild(indTitleLabel);
+              indTitleLine.appendChild(document.createTextNode(ind.employment_job_title));
+              memberCard.appendChild(indTitleLine);
+            }
 
             content.appendChild(memberCard);
           });
@@ -6371,26 +6414,391 @@
         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#10003;</div><div class="empty-state-text">No documents pending review</div></div>';
         return;
       }
-      var html = '<div class="table-container"><table><thead><tr><th>Applicant</th><th>Type</th><th>Submitted</th><th>Actions</th></tr></thead><tbody>';
+      var table = document.createElement('div');
+      table.className = 'table-container';
+      var tbl = document.createElement('table');
+      var thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Applicant</th><th>Type</th><th>Submitted</th><th>Actions</th></tr>';
+      tbl.appendChild(thead);
+      var tbody = document.createElement('tbody');
       docs.forEach(function(doc) {
-        var nameEl = document.createElement('span');
-        nameEl.textContent = doc.applicant_name;
-        var typeEl = document.createElement('span');
-        typeEl.textContent = doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1);
-        html += '<tr>' +
-          '<td>' + nameEl.outerHTML + '<br><small style="color:#999;">' + (function(){ var e=document.createElement('span'); e.textContent=doc.applicant_email; return e.outerHTML; })() + '</small></td>' +
-          '<td>' + typeEl.outerHTML + '</td>' +
-          '<td>' + (doc.submitted_date || '') + '</td>' +
-          '<td style="white-space:nowrap;">' +
-            (doc.file_id ? '<button class="btn btn-secondary btn-small" style="margin-right:4px;" onclick="viewDocument(\'' + doc.file_id + '\', \'' + doc.document_type + '\')">View</button>' : '') +
-            '<button class="btn btn-primary btn-small" style="margin-right:4px;" onclick="rsoApproveDoc(\'' + doc.submission_id + '\')">Approve</button>' +
-            '<button class="btn btn-danger btn-small" onclick="rsoRejectDocPrompt(\'' + doc.submission_id + '\')">Reject</button>' +
-          '</td>' +
-        '</tr>';
+        var tr = document.createElement('tr');
+
+        var nameTd = document.createElement('td');
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = doc.applicant_name;
+        var emailSmall = document.createElement('small');
+        emailSmall.style.color = '#999';
+        emailSmall.textContent = doc.applicant_email;
+        nameTd.appendChild(nameSpan);
+        nameTd.appendChild(document.createElement('br'));
+        nameTd.appendChild(emailSmall);
+        tr.appendChild(nameTd);
+
+        var typeTd = document.createElement('td');
+        typeTd.textContent = doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1);
+        tr.appendChild(typeTd);
+
+        var dateTd = document.createElement('td');
+        dateTd.textContent = doc.submitted_date || '';
+        tr.appendChild(dateTd);
+
+        var actionsTd = document.createElement('td');
+        actionsTd.style.whiteSpace = 'nowrap';
+
+        var reviewBtn = document.createElement('button');
+        reviewBtn.className = 'btn btn-primary btn-small';
+        reviewBtn.style.marginRight = '4px';
+        reviewBtn.textContent = 'Review Application';
+        reviewBtn.onclick = (function(d) {
+          return function() { openRsoApplicationReview(d.submission_id, d.application_id, d.document_type, d.file_id); };
+        })(doc);
+        actionsTd.appendChild(reviewBtn);
+
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
       });
-      html += '</tbody></table></div>';
-      container.innerHTML = html;
+      tbl.appendChild(tbody);
+      table.appendChild(tbl);
+      container.innerHTML = '';
+      container.appendChild(table);
     }).catch(function() { container.innerHTML = '<p style="color:#c00;">Failed to load documents.</p>'; });
+  }
+
+  /**
+   * Opens the full application detail modal for an RSO reviewer.
+   * Shows the complete application context (same as board view) plus
+   * RSO-specific approve/reject actions for the specific document being reviewed.
+   */
+  function openRsoApplicationReview(submissionId, applicationId, docType, fileId) {
+    if (!applicationId) {
+      // Fallback: no application linked — just approve/reject directly
+      _showRsoDirectReview(submissionId, docType, fileId);
+      return;
+    }
+    var container = document.getElementById('appDetailContent');
+    container.innerHTML = '<p style="text-align:center; padding:20px; color:#aaa;">Loading application...</p>';
+    var modal = document.getElementById('appDetailModal');
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+
+    apiCall('admin_application_detail', { application_id: applicationId }).then(function(res) {
+      if (!res.success || !res.data) {
+        container.innerHTML = '<p style="color:#c00; padding:20px;">Could not load application: ' + (res.message || 'Unknown error') + '</p>';
+        return;
+      }
+      var app = res.data.application;
+      var individuals = res.data.individuals || [];
+      var documents = res.data.documents || {};
+      container.innerHTML = '';
+
+      // Modal header
+      var header = document.createElement('div');
+      header.className = 'modal-header';
+      var title = document.createElement('h2');
+      title.className = 'modal-title';
+      title.textContent = app.primary_applicant_name || 'Applicant';
+      header.appendChild(title);
+      var closeBtn = document.createElement('button');
+      closeBtn.className = 'modal-close';
+      closeBtn.textContent = '×';
+      closeBtn.type = 'button';
+      closeBtn.onclick = function() { closeModal('appDetailModal'); };
+      header.appendChild(closeBtn);
+      container.appendChild(header);
+
+      var content = document.createElement('div');
+      content.className = 'modal-body';
+
+      // RSO banner: which document is under review
+      var banner = document.createElement('div');
+      banner.style.cssText = 'background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:12px 16px; margin-bottom:20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;';
+      var bannerLabel = document.createElement('span');
+      bannerLabel.style.cssText = 'font-weight:600; color:#856404;';
+      bannerLabel.textContent = 'Reviewing: ' + docType.charAt(0).toUpperCase() + docType.slice(1);
+      banner.appendChild(bannerLabel);
+      if (fileId) {
+        var viewDocBtn = document.createElement('button');
+        viewDocBtn.className = 'btn btn-secondary btn-small';
+        viewDocBtn.textContent = 'View Document';
+        viewDocBtn.onclick = (function(fid, dtype) { return function() { viewDocument(fid, dtype); }; })(fileId, docType);
+        banner.appendChild(viewDocBtn);
+      }
+      content.appendChild(banner);
+
+      // Category / Type
+      var headerInfo = document.createElement('div');
+      headerInfo.style.marginBottom = '20px';
+      var catSpan = document.createElement('span');
+      catSpan.style.cssText = 'font-weight:600; color:#0A3161;';
+      catSpan.textContent = 'Category: ';
+      headerInfo.appendChild(catSpan);
+      headerInfo.appendChild(document.createTextNode((app.membership_category || '') + ' | '));
+      var typeSpan = document.createElement('span');
+      typeSpan.style.cssText = 'font-weight:600; color:#0A3161;';
+      typeSpan.textContent = 'Type: ';
+      headerInfo.appendChild(typeSpan);
+      headerInfo.appendChild(document.createTextNode(app.household_type || ''));
+      content.appendChild(headerInfo);
+
+      // Contact Information
+      var contactDiv = document.createElement('div');
+      contactDiv.style.cssText = 'margin-bottom:20px; padding:12px; background:#f9f9f9; border-radius:4px;';
+      var contactTitle = document.createElement('div');
+      contactTitle.style.cssText = 'font-weight:600; margin-bottom:8px; font-size:13px; color:#0A3161;';
+      contactTitle.textContent = 'Contact Information';
+      contactDiv.appendChild(contactTitle);
+
+      var primaryIndividual = null;
+      for (var i = 0; i < individuals.length; i++) {
+        if (!individuals[i].relationship || individuals[i].relationship === 'Primary') {
+          primaryIndividual = individuals[i];
+          break;
+        }
+      }
+      var emailLine = document.createElement('div');
+      emailLine.style.cssText = 'font-size:13px; margin-bottom:4px;';
+      emailLine.appendChild(document.createTextNode('Email: '));
+      var emailLink = document.createElement('a');
+      var primaryEmail = app.primary_applicant_email || (primaryIndividual && primaryIndividual.email) || '';
+      emailLink.href = 'mailto:' + primaryEmail;
+      emailLink.textContent = primaryEmail || '(Not provided)';
+      emailLink.style.cssText = 'color:#1565C0; text-decoration:none;';
+      emailLine.appendChild(emailLink);
+      contactDiv.appendChild(emailLine);
+
+      var phoneLine = document.createElement('div');
+      phoneLine.style.fontSize = '13px';
+      if (primaryIndividual && primaryIndividual.phone_primary) {
+        var formatted = formatPhoneWithWhatsApp(
+          primaryIndividual.country_code_primary || 'BW',
+          primaryIndividual.phone_primary,
+          primaryIndividual.phone_primary_whatsapp === true
+        );
+        if (formatted) {
+          phoneLine.innerHTML = 'Phone: ' + formatted; // Safe: formatted uses hardcoded icon only
+        } else {
+          phoneLine.textContent = 'Phone: ' + primaryIndividual.phone_primary;
+        }
+      } else {
+        phoneLine.textContent = 'Phone: (Not provided)';
+      }
+      contactDiv.appendChild(phoneLine);
+
+      if (primaryIndividual && primaryIndividual.employment_office) {
+        var orgLine = document.createElement('div');
+        orgLine.style.cssText = 'font-size:13px; margin-bottom:4px;';
+        var orgLabel = document.createElement('strong');
+        orgLabel.textContent = 'Organization: ';
+        orgLine.appendChild(orgLabel);
+        orgLine.appendChild(document.createTextNode(primaryIndividual.employment_office));
+        contactDiv.appendChild(orgLine);
+      }
+      if (primaryIndividual && primaryIndividual.employment_job_title) {
+        var titleLine = document.createElement('div');
+        titleLine.style.fontSize = '13px';
+        var titleLabel = document.createElement('strong');
+        titleLabel.textContent = 'Job Title: ';
+        titleLine.appendChild(titleLabel);
+        titleLine.appendChild(document.createTextNode(primaryIndividual.employment_job_title));
+        contactDiv.appendChild(titleLine);
+      }
+
+      content.appendChild(contactDiv);
+
+      // Status
+      var statusDiv = document.createElement('div');
+      statusDiv.style.cssText = 'margin-bottom:20px; padding:12px; background:#f0f4ff; border-radius:6px;';
+      var statusLabel = document.createElement('strong');
+      statusLabel.textContent = 'Status: ';
+      statusDiv.appendChild(statusLabel);
+      statusDiv.appendChild(document.createTextNode(_formatStatus(app.status) + ' | '));
+      var submittedLabel = document.createElement('strong');
+      submittedLabel.textContent = 'Submitted: ';
+      statusDiv.appendChild(submittedLabel);
+      statusDiv.appendChild(document.createTextNode(new Date(app.submitted_date).toLocaleDateString()));
+      content.appendChild(statusDiv);
+
+      // Household Members
+      if (individuals.length > 1 || app.household_type === 'Family') {
+        var membersHeading = document.createElement('h3');
+        membersHeading.style.cssText = 'margin-top:20px; margin-bottom:12px; font-size:14px; font-weight:600; color:#0A3161;';
+        membersHeading.textContent = 'Household Members';
+        content.appendChild(membersHeading);
+        individuals.forEach(function(ind) {
+          var memberCard = document.createElement('div');
+          memberCard.style.cssText = 'margin-bottom:12px; padding:10px; background:#f9f9f9; border-radius:4px; border-left:4px solid #0A3161;';
+          var memberName = document.createElement('div');
+          memberName.style.cssText = 'font-weight:600; font-size:13px; margin-bottom:6px;';
+          memberName.textContent = ind.first_name + ' ' + ind.last_name;
+          memberCard.appendChild(memberName);
+          var rel = document.createElement('div');
+          rel.style.cssText = 'font-size:12px; color:#666;';
+          rel.textContent = 'Relationship: ' + (ind.relationship || 'Primary');
+          memberCard.appendChild(rel);
+          if (ind.employment_office) {
+            var indOrgLine = document.createElement('div');
+            indOrgLine.style.cssText = 'font-size:12px; color:#666; margin-top:2px;';
+            var indOrgLabel = document.createElement('strong');
+            indOrgLabel.textContent = 'Org: ';
+            indOrgLine.appendChild(indOrgLabel);
+            indOrgLine.appendChild(document.createTextNode(ind.employment_office));
+            memberCard.appendChild(indOrgLine);
+          }
+          if (ind.employment_job_title) {
+            var indTitleLine = document.createElement('div');
+            indTitleLine.style.cssText = 'font-size:12px; color:#666; margin-top:2px;';
+            var indTitleLabel = document.createElement('strong');
+            indTitleLabel.textContent = 'Title: ';
+            indTitleLine.appendChild(indTitleLabel);
+            indTitleLine.appendChild(document.createTextNode(ind.employment_job_title));
+            memberCard.appendChild(indTitleLine);
+          }
+          content.appendChild(memberCard);
+        });
+      }
+
+      // All submitted documents (read-only overview)
+      var docsHeading = document.createElement('h3');
+      docsHeading.style.cssText = 'margin-top:20px; margin-bottom:12px; font-size:14px; font-weight:600; color:#0A3161;';
+      docsHeading.textContent = 'Submitted Documents';
+      content.appendChild(docsHeading);
+
+      var hasDocuments = false;
+      individuals.forEach(function(ind) {
+        var indDocs = documents[ind.individual_id] || [];
+        if (indDocs.length === 0) return;
+        hasDocuments = true;
+        var indSection = document.createElement('div');
+        indSection.style.cssText = 'margin-bottom:12px; padding:10px; background:#f9f9f9; border-radius:4px;';
+        var indName = document.createElement('div');
+        indName.style.cssText = 'font-weight:600; font-size:13px; margin-bottom:8px;';
+        indName.textContent = ind.first_name + ' ' + ind.last_name;
+        indSection.appendChild(indName);
+        indDocs.forEach(function(doc) {
+          var docItem = document.createElement('div');
+          docItem.style.cssText = 'margin-bottom:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;';
+          var docInfo = document.createElement('span');
+          var docType2 = document.createElement('strong');
+          docType2.textContent = (doc.document_type || 'File').toUpperCase();
+          docInfo.appendChild(docType2);
+          docInfo.appendChild(document.createTextNode(' — '));
+          var docStatus = document.createElement('span');
+          var sColor = '#666';
+          if (doc.status === 'rso_approved' || doc.status === 'verified' || doc.status === 'gea_pending') sColor = '#2E7D32';
+          if (doc.status === 'rso_rejected' || doc.status === 'gea_rejected') sColor = '#C62828';
+          docStatus.style.color = sColor;
+          docStatus.textContent = doc.status || 'submitted';
+          docInfo.appendChild(docStatus);
+          docItem.appendChild(docInfo);
+          if (doc.file_id) {
+            var vBtn = document.createElement('button');
+            vBtn.className = 'btn btn-small';
+            vBtn.style.cssText = 'padding:4px 8px; font-size:11px;';
+            vBtn.textContent = 'View';
+            vBtn.onclick = (function(fid) { return function() { viewDocument(fid); }; })(doc.file_id);
+            docItem.appendChild(vBtn);
+          }
+          indSection.appendChild(docItem);
+        });
+        content.appendChild(indSection);
+      });
+      if (!hasDocuments) {
+        var noDocsMsg = document.createElement('p');
+        noDocsMsg.style.cssText = 'font-size:12px; color:#666;';
+        noDocsMsg.textContent = 'No documents submitted yet';
+        content.appendChild(noDocsMsg);
+      }
+
+      // RSO Action buttons for this specific document
+      var actionsDiv = document.createElement('div');
+      actionsDiv.style.cssText = 'margin-top:24px; padding-top:16px; border-top:2px solid #e0e0e0; display:flex; gap:10px; flex-wrap:wrap; align-items:center;';
+      var actionsLabel = document.createElement('span');
+      actionsLabel.style.cssText = 'font-weight:600; font-size:13px; color:#0A3161; margin-right:4px;';
+      actionsLabel.textContent = 'Decision for this document:';
+      actionsDiv.appendChild(actionsLabel);
+
+      var approveBtn = document.createElement('button');
+      approveBtn.className = 'btn btn-primary';
+      approveBtn.textContent = 'Approve Document';
+      approveBtn.onclick = (function(sid) {
+        return function() {
+          closeModal('appDetailModal');
+          rsoApproveDoc(sid);
+        };
+      })(submissionId);
+      actionsDiv.appendChild(approveBtn);
+
+      var rejectBtn = document.createElement('button');
+      rejectBtn.className = 'btn btn-danger';
+      rejectBtn.textContent = 'Reject Document';
+      rejectBtn.onclick = (function(sid) {
+        return function() {
+          closeModal('appDetailModal');
+          rsoRejectDocPrompt(sid);
+        };
+      })(submissionId);
+      actionsDiv.appendChild(rejectBtn);
+
+      content.appendChild(actionsDiv);
+      container.appendChild(content);
+    }).catch(function(err) {
+      container.innerHTML = '<p style="color:#c00; padding:20px;">Error loading application: ' + (err.message || '') + '</p>';
+    });
+  }
+
+  /**
+   * Fallback for when no application_id is linked: show a simple approve/reject dialog.
+   */
+  function _showRsoDirectReview(submissionId, docType, fileId) {
+    var container = document.getElementById('appDetailContent');
+    container.innerHTML = '';
+    var modal = document.getElementById('appDetailModal');
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+
+    var header = document.createElement('div');
+    header.className = 'modal-header';
+    var title = document.createElement('h2');
+    title.className = 'modal-title';
+    title.textContent = 'Review Document';
+    header.appendChild(title);
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.textContent = '×';
+    closeBtn.type = 'button';
+    closeBtn.onclick = function() { closeModal('appDetailModal'); };
+    header.appendChild(closeBtn);
+    container.appendChild(header);
+
+    var body = document.createElement('div');
+    body.className = 'modal-body';
+    var info = document.createElement('p');
+    info.style.cssText = 'font-size:14px; color:#555; margin-bottom:20px;';
+    info.textContent = 'Document type: ' + docType.charAt(0).toUpperCase() + docType.slice(1);
+    body.appendChild(info);
+    if (fileId) {
+      var viewBtn = document.createElement('button');
+      viewBtn.className = 'btn btn-secondary';
+      viewBtn.style.marginBottom = '20px';
+      viewBtn.textContent = 'View Document';
+      viewBtn.onclick = (function(fid, dt) { return function() { viewDocument(fid, dt); }; })(fileId, docType);
+      body.appendChild(viewBtn);
+    }
+    var actDiv = document.createElement('div');
+    actDiv.style.cssText = 'display:flex; gap:10px;';
+    var apBtn = document.createElement('button');
+    apBtn.className = 'btn btn-primary';
+    apBtn.textContent = 'Approve';
+    apBtn.onclick = (function(sid) { return function() { closeModal('appDetailModal'); rsoApproveDoc(sid); }; })(submissionId);
+    actDiv.appendChild(apBtn);
+    var rjBtn = document.createElement('button');
+    rjBtn.className = 'btn btn-danger';
+    rjBtn.textContent = 'Reject';
+    rjBtn.onclick = (function(sid) { return function() { closeModal('appDetailModal'); rsoRejectDocPrompt(sid); }; })(submissionId);
+    actDiv.appendChild(rjBtn);
+    body.appendChild(actDiv);
+    container.appendChild(body);
   }
 
   function rsoApproveDoc(submissionId) {

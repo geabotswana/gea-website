@@ -2594,7 +2594,7 @@ function _handleAdminApplications(p) {
  */
 function _handleAdminApplicationDetail(p) {
   try {
-    var auth = requireAuth(p.token, "board");
+    var auth = requireAuth(p.token, ["board", "rso_approve"]);
     if (!auth.ok) return auth.response;
 
     var result = getApplicationDetail(p.application_id);

@@ -2477,10 +2477,10 @@
 
       // Navigate to role-appropriate landing page
       var loginRole = res.data.role;
-      if (loginRole === 'rso_notify') {
+      if (loginRole === 'rso_notify' || loginRole === 'rso-notify') {
         showPage('rso-calendar');
         loadRsoCalendar();
-      } else if (loginRole === 'rso_approve' || loginRole === 'rso') {
+      } else if (loginRole === 'rso_approve' || loginRole === 'rso' || loginRole === 'rso-approve') {
         showPage('rso-documents');
         loadRsoDocuments();
       } else {
@@ -2735,8 +2735,10 @@
    *   rso         — backward-compat alias for rso_approve
    */
   function _applyNavRoleFilter(role) {
-    // Normalize legacy "rso" role to "rso_approve"
-    var effectiveRole = (role === 'rso') ? 'rso_approve' : role;
+    // Normalize legacy aliases to canonical role names
+    var effectiveRole = (role === 'rso' || role === 'rso-approve') ? 'rso_approve'
+                      : (role === 'rso-notify') ? 'rso_notify'
+                      : role;
 
     // Map nav page IDs to the roles that can see them (empty = all roles)
     var navRoles = {

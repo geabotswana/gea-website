@@ -1115,10 +1115,12 @@ function requireAuth(token, requiredRole) {
   if (requiredRole) {
     var allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
     var role = session.role;
-    // board is always a superuser; "rso" is backward compat alias for rso_approve
-    var isAllowed = role === "board" ||
-                    allowed.indexOf(role) !== -1 ||
-                    (role === "rso" && allowed.indexOf("rso_approve") !== -1);
+    // board is always a superuser; normalize hyphenated/legacy role aliases
+    var normalizedRole = (role === "rso" || role === "rso-approve") ? "rso_approve"
+                       : (role === "rso-notify") ? "rso_notify"
+                       : role;
+    var isAllowed = normalizedRole === "board" ||
+                    allowed.indexOf(normalizedRole) !== -1;
     if (!isAllowed) {
       return { ok: false, response: errorResponse(ERR_NOT_AUTHORIZED, "FORBIDDEN") };
     }

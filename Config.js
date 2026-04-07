@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.28";
+var SYSTEM_VERSION          = "2.4.29";
 var SYSTEM_BUILD_DATE       = "2026-04-07";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Normalize em/en dashes to hyphens in email subject lines to fix ? encoding";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-07 14:20:39";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Accept rso-approve/rso-notify hyphenated role aliases to fix RSO portal blank dashboard";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-07 15:31:46";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -253,7 +253,16 @@
   function buildIframeUrl(env) {
     var base = DEPLOYMENTS[env].execUrl;
     var url = new URL(base);
+    var parentParams = new URLSearchParams(window.location.search);
+    var parentAction = parentParams.get('action');
+    var token = parentParams.get('token');
+    // Always request Portal.html via action=serve, but pass through
+    // any reset_password flow params so Portal.html can detect them.
     url.searchParams.set('action', 'serve');
+    if (parentAction === 'reset_password' && token) {
+      url.searchParams.set('portal_action', 'reset_password');
+      url.searchParams.set('token', token);
+    }
     return url.toString();
   }
 

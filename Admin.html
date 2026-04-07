@@ -2395,8 +2395,8 @@
       apiCall('admin_session', {}).then(function(res) {
         if (res.success && res.data) {
           currentUser = { admin: res.data.admin, role: res.data.role };
+          _navigateToRoleLandingPage(res.data.role);  // set active page BEFORE showAuthenticatedUI so _applyNavRoleFilter won't redirect
           showAuthenticatedUI();
-          loadDashboard();
         } else {
           // Token invalid, clear and show login
           sessionStorage.removeItem('gea_token');
@@ -2473,19 +2473,8 @@
       }
 
       document.getElementById('loginScreen').classList.remove('show');
+      _navigateToRoleLandingPage(res.data.role);  // set active page BEFORE showAuthenticatedUI so _applyNavRoleFilter won't redirect
       showAuthenticatedUI();
-
-      // Navigate to role-appropriate landing page
-      var loginRole = res.data.role;
-      if (loginRole === 'rso_notify' || loginRole === 'rso-notify') {
-        showPage('rso-calendar');
-        loadRsoCalendar();
-      } else if (loginRole === 'rso_approve' || loginRole === 'rso' || loginRole === 'rso-approve') {
-        showPage('rso-documents');
-        loadRsoDocuments();
-      } else {
-        loadDashboard();
-      }
     }).catch(function(err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Sign In';
@@ -2698,6 +2687,27 @@
       errorDiv.classList.add('show');
       console.error('Password reset error:', err);
     });
+  }
+
+  /**
+   * Sets the initial page and loads data for the given admin role.
+   * Must be called BEFORE showAuthenticatedUI() so _applyNavRoleFilter sees the
+   * correct active page and does not fire its first-visible redirect.
+   */
+  function _navigateToRoleLandingPage(role) {
+    var normalizedRole = (role === 'rso' || role === 'rso-approve') ? 'rso_approve'
+                       : (role === 'rso-notify') ? 'rso_notify'
+                       : role;
+    if (normalizedRole === 'rso_notify') {
+      showPage('rso-calendar');
+      loadRsoCalendar();
+    } else if (normalizedRole === 'rso_approve') {
+      showPage('rso-documents');
+      loadRsoDocuments();
+    } else {
+      showPage('dashboard');
+      loadDashboard();
+    }
   }
 
   /**

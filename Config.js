@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.32";
+var SYSTEM_VERSION          = "2.4.33";
 var SYSTEM_BUILD_DATE       = "2026-04-07";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "RSO reviewer sees full membership application context when reviewing documents";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-07 16:27:42";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Show organization and job title in all membership application review popups";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-07 16:30:54";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

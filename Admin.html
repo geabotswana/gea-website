@@ -5854,6 +5854,26 @@
         }
         contactDiv.appendChild(phoneLine);
 
+        if (primaryIndividual && primaryIndividual.employment_office) {
+          var orgLine = document.createElement('div');
+          orgLine.style.fontSize = '13px';
+          orgLine.style.marginBottom = '4px';
+          var orgLabel = document.createElement('strong');
+          orgLabel.textContent = 'Organization: ';
+          orgLine.appendChild(orgLabel);
+          orgLine.appendChild(document.createTextNode(primaryIndividual.employment_office));
+          contactDiv.appendChild(orgLine);
+        }
+        if (primaryIndividual && primaryIndividual.employment_job_title) {
+          var titleLine = document.createElement('div');
+          titleLine.style.fontSize = '13px';
+          var titleLabel = document.createElement('strong');
+          titleLabel.textContent = 'Job Title: ';
+          titleLine.appendChild(titleLabel);
+          titleLine.appendChild(document.createTextNode(primaryIndividual.employment_job_title));
+          contactDiv.appendChild(titleLine);
+        }
+
         content.appendChild(contactDiv);
 
         // Status Section
@@ -5903,6 +5923,29 @@
             relationship.style.color = '#666';
             relationship.textContent = 'Relationship: ' + (ind.relationship || 'Primary');
             memberCard.appendChild(relationship);
+
+            if (ind.employment_office) {
+              var indOrgLine = document.createElement('div');
+              indOrgLine.style.fontSize = '12px';
+              indOrgLine.style.color = '#666';
+              indOrgLine.style.marginTop = '2px';
+              var indOrgLabel = document.createElement('strong');
+              indOrgLabel.textContent = 'Org: ';
+              indOrgLine.appendChild(indOrgLabel);
+              indOrgLine.appendChild(document.createTextNode(ind.employment_office));
+              memberCard.appendChild(indOrgLine);
+            }
+            if (ind.employment_job_title) {
+              var indTitleLine = document.createElement('div');
+              indTitleLine.style.fontSize = '12px';
+              indTitleLine.style.color = '#666';
+              indTitleLine.style.marginTop = '2px';
+              var indTitleLabel = document.createElement('strong');
+              indTitleLabel.textContent = 'Title: ';
+              indTitleLine.appendChild(indTitleLabel);
+              indTitleLine.appendChild(document.createTextNode(ind.employment_job_title));
+              memberCard.appendChild(indTitleLine);
+            }
 
             content.appendChild(memberCard);
           });
@@ -6541,6 +6584,26 @@
         phoneLine.textContent = 'Phone: (Not provided)';
       }
       contactDiv.appendChild(phoneLine);
+
+      if (primaryIndividual && primaryIndividual.employment_office) {
+        var orgLine = document.createElement('div');
+        orgLine.style.cssText = 'font-size:13px; margin-bottom:4px;';
+        var orgLabel = document.createElement('strong');
+        orgLabel.textContent = 'Organization: ';
+        orgLine.appendChild(orgLabel);
+        orgLine.appendChild(document.createTextNode(primaryIndividual.employment_office));
+        contactDiv.appendChild(orgLine);
+      }
+      if (primaryIndividual && primaryIndividual.employment_job_title) {
+        var titleLine = document.createElement('div');
+        titleLine.style.fontSize = '13px';
+        var titleLabel = document.createElement('strong');
+        titleLabel.textContent = 'Job Title: ';
+        titleLine.appendChild(titleLabel);
+        titleLine.appendChild(document.createTextNode(primaryIndividual.employment_job_title));
+        contactDiv.appendChild(titleLine);
+      }
+
       content.appendChild(contactDiv);
 
       // Status
@@ -6573,6 +6636,24 @@
           rel.style.cssText = 'font-size:12px; color:#666;';
           rel.textContent = 'Relationship: ' + (ind.relationship || 'Primary');
           memberCard.appendChild(rel);
+          if (ind.employment_office) {
+            var indOrgLine = document.createElement('div');
+            indOrgLine.style.cssText = 'font-size:12px; color:#666; margin-top:2px;';
+            var indOrgLabel = document.createElement('strong');
+            indOrgLabel.textContent = 'Org: ';
+            indOrgLine.appendChild(indOrgLabel);
+            indOrgLine.appendChild(document.createTextNode(ind.employment_office));
+            memberCard.appendChild(indOrgLine);
+          }
+          if (ind.employment_job_title) {
+            var indTitleLine = document.createElement('div');
+            indTitleLine.style.cssText = 'font-size:12px; color:#666; margin-top:2px;';
+            var indTitleLabel = document.createElement('strong');
+            indTitleLabel.textContent = 'Title: ';
+            indTitleLine.appendChild(indTitleLabel);
+            indTitleLine.appendChild(document.createTextNode(ind.employment_job_title));
+            memberCard.appendChild(indTitleLine);
+          }
           content.appendChild(memberCard);
         });
       }

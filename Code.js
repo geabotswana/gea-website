@@ -258,6 +258,9 @@ function _routeAction(action, params) {
     // ── DIAGNOSTICS ──────────────────────────────────────────
     case "image_diagnostic":  return _handleImageDiagnostic(params);
 
+    // ── FILE DATA (authenticated image/document fetch) ────────
+    case "get_file_data":     return _handleGetFileData(params);
+
     default:
       return errorResponse("Unknown action: " + action, "NOT_FOUND");
   }
@@ -316,6 +319,29 @@ function _routeAction(action, params) {
     }
   }
   
+  /**
+   * HANDLER: get_file_data
+   * Returns base64-encoded file data + MIME type for authenticated document viewing.
+   * Used by the Admin document viewer to display files inline without an iframe.
+   */
+  function _handleGetFileData(p) {
+    var auth = requireAuth(p.token);
+    if (!auth.success) return auth;
+
+    if (!p.file_id) return errorResponse("Missing file_id", "INVALID_PARAM");
+
+    try {
+      var file = DriveApp.getFileById(String(p.file_id).trim());
+      var blob = file.getBlob();
+      var base64 = Utilities.base64Encode(blob.getBytes());
+      var mimeType = blob.getContentType() || 'image/jpeg';
+      return successResponse({ base64: base64, mime_type: mimeType, file_name: file.getName() });
+    } catch (e) {
+      Logger.log("ERROR _handleGetFileData (file_id=" + p.file_id + "): " + e);
+      return errorResponse("Could not load file. It may no longer be accessible.", "SERVER_ERROR");
+    }
+  }
+
   /**
    * Extract a Drive fileId from common Drive URL formats.
    * Supports:

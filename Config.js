@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.22";
+var SYSTEM_VERSION          = "2.4.23";
 var SYSTEM_BUILD_DATE       = "2026-04-07";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
 var SYSTEM_LAST_FEATURE     = "Fix application review: email/phone fields, WhatsApp icon, document viewer";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-07 10:41:47";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var DEPLOYMENT_TIMESTAMP    = "2026-04-07 11:22:53";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

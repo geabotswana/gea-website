@@ -2207,6 +2207,29 @@
 </div>
 
 <!-- Reset Admin Password Modal -->
+
+<!-- Reusable Confirmation / Input Dialog -->
+<div id="confirmDialog" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header" id="confirmDialogHeader">
+      <h2 class="modal-title" id="confirmDialogTitle">Confirm</h2>
+      <button class="modal-close" onclick="_closeConfirmDialog()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmDialogMessage" style="color:#444; margin-bottom:16px; line-height:1.5;"></p>
+      <div id="confirmDialogInputWrap" style="display:none;">
+        <label id="confirmDialogInputLabel" class="form-label" style="margin-bottom:6px; display:block;"></label>
+        <textarea id="confirmDialogInput" class="form-input" rows="3"
+          style="resize:vertical; font-size:14px;"
+          placeholder=""></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="_closeConfirmDialog()">Cancel</button>
+      <button id="confirmDialogOkBtn" class="btn btn-primary">Confirm</button>
+    </div>
+  </div>
+</div>
 <div id="resetAdminPasswordModal" class="modal-overlay" style="display:none;">
   <div class="modal" style="max-width:440px;">
     <div class="modal-header">
@@ -6077,60 +6100,85 @@
   }
 
   function approveApplicationStage(applicationId, stage) {
-    var notes = prompt('Add optional notes for internal record:');
-    apiCall('admin_approve_application', {
-      application_id: applicationId,
-      stage: stage,
-      notes: notes || ''
-    }).then(function(res) {
-      if (res.success) {
-        closeModal('appDetailModal');
-        loadApplications(currentApplicationStatusFilter);
-        showNotification('Application approved!');
-      } else {
-        showError(res.message || 'Error approving application');
+    showConfirmDialog({
+      title: 'Approve Application',
+      message: 'Optionally add an internal note before approving.',
+      inputLabel: 'Notes (optional)',
+      inputHint: 'Internal notes — not visible to applicant',
+      required: false,
+      confirmText: 'Approve',
+      confirmClass: 'btn-primary',
+      onConfirm: function(notes) {
+        apiCall('admin_approve_application', {
+          application_id: applicationId,
+          stage: stage,
+          notes: notes || ''
+        }).then(function(res) {
+          if (res.success) {
+            closeModal('appDetailModal');
+            loadApplications(currentApplicationStatusFilter);
+            showNotification('Application approved!');
+          } else {
+            showError(res.message || 'Error approving application');
+          }
+        }).catch(function(err) {
+          showError('Error: ' + err.message);
+        });
       }
-    }).catch(function(err) {
-      showError('Error: ' + err.message);
     });
   }
 
   function denyApplicationStage(applicationId, stage) {
-    var reason = prompt('Reason for denial:');
-    if (!reason) return;
-
-    apiCall('admin_deny_application', {
-      application_id: applicationId,
-      stage: stage,
-      reason: reason,
-      notes: ''
-    }).then(function(res) {
-      if (res.success) {
-        closeModal('appDetailModal');
-        loadApplications(currentApplicationStatusFilter);
-        showNotification('Application denied');
-      } else {
-        showError(res.message || 'Error denying application');
+    showConfirmDialog({
+      title: 'Deny Application',
+      message: 'Please provide a reason for denial.',
+      inputLabel: 'Reason (required)',
+      inputHint: 'Enter reason for denial...',
+      required: true,
+      confirmText: 'Deny',
+      confirmClass: 'btn-danger',
+      headerColor: '#B71C1C',
+      onConfirm: function(reason) {
+        apiCall('admin_deny_application', {
+          application_id: applicationId,
+          stage: stage,
+          reason: reason,
+          notes: ''
+        }).then(function(res) {
+          if (res.success) {
+            closeModal('appDetailModal');
+            loadApplications(currentApplicationStatusFilter);
+            showNotification('Application denied');
+          } else {
+            showError(res.message || 'Error denying application');
+          }
+        }).catch(function(err) {
+          showError('Error: ' + err.message);
+        });
       }
-    }).catch(function(err) {
-      showError('Error: ' + err.message);
     });
   }
 
   function verifyPayment(applicationId) {
-    if (confirm('Verify payment and activate membership?')) {
-      apiCall('admin_verify_payment', { application_id: applicationId }).then(function(res) {
-        if (res.success) {
-          closeModal('appDetailModal');
-          loadApplications(currentApplicationStatusFilter);
-          showNotification('Membership activated!');
-        } else {
-          showError(res.message || 'Error verifying payment');
-        }
-      }).catch(function(err) {
-        showError('Error: ' + err.message);
-      });
-    }
+    showConfirmDialog({
+      title: 'Activate Membership',
+      message: 'This will verify the payment and activate the membership. This action cannot be undone.',
+      confirmText: 'Activate',
+      confirmClass: 'btn-primary',
+      onConfirm: function() {
+        apiCall('admin_verify_payment', { application_id: applicationId }).then(function(res) {
+          if (res.success) {
+            closeModal('appDetailModal');
+            loadApplications(currentApplicationStatusFilter);
+            showNotification('Membership activated!');
+          } else {
+            showError(res.message || 'Error verifying payment');
+          }
+        }).catch(function(err) {
+          showError('Error: ' + err.message);
+        });
+      }
+    });
   }
 
   function _getStatusColor(status) {
@@ -6248,22 +6296,30 @@
    * Prompt for rejection reason and reject payment.
    */
   function rejectPaymentPrompt(verificationId) {
-    var reason = prompt('Enter reason for rejection:');
-    if (!reason) return;
-
-    apiCall('admin_reject_payment', {
-      verification_id: verificationId,
-      reason: reason
-    }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to reject payment: ' + res.message);
-        return;
+    showConfirmDialog({
+      title: 'Reject Payment',
+      message: 'Please provide a reason. The member will be notified.',
+      inputLabel: 'Reason (required)',
+      inputHint: 'e.g. Payment not found, incorrect amount...',
+      required: true,
+      confirmText: 'Reject Payment',
+      confirmClass: 'btn-danger',
+      headerColor: '#B71C1C',
+      onConfirm: function(reason) {
+        apiCall('admin_reject_payment', {
+          verification_id: verificationId,
+          reason: reason
+        }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to reject payment: ' + res.message);
+            return;
+          }
+          showNotification('Payment rejected. Member has been notified.');
+          loadPayments();
+        }).catch(function(err) {
+          showError('Error rejecting payment: ' + err.message);
+        });
       }
-
-      showNotification('Payment rejected. Member has been notified.');
-      loadPayments();
-    }).catch(function(err) {
-      showError('Error rejecting payment: ' + err.message);
     });
   }
 
@@ -6663,6 +6719,91 @@
     });
   }
 
+  // ============================================================ //
+  // REUSABLE CONFIRM / INPUT DIALOG                             //
+  // Replaces native prompt() and confirm() throughout Admin UI  //
+  // ============================================================ //
+  /**
+   * Show a styled confirmation dialog.
+   * @param {object} opts
+   *   title       {string}   Dialog heading
+   *   message     {string}   Body text (optional)
+   *   inputLabel  {string}   Label for textarea; omit to hide input
+   *   inputHint   {string}   Placeholder text for textarea
+   *   required    {boolean}  If true, OK is disabled until input has text
+   *   confirmText {string}   OK button label (default "Confirm")
+   *   confirmClass {string}  Extra CSS class on OK button (e.g. "btn-danger")
+   *   headerClass {string}   Extra CSS class on header (e.g. "bg-danger")
+   *   onConfirm   {function} Called with (inputValue) on OK
+   */
+  function showConfirmDialog(opts) {
+    var title       = opts.title       || 'Confirm';
+    var message     = opts.message     || '';
+    var inputLabel  = opts.inputLabel  || null;
+    var inputHint   = opts.inputHint   || '';
+    var required    = opts.required    || false;
+    var confirmText = opts.confirmText || 'Confirm';
+    var confirmCls  = opts.confirmClass || 'btn-primary';
+    var onConfirm   = opts.onConfirm   || function() {};
+
+    var dialog    = document.getElementById('confirmDialog');
+    var header    = document.getElementById('confirmDialogHeader');
+    var titleEl   = document.getElementById('confirmDialogTitle');
+    var msgEl     = document.getElementById('confirmDialogMessage');
+    var inputWrap = document.getElementById('confirmDialogInputWrap');
+    var labelEl   = document.getElementById('confirmDialogInputLabel');
+    var inputEl   = document.getElementById('confirmDialogInput');
+    var okBtn     = document.getElementById('confirmDialogOkBtn');
+
+    titleEl.textContent = title;
+    msgEl.textContent   = message;
+    msgEl.style.display = message ? 'block' : 'none';
+
+    // Reset header colour
+    header.style.background = '';
+    if (opts.headerColor) header.style.background = opts.headerColor;
+
+    // Input field
+    if (inputLabel) {
+      labelEl.textContent     = inputLabel;
+      inputEl.placeholder     = inputHint;
+      inputEl.value           = '';
+      inputWrap.style.display = 'block';
+    } else {
+      inputWrap.style.display = 'none';
+    }
+
+    // OK button
+    okBtn.textContent = confirmText;
+    okBtn.className   = 'btn ' + confirmCls;
+
+    // Required-input guard
+    function _updateOkState() {
+      okBtn.disabled = required && inputEl.value.trim() === '';
+    }
+    inputEl.oninput = _updateOkState;
+    _updateOkState();
+
+    // Wire OK
+    okBtn.onclick = function() {
+      var val = inputEl.value.trim();
+      if (required && !val) return;
+      _closeConfirmDialog();
+      onConfirm(val);
+    };
+
+    dialog.style.display = 'flex';
+    if (inputLabel) { setTimeout(function() { inputEl.focus(); }, 50); }
+  }
+
+  function _closeConfirmDialog() {
+    var dialog = document.getElementById('confirmDialog');
+    dialog.style.display = 'none';
+    document.getElementById('confirmDialogInput').value = '';
+    document.getElementById('confirmDialogOkBtn').onclick = null;
+    document.getElementById('confirmDialogInput').oninput = null;
+  }
+
   // Close any visible modal on Escape key
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return;
@@ -6670,7 +6811,7 @@
     var docViewer = document.getElementById('docViewerModal');
     if (docViewer && docViewer.style.display === 'flex') { closeDocViewer(); return; }
     // Standard modal-overlay modals
-    var overlayIds = ['appDetailModal', 'resetAdminPasswordModal', 'photoRejectModal',
+    var overlayIds = ['confirmDialog', 'appDetailModal', 'resetAdminPasswordModal', 'photoRejectModal',
                       'guestHistoryModal', 'rsoRejectDocModal'];
     for (var i = 0; i < overlayIds.length; i++) {
       var el = document.getElementById(overlayIds[i]);

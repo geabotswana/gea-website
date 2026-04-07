@@ -1786,22 +1786,6 @@
         </div>
       </div>
 
-    </div>
-  </div>
-
-  <div id="environmentBox" class="environment-box" hidden>
-    <div class="environment-box-header">
-      <span id="environmentBoxTitle">ENVIRONMENT</span>
-      <button id="environmentToggle" type="button" class="environment-box-toggle" onclick="toggleEnvironmentBox();" aria-label="Collapse environment box">−</button>
-    </div>
-    <div class="environment-box-content">
-      <div><strong>Mode:</strong> <span id="environmentLabel" class="environment-pill env-unknown">UNKNOWN</span></div>
-      <div id="environmentVersion">Version: —</div>
-      <div id="environmentBuild">Build: —</div>
-    </div>
-  </div>
-</div>
-
       <!-- ========================================================== -->
       <!-- PAGE: RESERVATION CALENDAR (RES.5.5)                       -->
       <!-- Interactive month calendar for all board-visible reservations -->
@@ -2077,6 +2061,22 @@
           <p style="color:#aaa;">Loading...</p>
         </div>
       </div>
+
+    </div>
+  </div>
+
+  <div id="environmentBox" class="environment-box" hidden>
+    <div class="environment-box-header">
+      <span id="environmentBoxTitle">ENVIRONMENT</span>
+      <button id="environmentToggle" type="button" class="environment-box-toggle" onclick="toggleEnvironmentBox();" aria-label="Collapse environment box">−</button>
+    </div>
+    <div class="environment-box-content">
+      <div><strong>Mode:</strong> <span id="environmentLabel" class="environment-pill env-unknown">UNKNOWN</span></div>
+      <div id="environmentVersion">Version: —</div>
+      <div id="environmentBuild">Build: —</div>
+    </div>
+  </div>
+</div>
 
 <!-- ============================================================ -->
 <!-- MODALS                                                       -->
@@ -2395,8 +2395,8 @@
       apiCall('admin_session', {}).then(function(res) {
         if (res.success && res.data) {
           currentUser = { admin: res.data.admin, role: res.data.role };
+          _navigateToRoleLandingPage(res.data.role);  // set active page BEFORE showAuthenticatedUI so _applyNavRoleFilter won't redirect
           showAuthenticatedUI();
-          loadDashboard();
         } else {
           // Token invalid, clear and show login
           sessionStorage.removeItem('gea_token');
@@ -2473,19 +2473,8 @@
       }
 
       document.getElementById('loginScreen').classList.remove('show');
+      _navigateToRoleLandingPage(res.data.role);  // set active page BEFORE showAuthenticatedUI so _applyNavRoleFilter won't redirect
       showAuthenticatedUI();
-
-      // Navigate to role-appropriate landing page
-      var loginRole = res.data.role;
-      if (loginRole === 'rso_notify') {
-        showPage('rso-calendar');
-        loadRsoCalendar();
-      } else if (loginRole === 'rso_approve' || loginRole === 'rso') {
-        showPage('rso-documents');
-        loadRsoDocuments();
-      } else {
-        loadDashboard();
-      }
     }).catch(function(err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Sign In';
@@ -2701,6 +2690,27 @@
   }
 
   /**
+   * Sets the initial page and loads data for the given admin role.
+   * Must be called BEFORE showAuthenticatedUI() so _applyNavRoleFilter sees the
+   * correct active page and does not fire its first-visible redirect.
+   */
+  function _navigateToRoleLandingPage(role) {
+    var normalizedRole = (role === 'rso' || role === 'rso-approve') ? 'rso_approve'
+                       : (role === 'rso-notify') ? 'rso_notify'
+                       : role;
+    if (normalizedRole === 'rso_notify') {
+      showPage('rso-calendar');
+      loadRsoCalendar();
+    } else if (normalizedRole === 'rso_approve') {
+      showPage('rso-documents');
+      loadRsoDocuments();
+    } else {
+      showPage('dashboard');
+      loadDashboard();
+    }
+  }
+
+  /**
    * Shows the authenticated admin interface (header, sidebar, content).
    * Sets the user's name in the header and makes all authenticated UI visible.
    */
@@ -2735,8 +2745,10 @@
    *   rso         — backward-compat alias for rso_approve
    */
   function _applyNavRoleFilter(role) {
-    // Normalize legacy "rso" role to "rso_approve"
-    var effectiveRole = (role === 'rso') ? 'rso_approve' : role;
+    // Normalize legacy aliases to canonical role names
+    var effectiveRole = (role === 'rso' || role === 'rso-approve') ? 'rso_approve'
+                      : (role === 'rso-notify') ? 'rso_notify'
+                      : role;
 
     // Map nav page IDs to the roles that can see them (empty = all roles)
     var navRoles = {

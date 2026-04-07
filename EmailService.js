@@ -31,6 +31,10 @@
 function encodeSubjectLine(subject) {
   if (!subject) return "";
 
+  // Normalize em dash (—) and en dash (–) to " - " to avoid encoding issues
+  // across email clients that render these as "?" in subject lines.
+  subject = subject.replace(/\u2014|\u2013/g, ' - ');
+
   // Check if the string contains only ASCII characters (0-127)
   var isAsciiOnly = /^[\x00-\x7F]*$/.test(subject);
   if (isAsciiOnly) {
@@ -132,7 +136,7 @@ function sendEmailFromBoard(templateId, recipient, variables) {
     var fromHeader = BOARD_EMAIL_DISPLAY_NAME + ' <' + BOARD_EMAIL_TO_SEND_FROM + '>';
     var emailMessage = 'From: ' + fromHeader + '\r\n' +
                        'To: ' + to + '\r\n' +
-                       'Subject: ' + subject + '\r\n' +
+                       'Subject: ' + encodeSubjectLine(subject) + '\r\n' +
                        'Content-Type: text/html; charset=UTF-8\r\n' +
                        'MIME-Version: 1.0\r\n' +
                        '\r\n' +
@@ -432,7 +436,7 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
     var fromHeader = BOARD_EMAIL_DISPLAY_NAME + ' <' + BOARD_EMAIL_TO_SEND_FROM + '>';
     var emailMessage = 'From: ' + fromHeader + '\r\n' +
                        'To: ' + to + '\r\n' +
-                       'Subject: ' + subject + '\r\n' +
+                       'Subject: ' + encodeSubjectLine(subject) + '\r\n' +
                        'Content-Type: text/html; charset=UTF-8\r\n' +
                        'MIME-Version: 1.0\r\n' +
                        '\r\n' +

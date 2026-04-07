@@ -2188,8 +2188,11 @@
         <button onclick="closeDocViewer()" style="background:transparent; border:none; color:#fff; font-size:28px; line-height:1; cursor:pointer; padding:0 4px; opacity:0.8;">&times;</button>
       </div>
     </div>
-    <div style="flex:1; overflow:hidden; border-radius:0 0 8px 8px; background:#1a1a1a;">
-      <iframe id="docViewerFrame" src="" style="width:100%; height:100%; border:none;"></iframe>
+    <div style="flex:1; overflow:auto; border-radius:0 0 8px 8px; background:#1a1a1a; display:flex; align-items:center; justify-content:center;">
+      <div id="docViewerLoading" style="color:#aaa; font-family:sans-serif; font-size:14px;">Loading document...</div>
+      <img id="docViewerImg" src="" alt="Document" style="display:none; max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;">
+      <embed id="docViewerPdf" src="" type="application/pdf" style="display:none; width:100%; height:100%; border:none;">
+      <div id="docViewerError" style="display:none; color:#f88; font-family:sans-serif; font-size:14px; text-align:center; padding:20px;"></div>
     </div>
   </div>
 </div>
@@ -6014,22 +6017,58 @@
       showError('Document ID not available');
       return;
     }
-    var imageProxyUrl = PORTAL_API_URL + '?action=img&id=' + encodeURIComponent(documentId);
-    var modal = document.getElementById('docViewerModal');
-    var frame = document.getElementById('docViewerFrame');
-    var titleEl = document.getElementById('docViewerTitle');
+
+    var modal    = document.getElementById('docViewerModal');
+    var titleEl  = document.getElementById('docViewerTitle');
+    var loading  = document.getElementById('docViewerLoading');
+    var imgEl    = document.getElementById('docViewerImg');
+    var pdfEl    = document.getElementById('docViewerPdf');
+    var errorEl  = document.getElementById('docViewerError');
     var newTabBtn = document.getElementById('docViewerNewTabBtn');
 
+    // Reset state
     titleEl.textContent = title || 'Document Viewer';
-    frame.src = imageProxyUrl;
-    newTabBtn.onclick = function() { window.open(imageProxyUrl, '_blank'); };
+    loading.style.display = 'block';
+    imgEl.style.display = 'none';
+    imgEl.src = '';
+    pdfEl.style.display = 'none';
+    pdfEl.src = '';
+    errorEl.style.display = 'none';
+    newTabBtn.onclick = null;
+
     modal.style.display = 'flex';
     modal.onclick = function(e) { if (e.target === modal) closeDocViewer(); };
+
+    apiCall('get_file_data', { file_id: documentId }).then(function(res) {
+      loading.style.display = 'none';
+      if (!res.success) {
+        errorEl.textContent = res.message || 'Could not load document.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      var dataUrl = 'data:' + res.data.mime_type + ';base64,' + res.data.base64;
+      var isPdf = res.data.mime_type.indexOf('pdf') >= 0;
+
+      newTabBtn.onclick = function() { window.open(dataUrl, '_blank'); };
+
+      if (isPdf) {
+        pdfEl.src = dataUrl;
+        pdfEl.style.display = 'block';
+      } else {
+        imgEl.src = dataUrl;
+        imgEl.style.display = 'block';
+      }
+    }).catch(function(err) {
+      loading.style.display = 'none';
+      errorEl.textContent = 'Error loading document: ' + err.message;
+      errorEl.style.display = 'block';
+    });
   }
 
   function closeDocViewer() {
     var modal = document.getElementById('docViewerModal');
-    document.getElementById('docViewerFrame').src = '';
+    document.getElementById('docViewerImg').src = '';
+    document.getElementById('docViewerPdf').src = '';
     modal.style.display = 'none';
   }
 
@@ -6624,11 +6663,28 @@
     });
   }
 
-  // Close document viewer on Escape key
+  // Close any visible modal on Escape key
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-      var modal = document.getElementById('docViewerModal');
-      if (modal && modal.style.display === 'flex') closeDocViewer();
+    if (e.key !== 'Escape') return;
+    // Document viewer (custom close)
+    var docViewer = document.getElementById('docViewerModal');
+    if (docViewer && docViewer.style.display === 'flex') { closeDocViewer(); return; }
+    // Standard modal-overlay modals
+    var overlayIds = ['appDetailModal', 'resetAdminPasswordModal', 'photoRejectModal',
+                      'guestHistoryModal', 'rsoRejectDocModal'];
+    for (var i = 0; i < overlayIds.length; i++) {
+      var el = document.getElementById(overlayIds[i]);
+      if (el && (el.style.display === 'flex' || el.classList.contains('show'))) {
+        el.style.display = 'none';
+        el.classList.remove('show');
+        return;
+      }
+    }
+    // Inline modals (non-overlay)
+    var inlineIds = ['passwordChangeModal', 'passwordChangeFormModal'];
+    for (var j = 0; j < inlineIds.length; j++) {
+      var el2 = document.getElementById(inlineIds[j]);
+      if (el2 && el2.style.display !== 'none') { el2.style.display = 'none'; return; }
     }
   });
 

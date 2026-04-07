@@ -2528,9 +2528,12 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
-    // Check for password reset token in URL
-    var resetToken = new URLSearchParams(window.location.search).get('token');
-    var action = new URLSearchParams(window.location.search).get('action');
+    // Check for password reset token in URL.
+    // When loaded via member.html wrapper, GAS requires action=serve to serve this
+    // page, so the wrapper passes reset params as portal_action + token instead.
+    var urlParams = new URLSearchParams(window.location.search);
+    var resetToken = urlParams.get('token');
+    var action = urlParams.get('portal_action') || urlParams.get('action');
 
     if (action === 'reset_password' && resetToken) {
       // Show password reset form, hide login/auth UI

@@ -782,6 +782,26 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
       });
     }
 
+    // If approved and part of an application, check if all documents are now approved
+    if (approve && found.obj.application_id) {
+      var readiness = checkApplicationDocumentReadiness(found.obj.application_id);
+      if (readiness.ok && readiness.allApproved) {
+        // Get application to verify it's in RSO_REVIEW status
+        var app = _getApplicationById(found.obj.application_id);
+        if (app && String(app.status || "").toLowerCase() === String(APP_STATUS_RSO_REVIEW).toLowerCase()) {
+          // All documents approved - notify board that RSO can now finalize application
+          var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+          var appName = app.primary_applicant_name || "Applicant";
+          sendEmailFromTemplate("ADM_RSO_ALL_DOCS_APPROVED_TO_BOARD", boardEmail, {
+            FIRST_NAME:     "Board",
+            APPLICANT_NAME: appName,
+            APPLICATION_ID: found.obj.application_id,
+            APPROVAL_DATE:  formatDate(new Date())
+          });
+        }
+      }
+    }
+
     return { ok: true, new_status: newStatus };
   } catch (e) {
     Logger.log("ERROR approveDocumentByRso: " + e);

@@ -15,8 +15,8 @@ photo_max_size_mb|5|Max file size for member photos (MB)||Documents & Files
 youth_document_required|FALSE|Document upload required for under-16||Documents & Files
 employment_verification_optional_at_application|TRUE|Employment verification not required at application time||Employment Verification
 employment_verification_requestable_by_admin|TRUE|Admin can request employment verification post-activation||Employment Verification
-exchange_rate_last_updated|4/7/2026 1:51:31|Timestamp of last exchange rate API update||Exchange Rate
-exchange_rate_usd_to_bwp|13.876772|Current USD to BWP conversion rate (updated nightly)||Exchange Rate
+exchange_rate_last_updated|4/8/2026 1:51:31|Timestamp of last exchange rate API update||Exchange Rate
+exchange_rate_usd_to_bwp|13.96659|Current USD to BWP conversion rate (updated nightly)||Exchange Rate
 leobo_bump_window_days|5|Business days for bumping tentative reservations||Facility Reservations
 leobo_max_hours|6|Max hours per leobo reservation||Facility Reservations
 leobo_monthly_limit|1|Max leobo reservations per household/month||Facility Reservations
@@ -45,6 +45,6 @@ APP_COUNTER|10|Application ID sequence counter (do not edit manually)||System Co
 HSH_COUNTER|10|Household ID sequence counter (do not edit manually)||System Counters
 IND_COUNTER|14|Individual ID sequence counter (do not edit manually)||System Counters
 PAY_COUNTER|0|Payment ID sequence counter (do not edit manually)||System Counters
-RST_COUNTER|3|Reset/test counter (do not edit manually)||System Counters
-SES_COUNTER|61|Session ID sequence counter (do not edit manually)||System Counters
+RST_COUNTER|4|Reset/test counter (do not edit manually)||System Counters
+SES_COUNTER|73|Session ID sequence counter (do not edit manually)||System Counters
 SUB_COUNTER|9|File submission ID sequence counter (do not edit manually)||System Counters

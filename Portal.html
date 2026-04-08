@@ -3167,7 +3167,7 @@ function submitPasswordChange(event, isFirstLogin) {
     // Password changed successfully
     if (isFirstLogin) {
       // For first login, show success message and redirect to login
-      alert('Password created successfully! Please log in again with your new password.');
+      showNotification('Password created successfully! Please log in again with your new password.');
       document.getElementById('passwordChangeModal').style.display = 'none';
       currentToken = null;
       currentUser = null;
@@ -3175,7 +3175,7 @@ function submitPasswordChange(event, isFirstLogin) {
       showLoginScreen();
     } else {
       // For voluntary change, close modal and show success
-      alert('Password changed successfully! You will be logged out for security. Please log in again.');
+      showNotification('Password changed successfully! You will be logged out for security. Please log in again.');
       closePasswordChangeForm();
       logout();
     }

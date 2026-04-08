@@ -1224,7 +1224,7 @@
   <!-- Shown when user logs in for the first time                    -->
   <!-- ============================================================ -->
 
-  <div id="passwordChangeModal" class="modal" style="display: none;">
+  <div id="passwordChangeModal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 400px;">
       <div style="background: var(--color-primary); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin: -20px -20px 20px -20px;">
         <h2 style="margin: 0; font-size: 20px;">Create Your Password</h2>
@@ -1262,7 +1262,7 @@
   <!-- Optional password change for existing members                 -->
   <!-- ============================================================ -->
 
-  <div id="passwordChangeFormModal" class="modal" style="display: none;">
+  <div id="passwordChangeFormModal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 400px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0; font-size: 18px;">Change Password</h2>
@@ -2466,7 +2466,7 @@
       if (res.data.require_password_change) {
         // Hide login screen and show password change modal
         document.getElementById('loginScreen').classList.remove('show');
-        document.getElementById('passwordChangeModal').style.display = 'block';
+        document.getElementById('passwordChangeModal').style.display = 'flex';
         document.getElementById('passwordChangeUsername').value = email;
         document.getElementById('currentPassword').focus();
         return;
@@ -2584,7 +2584,7 @@
       // Password changed successfully
       if (isFirstLogin) {
         // For first login, show success message and redirect to login
-        alert('Password created successfully! Please log in again with your new password.');
+        showNotification('Password created successfully! Please log in again with your new password.');
         document.getElementById('passwordChangeModal').style.display = 'none';
         currentToken = null;
         currentUser = null;
@@ -2592,7 +2592,7 @@
         showLoginScreen();
       } else {
         // For voluntary change, close modal and show success
-        alert('Password changed successfully! You will be logged out for security. Please log in again.');
+        showNotification('Password changed successfully! You will be logged out for security. Please log in again.');
         closePasswordChangeForm();
         logout();
       }
@@ -2621,7 +2621,7 @@
    * Opens the password change form modal from settings.
    */
   function openPasswordChangeForm() {
-    document.getElementById('passwordChangeFormModal').style.display = 'block';
+    document.getElementById('passwordChangeFormModal').style.display = 'flex';
     document.getElementById('passwordChangeFormUsername').value = currentUser ? (currentUser.email || '') : '';
     document.getElementById('currentPasswordForm').focus();
   }
@@ -7280,7 +7280,7 @@
     if (docViewer && docViewer.style.display === 'flex') { closeDocViewer(); return; }
     // Standard modal-overlay modals
     var overlayIds = ['confirmDialog', 'appDetailModal', 'resetAdminPasswordModal', 'photoRejectModal',
-                      'guestHistoryModal', 'rsoRejectDocModal'];
+                      'guestHistoryModal', 'rsoRejectDocModal', 'passwordChangeModal', 'passwordChangeFormModal'];
     for (var i = 0; i < overlayIds.length; i++) {
       var el = document.getElementById(overlayIds[i]);
       if (el && (el.style.display === 'flex' || el.classList.contains('show'))) {
@@ -7288,12 +7288,6 @@
         el.classList.remove('show');
         return;
       }
-    }
-    // Inline modals (non-overlay)
-    var inlineIds = ['passwordChangeModal', 'passwordChangeFormModal'];
-    for (var j = 0; j < inlineIds.length; j++) {
-      var el2 = document.getElementById(inlineIds[j]);
-      if (el2 && el2.style.display !== 'none') { el2.style.display = 'none'; return; }
     }
   });
 

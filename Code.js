@@ -127,6 +127,19 @@ function doGet(e) {
 
 /**
  * google.script.run handler for Portal API calls.
+/**
+ * Returns the current system version and deployment timestamp.
+ * Called from Portal.html and Admin.html to display in version footer.
+ * @returns {Object} { version, timestamp }
+ */
+function getDeploymentInfo() {
+  return {
+    version: SYSTEM_VERSION,
+    timestamp: DEPLOYMENT_TIMESTAMP
+  };
+}
+
+/**
  * Called from Portal.html via google.script.run to avoid CORS issues.
  * @param {string} action - The API action
  * @param {Object} params - Request parameters

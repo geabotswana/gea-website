@@ -7366,11 +7366,15 @@
   <span id="version-text"></span>
 </div>
 <script>
-  // Display version and timestamp when page loads
+  // Fetch and display version and timestamp when page loads
   document.addEventListener('DOMContentLoaded', function() {
     var versionEl = document.getElementById('version-text');
     if (versionEl) {
-      versionEl.textContent = 'v' + SYSTEM_VERSION + ' • ' + DEPLOYMENT_TIMESTAMP;
+      google.script.run.withSuccessHandler(function(result) {
+        if (result && result.version && result.timestamp) {
+          versionEl.textContent = 'v' + result.version + ' • ' + result.timestamp;
+        }
+      }).getDeploymentInfo();
     }
   });
 </script>

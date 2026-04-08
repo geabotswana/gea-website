@@ -3469,20 +3469,29 @@ function _handleAdminGuestHistories(p) {
 // ============================================================
 /**
 /**
- * ADMIN: Get all rules for editing in Admin Portal
+ * ADMIN: Get all rules for viewing in Admin Portal
  * Returns array of rules sorted by category and sort order
+ * rso_approve can view (read-only); board can view and edit
  * Used by Rules Editor table in Admin.html
  */
 function _handleAdminGetRules(p) {
-  var auth = requireAuth(p.token, "board");
+  // Allow both board and rso_approve roles to view rules
+  var auth = requireAuth(p.token);
   if (!auth.ok) return auth.response;
+
+  var role = auth.session.role;
+  if (role !== "board" && role !== "rso_approve") {
+    return errorResponse("You are not authorized to view rules. Please contact board@geabotswana.org if you believe this is an error.", "FORBIDDEN");
+  }
+
+  var canEdit = (role === "board");  // Only board can edit
 
   try {
     var rulesSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_RULES);
     var data = rulesSheet.getDataRange().getValues();
 
     if (data.length < 2) {
-      return successResponse({ rules: [] });
+      return successResponse({ rules: [], can_edit: canEdit });
     }
 
     var rules = [];
@@ -3507,7 +3516,7 @@ function _handleAdminGetRules(p) {
       return a.rule_category_sort - b.rule_category_sort;
     });
 
-    return successResponse({ rules: rules });
+    return successResponse({ rules: rules, can_edit: canEdit });
   } catch (error) {
     Logger.log("ERROR in _handleAdminGetRules: " + error);
     return errorResponse("Failed to load rules: " + error.message, "SERVER_ERROR");

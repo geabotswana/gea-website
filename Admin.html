@@ -1972,16 +1972,19 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- PAGE: RULES & REGULATIONS (board-only)                    -->
+      <!-- PAGE: RULES & REGULATIONS (board view/edit, rso_approve view) -->
       <!-- Edit and manage GEA Rules & Regulations                   -->
       <!-- ========================================================== -->
       <div id="rules" class="page">
         <h1 class="page-title">Rules & Regulations</h1>
-        <p style="color:#666; margin-bottom:20px; font-size:14px;">
+        <p id="rulesDescriptionBoard" style="color:#666; margin-bottom:20px; font-size:14px;">
           Edit GEA Rules & Regulations. Changes sync automatically to the public website and member portal.
         </p>
+        <p id="rulesDescriptionRso" style="color:#666; margin-bottom:20px; font-size:14px; display:none;">
+          View GEA Rules & Regulations. (Read-only access)
+        </p>
 
-        <div style="display:flex; gap:16px; margin-bottom:24px;">
+        <div id="rulesEditControls" style="display:flex; gap:16px; margin-bottom:24px;">
           <button class="btn btn-primary" onclick="showAddRuleForm();">+ Add Rule</button>
           <button class="btn btn-secondary" onclick="loadRules();">Refresh Rules</button>
         </div>
@@ -7040,6 +7043,25 @@
       }
 
       currentRules = res.data.rules || [];
+      var canEdit = res.data.can_edit === true;
+
+      // Show/hide edit controls based on role
+      var editControls = document.getElementById('rulesEditControls');
+      var addRuleForm = document.getElementById('addRuleForm');
+      var descBoard = document.getElementById('rulesDescriptionBoard');
+      var descRso = document.getElementById('rulesDescriptionRso');
+
+      if (canEdit) {
+        editControls.style.display = 'flex';
+        descBoard.style.display = 'block';
+        descRso.style.display = 'none';
+      } else {
+        editControls.style.display = 'none';
+        addRuleForm.style.display = 'none';
+        descBoard.style.display = 'none';
+        descRso.style.display = 'block';
+      }
+
       var html = '';
 
       if (currentRules.length === 0) {
@@ -7053,10 +7075,14 @@
         catEl.textContent = rule.rule_category;
 
         // Actions with safe event delegation via data attributes
-        var actionHtml = '<td style="padding:12px; text-align:center;">' +
-          '<button class="rule-edit-btn btn btn-small" data-rule-id="' + (rule.rule_id || index) + '" style="font-size:12px; padding:4px 8px; background:#4a90e2; color:#fff; border:none; border-radius:4px; cursor:pointer;">Edit</button> ' +
-          '<button class="rule-delete-btn btn btn-small" data-rule-id="' + (rule.rule_id || index) + '" style="font-size:12px; padding:4px 8px; background:#e74c3c; color:#fff; border:none; border-radius:4px; cursor:pointer;">Delete</button>' +
-          '</td>';
+        var actionHtml = '<td style="padding:12px; text-align:center;">';
+        if (canEdit) {
+          actionHtml += '<button class="rule-edit-btn btn btn-small" data-rule-id="' + (rule.rule_id || index) + '" style="font-size:12px; padding:4px 8px; background:#4a90e2; color:#fff; border:none; border-radius:4px; cursor:pointer;">Edit</button> ' +
+            '<button class="rule-delete-btn btn btn-small" data-rule-id="' + (rule.rule_id || index) + '" style="font-size:12px; padding:4px 8px; background:#e74c3c; color:#fff; border:none; border-radius:4px; cursor:pointer;">Delete</button>';
+        } else {
+          actionHtml += '<span style="color:#999; font-size:12px;">Read-only</span>';
+        }
+        actionHtml += '</td>';
 
         html += '<tr style="border-bottom:1px solid #e0e0e0;">' +
           '<td style="padding:12px;">' + catEl.outerHTML + '</td>' +
@@ -7067,20 +7093,22 @@
 
       container.innerHTML = html;
 
-      // Attach event listeners to dynamically created buttons
-      var editButtons = container.querySelectorAll('.rule-edit-btn');
-      editButtons.forEach(function(btn) {
-        btn.onclick = function() {
-          editRule(this.getAttribute('data-rule-id'));
-        };
-      });
+      // Attach event listeners to dynamically created buttons (only if can edit)
+      if (canEdit) {
+        var editButtons = container.querySelectorAll('.rule-edit-btn');
+        editButtons.forEach(function(btn) {
+          btn.onclick = function() {
+            editRule(this.getAttribute('data-rule-id'));
+          };
+        });
 
-      var deleteButtons = container.querySelectorAll('.rule-delete-btn');
-      deleteButtons.forEach(function(btn) {
-        btn.onclick = function() {
-          deleteRule(this.getAttribute('data-rule-id'));
-        };
-      });
+        var deleteButtons = container.querySelectorAll('.rule-delete-btn');
+        deleteButtons.forEach(function(btn) {
+          btn.onclick = function() {
+            deleteRule(this.getAttribute('data-rule-id'));
+          };
+        });
+      }
 
       updateRulesPreview();
     }).catch(function(err) {

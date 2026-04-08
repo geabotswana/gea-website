@@ -1152,9 +1152,58 @@
     .environment-pill.env-prod { background: #d1e7dd; color: #0f5132; }
     .environment-pill.env-unknown { background: #e2e3e5; color: #41464b; }
 
+    /* ============================================================ */
+    /* TOAST NOTIFICATIONS                                           */
+    /* Non-blocking styled messages (success, error, info)          */
+    /* ============================================================ */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      max-width: 320px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: auto;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .toast.toast-success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+    .toast.toast-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+    .toast.toast-error {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+
   </style>
 </head>
 <body>
+
+<!-- Toast notification container (top-right) -->
+<div id="toast-container"></div>
 
 <!-- ============================================================ -->
 <!-- APP STRUCTURE                                                -->
@@ -3953,7 +4002,7 @@
     var title   = (monthLabel ? monthLabel.textContent : 'Reservation Calendar');
 
     var win = window.open('', '_blank');
-    if (!win) { alert('Please allow pop-ups to print.'); return; }
+    if (!win) { showToast('Please allow pop-ups to print.', 'error'); return; }
     win.document.title = title;
     var style = win.document.createElement('style');
     style.textContent = 'body{font-family:sans-serif;font-size:12px;padding:20px;}' +
@@ -6310,8 +6359,23 @@
     }
   }
 
+  function showToast(message, type) {
+    type = type || 'info';
+    if (type === 'error') console.error(message);
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('show'); });
+    setTimeout(function() {
+      toast.classList.remove('show');
+      setTimeout(function() { container.removeChild(toast); }, 300);
+    }, type === 'success' ? 3000 : 5000);
+  }
+
   function showNotification(message) {
-    alert(message);
+    showToast(message, 'success');
   }
 
   // ============================================================ //
@@ -6427,8 +6491,7 @@
    * In production, this could be replaced with a toast notification system.
    */
   function showError(message) {
-    alert('Error: ' + message);
-    console.error(message);
+    showToast('Error: ' + message, 'error');
   }
 
   // ============================================================ //
@@ -6861,7 +6924,7 @@
 
   function confirmRsoRejectDoc() {
     var reason = (document.getElementById('rsoRejectReason').value || '').trim();
-    if (!reason) { alert('Please enter a rejection reason.'); return; }
+    if (!reason) { showToast('Please enter a rejection reason.', 'error'); return; }
     apiCall('admin_rso_approve_document', {
       submission_id: _rsoPendingDocRejectId,
       decision: 'reject',
@@ -7118,7 +7181,7 @@
       rule = currentRules[parseInt(ruleId)];
     }
     if (!rule) {
-      alert('Rule not found');
+      showToast('Rule not found', 'error');
       return;
     }
 
@@ -7143,7 +7206,7 @@
     // Find the rule
     var rule = currentRules.find(function(r) { return r.rule_id === ruleId || currentRules.indexOf(r) === parseInt(ruleId); });
     if (!rule) {
-      alert('Rule not found');
+      showToast('Rule not found', 'error');
       return;
     }
 
@@ -7157,7 +7220,7 @@
           rule_id: ruleId
         }).then(function(res) {
           if (!res.success) {
-            alert('Error: ' + (res.message || 'Failed to delete rule'));
+            showToast('Error: ' + (res.message || 'Failed to delete rule'), 'error');
             return;
           }
 
@@ -7165,7 +7228,7 @@
         });
       }
     }).catch(function(err) {
-      alert('Error: ' + err.message);
+      showToast('Error: ' + err.message, 'error');
       console.error('Delete rule error:', err);
     });
   }

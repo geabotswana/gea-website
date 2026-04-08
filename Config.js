@@ -979,8 +979,8 @@ var SYSTEM_VERSION          = "2.4.35";
 var SYSTEM_BUILD_DATE       = "2026-04-08";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Replace native popups with styled dialogs, add version footer, allow rso_approve to view Rules";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-08 09:32:18";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix JS syntax errors in showConfirmDialog conversions (guest list, payment, rule delete)";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-08 11:07:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

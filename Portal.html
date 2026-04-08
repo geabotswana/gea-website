@@ -3167,7 +3167,7 @@ function submitPasswordChange(event, isFirstLogin) {
     // Password changed successfully
     if (isFirstLogin) {
       // For first login, show success message and redirect to login
-      alert('Password created successfully! Please log in again with your new password.');
+      showNotification('Password created successfully! Please log in again with your new password.');
       document.getElementById('passwordChangeModal').style.display = 'none';
       currentToken = null;
       currentUser = null;
@@ -3175,7 +3175,7 @@ function submitPasswordChange(event, isFirstLogin) {
       showLoginScreen();
     } else {
       // For voluntary change, close modal and show success
-      alert('Password changed successfully! You will be logged out for security. Please log in again.');
+      showNotification('Password changed successfully! You will be logged out for security. Please log in again.');
       closePasswordChangeForm();
       logout();
     }
@@ -9211,6 +9211,21 @@ function submitPasswordReset(event) {
   function showError(message, type) {
     showToast(message, type || 'error');
   }
+</script>
+
+<!-- DEPLOYMENT VERSION FOOTER (Uncomment the style below to hide for production) -->
+<!-- <style>#version-footer { display: none !important; }</style> -->
+<div id="version-footer" style="position: fixed; bottom: 0; right: 0; padding: 4px 8px; font-size: 11px; color: #999; background: rgba(255,255,255,0.8); font-family: monospace; border-top: 1px solid #eee; border-left: 1px solid #eee; pointer-events: none; z-index: 1;">
+  <span id="version-text"></span>
+</div>
+<script>
+  // Display version and timestamp when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    var versionEl = document.getElementById('version-text');
+    if (versionEl) {
+      versionEl.textContent = 'v' + SYSTEM_VERSION + ' • ' + DEPLOYMENT_TIMESTAMP;
+    }
+  });
 </script>
 
 </body>

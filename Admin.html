@@ -1152,9 +1152,58 @@
     .environment-pill.env-prod { background: #d1e7dd; color: #0f5132; }
     .environment-pill.env-unknown { background: #e2e3e5; color: #41464b; }
 
+    /* ============================================================ */
+    /* TOAST NOTIFICATIONS                                           */
+    /* Non-blocking styled messages (success, error, info)          */
+    /* ============================================================ */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      max-width: 320px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: auto;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .toast.toast-success {
+      background: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+    .toast.toast-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
+    .toast.toast-error {
+      background: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+
   </style>
 </head>
 <body>
+
+<!-- Toast notification container (top-right) -->
+<div id="toast-container"></div>
 
 <!-- ============================================================ -->
 <!-- APP STRUCTURE                                                -->
@@ -1224,7 +1273,7 @@
   <!-- Shown when user logs in for the first time                    -->
   <!-- ============================================================ -->
 
-  <div id="passwordChangeModal" class="modal" style="display: none;">
+  <div id="passwordChangeModal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 400px;">
       <div style="background: var(--color-primary); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin: -20px -20px 20px -20px;">
         <h2 style="margin: 0; font-size: 20px;">Create Your Password</h2>
@@ -1262,7 +1311,7 @@
   <!-- Optional password change for existing members                 -->
   <!-- ============================================================ -->
 
-  <div id="passwordChangeFormModal" class="modal" style="display: none;">
+  <div id="passwordChangeFormModal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="max-width: 400px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="margin: 0; font-size: 18px;">Change Password</h2>
@@ -2466,7 +2515,7 @@
       if (res.data.require_password_change) {
         // Hide login screen and show password change modal
         document.getElementById('loginScreen').classList.remove('show');
-        document.getElementById('passwordChangeModal').style.display = 'block';
+        document.getElementById('passwordChangeModal').style.display = 'flex';
         document.getElementById('passwordChangeUsername').value = email;
         document.getElementById('currentPassword').focus();
         return;
@@ -2584,7 +2633,7 @@
       // Password changed successfully
       if (isFirstLogin) {
         // For first login, show success message and redirect to login
-        alert('Password created successfully! Please log in again with your new password.');
+        showNotification('Password created successfully! Please log in again with your new password.');
         document.getElementById('passwordChangeModal').style.display = 'none';
         currentToken = null;
         currentUser = null;
@@ -2592,7 +2641,7 @@
         showLoginScreen();
       } else {
         // For voluntary change, close modal and show success
-        alert('Password changed successfully! You will be logged out for security. Please log in again.');
+        showNotification('Password changed successfully! You will be logged out for security. Please log in again.');
         closePasswordChangeForm();
         logout();
       }
@@ -2621,7 +2670,7 @@
    * Opens the password change form modal from settings.
    */
   function openPasswordChangeForm() {
-    document.getElementById('passwordChangeFormModal').style.display = 'block';
+    document.getElementById('passwordChangeFormModal').style.display = 'flex';
     document.getElementById('passwordChangeFormUsername').value = currentUser ? (currentUser.email || '') : '';
     document.getElementById('currentPasswordForm').focus();
   }
@@ -3953,7 +4002,7 @@
     var title   = (monthLabel ? monthLabel.textContent : 'Reservation Calendar');
 
     var win = window.open('', '_blank');
-    if (!win) { alert('Please allow pop-ups to print.'); return; }
+    if (!win) { showToast('Please allow pop-ups to print.', 'error'); return; }
     win.document.title = title;
     var style = win.document.createElement('style');
     style.textContent = 'body{font-family:sans-serif;font-size:12px;padding:20px;}' +
@@ -4150,24 +4199,37 @@
    * Promotes a waitlisted reservation to confirmed (manual bump).
    */
   function _promoteWaitlisted(reservationId) {
-    if (!confirm('Promote this member from the waitlist to confirmed?')) return;
-    apiCall('admin_approve_bump', { reservation_id: reservationId, notes: 'Manual promotion by board' })
-      .then(function(res) {
-        if (!res.success) { showError('Failed to promote: ' + res.message); return; }
-        loadWaitlist();
-      });
+    showConfirmDialog({
+      title: 'Promote from Waitlist',
+      message: 'Promote this member from the waitlist to confirmed?',
+      confirmText: 'Promote',
+      onConfirm: function() {
+        apiCall('admin_approve_bump', { reservation_id: reservationId, notes: 'Manual promotion by board' })
+          .then(function(res) {
+            if (!res.success) { showError('Failed to promote: ' + res.message); return; }
+            loadWaitlist();
+          });
+      }
+    });
   }
 
   /**
    * Removes a waitlisted reservation (cancels the waitlist position).
    */
   function _removeFromWaitlist(reservationId) {
-    if (!confirm('Remove this member from the waitlist? This will cancel their position.')) return;
-    apiCall('admin_deny', { reservation_id: reservationId, reason: 'Removed from waitlist by board' })
-      .then(function(res) {
-        if (!res.success) { showError('Failed to remove: ' + res.message); return; }
-        loadWaitlist();
-      });
+    showConfirmDialog({
+      title: 'Remove from Waitlist',
+      message: 'Remove this member from the waitlist? This will cancel their position.',
+      confirmText: 'Remove',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_deny', { reservation_id: reservationId, reason: 'Removed from waitlist by board' })
+          .then(function(res) {
+            if (!res.success) { showError('Failed to remove: ' + res.message); return; }
+            loadWaitlist();
+          });
+      }
+    });
   }
 
 
@@ -4644,19 +4706,23 @@
 
     var rejectedCount = decisions.filter(function(d) { return d.rso_status === 'rejected'; }).length;
     var confirmMsg = rejectedCount > 0
-      ? 'Finalize review? ' + rejectedCount + ' guest(s) will be flagged. The board will be notified. This cannot be undone.'
-      : 'Finalize review? All guests approved. This cannot be undone.';
+      ? rejectedCount + ' guest(s) will be flagged. The board will be notified.'
+      : 'All guests approved.';
 
-    if (!confirm(confirmMsg)) return;
+    showConfirmDialog({
+      title: 'Finalize Guest List Review',
+      message: confirmMsg + ' This cannot be undone.',
+      confirmText: 'Finalize',
+      confirmClass: rejectedCount > 0 ? 'btn-warning' : 'btn-primary',
+      onConfirm: function() {
+        var btn = document.getElementById('glFinalizeBtn');
+        btn.disabled = true;
+        btn.textContent = 'Finalizing...';
 
-    var btn = document.getElementById('glFinalizeBtn');
-    btn.disabled = true;
-    btn.textContent = 'Finalizing...';
-
-    apiCall('admin_finalize_guest_list', {
-      guest_list_id: _selectedGuestListId,
-      decisions: JSON.stringify(decisions)
-    }).then(function(res) {
+        apiCall('admin_finalize_guest_list', {
+          guest_list_id: _selectedGuestListId,
+          decisions: JSON.stringify(decisions)
+        }).then(function(res) {
       btn.disabled = false;
       btn.textContent = 'Finalize Review';
       if (!res.success) { showError('Failed: ' + res.message); return; }
@@ -4921,11 +4987,18 @@
 
   /** Deactivates an admin account after confirmation. */
   function deactivateAdmin(adminId, adminName) {
-    if (!confirm('Deactivate ' + adminName + '? They will immediately lose access.')) return;
-    apiCall('admin_deactivate_admin', { admin_id: adminId }).then(function(res) {
-      if (!res.success) { showError(res.message || 'Failed to deactivate.'); return; }
-      showNotification(adminName + ' has been deactivated.');
-      loadAdminAccounts();
+    showConfirmDialog({
+      title: 'Deactivate Admin Account',
+      message: 'Deactivate ' + adminName + '? They will immediately lose access.',
+      confirmText: 'Deactivate',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_deactivate_admin', { admin_id: adminId }).then(function(res) {
+          if (!res.success) { showError(res.message || 'Failed to deactivate.'); return; }
+          showNotification(adminName + ' has been deactivated.');
+          loadAdminAccounts();
+        });
+      }
     });
   }
 
@@ -5443,17 +5516,22 @@
    * Confirms a payment submission as verified.
    */
   function confirmPayment(paymentId) {
-    if (!confirm('Confirm this payment submission?')) return;
-
-    apiCall('admin_approve_payment', {
-      payment_id: paymentId,
-      notes: ''
-    }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to confirm payment: ' + res.message);
-        return;
+    showConfirmDialog({
+      title: 'Confirm Payment',
+      message: 'Confirm this payment submission?',
+      confirmText: 'Confirm',
+      onConfirm: function() {
+        apiCall('admin_approve_payment', {
+          payment_id: paymentId,
+          notes: ''
+        }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to confirm payment: ' + res.message);
+            return;
+          }
+          loadPayments();
+        });
       }
-      loadPayments();
     });
   }
 
@@ -5461,17 +5539,23 @@
    * Marks a payment submission as not found during verification.
    */
   function markPaymentNotFound(paymentId) {
-    if (!confirm('Mark this payment as not found in account?')) return;
-
-    apiCall('admin_reject_payment', {
-      payment_id: paymentId,
-      reason: 'Payment not found in account'
-    }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to update payment: ' + res.message);
-        return;
+    showConfirmDialog({
+      title: 'Mark Payment as Not Found',
+      message: 'Mark this payment as not found in account?',
+      confirmText: 'Mark Not Found',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_reject_payment', {
+          payment_id: paymentId,
+          reason: 'Payment not found in account'
+        }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to update payment: ' + res.message);
+            return;
+          }
+          loadPayments();
+        });
       }
-      loadPayments();
     });
   }
   
@@ -6275,8 +6359,23 @@
     }
   }
 
+  function showToast(message, type) {
+    type = type || 'info';
+    if (type === 'error') console.error(message);
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = message;
+    container.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('show'); });
+    setTimeout(function() {
+      toast.classList.remove('show');
+      setTimeout(function() { container.removeChild(toast); }, 300);
+    }, type === 'success' ? 3000 : 5000);
+  }
+
   function showNotification(message) {
-    alert(message);
+    showToast(message, 'success');
   }
 
   // ============================================================ //
@@ -6328,20 +6427,23 @@
    * Approve a payment verification.
    */
   function approvePayment(verificationId) {
-    if (!confirm('Approve this payment and activate membership?')) return;
+    showConfirmDialog({
+      title: 'Approve Payment',
+      message: 'Approve this payment and activate membership?',
+      confirmText: 'Approve',
+      onConfirm: function() {
+        apiCall('admin_approve_payment', {
+          verification_id: verificationId,
+          paid_in_full: true,
+          notes: 'Approved by treasurer'
+        }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to approve payment: ' + res.message);
+            return;
+          }
 
-    apiCall('admin_approve_payment', {
-      verification_id: verificationId,
-      paid_in_full: true,
-      notes: 'Approved by treasurer'
-    }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to approve payment: ' + res.message);
-        return;
-      }
-
-      showNotification('Payment approved and membership activated!');
-      loadPayments();
+          showNotification('Payment approved and membership activated!');
+          loadPayments();
     }).catch(function(err) {
       showError('Error approving payment: ' + err.message);
     });
@@ -6389,8 +6491,7 @@
    * In production, this could be replaced with a toast notification system.
    */
   function showError(message) {
-    alert('Error: ' + message);
-    console.error(message);
+    showToast('Error: ' + message, 'error');
   }
 
   // ============================================================ //
@@ -6802,10 +6903,16 @@
   }
 
   function rsoApproveDoc(submissionId) {
-    if (!confirm('Approve this document for GEA admin review?')) return;
-    apiCall('admin_rso_approve_document', { submission_id: submissionId, decision: 'approve' }).then(function(res) {
-      if (!res.success) { showError(res.message); return; }
-      loadRsoDocuments();
+    showConfirmDialog({
+      title: 'Approve Document',
+      message: 'Approve this document for GEA admin review?',
+      confirmText: 'Approve',
+      onConfirm: function() {
+        apiCall('admin_rso_approve_document', { submission_id: submissionId, decision: 'approve' }).then(function(res) {
+          if (!res.success) { showError(res.message); return; }
+          loadRsoDocuments();
+        });
+      }
     });
   }
 
@@ -6817,7 +6924,7 @@
 
   function confirmRsoRejectDoc() {
     var reason = (document.getElementById('rsoRejectReason').value || '').trim();
-    if (!reason) { alert('Please enter a rejection reason.'); return; }
+    if (!reason) { showToast('Please enter a rejection reason.', 'error'); return; }
     apiCall('admin_rso_approve_document', {
       submission_id: _rsoPendingDocRejectId,
       decision: 'reject',
@@ -7074,7 +7181,7 @@
       rule = currentRules[parseInt(ruleId)];
     }
     if (!rule) {
-      alert('Rule not found');
+      showToast('Rule not found', 'error');
       return;
     }
 
@@ -7099,25 +7206,29 @@
     // Find the rule
     var rule = currentRules.find(function(r) { return r.rule_id === ruleId || currentRules.indexOf(r) === parseInt(ruleId); });
     if (!rule) {
-      alert('Rule not found');
+      showToast('Rule not found', 'error');
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this rule?\n\n' + rule.rule_text.substring(0, 60) + '...')) {
-      return;
-    }
+    showConfirmDialog({
+      title: 'Delete Rule',
+      message: 'Are you sure you want to delete this rule?\n\n' + rule.rule_text.substring(0, 60) + '...',
+      confirmText: 'Delete',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_delete_rule', {
+          rule_id: ruleId
+        }).then(function(res) {
+          if (!res.success) {
+            showToast('Error: ' + (res.message || 'Failed to delete rule'), 'error');
+            return;
+          }
 
-    apiCall('admin_delete_rule', {
-      rule_id: ruleId
-    }).then(function(res) {
-      if (!res.success) {
-        alert('Error: ' + (res.message || 'Failed to delete rule'));
-        return;
+          loadRules();
+        });
       }
-
-      loadRules();
     }).catch(function(err) {
-      alert('Error: ' + err.message);
+      showToast('Error: ' + err.message, 'error');
       console.error('Delete rule error:', err);
     });
   }
@@ -7232,7 +7343,7 @@
     if (docViewer && docViewer.style.display === 'flex') { closeDocViewer(); return; }
     // Standard modal-overlay modals
     var overlayIds = ['confirmDialog', 'appDetailModal', 'resetAdminPasswordModal', 'photoRejectModal',
-                      'guestHistoryModal', 'rsoRejectDocModal'];
+                      'guestHistoryModal', 'rsoRejectDocModal', 'passwordChangeModal', 'passwordChangeFormModal'];
     for (var i = 0; i < overlayIds.length; i++) {
       var el = document.getElementById(overlayIds[i]);
       if (el && (el.style.display === 'flex' || el.classList.contains('show'))) {
@@ -7241,17 +7352,26 @@
         return;
       }
     }
-    // Inline modals (non-overlay)
-    var inlineIds = ['passwordChangeModal', 'passwordChangeFormModal'];
-    for (var j = 0; j < inlineIds.length; j++) {
-      var el2 = document.getElementById(inlineIds[j]);
-      if (el2 && el2.style.display !== 'none') { el2.style.display = 'none'; return; }
-    }
   });
 
   // Load rules when page first loads
   document.addEventListener('DOMContentLoaded', function() {
     // Rules will load when user clicks on the Rules & Regulations page
+  });
+</script>
+
+<!-- DEPLOYMENT VERSION FOOTER (Uncomment the style below to hide for production) -->
+<!-- <style>#version-footer { display: none !important; }</style> -->
+<div id="version-footer" style="position: fixed; bottom: 0; right: 0; padding: 4px 8px; font-size: 11px; color: #999; background: rgba(255,255,255,0.8); font-family: monospace; border-top: 1px solid #eee; border-left: 1px solid #eee; pointer-events: none; z-index: 1;">
+  <span id="version-text"></span>
+</div>
+<script>
+  // Display version and timestamp when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    var versionEl = document.getElementById('version-text');
+    if (versionEl) {
+      versionEl.textContent = 'v' + SYSTEM_VERSION + ' • ' + DEPLOYMENT_TIMESTAMP;
+    }
   });
 </script>
 

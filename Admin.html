@@ -4726,14 +4726,16 @@
           guest_list_id: _selectedGuestListId,
           decisions: JSON.stringify(decisions)
         }).then(function(res) {
-      btn.disabled = false;
-      btn.textContent = 'Finalize Review';
-      if (!res.success) { showError('Failed: ' + res.message); return; }
-      closeGlDetail();
-      loadGuestLists();
-      var msg = 'Review finalized. ' + (res.data.approvedCount || 0) + ' approved, ' + (res.data.rejectedCount || 0) + ' rejected.';
-      if (res.data.rejectedCount > 0) msg += ' Board has been notified.';
-      showNotification(msg);
+          btn.disabled = false;
+          btn.textContent = 'Finalize Review';
+          if (!res.success) { showError('Failed: ' + res.message); return; }
+          closeGlDetail();
+          loadGuestLists();
+          var msg = 'Review finalized. ' + (res.data.approvedCount || 0) + ' approved, ' + (res.data.rejectedCount || 0) + ' rejected.';
+          if (res.data.rejectedCount > 0) msg += ' Board has been notified.';
+          showNotification(msg);
+        });
+      }
     });
   }
 
@@ -6444,11 +6446,12 @@
             showError('Failed to approve payment: ' + res.message);
             return;
           }
-
           showNotification('Payment approved and membership activated!');
           loadPayments();
-    }).catch(function(err) {
-      showError('Error approving payment: ' + err.message);
+        }).catch(function(err) {
+          showError('Error approving payment: ' + err.message);
+        });
+      }
     });
   }
 
@@ -7251,13 +7254,12 @@
             showToast('Error: ' + (res.message || 'Failed to delete rule'), 'error');
             return;
           }
-
           loadRules();
+        }).catch(function(err) {
+          showToast('Error: ' + err.message, 'error');
+          console.error('Delete rule error:', err);
         });
       }
-    }).catch(function(err) {
-      showToast('Error: ' + err.message, 'error');
-      console.error('Delete rule error:', err);
     });
   }
 

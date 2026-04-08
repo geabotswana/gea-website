@@ -635,7 +635,6 @@ var AUDIT_HOUSEHOLD_PHONE_SYNC_SKIPPED  = "HOUSEHOLD_PHONE_SYNC_SKIPPED";
 var AUDIT_HOUSEHOLD_PHONE_SYNC_COMPLETE = "HOUSEHOLD_PHONE_SYNC_COMPLETE";
 var AUDIT_HOUSEHOLD_PHONE_SYNC_FAILED   = "HOUSEHOLD_PHONE_SYNC_FAILED";
 var AUDIT_APPLICATION_CREATED             = "APPLICATION_CREATED";
-var AUDIT_APPLICATION_DOCS_CONFIRMED      = "APPLICATION_DOCS_CONFIRMED";
 var AUDIT_APPLICATION_BOARD_INITIAL       = "APPLICATION_BOARD_INITIAL";
 var AUDIT_APPLICATION_RSO_REVIEWED        = "APPLICATION_RSO_REVIEWED";
 var AUDIT_APPLICATION_BOARD_FINAL         = "APPLICATION_BOARD_FINAL";
@@ -676,7 +675,6 @@ var AUDIT_EMAIL_MISSING_VARIABLES         = "EMAIL_MISSING_VARIABLES";
 // ============================================================
 
 var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
-var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
 var APP_STATUS_RSO_DOCS_REVIEW          = "rso_docs_review";
 var APP_STATUS_RSO_APPLICATION_REVIEW   = "rso_application_review";
@@ -976,12 +974,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.36";
+var SYSTEM_VERSION          = "2.4.37";
 var SYSTEM_BUILD_DATE       = "2026-04-08";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Rename RSO approval statuses for clarity: rso_review → rso_docs_review, rso_docs_approved → rso_application_review";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-08 15:18:37";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Remove docs_confirmed intermediate status; simplify workflow to awaiting_docs → board_initial_review";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-08 15:33:17";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -40,9 +40,8 @@ Controls the overall progress of an application through the 11-step workflow.
 
 | Status | Meaning | Set When | Next Transition |
 |--------|---------|----------|-----------------|
-| `awaiting_docs` | Application created, awaiting document uploads | Application submitted (Step 3) | → `docs_confirmed` |
-| `docs_confirmed` | Applicant confirmed all documents uploaded | Applicant confirms documents (Step 5) | → `board_initial_review` |
-| `board_initial_review` | Waiting for board initial review | RSO rejects documents (loops back) | → `rso_docs_review` or `denied` |
+| `awaiting_docs` | Application created, awaiting document uploads | Application submitted (Step 3) | → `board_initial_review` |
+| `board_initial_review` | Waiting for board initial review | Applicant confirms documents (Step 5) | → `rso_docs_review` or `denied` |
 | `rso_docs_review` | Documents sent to RSO for verification | Board approves initial (Step 6) | → `rso_application_review` or `board_initial_review` |
 | `rso_application_review` | RSO approved; awaiting board final decision | RSO approves application (Step 7) | → `board_final_review` or looping |
 | `board_final_review` | Board makes final membership decision | RSO application approved (Step 7) | → `approved_pending_payment` or `denied` |
@@ -55,7 +54,6 @@ Controls the overall progress of an application through the 11-step workflow.
 **Implementation Note:** Status values are defined as constants in Config.js (lines 666-676):
 ```javascript
 var APP_STATUS_AWAITING_DOCS = "awaiting_docs";
-var APP_STATUS_DOCS_CONFIRMED = "docs_confirmed";
 // ... etc.
 ```
 

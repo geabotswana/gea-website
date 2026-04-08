@@ -22,7 +22,6 @@
 ### Defined in Config.js (Lines 666-676)
 ```javascript
 var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
-var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
 var APP_STATUS_RSO_DOCS_REVIEW          = "rso_docs_review";
 var APP_STATUS_RSO_APPLICATION_REVIEW   = "rso_application_review";
@@ -40,8 +39,7 @@ var APP_STATUS_WITHDRAWN                = "withdrawn";  // ⚠️ NOT USED
 | Status Value | Used in Code | Line(s) | When Set |
 |---|---|---|---|
 | `awaiting_docs` | ✅ Yes | 236 | When application first created (createApplicationRecord) |
-| `docs_confirmed` | ✅ Yes | 435 | When applicant confirms documents uploaded (confirmDocumentsUploaded) |
-| `board_initial_review` | ✅ Yes | 702 (and others) | When RSO rejects documents (rsoApproveApplication), loops back for re-review |
+| `board_initial_review` | ✅ Yes | 430 | When applicant confirms documents uploaded (confirmDocumentsUploaded) |
 | `rso_docs_review` | ✅ Yes | 585 | When board approves initial application (boardInitialDecision) |
 | `rso_application_review` | ✅ Yes | 341 | When RSO approves all documents and application (rsoApproveApplication) |
 | `board_final_review` | ✅ Yes | 753 | When board makes final decision after RSO approval |
@@ -135,7 +133,6 @@ This might cause the unverified payment count to always return 0 if "status" fie
 
 **"Key Status Values"** section lists:
 - awaiting_docs
-- docs_confirmed
 - board_initial_review
 - rso_docs_review
 - rso_application_review
@@ -201,8 +198,7 @@ This might cause the unverified payment count to always return 0 if "status" fie
 APPLICATION FLOW:
 awaiting_docs
   │ [Applicant confirms documents uploaded]
-  └─→ docs_confirmed
-      │ [Board initial review]
+  └─→ board_initial_review [Board initial review]
       ├─→ rso_docs_review [Board approves]
       │   │ [RSO reviews individual documents]
       │   ├─→ rso_application_review [RSO approves all documents]

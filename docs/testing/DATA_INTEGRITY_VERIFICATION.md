@@ -82,7 +82,7 @@ Use this checklist after each major stage to ensure data integrity.
 
 **Membership Applications Tab (GEA Member Directory):**
 - [ ] `documents_confirmed_date` = today
-- [ ] `status` = "docs_confirmed" or "board_initial_review"
+- [ ] `status` = "board_initial_review"
 - [ ] `board_initial_status` = NULL (board hasn't decided yet)
 
 ---
@@ -192,7 +192,7 @@ Use this checklist after each major stage to ensure data integrity.
 | `primary_applicant_name`, `email` | Text | Match Individuals sheet |
 | `membership_category` | Text | One of six categories |
 | `household_type` | Text | "Individual" or "Family" |
-| `status` | Text | Progression: awaiting_docs → docs_confirmed → board_initial_review → rso_review → board_final_review → approved_pending_payment → payment_submitted → activated |
+| `status` | Text | Progression: awaiting_docs → board_initial_review → rso_docs_review → rso_application_review → board_final_review → approved_pending_payment → payment_submitted → activated |
 | `submitted_date` | Date | = application submission date |
 | `board_initial_status` | Text | "approved", "denied", or NULL |
 | `board_initial_reviewed_by` | Text | Board member email; NULL if not reviewed |

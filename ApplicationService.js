@@ -16,7 +16,7 @@
  * 7. Treasurer activation (Step 10)
  *
  * Status progression:
- * awaiting_docs → docs_confirmed → board_initial_review →
+ * awaiting_docs → board_initial_review →
  * rso_review → board_final_review → approved_pending_payment →
  * payment_submitted → activated
  * ============================================================
@@ -426,12 +426,11 @@ function confirmDocumentsUploaded(applicationId, email) {
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
     if (appRow > 0) {
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "documents_confirmed_date")).setValue(new Date());
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_INITIAL_REVIEW);
     }
 
-    logAuditEntry(email, AUDIT_APPLICATION_DOCS_CONFIRMED, "Application", applicationId,
-                  "Documents confirmed and ready for board review");
+    logAuditEntry(email, AUDIT_APPLICATION_BOARD_INITIAL, "Application", applicationId,
+                  "Documents submitted and ready for board review");
 
     var applicantName      = application.primary_applicant_name || "";
     var applicantFirstName = applicantName.split(" ")[0] || "Applicant";

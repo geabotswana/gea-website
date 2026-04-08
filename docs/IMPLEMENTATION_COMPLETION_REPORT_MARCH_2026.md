@@ -106,10 +106,9 @@ board_final_denial_reason, payment_status, payment_id, created_date, last_modifi
 
 **Actions:**
 - ✅ Validates applicant owns this application
-- ✅ Sets `documents_confirmed_date = NOW()`
-- ✅ Sets `status = APP_STATUS_DOCS_CONFIRMED`
-- ✅ Sends tpl_043 (Documents Confirmed) to board@geabotswana.org
-- ✅ Logs AUDIT_APPLICATION_DOCS_CONFIRMED
+- ✅ Sets `status = APP_STATUS_BOARD_INITIAL_REVIEW` immediately when documents confirmed
+- ✅ Sends email to board@geabotswana.org with ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_BOARD template
+- ✅ Logs AUDIT_APPLICATION_BOARD_INITIAL
 
 ---
 
@@ -257,7 +256,6 @@ board_final_denial_reason, payment_status, payment_id, created_date, last_modifi
 ### Application Status Constants
 ```javascript
 var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
-var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
 var APP_STATUS_RSO_DOCS_REVIEW          = "rso_docs_review";
 var APP_STATUS_RSO_APPLICATION_REVIEW   = "rso_application_review";

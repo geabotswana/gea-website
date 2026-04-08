@@ -213,7 +213,7 @@
 
 **Check:**
 - Confirmation succeeds
-- Dashboard status card updates to "docs_confirmed" or "board_initial_review"
+- Dashboard status card updates to "board_initial_review"
 - Membership Applications sheet: status advances to "board_initial_review"
 - Board receives notification email (check board@geabotswana.org inbox): ADM_NEW_APPLICATION_BOARD_TO_BOARD
 

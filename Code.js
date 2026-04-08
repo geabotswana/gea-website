@@ -236,6 +236,7 @@ function _routeAction(action, params) {
     case "admin_guest_histories":          return _handleAdminGuestHistories(params);
     case "admin_rso_pending_documents":    return _handleAdminRsoPendingDocuments(params);
     case "admin_rso_approve_document":     return _handleAdminRsoApproveDocument(params);
+    case "admin_rso_applications_ready":   return _handleAdminRsoApplicationsReady(params);
     case "admin_rso_approved_calendar":    return _handleAdminRsoApprovedCalendar(params);
     case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
     case "admin_calendar":                 return _handleAdminCalendar(params);
@@ -3876,6 +3877,53 @@ function _handleAdminRsoApproveDocument(p) {
   } catch (e) {
     Logger.log("ERROR _handleAdminRsoApproveDocument: " + e);
     return errorResponse("Could not process decision.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoApplicationsReady
+ * PURPOSE: rso_approve views applications where all documents are approved and ready for RSO approval
+ * RETURNS: { success, data: { applications: [...], count } }
+ */
+function _handleAdminRsoApplicationsReady(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+  try {
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appData = appSheet.getDataRange().getValues();
+    var appHeaders = appData[0];
+    var readyApps = [];
+
+    for (var i = 1; i < appData.length; i++) {
+      var app = rowToObject(appHeaders, appData[i]);
+
+      // Only include applications in RSO_REVIEW status
+      if (String(app.status || "").toLowerCase() !== String(APP_STATUS_RSO_REVIEW).toLowerCase()) {
+        continue;
+      }
+
+      // Check if all documents are approved
+      var readiness = checkApplicationDocumentReadiness(app.application_id);
+      if (readiness.ok && readiness.allApproved) {
+        readyApps.push({
+          application_id: app.application_id,
+          applicant_name: app.primary_applicant_name || "",
+          applicant_email: app.primary_applicant_email || "",
+          status: app.status,
+          submitted_date: app.application_date ? formatDate(new Date(app.application_date), true) : ""
+        });
+      }
+    }
+
+    // Sort by submitted date (newest first)
+    readyApps.sort(function(a, b) {
+      return a.submitted_date < b.submitted_date ? 1 : -1;
+    });
+
+    return successResponse({ applications: readyApps, count: readyApps.length });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoApplicationsReady: " + e);
+    return errorResponse("Could not load applications.", "SERVER_ERROR");
   }
 }
 

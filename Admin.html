@@ -4150,24 +4150,37 @@
    * Promotes a waitlisted reservation to confirmed (manual bump).
    */
   function _promoteWaitlisted(reservationId) {
-    if (!confirm('Promote this member from the waitlist to confirmed?')) return;
-    apiCall('admin_approve_bump', { reservation_id: reservationId, notes: 'Manual promotion by board' })
-      .then(function(res) {
-        if (!res.success) { showError('Failed to promote: ' + res.message); return; }
-        loadWaitlist();
-      });
+    showConfirmDialog({
+      title: 'Promote from Waitlist',
+      message: 'Promote this member from the waitlist to confirmed?',
+      confirmText: 'Promote',
+      onConfirm: function() {
+        apiCall('admin_approve_bump', { reservation_id: reservationId, notes: 'Manual promotion by board' })
+          .then(function(res) {
+            if (!res.success) { showError('Failed to promote: ' + res.message); return; }
+            loadWaitlist();
+          });
+      }
+    });
   }
 
   /**
    * Removes a waitlisted reservation (cancels the waitlist position).
    */
   function _removeFromWaitlist(reservationId) {
-    if (!confirm('Remove this member from the waitlist? This will cancel their position.')) return;
-    apiCall('admin_deny', { reservation_id: reservationId, reason: 'Removed from waitlist by board' })
-      .then(function(res) {
-        if (!res.success) { showError('Failed to remove: ' + res.message); return; }
-        loadWaitlist();
-      });
+    showConfirmDialog({
+      title: 'Remove from Waitlist',
+      message: 'Remove this member from the waitlist? This will cancel their position.',
+      confirmText: 'Remove',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_deny', { reservation_id: reservationId, reason: 'Removed from waitlist by board' })
+          .then(function(res) {
+            if (!res.success) { showError('Failed to remove: ' + res.message); return; }
+            loadWaitlist();
+          });
+      }
+    });
   }
 
 
@@ -4644,19 +4657,23 @@
 
     var rejectedCount = decisions.filter(function(d) { return d.rso_status === 'rejected'; }).length;
     var confirmMsg = rejectedCount > 0
-      ? 'Finalize review? ' + rejectedCount + ' guest(s) will be flagged. The board will be notified. This cannot be undone.'
-      : 'Finalize review? All guests approved. This cannot be undone.';
+      ? rejectedCount + ' guest(s) will be flagged. The board will be notified.'
+      : 'All guests approved.';
 
-    if (!confirm(confirmMsg)) return;
+    showConfirmDialog({
+      title: 'Finalize Guest List Review',
+      message: confirmMsg + ' This cannot be undone.',
+      confirmText: 'Finalize',
+      confirmClass: rejectedCount > 0 ? 'btn-warning' : 'btn-primary',
+      onConfirm: function() {
+        var btn = document.getElementById('glFinalizeBtn');
+        btn.disabled = true;
+        btn.textContent = 'Finalizing...';
 
-    var btn = document.getElementById('glFinalizeBtn');
-    btn.disabled = true;
-    btn.textContent = 'Finalizing...';
-
-    apiCall('admin_finalize_guest_list', {
-      guest_list_id: _selectedGuestListId,
-      decisions: JSON.stringify(decisions)
-    }).then(function(res) {
+        apiCall('admin_finalize_guest_list', {
+          guest_list_id: _selectedGuestListId,
+          decisions: JSON.stringify(decisions)
+        }).then(function(res) {
       btn.disabled = false;
       btn.textContent = 'Finalize Review';
       if (!res.success) { showError('Failed: ' + res.message); return; }
@@ -4921,11 +4938,18 @@
 
   /** Deactivates an admin account after confirmation. */
   function deactivateAdmin(adminId, adminName) {
-    if (!confirm('Deactivate ' + adminName + '? They will immediately lose access.')) return;
-    apiCall('admin_deactivate_admin', { admin_id: adminId }).then(function(res) {
-      if (!res.success) { showError(res.message || 'Failed to deactivate.'); return; }
-      showNotification(adminName + ' has been deactivated.');
-      loadAdminAccounts();
+    showConfirmDialog({
+      title: 'Deactivate Admin Account',
+      message: 'Deactivate ' + adminName + '? They will immediately lose access.',
+      confirmText: 'Deactivate',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_deactivate_admin', { admin_id: adminId }).then(function(res) {
+          if (!res.success) { showError(res.message || 'Failed to deactivate.'); return; }
+          showNotification(adminName + ' has been deactivated.');
+          loadAdminAccounts();
+        });
+      }
     });
   }
 
@@ -5443,17 +5467,22 @@
    * Confirms a payment submission as verified.
    */
   function confirmPayment(paymentId) {
-    if (!confirm('Confirm this payment submission?')) return;
-
-    apiCall('admin_approve_payment', {
-      payment_id: paymentId,
-      notes: ''
-    }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to confirm payment: ' + res.message);
-        return;
+    showConfirmDialog({
+      title: 'Confirm Payment',
+      message: 'Confirm this payment submission?',
+      confirmText: 'Confirm',
+      onConfirm: function() {
+        apiCall('admin_approve_payment', {
+          payment_id: paymentId,
+          notes: ''
+        }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to confirm payment: ' + res.message);
+            return;
+          }
+          loadPayments();
+        });
       }
-      loadPayments();
     });
   }
 
@@ -5461,17 +5490,23 @@
    * Marks a payment submission as not found during verification.
    */
   function markPaymentNotFound(paymentId) {
-    if (!confirm('Mark this payment as not found in account?')) return;
-
-    apiCall('admin_reject_payment', {
-      payment_id: paymentId,
-      reason: 'Payment not found in account'
-    }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to update payment: ' + res.message);
-        return;
+    showConfirmDialog({
+      title: 'Mark Payment as Not Found',
+      message: 'Mark this payment as not found in account?',
+      confirmText: 'Mark Not Found',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_reject_payment', {
+          payment_id: paymentId,
+          reason: 'Payment not found in account'
+        }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to update payment: ' + res.message);
+            return;
+          }
+          loadPayments();
+        });
       }
-      loadPayments();
     });
   }
   
@@ -6328,20 +6363,23 @@
    * Approve a payment verification.
    */
   function approvePayment(verificationId) {
-    if (!confirm('Approve this payment and activate membership?')) return;
+    showConfirmDialog({
+      title: 'Approve Payment',
+      message: 'Approve this payment and activate membership?',
+      confirmText: 'Approve',
+      onConfirm: function() {
+        apiCall('admin_approve_payment', {
+          verification_id: verificationId,
+          paid_in_full: true,
+          notes: 'Approved by treasurer'
+        }).then(function(res) {
+          if (!res.success) {
+            showError('Failed to approve payment: ' + res.message);
+            return;
+          }
 
-    apiCall('admin_approve_payment', {
-      verification_id: verificationId,
-      paid_in_full: true,
-      notes: 'Approved by treasurer'
-    }).then(function(res) {
-      if (!res.success) {
-        showError('Failed to approve payment: ' + res.message);
-        return;
-      }
-
-      showNotification('Payment approved and membership activated!');
-      loadPayments();
+          showNotification('Payment approved and membership activated!');
+          loadPayments();
     }).catch(function(err) {
       showError('Error approving payment: ' + err.message);
     });
@@ -6802,10 +6840,16 @@
   }
 
   function rsoApproveDoc(submissionId) {
-    if (!confirm('Approve this document for GEA admin review?')) return;
-    apiCall('admin_rso_approve_document', { submission_id: submissionId, decision: 'approve' }).then(function(res) {
-      if (!res.success) { showError(res.message); return; }
-      loadRsoDocuments();
+    showConfirmDialog({
+      title: 'Approve Document',
+      message: 'Approve this document for GEA admin review?',
+      confirmText: 'Approve',
+      onConfirm: function() {
+        apiCall('admin_rso_approve_document', { submission_id: submissionId, decision: 'approve' }).then(function(res) {
+          if (!res.success) { showError(res.message); return; }
+          loadRsoDocuments();
+        });
+      }
     });
   }
 
@@ -7103,19 +7147,23 @@
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this rule?\n\n' + rule.rule_text.substring(0, 60) + '...')) {
-      return;
-    }
+    showConfirmDialog({
+      title: 'Delete Rule',
+      message: 'Are you sure you want to delete this rule?\n\n' + rule.rule_text.substring(0, 60) + '...',
+      confirmText: 'Delete',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        apiCall('admin_delete_rule', {
+          rule_id: ruleId
+        }).then(function(res) {
+          if (!res.success) {
+            alert('Error: ' + (res.message || 'Failed to delete rule'));
+            return;
+          }
 
-    apiCall('admin_delete_rule', {
-      rule_id: ruleId
-    }).then(function(res) {
-      if (!res.success) {
-        alert('Error: ' + (res.message || 'Failed to delete rule'));
-        return;
+          loadRules();
+        });
       }
-
-      loadRules();
     }).catch(function(err) {
       alert('Error: ' + err.message);
       console.error('Delete rule error:', err);

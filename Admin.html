@@ -7360,5 +7360,20 @@
   });
 </script>
 
+<!-- DEPLOYMENT VERSION FOOTER (Uncomment the style below to hide for production) -->
+<!-- <style>#version-footer { display: none !important; }</style> -->
+<div id="version-footer" style="position: fixed; bottom: 0; right: 0; padding: 4px 8px; font-size: 11px; color: #999; background: rgba(255,255,255,0.8); font-family: monospace; border-top: 1px solid #eee; border-left: 1px solid #eee; pointer-events: none; z-index: 1;">
+  <span id="version-text"></span>
+</div>
+<script>
+  // Display version and timestamp when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    var versionEl = document.getElementById('version-text');
+    if (versionEl) {
+      versionEl.textContent = 'v' + SYSTEM_VERSION + ' • ' + DEPLOYMENT_TIMESTAMP;
+    }
+  });
+</script>
+
 </body>
 </html>

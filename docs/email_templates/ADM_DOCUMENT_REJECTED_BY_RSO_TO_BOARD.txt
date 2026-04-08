@@ -1,0 +1,20 @@
+Dear Board,
+
+RSO has rejected a document for {{APPLICANT_NAME}} ({{INDIVIDUAL_ID}}):
+
+Document Type: {{DOCUMENT_TYPE}}
+Application: {{APPLICATION_ID}}
+
+Reason for Rejection:
+{{REJECTION_REASON}}
+
+The applicant {{IF_ALLOW_RESUBMIT}}may resubmit this document{{ELSE}}may NOT resubmit this document{{END_IF}}.
+
+{{IF_ALLOW_RESUBMIT}}Please coordinate with the applicant to resolve this issue and allow them to resubmit.{{ELSE}}This document has been marked as non-resubmittable due to serious issues. Please review with the applicant.{{END_IF}}
+
+---
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+This is an automated message from the GEA member management system. Please do not reply to this email. Contact board@geabotswana.org for support.

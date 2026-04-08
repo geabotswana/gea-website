@@ -1,0 +1,14 @@
+Dear {{FIRST_NAME}},
+
+Your {{DOCUMENT_TYPE}} will expire on {{EXPIRATION_DATE}} (in approximately 6 months).
+
+Please remember to renew your document and upload the new one to your GEA member portal as soon as you receive it. You can update your documents by logging into your account at {{PORTAL_URL}}.
+
+Keeping your identification documents current ensures your membership remains active and in good standing.
+
+---
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+This is an automated message from the GEA member management system. Please do not reply to this email. Contact board@geabotswana.org for support.

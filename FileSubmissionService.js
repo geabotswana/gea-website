@@ -351,7 +351,7 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
 
     // Send email to board (no email to applicant at this stage)
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-    sendEmailFromTemplate("ADM_RSO_DOCS_APPROVED_TO_BOARD", boardEmail, {
+    sendEmailFromTemplate("ADM_RSO_APPLICATION_APPROVED_TO_BOARD", boardEmail, {
       FIRST_NAME:       "Board",
       APPLICANT_NAME:   application.primary_applicant_name || "",
       APPLICATION_ID:   applicationId,

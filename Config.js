@@ -979,8 +979,8 @@ var SYSTEM_VERSION          = "2.4.34";
 var SYSTEM_BUILD_DATE       = "2026-04-08";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Replace all native popups with styled dialogs and toast notifications";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-08 09:23:27";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add deployment version footer and replace native popups with styled dialogs";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-08 09:25:38";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -3850,6 +3850,7 @@ function _handleAdminRsoPendingDocuments(p) {
  * HANDLER: _handleAdminRsoApproveDocument
  * PURPOSE: rso_approve approves or rejects a single document submission.
  * REQUIRED PARAMS: submission_id, decision ("approve"|"reject"), rejection_reason (if rejecting)
+ * OPTIONAL PARAMS: allow_resubmit (boolean, defaults to true if rejecting)
  * RETURNS: { success, data: { submission_id, new_status } }
  */
 function _handleAdminRsoApproveDocument(p) {
@@ -3863,7 +3864,13 @@ function _handleAdminRsoApproveDocument(p) {
     return errorResponse("rejection_reason required when rejecting.", "MISSING_PARAM");
   }
   try {
-    var result = approveDocumentByRso(p.submission_id, p.decision, p.rejection_reason || "", auth.session.email);
+    var result = approveDocumentByRso(
+      p.submission_id,
+      p.decision,
+      p.rejection_reason || "",
+      auth.session.email,
+      p.allow_resubmit !== undefined ? p.allow_resubmit : undefined
+    );
     if (!result.ok) return errorResponse(result.error || "Could not process decision.", "OPERATION_FAILED");
     return successResponse({ submission_id: p.submission_id, new_status: result.new_status });
   } catch (e) {

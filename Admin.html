@@ -2064,6 +2064,15 @@
         <div id="rsoDocsContent">
           <p style="color:#aaa;">Loading...</p>
         </div>
+
+        <!-- Applications Ready for RSO Approval -->
+        <div id="rsoAppsReadySection" style="margin-top:40px; display:none;">
+          <h2 style="font-size:16px; color:#0A3161; margin-bottom:12px;">Applications Ready for RSO Approval</h2>
+          <p style="color:#666; margin-bottom:16px; font-size:13px;">All required documents have been approved. Click below to finalize RSO review.</p>
+          <div id="rsoAppsReadyContent">
+            <p style="color:#aaa;">Loading...</p>
+          </div>
+        </div>
       </div>
 
       <!-- ========================================================== -->
@@ -2143,10 +2152,19 @@
       <button class="modal-close" onclick="document.getElementById('rsoRejectDocModal').style.display='none';">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="color:#555; margin-bottom:12px;">Please provide a reason so the applicant can correct and resubmit.</p>
+      <p style="color:#555; margin-bottom:16px;">Please provide a reason. The Board will contact the applicant to resolve the issue.</p>
       <div class="form-group">
         <label class="form-label">Rejection Reason</label>
         <textarea id="rsoRejectReason" class="form-input" rows="3" placeholder="e.g. Document is expired, photo is unclear, name does not match application..."></textarea>
+      </div>
+      <div style="background:#f9f3f0; border:1px solid #e8ccc3; border-radius:6px; padding:12px; margin-bottom:16px;">
+        <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; margin:0;">
+          <input type="checkbox" id="rsoBlockResubmit" style="margin-top:2px;">
+          <span style="font-size:13px; color:#555;">
+            <strong style="color:#d32f2f;">Do Not Allow Resubmission</strong><br>
+            Check this if this is a serious issue (e.g. fraud, falsified documents) and the applicant should not be allowed to resubmit.
+          </span>
+        </label>
       </div>
     </div>
     <div class="modal-footer">
@@ -6931,13 +6949,20 @@
   function confirmRsoRejectDoc() {
     var reason = (document.getElementById('rsoRejectReason').value || '').trim();
     if (!reason) { showToast('Please enter a rejection reason.', 'error'); return; }
+
+    // Checkbox is "Do Not Allow Resubmission", so allow_resubmit is the opposite
+    var blockResubmit = document.getElementById('rsoBlockResubmit').checked;
+    var allowResubmit = !blockResubmit; // If "do not allow" is checked, allow_resubmit = false
+
     apiCall('admin_rso_approve_document', {
       submission_id: _rsoPendingDocRejectId,
       decision: 'reject',
-      rejection_reason: reason
+      rejection_reason: reason,
+      allow_resubmit: allowResubmit
     }).then(function(res) {
       if (!res.success) { showError(res.message); return; }
       document.getElementById('rsoRejectDocModal').style.display = 'none';
+      document.getElementById('rsoBlockResubmit').checked = false; // Reset checkbox
       _rsoPendingDocRejectId = null;
       loadRsoDocuments();
     });

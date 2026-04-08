@@ -731,7 +731,7 @@ function getDocumentsForRsoReview(documentTypeFilter) {
  * @param {string} rsoEmail       Authenticated RSO member's email (from session)
  * @returns {Object}  { ok, new_status } or { ok: false, error }
  */
-function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail) {
+function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail, allowResubmit) {
   try {
     var found = _findSubmissionById_(submissionId);
     if (!found) return { ok: false, error: "Submission not found." };
@@ -754,9 +754,10 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail)
       member_facing_rejection_reason:  approve ? "" : (rejectionReason || "Rejected by RSO")
     };
 
-    // If rejecting, track that RSO rejected it (allow_resubmit will be set by Board)
+    // If rejecting, track that RSO rejected it
     if (!approve) {
-      patchObj.allow_resubmit = true; // Default to allowing resubmission; Board can change
+      // Default to allowing resubmission unless explicitly set otherwise
+      patchObj.allow_resubmit = allowResubmit !== undefined ? allowResubmit : true;
     }
 
     _setSubmissionFields_(found, patchObj);

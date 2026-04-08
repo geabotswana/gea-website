@@ -2042,14 +2042,19 @@ function _handleUploadDocument(p) {
       submitted_date: new Date(),
       doc_number: p.doc_number || "",
       doc_expiry_date: p.doc_expiry || "",
+      document_expiration_date: p.document_expiration_date || "",
       doc_country: p.doc_country || "",
       passport_type: p.passport_type || "",
       is_current: true,
+      application_id: p.application_id || "",
+      expiration_warning_6m_sent_date: "",
+      expiration_warning_1m_sent_date: "",
       rso_reviewed_by: "",
       rso_review_date: "",
       gea_reviewed_by: "",
       gea_review_date: "",
       rejection_reason: "",
+      allow_resubmit: "",
       cloud_storage_path: ""
     };
 

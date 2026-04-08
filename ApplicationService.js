@@ -747,6 +747,14 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       return { success: false, message: "Application not found." };
     }
 
+    // Verify application is in a state that allows final approval
+    var currentStatus = String(application.status || "");
+    var isValidState = (currentStatus === APP_STATUS_BOARD_FINAL_REVIEW ||
+                        currentStatus === APP_STATUS_RSO_DOCS_APPROVED);
+    if (!isValidState) {
+      return { success: false, message: "Application is not in a state ready for final approval. Current status: " + currentStatus };
+    }
+
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
 

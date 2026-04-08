@@ -59,10 +59,10 @@ function uploadFileSubmission(params) {
       is_current: true,
       member_facing_rejection_reason: "",
       disabled_date: "",
-      rso_approval_link_token: "",
-      rso_approval_link_expires_at: "",
-      rso_approval_link_used_at: "",
-      rso_approval_link_sent_date: ""
+      application_id: params.application_id || "",
+      document_expiration_date: params.document_expiration_date || "",
+      expiration_warning_6m_sent_date: "",
+      expiration_warning_1m_sent_date: ""
     };
 
     _expireCurrentSubmission_(payload.individual_id, documentType);
@@ -254,21 +254,175 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
   }
 }
 
+/**
+ * Checks if all required documents for an application are approved (gea_pending or better)
+ * Required: photo (approved/verified) AND (passport OR omang) (gea_pending/verified)
+ * @param {string} applicationId
+ * @returns {Object} { allApproved: bool, missingDocs: [], readyForApproval: bool }
+ */
+function checkApplicationDocumentReadiness(applicationId) {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var submissions = [];
+
+    for (var i = 1; i < data.length; i++) {
+      var obj = rowToObject(headers, data[i]);
+      if (obj.application_id === applicationId) {
+        submissions.push(obj);
+      }
+    }
+
+    var photoApproved = false;
+    var passportReady = false;
+    var omangReady = false;
+    var missingDocs = [];
+
+    for (var j = 0; j < submissions.length; j++) {
+      var s = submissions[j];
+      var status = String(s.status || "").toLowerCase();
+      var docType = String(s.document_type || "").toLowerCase();
+
+      if (docType === "photo" && (status === "approved" || status === "verified")) {
+        photoApproved = true;
+      } else if (docType === "passport" && (status === "gea_pending" || status === "verified")) {
+        passportReady = true;
+      } else if (docType === "omang" && (status === "gea_pending" || status === "verified")) {
+        omangReady = true;
+      }
+    }
+
+    if (!photoApproved) missingDocs.push("photo");
+    if (!passportReady && !omangReady) missingDocs.push("passport or omang");
+
+    var allApproved = photoApproved && (passportReady || omangReady);
+
+    return {
+      ok: true,
+      allApproved: allApproved,
+      missingDocs: missingDocs,
+      readyForApproval: allApproved // RSO can approve application when all docs ready
+    };
+  } catch (e) {
+    Logger.log("ERROR checkApplicationDocumentReadiness: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * RSO finalizes approval of an application after all documents are approved
+ * Moves application from RSO_REVIEW to RSO_DOCS_APPROVED status
+ * @param {string} applicationId
+ * @param {string} rsoEmail
+ * @param {string} notes (optional) RSO notes
+ * @returns {Object} { ok, message }
+ */
+function rsoApproveApplication(applicationId, rsoEmail, notes) {
+  try {
+    var readiness = checkApplicationDocumentReadiness(applicationId);
+    if (!readiness.ok) {
+      return { ok: false, message: "Could not check document status." };
+    }
+    if (!readiness.allApproved) {
+      return { ok: false, message: "Not all required documents are approved. Missing: " + readiness.missingDocs.join(", ") };
+    }
+
+    // Get application from ApplicationService
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { ok: false, message: "Application not found." };
+    }
+
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appRow = _findApplicationRow(applicationId);
+
+    // Update application status to RSO_DOCS_APPROVED (intermediate state)
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_DOCS_APPROVED);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("docs_approved");
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
+    if (notes) {
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(notes);
+    }
+
+    logAuditEntry(rsoEmail, "APPLICATION_RSO_DOCS_APPROVED", "Application", applicationId,
+      "RSO approved all documents and application");
+
+    // Send email to board (no email to applicant at this stage)
+    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+    sendEmailFromTemplate("ADM_RSO_APPLICATION_APPROVED_TO_BOARD", boardEmail, {
+      FIRST_NAME:       "Board",
+      APPLICANT_NAME:   application.primary_applicant_name || "",
+      APPLICATION_ID:   applicationId,
+      APPROVAL_DATE:    formatDate(new Date()),
+      NEXT_STEPS:       "All RSO documents approved. Ready for your final approval and payment instructions."
+    });
+
+    return { ok: true, message: "Application documents approved by RSO. Awaiting board final approval." };
+  } catch (e) {
+    Logger.log("ERROR rsoApproveApplication: " + e);
+    return { ok: false, message: String(e) };
+  }
+}
+
 function checkDocumentExpirationWarnings() {
   var submissions = _getAllSubmissions_();
   var warningsSent = 0;
   var now = new Date();
   var sixMonths = new Date(now.getFullYear(), now.getMonth() + PASSPORT_WARNING_MONTHS, now.getDate());
+  var oneMonth = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
 
   for (var i = 0; i < submissions.length; i++) {
     var s = submissions[i];
     if (!s.is_current || (s.status !== "verified" && s.status !== "approved")) continue;
     var docType = String(s.document_type || "").toLowerCase();
     if (docType !== "passport" && docType !== "omang") continue;
-    if (!s.doc_expiry_date && !s.expiration_date) continue;
-    var expiry = new Date(s.doc_expiry_date || s.expiration_date);
-    if (expiry <= sixMonths && expiry >= now) {
-      warningsSent++;
+    if (!s.document_expiration_date) continue;
+    var expiry = new Date(s.document_expiration_date);
+    if (expiry <= now) continue; // Already expired
+
+    var individual = getMemberById(s.individual_id);
+    if (!individual || !individual.email) continue;
+
+    // Check for 6-month warning
+    if (expiry <= sixMonths && expiry > oneMonth) {
+      if (!s.expiration_warning_6m_sent_date) {
+        // Send 6-month warning
+        sendEmailFromTemplate("MEM_PASSPORT_EXPIRATION_WARNING_6M_TO_MEMBER", individual.email, {
+          FIRST_NAME:        individual.first_name || "Member",
+          DOCUMENT_TYPE:     docType === "passport" ? "passport" : "omang",
+          EXPIRATION_DATE:   formatDate(expiry),
+          PORTAL_URL:        getConfigValue("PORTAL_URL") || ""
+        });
+
+        // Mark as sent
+        var found = _findSubmissionById_(s.submission_id);
+        if (found) {
+          _setSubmissionFields_(found, { expiration_warning_6m_sent_date: new Date() });
+        }
+        warningsSent++;
+      }
+    }
+
+    // Check for 1-month warning (only if 6-month wasn't just sent)
+    if (expiry <= oneMonth && expiry > now) {
+      if (!s.expiration_warning_1m_sent_date) {
+        // Send 1-month warning
+        sendEmailFromTemplate("MEM_PASSPORT_EXPIRATION_WARNING_1M_TO_MEMBER", individual.email, {
+          FIRST_NAME:        individual.first_name || "Member",
+          DOCUMENT_TYPE:     docType === "passport" ? "passport" : "omang",
+          EXPIRATION_DATE:   formatDate(expiry),
+          PORTAL_URL:        getConfigValue("PORTAL_URL") || ""
+        });
+
+        // Mark as sent
+        var found2 = _findSubmissionById_(s.submission_id);
+        if (found2) {
+          _setSubmissionFields_(found2, { expiration_warning_1m_sent_date: new Date() });
+        }
+        warningsSent++;
+      }
     }
   }
 
@@ -309,14 +463,22 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
     var newStatus = approved ? (docType === "photo" || docType === "employment" ? "approved" : "verified") :
       (found.obj.status === "submitted" ? "rso_rejected" : "gea_rejected");
 
-    _setSubmissionFields_(found, {
+    var patchObj = {
       status: newStatus,
       gea_reviewed_by: userEmail,
       gea_review_date: new Date(),
       member_facing_rejection_reason: approved ? "" : rejectionReason,
       is_current: approved ? true : false,
       disabled_date: approved ? "" : new Date()
-    });
+    };
+
+    // When document is approved, blank out expiration warning dates so new document is tracked
+    if (approved) {
+      patchObj.expiration_warning_6m_sent_date = "";
+      patchObj.expiration_warning_1m_sent_date = "";
+    }
+
+    _setSubmissionFields_(found, patchObj);
 
     if (approved && docType === "photo") {
       copyApprovedPhotoToCloudStorage(submission_id, found.obj.individual_id);
@@ -569,7 +731,7 @@ function getDocumentsForRsoReview(documentTypeFilter) {
  * @param {string} rsoEmail       Authenticated RSO member's email (from session)
  * @returns {Object}  { ok, new_status } or { ok: false, error }
  */
-function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail) {
+function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail, allowResubmit) {
   try {
     var found = _findSubmissionById_(submissionId);
     if (!found) return { ok: false, error: "Submission not found." };
@@ -585,17 +747,60 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail)
     var approve    = decision === "approve";
     var newStatus  = approve ? "gea_pending" : "rso_rejected";
 
-    _setSubmissionFields_(found, {
+    var patchObj = {
       status:                          newStatus,
       rso_reviewed_by:                 rsoEmail,
       rso_review_date:                 new Date(),
       member_facing_rejection_reason:  approve ? "" : (rejectionReason || "Rejected by RSO")
-    });
+    };
+
+    // If rejecting, track that RSO rejected it
+    if (!approve) {
+      // Default to allowing resubmission unless explicitly set otherwise
+      patchObj.allow_resubmit = allowResubmit !== undefined ? allowResubmit : true;
+    }
+
+    _setSubmissionFields_(found, patchObj);
 
     logAuditEntry(rsoEmail,
       approve ? AUDIT_FILE_SUBMISSION_RSO_APPROVED : AUDIT_FILE_SUBMISSION_RSO_REJECTED,
       "FileSubmission", submissionId,
       approve ? "Approved via RSO portal" : "Rejected via RSO portal: " + rejectionReason);
+
+    // Send rejection notification to board
+    if (!approve) {
+      var individual = getMemberById(found.obj.individual_id);
+      var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+      var applicantName = individual ? (individual.first_name + " " + individual.last_name) : "Unknown";
+      sendEmailFromTemplate("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD", boardEmail, {
+        FIRST_NAME:        "Board",
+        APPLICANT_NAME:    applicantName,
+        INDIVIDUAL_ID:     found.obj.individual_id,
+        DOCUMENT_TYPE:     docType,
+        REJECTION_REASON:  rejectionReason || "Rejected by RSO",
+        APPLICATION_ID:    found.obj.application_id || "(standalone document)"
+      });
+    }
+
+    // If approved and part of an application, check if all documents are now approved
+    if (approve && found.obj.application_id) {
+      var readiness = checkApplicationDocumentReadiness(found.obj.application_id);
+      if (readiness.ok && readiness.allApproved) {
+        // Get application to verify it's in RSO_REVIEW status
+        var app = _getApplicationById(found.obj.application_id);
+        if (app && String(app.status || "").toLowerCase() === String(APP_STATUS_RSO_REVIEW).toLowerCase()) {
+          // All documents approved - notify board that RSO can now finalize application
+          var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+          var appName = app.primary_applicant_name || "Applicant";
+          sendEmailFromTemplate("ADM_RSO_ALL_DOCS_APPROVED_TO_BOARD", boardEmail, {
+            FIRST_NAME:     "Board",
+            APPLICANT_NAME: appName,
+            APPLICATION_ID: found.obj.application_id,
+            APPROVAL_DATE:  formatDate(new Date())
+          });
+        }
+      }
+    }
 
     return { ok: true, new_status: newStatus };
   } catch (e) {

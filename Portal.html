@@ -1333,6 +1333,29 @@
 </div>
 
 <!-- ============================================================ -->
+<!-- DOCUMENT EXPIRATION DATE MODAL                                -->
+<!-- Capture expiration date when uploading passport/omang         -->
+<!-- ============================================================ -->
+
+<div id="docExpirationModal" class="modal-overlay" style="display: none;">
+  <div class="modal-content" style="max-width: 400px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 style="margin: 0; font-size: 18px;">Document Expiration Date</h2>
+      <button type="button" class="btn btn-icon" onclick="closeDocExpirationModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">×</button>
+    </div>
+    <p style="color: #666; margin-bottom: 16px; font-size: 14px;">Please provide the expiration date of your <span id="docExpirationDocType" style="font-weight: 600;">document</span>. This helps us send you timely reminders when your document is about to expire.</p>
+    <div class="form-group">
+      <label class="form-label">Expiration Date</label>
+      <input type="date" id="docExpirationDateInput" class="form-input" required>
+    </div>
+    <div style="display: flex; gap: 12px; margin-top: 24px;">
+      <button type="button" class="btn btn-primary" onclick="proceedWithDocumentUpload()" style="flex: 1;">Upload Document</button>
+      <button type="button" class="btn btn-link" onclick="closeDocExpirationModal()" style="flex: 1; background: none; border: 1px solid #ddd; color: #666;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
 <!-- PASSWORD RESET REQUEST SCREEN                                -->
 <!-- Request password reset via email                             -->
 <!-- ============================================================ -->
@@ -7750,6 +7773,9 @@ function submitPasswordReset(event) {
     triggerBtn.parentNode.insertBefore(confirmSpan, triggerBtn.nextSibling);
   }
 
+  // Global state for document upload with expiration date
+  var _pendingDocumentUpload = null;
+
   function triggerDocumentUpload(individualId, docType, btn) {
     // Create a temporary file input and trigger it
     var input = document.createElement('input');
@@ -7759,33 +7785,80 @@ function submitPasswordReset(event) {
       var file = e.target.files[0];
       if (!file) return;
 
-      var originalText = btn ? btn.textContent : null;
-      if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
-
-      var reader = new FileReader();
-      reader.onload = function(evt) {
-        var base64 = evt.target.result.split(',')[1];
-        apiCall('upload_document', {
-          individual_id: individualId,
-          document_type: docType,
-          file_data_base64: base64,
-          file_name: file.name
-        }).then(function(res) {
-          if (res.success) {
-            showError('Document uploaded successfully!', 'success');
-            loadApplicantPortal();
-          } else {
-            if (btn) { btn.disabled = false; btn.textContent = originalText; }
-            showError('Error uploading document: ' + res.message);
-          }
-        }).catch(function(err) {
-          if (btn) { btn.disabled = false; btn.textContent = originalText; }
-          showError('Error: ' + err.message);
-        });
+      // Store pending upload info
+      _pendingDocumentUpload = {
+        individualId: individualId,
+        docType: docType,
+        file: file,
+        btn: btn,
+        originalText: btn ? btn.textContent : null
       };
-      reader.readAsDataURL(file);
+
+      // For passport and omang, show expiration date modal
+      if (docType === 'passport' || docType === 'omang') {
+        var docTypeLabel = docType === 'passport' ? 'Passport' : 'OMANG';
+        document.getElementById('docExpirationDocType').textContent = docTypeLabel;
+        document.getElementById('docExpirationDateInput').value = '';
+        document.getElementById('docExpirationModal').style.display = 'flex';
+      } else {
+        // For other documents, proceed directly
+        proceedWithDocumentUpload();
+      }
     };
     input.click();
+  }
+
+  function closeDocExpirationModal() {
+    document.getElementById('docExpirationModal').style.display = 'none';
+    _pendingDocumentUpload = null;
+  }
+
+  function proceedWithDocumentUpload() {
+    if (!_pendingDocumentUpload) return;
+
+    var upload = _pendingDocumentUpload;
+    var expirationDate = document.getElementById('docExpirationDateInput').value;
+
+    // For passport/omang, validate expiration date
+    if ((upload.docType === 'passport' || upload.docType === 'omang') && !expirationDate) {
+      showError('Please enter the document expiration date.');
+      return;
+    }
+
+    closeDocExpirationModal();
+
+    var btn = upload.btn;
+    if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      var base64 = evt.target.result.split(',')[1];
+      var payload = {
+        individual_id: upload.individualId,
+        document_type: upload.docType,
+        file_data_base64: base64,
+        file_name: upload.file.name
+      };
+
+      // Add expiration date if provided
+      if (expirationDate) {
+        payload.document_expiration_date = new Date(expirationDate);
+      }
+
+      apiCall('upload_document', payload).then(function(res) {
+        if (res.success) {
+          showError('Document uploaded successfully!', 'success');
+          loadApplicantPortal();
+        } else {
+          if (btn) { btn.disabled = false; btn.textContent = upload.originalText; }
+          showError('Error uploading document: ' + res.message);
+        }
+      }).catch(function(err) {
+        if (btn) { btn.disabled = false; btn.textContent = upload.originalText; }
+        showError('Error: ' + err.message);
+      });
+    };
+    reader.readAsDataURL(upload.file);
   }
 
   /**

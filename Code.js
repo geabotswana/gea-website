@@ -236,6 +236,7 @@ function _routeAction(action, params) {
     case "admin_guest_histories":          return _handleAdminGuestHistories(params);
     case "admin_rso_pending_documents":    return _handleAdminRsoPendingDocuments(params);
     case "admin_rso_approve_document":     return _handleAdminRsoApproveDocument(params);
+    case "admin_rso_applications_ready":   return _handleAdminRsoApplicationsReady(params);
     case "admin_rso_approved_calendar":    return _handleAdminRsoApprovedCalendar(params);
     case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
     case "admin_calendar":                 return _handleAdminCalendar(params);
@@ -246,6 +247,7 @@ function _routeAction(action, params) {
     case "admin_application_detail": return _handleAdminApplicationDetail(params);
     case "admin_approve_application": return _handleAdminApproveApplication(params);
     case "admin_deny_application":    return _handleAdminDenyApplication(params);
+    case "rso_approve_application":   return _handleRsoApproveApplication(params);
     case "admin_verify_payment":      return _handleAdminVerifyPayment(params);
     case "admin_pending_payments": return _handleAdminPendingPayments(params);
     case "admin_approve_payment": return _handleAdminApprovePayment(params);
@@ -2041,14 +2043,19 @@ function _handleUploadDocument(p) {
       submitted_date: new Date(),
       doc_number: p.doc_number || "",
       doc_expiry_date: p.doc_expiry || "",
+      document_expiration_date: p.document_expiration_date || "",
       doc_country: p.doc_country || "",
       passport_type: p.passport_type || "",
       is_current: true,
+      application_id: p.application_id || "",
+      expiration_warning_6m_sent_date: "",
+      expiration_warning_1m_sent_date: "",
       rso_reviewed_by: "",
       rso_review_date: "",
       gea_reviewed_by: "",
       gea_review_date: "",
       rejection_reason: "",
+      allow_resubmit: "",
       cloud_storage_path: ""
     };
 
@@ -2708,6 +2715,36 @@ function _handleAdminDenyApplication(p) {
     }
   } catch (e) {
     return errorResponse("Error denying application: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRsoApproveApplication
+ * PURPOSE: RSO approves an application after all documents are approved
+ * Moves application from RSO_REVIEW to RSO_DOCS_APPROVED status
+ */
+function _handleRsoApproveApplication(p) {
+  try {
+    var auth = requireAuth(p.token, "rso_approve");
+    if (!auth.ok) return auth.response;
+
+    if (!p.application_id) {
+      return errorResponse("application_id is required.", "INVALID_PARAM");
+    }
+
+    var result = rsoApproveApplication(
+      p.application_id,
+      auth.session.email,
+      p.notes || ""
+    );
+
+    if (result.ok) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error approving application: " + e.toString(), "SERVER_ERROR");
   }
 }
 
@@ -3814,6 +3851,7 @@ function _handleAdminRsoPendingDocuments(p) {
  * HANDLER: _handleAdminRsoApproveDocument
  * PURPOSE: rso_approve approves or rejects a single document submission.
  * REQUIRED PARAMS: submission_id, decision ("approve"|"reject"), rejection_reason (if rejecting)
+ * OPTIONAL PARAMS: allow_resubmit (boolean, defaults to true if rejecting)
  * RETURNS: { success, data: { submission_id, new_status } }
  */
 function _handleAdminRsoApproveDocument(p) {
@@ -3827,12 +3865,65 @@ function _handleAdminRsoApproveDocument(p) {
     return errorResponse("rejection_reason required when rejecting.", "MISSING_PARAM");
   }
   try {
-    var result = approveDocumentByRso(p.submission_id, p.decision, p.rejection_reason || "", auth.session.email);
+    var result = approveDocumentByRso(
+      p.submission_id,
+      p.decision,
+      p.rejection_reason || "",
+      auth.session.email,
+      p.allow_resubmit !== undefined ? p.allow_resubmit : undefined
+    );
     if (!result.ok) return errorResponse(result.error || "Could not process decision.", "OPERATION_FAILED");
     return successResponse({ submission_id: p.submission_id, new_status: result.new_status });
   } catch (e) {
     Logger.log("ERROR _handleAdminRsoApproveDocument: " + e);
     return errorResponse("Could not process decision.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoApplicationsReady
+ * PURPOSE: rso_approve views applications where all documents are approved and ready for RSO approval
+ * RETURNS: { success, data: { applications: [...], count } }
+ */
+function _handleAdminRsoApplicationsReady(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+  try {
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appData = appSheet.getDataRange().getValues();
+    var appHeaders = appData[0];
+    var readyApps = [];
+
+    for (var i = 1; i < appData.length; i++) {
+      var app = rowToObject(appHeaders, appData[i]);
+
+      // Only include applications in RSO_REVIEW status
+      if (String(app.status || "").toLowerCase() !== String(APP_STATUS_RSO_REVIEW).toLowerCase()) {
+        continue;
+      }
+
+      // Check if all documents are approved
+      var readiness = checkApplicationDocumentReadiness(app.application_id);
+      if (readiness.ok && readiness.allApproved) {
+        readyApps.push({
+          application_id: app.application_id,
+          applicant_name: app.primary_applicant_name || "",
+          applicant_email: app.primary_applicant_email || "",
+          status: app.status,
+          submitted_date: app.application_date ? formatDate(new Date(app.application_date), true) : ""
+        });
+      }
+    }
+
+    // Sort by submitted date (newest first)
+    readyApps.sort(function(a, b) {
+      return a.submitted_date < b.submitted_date ? 1 : -1;
+    });
+
+    return successResponse({ applications: readyApps, count: readyApps.length });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoApplicationsReady: " + e);
+    return errorResponse("Could not load applications.", "SERVER_ERROR");
   }
 }
 

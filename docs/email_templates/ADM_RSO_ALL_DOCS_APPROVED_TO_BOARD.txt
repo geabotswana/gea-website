@@ -1,0 +1,15 @@
+Dear Board,
+
+All required documents for {{APPLICANT_NAME}} have been reviewed and approved by RSO.
+
+Application: {{APPLICATION_ID}}
+Approved: {{APPROVAL_DATE}}
+
+RSO will proceed to finalize the application approval. Once complete, the application will be ready for your final review and approval.
+
+---
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+This is an automated message from the GEA member management system. Please do not reply to this email. Contact board@geabotswana.org for support.

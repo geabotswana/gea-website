@@ -1,0 +1,16 @@
+Dear {{FIRST_NAME}},
+
+Your {{DOCUMENT_TYPE}} will expire on {{EXPIRATION_DATE}} (in approximately 1 month).
+
+Please urgently renew your document and upload the new one to your GEA member portal as soon as you receive it. Expired documents may affect your membership status.
+
+You can update your documents by logging into your account at {{PORTAL_URL}}.
+
+If you have any questions or need assistance, please contact board@geabotswana.org.
+
+---
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+This is an automated message from the GEA member management system. Please do not reply to this email. Contact board@geabotswana.org for support.

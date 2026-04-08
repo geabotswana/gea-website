@@ -679,6 +679,7 @@ var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
 var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
 var APP_STATUS_RSO_REVIEW               = "rso_review";
+var APP_STATUS_RSO_DOCS_APPROVED        = "rso_docs_approved";
 var APP_STATUS_BOARD_FINAL_REVIEW       = "board_final_review";
 var APP_STATUS_APPROVED_PENDING_PAYMENT = "approved_pending_payment";
 var APP_STATUS_PAYMENT_SUBMITTED        = "payment_submitted";

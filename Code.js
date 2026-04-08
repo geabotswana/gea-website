@@ -246,6 +246,7 @@ function _routeAction(action, params) {
     case "admin_application_detail": return _handleAdminApplicationDetail(params);
     case "admin_approve_application": return _handleAdminApproveApplication(params);
     case "admin_deny_application":    return _handleAdminDenyApplication(params);
+    case "rso_approve_application":   return _handleRsoApproveApplication(params);
     case "admin_verify_payment":      return _handleAdminVerifyPayment(params);
     case "admin_pending_payments": return _handleAdminPendingPayments(params);
     case "admin_approve_payment": return _handleAdminApprovePayment(params);
@@ -2708,6 +2709,36 @@ function _handleAdminDenyApplication(p) {
     }
   } catch (e) {
     return errorResponse("Error denying application: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRsoApproveApplication
+ * PURPOSE: RSO approves an application after all documents are approved
+ * Moves application from RSO_REVIEW to RSO_DOCS_APPROVED status
+ */
+function _handleRsoApproveApplication(p) {
+  try {
+    var auth = requireAuth(p.token, "rso_approve");
+    if (!auth.ok) return auth.response;
+
+    if (!p.application_id) {
+      return errorResponse("application_id is required.", "INVALID_PARAM");
+    }
+
+    var result = rsoApproveApplication(
+      p.application_id,
+      auth.session.email,
+      p.notes || ""
+    );
+
+    if (result.ok) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error approving application: " + e.toString(), "SERVER_ERROR");
   }
 }
 

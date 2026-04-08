@@ -119,7 +119,7 @@ board_final_denial_reason, payment_status, payment_id, created_date, last_modifi
 
 **APPROVE PATH:**
 - ✅ Sets `board_initial_status = "approved"`
-- ✅ Sets `status = APP_STATUS_RSO_REVIEW`
+- ✅ Sets `status = APP_STATUS_RSO_DOCS_REVIEW`
 - ✅ Sends tpl_044 (Docs Sent to RSO) to RSO + applicant
 - ✅ Logs AUDIT_APPLICATION_BOARD_INITIAL
 
@@ -259,7 +259,8 @@ board_final_denial_reason, payment_status, payment_id, created_date, last_modifi
 var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
 var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
-var APP_STATUS_RSO_REVIEW               = "rso_review";
+var APP_STATUS_RSO_DOCS_REVIEW          = "rso_docs_review";
+var APP_STATUS_RSO_APPLICATION_REVIEW   = "rso_application_review";
 var APP_STATUS_BOARD_FINAL_REVIEW       = "board_final_review";
 var APP_STATUS_APPROVED_PENDING_PAYMENT = "approved_pending_payment";
 var APP_STATUS_PAYMENT_SUBMITTED        = "payment_submitted";

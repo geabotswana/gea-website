@@ -234,7 +234,7 @@
 6. Click **"Approve for RSO Review"**
 
 **Check:**
-- Application status in sheet advances to "rso_review"
+- Application status in sheet advances to "rso_docs_review"
 - RSO receives email to rso-approve@geabotswana.org: ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE
   - Email contains applicant name, application ID, and one-time approval link (for EACH submitted document)
 - Applicant portal status card updates to "rso_review"

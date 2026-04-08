@@ -24,7 +24,8 @@
 var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
 var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
-var APP_STATUS_RSO_REVIEW               = "rso_review";
+var APP_STATUS_RSO_DOCS_REVIEW          = "rso_docs_review";
+var APP_STATUS_RSO_APPLICATION_REVIEW   = "rso_application_review";
 var APP_STATUS_BOARD_FINAL_REVIEW       = "board_final_review";
 var APP_STATUS_APPROVED_PENDING_PAYMENT = "approved_pending_payment";
 var APP_STATUS_PAYMENT_SUBMITTED        = "payment_submitted";
@@ -40,9 +41,10 @@ var APP_STATUS_WITHDRAWN                = "withdrawn";  // ⚠️ NOT USED
 |---|---|---|---|
 | `awaiting_docs` | ✅ Yes | 236 | When application first created (createApplicationRecord) |
 | `docs_confirmed` | ✅ Yes | 435 | When applicant confirms documents uploaded (confirmDocumentsUploaded) |
-| `board_initial_review` | ✅ Yes | 702 (and others) | When RSO rejects (rsoDecision), loops back for re-review |
-| `rso_review` | ✅ Yes | 600 | When board approves initial application (boardInitialDecision) |
-| `board_final_review` | ✅ Yes | 682 | When RSO approves documents (rsoDecision) |
+| `board_initial_review` | ✅ Yes | 702 (and others) | When RSO rejects documents (rsoApproveApplication), loops back for re-review |
+| `rso_docs_review` | ✅ Yes | 585 | When board approves initial application (boardInitialDecision) |
+| `rso_application_review` | ✅ Yes | 341 | When RSO approves all documents and application (rsoApproveApplication) |
+| `board_final_review` | ✅ Yes | 753 | When board makes final decision after RSO approval |
 | `approved_pending_payment` | ✅ Yes | 762 | When board approves final application (boardFinalDecision) |
 | `payment_submitted` | ✅ Yes | 880 | When applicant submits payment proof (submitPaymentProofForApplication) |
 | `payment_verified` | ❌ NOT USED | 673 only | Defined in Config but never assigned in code |
@@ -135,7 +137,8 @@ This might cause the unverified payment count to always return 0 if "status" fie
 - awaiting_docs
 - docs_confirmed
 - board_initial_review
-- rso_review
+- rso_docs_review
+- rso_application_review
 - board_final_review
 - approved_pending_payment
 - payment_submitted
@@ -200,17 +203,19 @@ awaiting_docs
   │ [Applicant confirms documents uploaded]
   └─→ docs_confirmed
       │ [Board initial review]
-      ├─→ rso_review [Board approves]
-      │   │ [RSO reviews documents]
-      │   ├─→ board_final_review [RSO approves]
-      │   │   │ [Board final review]
-      │   │   ├─→ approved_pending_payment [Board approves]
-      │   │   │   │ [Applicant submits payment proof]
-      │   │   │   └─→ payment_submitted
-      │   │   │       │ [Treasurer verifies payment]
-      │   │   │       └─→ activated ✅
-      │   │   └─→ denied ❌
-      │   └─→ board_initial_review [RSO rejects - loops back]
+      ├─→ rso_docs_review [Board approves]
+      │   │ [RSO reviews individual documents]
+      │   ├─→ rso_application_review [RSO approves all documents]
+      │   │   │ [RSO approves application]
+      │   │   └─→ board_final_review [Ready for board final review]
+      │   │       │ [Board final review]
+      │   │       ├─→ approved_pending_payment [Board approves]
+      │   │       │   │ [Applicant submits payment proof]
+      │   │       │   └─→ payment_submitted
+      │   │       │       │ [Treasurer verifies payment]
+      │   │       │       └─→ activated ✅
+      │   │       └─→ denied ❌
+      │   └─→ board_initial_review [RSO rejects documents - loops back]
       └─→ denied ❌ [Board denies initial]
 
 FILE SUBMISSION FLOW:

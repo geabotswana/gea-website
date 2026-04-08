@@ -139,7 +139,7 @@ All handlers require: `requireAuth(p.token, "rso")` before proceeding.
   - `rso_reviewed_by` = **session.email** (authenticated RSO member)
   - `rso_review_date` = NOW
   - `rejection_reason` = reason (if rejected)
-- If approved: Update Application status to "rso_review" (waiting for GEA admin final review)
+- If approved: Update Application status to "rso_application_review" (waiting for board final review)
 - If rejected: Email applicant with rejection reason, allow resubmission
 - Audit log: Record RSO decision with individual's email
 

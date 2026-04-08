@@ -337,8 +337,8 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
 
-    // Update application status to RSO_DOCS_APPROVED (intermediate state)
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_DOCS_APPROVED);
+    // Update application status to RSO_APPLICATION_REVIEW (intermediate state)
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("docs_approved");
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
@@ -788,7 +788,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
       if (readiness.ok && readiness.allApproved) {
         // Get application to verify it's in RSO_REVIEW status
         var app = _getApplicationById(found.obj.application_id);
-        if (app && String(app.status || "").toLowerCase() === String(APP_STATUS_RSO_REVIEW).toLowerCase()) {
+        if (app && String(app.status || "").toLowerCase() === String(APP_STATUS_RSO_DOCS_REVIEW).toLowerCase()) {
           // All documents approved - notify board that RSO can now finalize application
           var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
           var appName = app.primary_applicant_name || "Applicant";

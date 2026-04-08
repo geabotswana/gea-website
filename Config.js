@@ -678,8 +678,8 @@ var AUDIT_EMAIL_MISSING_VARIABLES         = "EMAIL_MISSING_VARIABLES";
 var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
 var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
-var APP_STATUS_RSO_REVIEW               = "rso_review";
-var APP_STATUS_RSO_DOCS_APPROVED        = "rso_docs_approved";
+var APP_STATUS_RSO_DOCS_REVIEW          = "rso_docs_review";
+var APP_STATUS_RSO_APPLICATION_REVIEW   = "rso_application_review";
 var APP_STATUS_BOARD_FINAL_REVIEW       = "board_final_review";
 var APP_STATUS_APPROVED_PENDING_PAYMENT = "approved_pending_payment";
 var APP_STATUS_PAYMENT_SUBMITTED        = "payment_submitted";
@@ -976,12 +976,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.35";
+var SYSTEM_VERSION          = "2.4.36";
 var SYSTEM_BUILD_DATE       = "2026-04-08";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix JS syntax errors in showConfirmDialog conversions (guest list, payment, rule delete)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-08 11:07:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Rename RSO approval statuses for clarity: rso_review → rso_docs_review, rso_docs_approved → rso_application_review";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-08 15:18:37";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

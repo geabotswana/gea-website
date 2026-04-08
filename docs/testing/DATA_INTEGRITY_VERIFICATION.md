@@ -97,7 +97,7 @@ Use this checklist after each major stage to ensure data integrity.
 - [ ] `board_initial_status` = "approved"
 - [ ] `board_initial_reviewed_by` = board member email
 - [ ] `board_initial_review_date` = today
-- [ ] `status` = "rso_review" (if after RSO forward) or "board_final_review" (if at final review)
+- [ ] `status` = "rso_docs_review" (if after RSO forward), "rso_application_review" (after RSO approves), or "board_final_review" (if at final review)
 - [ ] `board_final_status` = "approved" (if final board approved)
 
 ---

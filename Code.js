@@ -1382,16 +1382,45 @@ function _handleAdminPhoto(p) {
     return errorResponse("decision must be 'approved' or 'rejected'.", "INVALID_PARAM");
   }
 
-  // Step 4: Call MemberService to update photo status
-  // This handles: status update, email notification, audit log
-  var ok = updatePhotoStatus(p.individual_id, p.decision,
-                             auth.session.email, p.reason || "");
+  // Step 4: Find the pending photo submission for this individual
+  try {
+    var fileSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+    var fileData = fileSheet.getDataRange().getValues();
+    var fileHeaders = fileData[0];
+    var submissionId = null;
 
-  if (!ok) {
-    return errorResponse("Could not update photo status.", "UPDATE_FAILED");
+    for (var i = 1; i < fileData.length; i++) {
+      var file = rowToObject(fileHeaders, fileData[i]);
+      if (file.individual_id === p.individual_id &&
+          file.document_type === "photo" &&
+          file.status === "submitted") {
+        submissionId = file.submission_id;
+        break;
+      }
+    }
+
+    if (!submissionId) {
+      return errorResponse("No pending photo found for this member.", "NOT_FOUND");
+    }
+
+    // Step 5: Call FileSubmissionService to approve or reject
+    var result;
+    if (p.decision === "approved") {
+      result = approveFileSubmission(submissionId, auth.session.email);
+    } else {
+      result = rejectFileSubmission(submissionId, p.reason || "Rejected by board", auth.session.email);
+    }
+
+    if (!result.ok) {
+      return errorResponse(result.error || "Could not update photo status.", "UPDATE_FAILED");
+    }
+
+    return successResponse({}, "Photo " + p.decision + ".");
+
+  } catch (e) {
+    Logger.log("ERROR _handleAdminPhoto: " + e);
+    return errorResponse("Could not update photo status: " + e.toString(), "SERVER_ERROR");
   }
-
-  return successResponse({}, "Photo " + p.decision + ".");
 }
 
 

@@ -5478,7 +5478,7 @@
    */
   function approvePhoto(individualId) {
     apiCall('admin_photo', {
-      action: 'approve',
+      decision: 'approved',
       individual_id: individualId
     }).then(function(res) {
       if (!res.success) {
@@ -5518,7 +5518,7 @@
     btn.textContent = 'Rejecting...';
     
     apiCall('admin_photo', {
-      action: 'reject',
+      decision: 'rejected',
       individual_id: selectedPhotoIndividualId,
       reason: reason,
       details: details

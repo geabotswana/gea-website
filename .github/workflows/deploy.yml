@@ -1,12 +1,17 @@
 name: Deploy to GEA Botswana
 on:
-  push:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["Auto-update Deployment Metadata"]
+    types: [completed]
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pull latest changes from main
+        run: git pull origin main
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

@@ -1,0 +1,77 @@
+name: Auto-update Deployment Metadata
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Code.js'
+      - 'Admin.html'
+      - 'Portal.html'
+      - 'AuthService.js'
+      - 'MemberService.js'
+      - 'ReservationService.js'
+      - 'PaymentService.js'
+      - 'FileSubmissionService.js'
+      - 'EmailService.js'
+      - 'NotificationService.js'
+      - 'ApplicationService.js'
+      - 'RulesService.js'
+      - 'Utilities.js'
+      - '.github/workflows/update-deployment-metadata.yml'
+
+jobs:
+  update-metadata:
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-metadata]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Configure git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Update deployment timestamp
+        run: node scripts/update-deploy-timestamp.js
+
+      - name: Update version and feature description
+        run: |
+          # Get the commit message from the latest commit
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+
+          # Extract feature description (first line)
+          FEATURE=$(echo "$COMMIT_MSG" | head -1)
+
+          # Get current version
+          CURRENT_VERSION=$(grep "var SYSTEM_VERSION" Config.js | sed "s/.*\"\([^\"]*\)\".*/\1/")
+
+          # Bump patch version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+
+          # Update Config.js
+          sed -i "s/var SYSTEM_VERSION.*=.*/var SYSTEM_VERSION          = \"$NEW_VERSION\";/" Config.js
+          sed -i "s/var SYSTEM_BUILD_DATE.*/var SYSTEM_BUILD_DATE       = \"$(date +%Y-%m-%d)\";/" Config.js
+          sed -i "s/var SYSTEM_LAST_FEATURE.*/var SYSTEM_LAST_FEATURE     = \"$FEATURE\";/" Config.js
+
+          echo "✅ Updated version from $CURRENT_VERSION → $NEW_VERSION"
+          echo "✅ Feature: $FEATURE"
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet Config.js; then
+            echo "No changes to commit"
+          else
+            git add Config.js
+            git commit -m "chore: auto-update deployment metadata [skip-metadata]"
+            git push
+            echo "✅ Committed updated metadata"
+          fi

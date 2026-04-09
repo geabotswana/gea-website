@@ -1418,10 +1418,11 @@ function _handleAdminPendingPhotos(p) {
           photos.push({
             submission_id: file.submission_id,
             individual_id: file.individual_id,
-            individual_name: individual.first_name + " " + individual.last_name,
+            member_name: individual.first_name + " " + individual.last_name,
             household_id: individual.household_id,
             submitted_date: file.submitted_date,
-            status: file.status
+            status: file.status,
+            file_id: file.file_id
           });
         }
       }

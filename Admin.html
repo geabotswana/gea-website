@@ -1409,6 +1409,7 @@
       <div class="nav-item" data-page="photos" onclick="showPage('photos', event)">
         <span class="nav-icon">📸</span>
         <span>Photo Review</span>
+        <span id="photos-badge" class="badge" style="display:none;">0</span>
       </div>
       <div class="nav-item" data-page="guest-lists" onclick="showPage('guest-lists', event)">
         <span class="nav-icon">📋</span>
@@ -3210,6 +3211,13 @@
         if (appBadge) {
           appBadge.textContent = data.pending_applications || 0;
           appBadge.style.display = (data.pending_applications > 0) ? '' : 'none';
+        }
+
+        // Update Photos badge in sidebar
+        var photoBadge = document.getElementById('photos-badge');
+        if (photoBadge) {
+          photoBadge.textContent = data.pending_photos || 0;
+          photoBadge.style.display = (data.pending_photos > 0) ? '' : 'none';
         }
 
         // Photo submissions pending
@@ -5380,7 +5388,17 @@
         // Build photo card safely using DOM methods to prevent XSS
         var imageDiv = document.createElement('div');
         imageDiv.className = 'photo-image';
-        imageDiv.textContent = '📸';
+        if (photo.file_id) {
+          var img = document.createElement('img');
+          img.src = 'https://drive.google.com/uc?id=' + encodeURIComponent(photo.file_id) + '&export=view';
+          img.alt = 'Member photo';
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          imageDiv.appendChild(img);
+        } else {
+          imageDiv.textContent = '📸';
+        }
         card.appendChild(imageDiv);
 
         var footerDiv = document.createElement('div');

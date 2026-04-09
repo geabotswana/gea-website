@@ -1438,6 +1438,11 @@
         <span>Document Review</span>
         <span id="rso-documents-badge" class="badge" style="display:none;">0</span>
       </div>
+      <div class="nav-item" data-page="rso-applications" onclick="showPage('rso-applications', event)">
+        <span class="nav-icon">📋</span>
+        <span>Application Review</span>
+        <span id="rso-applications-badge" class="badge" style="display:none;">0</span>
+      </div>
       <div class="nav-item" data-page="rso-calendar" onclick="showPage('rso-calendar', event)">
         <span class="nav-icon">📅</span>
         <span>Event Calendar</span>
@@ -2076,14 +2081,17 @@
         <div id="rsoDocsContent">
           <p style="color:#aaa;">Loading...</p>
         </div>
+      </div>
 
-        <!-- Applications Ready for RSO Approval -->
-        <div id="rsoAppsReadySection" style="margin-top:40px; display:none;">
-          <h2 style="font-size:16px; color:#0A3161; margin-bottom:12px;">Applications Ready for RSO Approval</h2>
-          <p style="color:#666; margin-bottom:16px; font-size:13px;">All required documents have been approved. Click below to finalize RSO review.</p>
-          <div id="rsoAppsReadyContent">
-            <p style="color:#aaa;">Loading...</p>
-          </div>
+      <!-- ========================================================== -->
+      <!-- PAGE: RSO APPLICATION REVIEW (rso_approve only)             -->
+      <!-- ========================================================== -->
+      <div id="rso-applications" class="page">
+        <h1 class="page-title">Application Review</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review and approve or deny membership applications. All required documents must be approved before this stage.</p>
+
+        <div id="rsoAppsReadyContent">
+          <p style="color:#aaa;">Loading...</p>
         </div>
       </div>
 
@@ -2829,8 +2837,8 @@
       showPage('rso-calendar');
       loadRsoCalendar();
     } else if (normalizedRole === 'rso_approve') {
-      showPage('rso-documents');
-      loadRsoDocuments();
+      showPage('dashboard');
+      loadDashboard();
     } else {
       showPage('dashboard');
       loadDashboard();
@@ -2867,8 +2875,8 @@
    * Shows/hides sidebar nav items based on the logged-in admin's role.
    *   board       — sees everything
    *   mgt         — dashboard, pending reservations, waitlist, reservation calendar
-   *   rso_approve — guest lists, rso-documents (document review queue), rso-calendar, rso-approved-guests
-   *   rso_notify  — rso-calendar, rso-approved-guests (read-only)
+   *   rso_approve — dashboard, document review, application review, guest lists, event calendar, approved guest lists
+   *   rso_notify  — event calendar, approved guest lists (read-only)
    *   rso         — backward-compat alias for rso_approve
    */
   function _applyNavRoleFilter(role) {
@@ -2879,7 +2887,7 @@
 
     // Map nav page IDs to the roles that can see them (empty = all roles)
     var navRoles = {
-      'dashboard':           ['board', 'mgt'],                         // board + mgt only
+      'dashboard':           ['board', 'mgt', 'rso_approve'],           // board + mgt + rso_approve
       'reservations':        ['board', 'mgt'],
       'waitlist':            ['board', 'mgt'],
       'res-calendar':        ['board', 'mgt'],
@@ -2891,6 +2899,7 @@
       'reports':             ['board'],
       'administrators':      ['board'],
       'rso-documents':       ['rso_approve'],
+      'rso-applications':    ['rso_approve'],                           // rso_approve reviews applications
       'rso-calendar':        ['rso_approve', 'rso_notify'],
       'rso-approved-guests': ['rso_approve', 'rso_notify']
     };
@@ -3082,6 +3091,9 @@
       case 'rso-documents':
         loadRsoDocuments();
         break;
+      case 'rso-applications':
+        loadRsoAppsReady();
+        break;
       case 'rso-calendar':
         if (!document.getElementById('rsoCalMonth').value) {
           var now = new Date();
@@ -3222,7 +3234,17 @@
    * Updates the stat cards and lists on the dashboard page.
    */
   function loadDashboard() {
-    // Load dashboard statistics from backend
+    // Check user role for RSO-specific dashboard
+    var userRole = currentUser ? currentUser.role : 'board';
+    var isRsoApprove = userRole === 'rso_approve' || userRole === 'rso' || userRole === 'rso-approve';
+
+    if (isRsoApprove) {
+      // Load RSO-specific dashboard
+      _loadRsoApprovalDashboard();
+      return;
+    }
+
+    // Load board/mgt dashboard statistics from backend
     apiCall('admin_dashboard_stats', {}).then(function(res) {
       if (res.success && res.data) {
         var data = res.data;
@@ -3281,6 +3303,60 @@
     document.getElementById('dashUpcomingList').innerHTML = upcomingHtml;
 
     // In production, fetch from backend and render upcoming reservations here
+  }
+
+  /**
+   * Loads RSO approval dashboard with RSO-specific metrics.
+   */
+  function _loadRsoApprovalDashboard() {
+    var dashContent = document.getElementById('dashboardContent');
+    if (!dashContent) return;
+
+    // Show RSO-specific dashboard
+    var rsoHtml = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">';
+
+    rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #0A3161; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Documents Pending Review</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #0A3161; font-weight: 600;" id="rsoDashDocCount">—</div>';
+    rsoHtml += '</div>';
+
+    rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #2E7D32; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Applications Ready for Review</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #2E7D32; font-weight: 600;" id="rsoDashAppCount">—</div>';
+    rsoHtml += '</div>';
+
+    rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #F57C00; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Guest Lists Pending Review</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #F57C00; font-weight: 600;" id="rsoDashGuestCount">—</div>';
+    rsoHtml += '</div>';
+
+    rsoHtml += '</div>';
+
+    dashContent.innerHTML = rsoHtml;
+
+    // Load document count
+    apiCall('admin_rso_pending_documents', {}).then(function(res) {
+      if (res.success && res.data) {
+        var docCount = document.getElementById('rsoDashDocCount');
+        if (docCount) docCount.textContent = res.data.count || 0;
+      }
+    });
+
+    // Load applications ready count
+    apiCall('admin_rso_applications_ready', {}).then(function(res) {
+      if (res.success && res.data) {
+        var appCount = document.getElementById('rsoDashAppCount');
+        if (appCount) appCount.textContent = res.data.count || 0;
+      }
+    });
+
+    // Load pending guest lists count
+    apiCall('admin_guest_lists', {}).then(function(res) {
+      if (res.success && res.data) {
+        var guestCount = document.getElementById('rsoDashGuestCount');
+        if (guestCount) guestCount.textContent = res.data.pending_count || 0;
+      }
+    });
   }
   
   // ============================================================ //

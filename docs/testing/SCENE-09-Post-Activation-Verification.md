@@ -21,51 +21,51 @@
 
 | Role | Who | Access |
 |------|-----|--------|
-| **Member 1** | Alice Thornton (Scene 01) | Regular Member Portal |
-| **Family Primary** | Robert Osei (Scene 02) | Regular Member Portal |
-| **Family Member** | Margaret Osei (Scene 02, spouse) | Regular Member Portal (if she has her own login) |
+| **Member 1** | James Morrison (Scene 01) | Regular Member Portal |
+| **Family Primary** | William Peterson (Scene 02) | Regular Member Portal |
+| **Family Member** | Sarah Peterson (Scene 02, spouse) | Regular Member Portal (if she has her own login) |
 
 ---
 
 ## Pre-conditions
 
-- Scene 01 complete: Alice Thornton is an active Full Individual member
-- Scene 02 complete: Osei family is active (all 5 members)
+- Scene 01 complete: James Morrison is an active Full Individual member
+- Scene 02 complete: Peterson family is active (all 5 members)
 
 ---
 
-## Part A — Alice Thornton (Full Individual)
+## Part A — James Morrison (Full Individual)
 
 ---
 
 ### Step A1 — Login and Portal Redirect
-**Who:** Alice Thornton
+**Who:** James Morrison
 **Where:** Portal login page
 
 **Action:**
 1. Navigate to the Member Portal login page
-2. Log in with Alice's credentials
+2. Log in with James's credentials (email: michael+fullindividual@raneyworld.com)
 
 **Check:**
 - Login succeeds
-- Alice is immediately directed to the **regular member portal** (not non-member portal)
+- James is immediately directed to the **regular member portal** (not non-member portal)
 - Regular portal nav shows: Dashboard, Reservations, Profile, Membership Card
 - Non-member portal nav items (Documents upload, Application Status, My Household, Help/Contact form) are NOT shown
 
-**Fail if:** Alice sees non-member portal, or regular portal tabs are missing
+**Fail if:** James sees non-member portal, or regular portal tabs are missing
 
 ---
 
 ### Step A2 — Dashboard
-**Who:** Alice Thornton
+**Who:** James Morrison
 **Where:** Member Portal → Dashboard
 
 **Check:**
-- Household name shown: "Thornton" (or "Alice Thornton")
+- Household name shown: "Morrison" (or "James Morrison")
 - Membership status: ACTIVE (green badge or equivalent)
 - Membership type shown: "Full — Individual"
 - Expiration date: next July 31 (e.g. 2026-07-31 if activated before July 31 2026)
-- No pending reservations (she has none yet)
+- No pending reservations (he has none yet)
 - No warnings or error banners
 
 **Fail if:** Status shows inactive, expiration date is wrong, or household name is missing
@@ -73,7 +73,7 @@
 ---
 
 ### Step A3 — Membership Card
-**Who:** Alice Thornton
+**Who:** James Morrison
 **Where:** Member Portal → Membership Card
 
 **Action:**
@@ -81,11 +81,11 @@
 2. View the digital card
 
 **Check:**
-- Name: Alice Thornton
+- Name: James Morrison
 - Membership Category: Full (Individual) or equivalent
 - Member Since: today's date (or application submitted date)
 - Valid Through: next July 31
-- Household ID: HSH-2026-XXXX (her household ID)
+- Household ID: HSH-2026-XXXX (his household ID)
 - Card design renders correctly (no broken images, no missing placeholders)
 
 **Fail if:** Name wrong, category wrong, expired date wrong, or card shows a different member's info
@@ -93,20 +93,20 @@
 ---
 
 ### Step A4 — Profile Page
-**Who:** Alice Thornton
+**Who:** James Morrison
 **Where:** Member Portal → Profile
 
 **Check:**
-- First name = Alice, Last name = Thornton
-- Email = [her test email]
-- Phone = what she entered during application
+- First name = James, Last name = Morrison
+- Email = michael+fullindividual@raneyworld.com (or his test email)
+- Phone = +267 71 234501 or what he entered during application
 - Contact info is editable (Edit button or inline edit)
 
 **Action:** Make a small edit — change phone number, save
 
 **Check after edit:**
 - Success message shown
-- Individuals sheet: Alice's phone_primary updated
+- Individuals sheet: James's phone_primary updated
 - Profile page reflects new number after save
 
 **Fail if:** Profile is read-only (should be editable), or sheet doesn't update
@@ -114,7 +114,7 @@
 ---
 
 ### Step A5 — Reservations Page
-**Who:** Alice Thornton
+**Who:** James Morrison
 **Where:** Member Portal → Reservations
 
 **Check:**
@@ -132,34 +132,34 @@
 ---
 
 ### Step A6 — Cannot Access Admin Portal
-**Who:** Alice Thornton
+**Who:** James Morrison
 **Where:** Admin Portal URL
 
-**Action:** Navigate to the Admin Portal URL while logged in as Alice
+**Action:** Navigate to the Admin Portal URL while logged in as James
 
 **Check:**
-- Alice is denied access with "Forbidden" or "Board access required" error
-- She is NOT shown the admin dashboard
-- Her role is "member" (not "board") — confirm in Sessions sheet if needed
+- James is denied access with "Forbidden" or "Board access required" error
+- He is NOT shown the admin dashboard
+- His role is "member" (not "board") — confirm in Sessions sheet if needed
 
 **Fail if:** Regular member can access admin portal
 
 ---
 
-## Part B — Robert Osei and Family (Full Family)
+## Part B — William Peterson and Family (Full Family)
 
 ---
 
-### Step B1 — Robert Osei Login
-**Who:** Robert Osei (primary family member)
+### Step B1 — William Peterson Login
+**Who:** William Peterson (primary family member)
 **Where:** Portal login
 
-**Action:** Log in as Robert Osei
+**Action:** Log in as William Peterson (email: michael+fullfamily@raneyworld.com)
 
 **Check:**
 - Directed to regular member portal
-- Dashboard shows household name "Osei"
-- Family members count: 4 additional members (Margaret, Daniel, Sophie, Grace) — confirm household size indicator if present
+- Dashboard shows household name "Peterson"
+- Family members count: 4 additional members (Sarah, Emma, Lucas, Thabo) — confirm household size indicator if present
 - Membership type: "Full — Family"
 
 **Fail if:** Shows non-member portal, or shows individual rate instead of family
@@ -167,18 +167,18 @@
 ---
 
 ### Step B2 — Membership Card Shows Family Designation
-**Who:** Robert Osei
+**Who:** William Peterson
 **Where:** Membership Card
 
 **Check:**
 - Card shows "Full Family" or equivalent
-- Robert's name on card
+- William's name on card
 - Valid through next July 31
 
 ---
 
 ### Step B3 — Dues Reflect Family Rate
-**Who:** Robert Osei
+**Who:** William Peterson
 
 **Action:** Navigate to any page that shows dues or membership pricing
 
@@ -189,33 +189,33 @@
 ---
 
 ### Step B4 — Family Members Have Individual Access
-**Who:** Margaret Osei (spouse)
+**Who:** Sarah Peterson (spouse)
 **Where:** Portal login
 
-**Pre-condition:** Margaret has her own email address and received credentials during the application
+**Pre-condition:** Sarah has her own email address and received credentials during the application
 
-**Action:** Log in as Margaret Osei
+**Action:** Log in as Sarah Peterson
 
 **Check:**
-- Margaret can log in
+- Sarah can log in
 - Directed to regular member portal
-- Dashboard shows Osei household info
+- Dashboard shows Peterson household info
 - Her individual profile is accessible
 
-**Note:** If Margaret's email was not provided during the application, skip this step and note it as untested.
+**Note:** If Sarah's email was not provided during the application, skip this step and note it as untested.
 
 ---
 
-### Step B5 — Grace (Staff Member) Cannot Make Reservations
-**Who:** Grace Mokobi (household staff)
-**Where:** Portal login (if Grace has login credentials)
+### Step B5 — Thabo (Staff Member) Cannot Make Reservations
+**Who:** Thabo Motswana (household staff)
+**Where:** Portal login (if Thabo has login credentials)
 
-**Action:** If Grace has an email address and received credentials, log in as Grace
+**Action:** If Thabo has an email address and received credentials, log in as Thabo
 
 **Check:**
-- Grace can log in
-- Her access may be limited compared to full members — verify what she can and cannot do
-- Specifically: can Grace make a reservation? (per system design, staff members may have limited access)
+- Thabo can log in
+- His access may be limited compared to full members — verify what he can and cannot do
+- Specifically: can Thabo make a reservation? (per system design, staff members may have limited access)
 
 **Note:** Document the actual behavior observed here as this may inform future policy.
 
@@ -228,20 +228,19 @@
 
 ### Step C1 — Households Integrity
 **Check:**
-- Alice Thornton: Households row active = TRUE, membership_level_id = "full_indiv", expiration = next July 31
-- Osei family: Households row active = TRUE, membership_level_id = "full_family", expiration = next July 31
+- James Morrison: Households row active = TRUE, membership_level_id = "full_indiv", expiration = next July 31
+- Peterson family: Households row active = TRUE, membership_level_id = "full_family", expiration = next July 31
 
 ### Step C2 — Individuals Integrity
 **Check:**
-- All active individuals (Alice, Robert, Margaret, Abena, Grace) have active = TRUE
-- Kofi Asante (removed in Scene 07): active = FALSE
-- Sophie Osei (over 18): voting_eligible = TRUE
-- Daniel Osei (under 18): voting_eligible = FALSE
+- All active individuals (James, William, Sarah, Emma, Lucas, Thabo) have active = TRUE
+- Lucas (over 17): voting_eligible = TRUE
+- Emma (under 17): voting_eligible = FALSE
 
 ### Step C3 — Applications Integrity
 **Check:**
-- Alice's application: status = "activated", payment_status = "verified"
-- Osei application: status = "activated", payment_status = "verified"
+- James Morrison's application: status = "activated", payment_status = "verified"
+- Peterson family application: status = "activated", payment_status = "verified"
 - Neither has any residual pending or null fields that should have been populated at activation
 
 ### Step C4 — Sessions

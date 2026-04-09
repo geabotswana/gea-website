@@ -306,7 +306,7 @@ Use this table to find which test identity to use for each scene:
 |-------|-------|---------------|-------|-------|
 | **01** | Full Individual Happy Path | James Morrison | michael+fullindividual@raneyworld.com | Baseline; creates household HSH-XXXX-TEST01 |
 | **02** | Full Family Happy Path | William Peterson | michael+fullfamily@raneyworld.com | Large household; activation cascade test |
-| **03A** | Category Routing — Full | James Morrison (above) or Alice Thornton | Use test data loader | Questionnaire to Full, Individual |
+| **03A** | Category Routing — Full | James Morrison | michael+fullindividual@raneyworld.com | Questionnaire to Full, Individual (can reuse from Scene 01) |
 | **03B** | Category Routing — Temporary | Patricia Anderson | michael+temporaryindividual@raneyworld.com | Test Q1b branch (TDY route) |
 | **03C** | Category Routing — Associate | David Chen | michael+associateindividual@raneyworld.com | No sponsor required |
 | **03D** | Category Routing — Affiliate | Boitumelo Lekgotho | michael+affiliateindividual@raneyworld.com | Embassy local-hire category |

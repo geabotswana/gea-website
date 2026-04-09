@@ -42,7 +42,7 @@ You need test accounts at each of the following statuses. Use accounts from prio
 | `payment_submitted` | After submitting payment proof |
 | `lapsed` | An activated member whose membership has expired (run `checkExpiringMemberships()` in GAS editor, or manually set application_status = "lapsed" and active = FALSE in the Households sheet for a test household) |
 | `denied` | Scene 04 accounts (Nina Walsh or Owen Batho) |
-| `activated` | Scene 01 account (Alice Thornton) — though she redirects to member portal |
+| `activated` | Scene 01 account (James Morrison) — though he redirects to member portal |
 
 ---
 
@@ -219,7 +219,7 @@ For each status, log in as the corresponding test account and verify the followi
 ### Status: `activated` (redirected to member portal)
 
 **Action:**
-1. Log in as Alice Thornton (Scene 01 — activated member)
+1. Log in as James Morrison (Scene 01 — activated member) with email michael+fullindividual@raneyworld.com
 
 **Check:**
 - [ ] Directed to the REGULAR Member Portal (NOT the non-member portal)

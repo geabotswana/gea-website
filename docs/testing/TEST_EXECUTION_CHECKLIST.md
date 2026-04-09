@@ -262,7 +262,7 @@ Submit 6 applications (one per category) and verify questionnaire routing.
 #### Path A: Full Individual
 - ⬜ Load test data (Full + Individual)
 - ⬜ Q1: YES, Q1b: NO → Category = Full
-- ⬜ Submit as Alice Thornton
+- ⬜ Submit as James Morrison (michael+fullindividual@raneyworld.com)
 - ⬜ No sponsor required
 - Result: ✅ / ❌
 

@@ -27,9 +27,9 @@
 **Admin Portal login note:** Admin credentials are stored in the Administrators tab of the System Backend workbook (not in the Individuals sheet). Each admin logs in with their email and password. Contact the board chair if you need credentials issued or reset.
 
 **Suggested test data:**
-- Applicant name: Alice Thornton
-- Applicant email: use a real inbox you control (e.g. a personal Gmail)
-- Household name will be: Thornton
+- Applicant name: James Morrison
+- Applicant email: michael+fullindividual@raneyworld.com (or use a real inbox you control)
+- Household name will be: Morrison
 
 ---
 
@@ -89,16 +89,16 @@
 **Where:** Portal — Application Form Step 2
 
 **Action:** Fill in all required fields:
-- First Name: Alice
-- Last Name: Thornton
-- Email: [your test email]
-- Phone: [any valid number with country code]
+- First Name: James
+- Last Name: Morrison
+- Email: michael+fullindividual@raneyworld.com (or your test email)
+- Phone: +267 71 234501
 - WhatsApp: check the box if applicable
 - Country of Citizenship: United States
-- Employment Office: Embassy of the United States, Gaborone
-- Job Title: [any title, e.g. Political Officer]
-- Posting Date: [a past date, e.g. 2024-08-01]
-- Departure Date: [a future date, e.g. 2027-07-31]
+- Employment Office: U.S. Embassy Gaborone
+- Job Title: Economic Officer
+- Posting Date: 2023-08-20
+- Departure Date: (blank — Full members no departure date)
 
 **Action:** Click Submit / Next to submit the application
 
@@ -118,19 +118,19 @@
 **Action:** Open Member Directory → check the following tabs:
 
 **Households tab:**
-- New row exists with household_name = "Thornton" (or "Alice Thornton")
+- New row exists with household_name = "Morrison" (or "James Morrison")
 - active = FALSE
 - application_status = "awaiting_docs" (or similar initial status)
 - membership_level_id = "full_indiv"
 
 **Individuals tab:**
-- New row exists with first_name = "Alice", last_name = "Thornton"
-- email = [test email]
+- New row exists with first_name = "James", last_name = "Morrison"
+- email = michael+fullindividual@raneyworld.com (or your test email)
 - active = FALSE
 - role = "member" (not yet activated)
 
 **System Backend → Membership Applications tab:**
-- New row with email = [test email]
+- New row with email = michael+fullindividual@raneyworld.com (or your test email)
 - status = "awaiting_docs"
 - membership_category = "Full"
 - household_type = "Individual"
@@ -186,9 +186,9 @@
 
 **Action:**
 1. Click "Documents" in navigation
-2. Find the primary applicant section (Alice Thornton)
-3. Upload a **Passport** document (use any PDF or JPG test file, max 5MB)
-4. Upload a **Photo** (use any JPG test file)
+2. Find the primary applicant section (James Morrison)
+3. Upload a **Passport** document (use test-data/id-documents/James_Morrison_passport.png or any PDF/JPG test file, max 5MB)
+4. Upload a **Photo** (use test-data/photos/James_Morrison_photo.png or any JPG test file)
 5. Confirm each upload shows a "Pending" status after upload
 
 **Check:**
@@ -228,7 +228,7 @@
 **Action:**
 1. Log in to Admin Portal with email and password (board@geabotswana.org). The Admin Portal login screen now has both an email and password field — this is different from the member portal.
 2. Navigate to Applications
-3. Find Alice Thornton's application (filter by "Board Review" status if needed)
+3. Find James Morrison's application (filter by "Board Review" status if needed)
 4. Click to open the application detail
 5. Review: confirm category = Full, household_type = Individual, documents shown
 6. Click **"Approve for RSO Review"**
@@ -286,7 +286,7 @@
 **Where:** Admin Portal → Applications
 
 **Action:**
-1. Open Alice Thornton's application
+1. Open James Morrison's application
 2. Confirm status is "Board Final Review"
 3. Click **"Approve Membership"** (final approval button)
 
@@ -364,7 +364,7 @@
 **Action:**
 1. Log in to Admin Portal with email and password (treasurer@ or board@geabotswana.org)
 2. Navigate to Payments → Pending Verification
-3. Confirm Alice Thornton's payment appears in the list
+3. Confirm James Morrison's payment appears in the list
 4. Click to open payment detail
 5. Verify: method = PayPal (USD), notes visible, proof file downloadable (if uploaded)
 
@@ -382,7 +382,7 @@
 **Where:** Admin Portal → Payments → Pending Verification
 
 **Action:**
-1. Click **"Approve"** on Alice Thornton's payment
+1. Click **"Approve"** on James Morrison's payment
 
 **Check all of the following:**
 
@@ -420,7 +420,7 @@
 This scene is **PASS** when all 16 steps complete with all checks satisfied.
 
 Key end state:
-- Alice Thornton is an active Full Individual member
+- James Morrison is an active Full Individual member
 - All three IDs exist and are consistent: HSH-XXXX, IND-XXXX, APP-XXXX, payment_id
-- She can log in to the regular Member Portal
-- Her record will be reused in Scene 09 for post-activation verification
+- He can log in to the regular Member Portal
+- His record will be reused in Scene 09 for post-activation verification

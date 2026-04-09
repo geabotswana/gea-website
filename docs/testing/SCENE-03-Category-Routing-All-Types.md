@@ -44,7 +44,14 @@
 2. Q1: "U.S. Direct-Hire?" → **YES**
 3. Q1b: "Temporary duty?" → **NO**
 4. Household type: **Individual**
-5. Fill personal info (name: Carol Bennett, employment info required)
+5. Fill personal info:
+   - Name: James Morrison
+   - Email: michael+fullindividual@raneyworld.com
+   - Phone: +267 71 234501
+   - Citizenship: United States
+   - Employment Office: U.S. Embassy Gaborone
+   - Job Title: Economic Officer
+   - Posting Date: 2023-08-20
 6. Submit
 
 **Check:**
@@ -63,7 +70,15 @@
 **Action:**
 1. Q1: **YES**, Q1b: **YES** (temporary duty)
 2. Household type: **Individual**
-3. Fill personal info (name: David Park, TDY officer)
+3. Fill personal info:
+   - Name: Patricia Anderson
+   - Email: michael+temporaryindividual@raneyworld.com
+   - Phone: +267 71 234509
+   - Citizenship: United States
+   - Employment Office: U.S. State Department
+   - Job Title: Temporary Assignment Officer
+   - Posting Date: 2026-02-01
+   - Departure Date: 2026-08-31 (6-month maximum)
 4. Submit
 
 **Check:**
@@ -84,7 +99,14 @@
 1. Q1: **NO**
 2. Q2: "Recruited outside Botswana or USG-funded contractor?" → **YES**
 3. Household type: **Individual**
-4. Fill personal info (name: Fatima Al-Hassan); employment fields for USG-funded contractor
+4. Fill personal info:
+   - Name: David Chen
+   - Email: michael+associateindividual@raneyworld.com
+   - Phone: +267 71 234503
+   - Citizenship: Singapore
+   - Employment Office: Infosys Gaborone
+   - Job Title: Senior Systems Architect
+   - Posting Date: 2024-02-01
 5. Submit
 
 **Check:**
@@ -104,7 +126,14 @@
 2. Q2: **NO**
 3. Q3: "Embassy employee recruited IN Botswana?" → **YES**
 4. Household type: **Individual**
-5. Fill personal info (name: James Nkosi, employer = US Embassy, local hire)
+5. Fill personal info:
+   - Name: Boitumelo Lekgotho
+   - Email: michael+affiliateindividual@raneyworld.com
+   - Phone: +267 71 234505
+   - Citizenship: Botswana
+   - Employment Office: U.S. Embassy Gaborone
+   - Job Title: Local Hire - Administrative Assistant
+   - Posting Date: 2021-01-15
 6. Submit
 
 **Check:**
@@ -124,7 +153,15 @@
 1. Q1: **NO**, Q2: **NO**, Q3: **NO**
 2. Q4: "Registered diplomat of another mission?" → **YES**
 3. Household type: **Individual**
-4. Fill personal info (name: Isabella Rodrigues, Mission = Embassy of Brazil, title = Second Secretary)
+4. Fill personal info:
+   - Name: Jean-Pierre Dupont
+   - Email: michael+diplomaticindividual@raneyworld.com
+   - Phone: +267 71 234507
+   - Citizenship: France
+   - Employment Office: Ministry of Foreign Affairs (France)
+   - Job Title: Ambassador
+   - Posting Date: 2021-09-01
+   - Departure Date: 2027-08-31
 5. Submit
 
 **Check:**
@@ -143,16 +180,26 @@
 **Action:**
 1. Q1: **NO**, Q2: **NO**, Q3: **NO**, Q4: **NO**
 2. Household type: **Individual**
-3. Fill personal info (name: Thomas Segoe, no USG affiliation)
-4. Provide sponsor
+3. Fill personal info:
+   - Name: George Makgawe
+   - Email: michael+communityindividual@raneyworld.com
+   - Phone: +267 71 234510
+   - Citizenship: Botswana
+   - Employment Office: Pula Capital Partners
+   - Job Title: Managing Director
+   - Posting Date: 2019-06-01
+4. Provide sponsor:
+   - Sponsor Name: Ambassador James Morrison
+   - Sponsor Email: morrison@example.com
 5. Submit
 
 **Check:**
 - Application row: membership_category = "Community"
-- Employment fields minimal or not required (Community members may not need employment info)
+- Employment fields shown (Community members have employment, just not USG-specific)
 - membership_level_id = "community_indiv"
+- Sponsor field IS shown (required for Community)
 
-**Fail if:** Category = "Diplomatic" (fallthrough not working)
+**Fail if:** Category = "Diplomatic" (fallthrough not working), or sponsor field not shown
 
 ---
 

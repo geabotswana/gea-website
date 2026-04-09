@@ -5576,7 +5576,11 @@
         return;
       }
 
-      var dataUrl = res.data.data_url;
+      // Construct data URL from base64 and mime type returned by API
+      var base64 = res.data.base64;
+      var mimeType = res.data.mime_type || 'image/jpeg';
+      var dataUrl = 'data:' + mimeType + ';base64,' + base64;
+
       imgEl.src = dataUrl;
       imgEl.style.display = 'block';
       actionsEl.style.display = 'flex';

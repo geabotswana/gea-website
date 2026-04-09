@@ -5390,7 +5390,8 @@
         imageDiv.className = 'photo-image';
         if (photo.file_id) {
           var img = document.createElement('img');
-          img.src = 'https://drive.google.com/uc?id=' + encodeURIComponent(photo.file_id) + '&export=view';
+          // Use the image proxy endpoint built into the webapp
+          img.src = '?action=img&id=' + encodeURIComponent(photo.file_id);
           img.alt = 'Member photo';
           img.style.width = '100%';
           img.style.height = '100%';

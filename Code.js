@@ -3930,8 +3930,8 @@ function _handleAdminRsoApplicationsReady(p) {
     for (var i = 1; i < appData.length; i++) {
       var app = rowToObject(appHeaders, appData[i]);
 
-      // Only include applications in RSO_DOCS_REVIEW status
-      if (String(app.status || "").toLowerCase() !== String(APP_STATUS_RSO_DOCS_REVIEW).toLowerCase()) {
+      // Only include applications in RSO_APPLICATION_REVIEW status (ready for RSO approval)
+      if (String(app.status || "").toLowerCase() !== String(APP_STATUS_RSO_APPLICATION_REVIEW).toLowerCase()) {
         continue;
       }
 

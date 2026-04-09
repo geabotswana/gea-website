@@ -1,0 +1,19 @@
+Dear Board,
+
+RSO Denial Recommendation: {{APPLICANT_NAME}}
+
+Application: {{APPLICATION_ID}}
+
+RSO RECOMMENDATION:
+{{DENIAL_MESSAGE}}
+
+---
+
+{{NEXT_STEPS}}
+
+---
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+This is an automated message from the GEA member management system. Please do not reply to this email. Contact board@geabotswana.org for support.

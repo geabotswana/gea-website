@@ -589,10 +589,10 @@ Tracks membership applications with complete workflow history from submission th
 
 **Status Flow:**
 
-1. `awaiting_docs` — Application submitted; applicant needs to upload/confirm required documents.
-2. `docs_confirmed` — Applicant confirmed required docs are uploaded.
-3. `board_initial_review` — Board reviews before RSO escalation.
-4. `rso_review` — RSO reviews documents and can loop back if issues found.
+1. `awaiting_docs` — Application submitted; applicant uploads and confirms required documents.
+2. `board_initial_review` — Board reviews application and documents; decides whether to forward to RSO.
+3. `rso_docs_review` — RSO reviews individual documents (passport, omang, photos, etc).
+4. `rso_application_review` — All documents approved by RSO; RSO approves/denies application as a whole.
 5. `board_final_review` — Board makes final decision after RSO.
 6. `approved_pending_payment` — Applicant approved, awaiting payment submission.
 7. `payment_submitted` — Payment proof submitted and pending verification.

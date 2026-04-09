@@ -635,9 +635,9 @@ var AUDIT_HOUSEHOLD_PHONE_SYNC_SKIPPED  = "HOUSEHOLD_PHONE_SYNC_SKIPPED";
 var AUDIT_HOUSEHOLD_PHONE_SYNC_COMPLETE = "HOUSEHOLD_PHONE_SYNC_COMPLETE";
 var AUDIT_HOUSEHOLD_PHONE_SYNC_FAILED   = "HOUSEHOLD_PHONE_SYNC_FAILED";
 var AUDIT_APPLICATION_CREATED             = "APPLICATION_CREATED";
-var AUDIT_APPLICATION_DOCS_CONFIRMED      = "APPLICATION_DOCS_CONFIRMED";
 var AUDIT_APPLICATION_BOARD_INITIAL       = "APPLICATION_BOARD_INITIAL";
 var AUDIT_APPLICATION_RSO_REVIEWED        = "APPLICATION_RSO_REVIEWED";
+var AUDIT_APPLICATION_RSO_DENIED          = "APPLICATION_RSO_DENIED";
 var AUDIT_APPLICATION_BOARD_FINAL         = "APPLICATION_BOARD_FINAL";
 var AUDIT_APPLICATION_PAYMENT_SUBMITTED   = "APPLICATION_PAYMENT_SUBMITTED";
 var AUDIT_APPLICATION_ACTIVATED           = "APPLICATION_ACTIVATED";
@@ -676,10 +676,9 @@ var AUDIT_EMAIL_MISSING_VARIABLES         = "EMAIL_MISSING_VARIABLES";
 // ============================================================
 
 var APP_STATUS_AWAITING_DOCS            = "awaiting_docs";
-var APP_STATUS_DOCS_CONFIRMED           = "docs_confirmed";
 var APP_STATUS_BOARD_INITIAL_REVIEW     = "board_initial_review";
-var APP_STATUS_RSO_REVIEW               = "rso_review";
-var APP_STATUS_RSO_DOCS_APPROVED        = "rso_docs_approved";
+var APP_STATUS_RSO_DOCS_REVIEW          = "rso_docs_review";
+var APP_STATUS_RSO_APPLICATION_REVIEW   = "rso_application_review";
 var APP_STATUS_BOARD_FINAL_REVIEW       = "board_final_review";
 var APP_STATUS_APPROVED_PENDING_PAYMENT = "approved_pending_payment";
 var APP_STATUS_PAYMENT_SUBMITTED        = "payment_submitted";
@@ -976,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.35";
-var SYSTEM_BUILD_DATE       = "2026-04-08";
+var SYSTEM_VERSION          = "2.4.39";
+var SYSTEM_BUILD_DATE       = "2026-04-09";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix JS syntax errors in showConfirmDialog conversions (guest list, payment, rule delete)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-08 11:07:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Create ADM_RSO_APPLICATION_DENIED_TO_BOARD email template for RSO denial notifications";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-09 08:12:43";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

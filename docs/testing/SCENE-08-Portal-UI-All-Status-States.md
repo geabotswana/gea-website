@@ -35,8 +35,9 @@ You need test accounts at each of the following statuses. Use accounts from prio
 |--------|--------|
 | `awaiting_docs` | Any new application |
 | `board_initial_review` | After docs confirmed |
-| `rso_review` | After board initial approval |
-| `board_final_review` | After RSO approval |
+| `rso_docs_review` | After board initial approval |
+| `rso_application_review` | After RSO approves all documents |
+| `board_final_review` | After RSO approves application |
 | `approved_pending_payment` | After board final approval |
 | `payment_submitted` | After submitting payment proof |
 | `lapsed` | An activated member whose membership has expired (run `checkExpiringMemberships()` in GAS editor, or manually set application_status = "lapsed" and active = FALSE in the Households sheet for a test household) |
@@ -96,18 +97,32 @@ For each status, log in as the corresponding test account and verify the followi
 
 ---
 
-### Status: `rso_review`
+### Status: `rso_docs_review`
 
 **Dashboard:**
-- [ ] Status message: "Application is in RSO review."
+- [ ] Status message: "Application documents are under RSO review."
 - [ ] No action required from applicant
 
 **Timeline (if Application Status page is accessible):**
 - [ ] Steps 1 (Submitted) and 2 (Documents) show ✓
 - [ ] Step 3 (Board Approval) shows ✓ (initial board approved)
-- [ ] Step 4 (RSO/Payment) shows ⏳ (in progress)
+- [ ] Step 4 (RSO Review) shows ⏳ (in progress)
 
 **Fail if:** Timeline shows incorrect step statuses
+
+---
+
+### Status: `rso_application_review`
+
+**Dashboard:**
+- [ ] Status message: "Documents approved by RSO. Application awaiting final board decision."
+- [ ] No action required from applicant
+
+**Timeline (if Application Status page is accessible):**
+- [ ] Steps 1 (Submitted), 2 (Documents), and 3 (RSO Review) show ✓
+- [ ] Step 4 (Board Final Review) shows ⏳ (in progress)
+
+**Fail if:** Payment page accessible at this status (it shouldn't be)
 
 ---
 

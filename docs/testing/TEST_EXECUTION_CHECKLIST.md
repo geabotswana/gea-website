@@ -91,7 +91,7 @@ Category: Full | Household: Individual
   - Expected: Documents tab shows 2 submissions
   - Actual: ___________
 - ⬜ Approve application (initial review)
-  - Expected: Status = "docs_confirmed"; email sent to applicant
+  - Expected: Status = "board_initial_review"; board notified for review
   - Actual: ___________
 
 #### RSO Document Review

@@ -248,6 +248,7 @@ function _routeAction(action, params) {
     case "admin_approve_application": return _handleAdminApproveApplication(params);
     case "admin_deny_application":    return _handleAdminDenyApplication(params);
     case "rso_approve_application":   return _handleRsoApproveApplication(params);
+    case "rso_deny_application":      return _handleRsoDenyApplication(params);
     case "admin_verify_payment":      return _handleAdminVerifyPayment(params);
     case "admin_pending_payments": return _handleAdminPendingPayments(params);
     case "admin_approve_payment": return _handleAdminApprovePayment(params);
@@ -2749,6 +2750,38 @@ function _handleRsoApproveApplication(p) {
 }
 
 /**
+ * HANDLER: _handleRsoDenyApplication
+ * PURPOSE: RSO recommends denial of application (goes to board for final decision)
+ */
+function _handleRsoDenyApplication(p) {
+  try {
+    var auth = requireAuth(p.token, "rso_approve");
+    if (!auth.ok) return auth.response;
+
+    if (!p.application_id) {
+      return errorResponse("application_id is required.", "INVALID_PARAM");
+    }
+    if (!p.denial_message) {
+      return errorResponse("denial_message is required.", "INVALID_PARAM");
+    }
+
+    var result = rsoDenyApplication(
+      p.application_id,
+      auth.session.email,
+      p.denial_message
+    );
+
+    if (result.ok) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error denying application: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
  * HANDLER: _handleAdminVerifyPayment
  * PURPOSE: Treasurer verifies payment and activates membership
  */
@@ -3897,8 +3930,8 @@ function _handleAdminRsoApplicationsReady(p) {
     for (var i = 1; i < appData.length; i++) {
       var app = rowToObject(appHeaders, appData[i]);
 
-      // Only include applications in RSO_REVIEW status
-      if (String(app.status || "").toLowerCase() !== String(APP_STATUS_RSO_REVIEW).toLowerCase()) {
+      // Only include applications in RSO_DOCS_REVIEW status
+      if (String(app.status || "").toLowerCase() !== String(APP_STATUS_RSO_DOCS_REVIEW).toLowerCase()) {
         continue;
       }
 

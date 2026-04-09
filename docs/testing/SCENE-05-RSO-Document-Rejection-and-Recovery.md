@@ -137,7 +137,7 @@
 **Where:** Admin Portal → Applications
 
 **Action:**
-1. Board sees Priya's application still in "rso_review" but passport was rejected
+1. Board sees Priya's application still in "rso_docs_review" but passport was rejected
 2. Board triggers a new RSO approval link for the re-uploaded passport
 3. (Mechanism: either automatic on re-upload, or board clicks "Send to RSO" again)
 

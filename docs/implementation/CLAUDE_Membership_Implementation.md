@@ -40,11 +40,11 @@ Controls the overall progress of an application through the 11-step workflow.
 
 | Status | Meaning | Set When | Next Transition |
 |--------|---------|----------|-----------------|
-| `awaiting_docs` | Application created, awaiting document uploads | Application submitted (Step 3) | → `docs_confirmed` |
-| `docs_confirmed` | Applicant confirmed all documents uploaded | Applicant confirms documents (Step 5) | → `board_initial_review` |
-| `board_initial_review` | Waiting for board initial review | RSO rejects documents (loops back) | → `rso_review` or `denied` |
-| `rso_review` | Documents sent to RSO for verification | Board approves initial (Step 6) | → `board_final_review` or `board_initial_review` |
-| `board_final_review` | RSO approved; awaiting board final decision | RSO approves documents (Step 7) | → `approved_pending_payment` or `denied` |
+| `awaiting_docs` | Application created, awaiting document uploads | Application submitted (Step 3) | → `board_initial_review` |
+| `board_initial_review` | Waiting for board initial review | Applicant confirms documents (Step 5) | → `rso_docs_review` or `denied` |
+| `rso_docs_review` | Documents sent to RSO for verification | Board approves initial (Step 6) | → `rso_application_review` or `board_initial_review` |
+| `rso_application_review` | RSO approved; awaiting board final decision | RSO approves application (Step 7) | → `board_final_review` or looping |
+| `board_final_review` | Board makes final membership decision | RSO application approved (Step 7) | → `approved_pending_payment` or `denied` |
 | `approved_pending_payment` | Board approved; applicant can submit payment | Board approves final (Step 9) | → `payment_submitted` |
 | `payment_submitted` | Payment proof submitted, awaiting treasurer verification | Applicant submits payment proof (Step 8) | → `activated` |
 | `activated` | Membership activated, all features unlocked | Treasurer verifies payment (Step 10) | ✅ Terminal |
@@ -54,7 +54,6 @@ Controls the overall progress of an application through the 11-step workflow.
 **Implementation Note:** Status values are defined as constants in Config.js (lines 666-676):
 ```javascript
 var APP_STATUS_AWAITING_DOCS = "awaiting_docs";
-var APP_STATUS_DOCS_CONFIRMED = "docs_confirmed";
 // ... etc.
 ```
 
@@ -318,77 +317,79 @@ REQUEST MORE INFO PATH:
   └─ Application remains in "Under Review" status until deadline
 ```
 
-### STEP 7: RSO Reviews & Approves Documents
+### STEP 7: RSO Reviews & Approves Documents, Then Application
+
+**Two-Tier RSO Approval:**
+1. **Document-Level Review:** RSO approves/rejects individual documents
+2. **Application-Level Review:** RSO approves complete application (all documents approved)
 
 ```
-Email sent to rso-approve@geabotswana.org with notification (no link)
+Email sent to rso-approve@geabotswana.org with notification
   └─ RSO logs in to Admin Portal with RSO account
      ├─ Navigate to "Document Reviews" section
-     └─ Documents for all applications pending RSO review listed
+     └─ Documents for all applications in rso_docs_review status listed
 
+TIER 1: RSO Reviews Individual Documents
+─────────────────────────────────────────
 RSO reviews each document via portal interface:
   ├─ Applicant name, application ID, document type
   ├─ Document preview (image or file download)
+  ├─ Document expiration date (captured during upload)
   ├─ Validation checklist:
   │  ├─ Passport: Valid? Expiration date OK? Matches application?
-  │  ├─ Omang: Valid? Current? Matches application?
+  │  ├─ Omang: Valid? Current? Expiration OK? Matches application?
   │  ├─ Diplomatic Passport: Correct country/org? Valid?
   │  ├─ Photo: Quality acceptable? Dimensions correct? Current?
   │  └─ Employment verification: Complete? Verifiable?
   └─ Actions per document: [Approve] [Reject with reason]
 
-RSO DECISION (ALL DOCUMENTS APPROVED):
-  ├─ Click [Approve] on each document
+DOCUMENT APPROVAL (Individual Document Approved):
+  ├─ Click [Approve] on document
   ├─ Update File Submissions: status = "rso_approved"
   │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL] (captured from session)
   │  └─ rso_review_date = NOW
   │
-  ├─ Update Application:
-  │  ├─ rso_status = "approved"
-  │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL]
-  │  ├─ rso_review_date = NOW
-  │  └─ status = "approved_pending_payment"
-  │
-  ├─ Email applicant:
-  │  └─ Email template: "Application Approved! Next: Submit Payment"
-  │     ├─ Congratulations
-  │     ├─ Membership dues amount (if applicable)
-  │     ├─ Payment instructions
-  │     ├─ How to submit proof of payment
-  │     └─ Link to application dashboard
-  │
-  ├─ Email treasurer:
-  │  └─ Email template: "New Member Ready for Payment Verification"
-  │     ├─ Applicant info
-  │     ├─ Membership type
-  │     ├─ Dues amount due
-  │     └─ Link to admin portal to verify payment
-  │
-  └─ Audit log: Record which RSO member approved documents
+  └─ Audit log: Record which RSO member approved document
 
-RSO DECISION (SOME DOCUMENTS REJECTED):
-  ├─ Click [Reject] on document(s), enter reason
+DOCUMENT REJECTION (Individual Document Rejected):
+  ├─ Click [Reject] on document, enter reason, optionally block resubmission
   ├─ Update File Submissions: status = "rso_rejected"
   │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL]
   │  ├─ rso_review_date = NOW
-  │  └─ rejection_reason = [REASON from RSO]
+  │  ├─ rejection_reason = [REASON from RSO]
+  │  └─ allow_resubmit = FALSE (if RSO checks "Do Not Allow Resubmission")
+  │
+  ├─ Update Application: Stays in rso_docs_review (waits for resubmission)
+  │
+  ├─ Email board (via ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD):
+  │  └─ Board notified that RSO flagged a document issue requiring resolution
+  │
+  └─ Audit log: Record RSO rejection and reason
+
+TIER 2: RSO Approves Complete Application
+──────────────────────────────────────────
+Once ALL required documents are approved, RSO sees "Applications Ready for RSO Approval" section:
+  ├─ Application ID, applicant name, all document statuses
+  ├─ RSO clicks [Approve Application]
   │
   ├─ Update Application:
-  │  ├─ rso_status = "denied"
+  │  ├─ status = "rso_application_review" (intermediate state)
+  │  ├─ rso_status = "approved"
   │  ├─ rso_reviewed_by = [LOGGED_IN_RSO_EMAIL]
   │  └─ rso_review_date = NOW
   │
-  ├─ Email applicant:
-  │  └─ Email template: "Documents Rejected - Please Resubmit"
-  │     ├─ List of rejected documents with specific reasons from RSO
-  │     ├─ Instructions for resubmission
-  │     ├─ Deadline to resubmit (e.g., 10 business days)
-  │     └─ Link to dashboard to upload replacements
+  ├─ Email board (via ADM_RSO_APPLICATION_APPROVED_TO_BOARD):
+  │  └─ Board notified that RSO has finalized document review and application is ready for final board decision
   │
-  ├─ Application status: "rejected_documents" (applicant can resubmit)
-  └─ Audit log: Record which RSO member rejected documents
+  └─ Audit log: Record which RSO member approved application
 
-Applicant resubmits rejected documents → Return to STEP 5
+DOCUMENT RESUBMISSION (Applicant Resubmits Rejected Document):
+  ├─ Applicant logs in, sees rejected document in portal
+  ├─ Applicant re-uploads corrected document
+  ├─ New File Submissions record created: status = "submitted"
+  ├─ Application stays in rso_docs_review status (awaiting re-review)
+  ├─ RSO sees updated document list, repeats review cycle
+  └─ Return to TIER 1 for re-review
 ```
 
 **Important Note:** RSO members must have accounts in the Administrators table (System Backend sheet) with role="rso" and password set. See **CLAUDE_RSO_Portal_Implementation.md** for complete RSO portal implementation details.

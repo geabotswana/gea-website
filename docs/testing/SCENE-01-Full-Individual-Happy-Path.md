@@ -213,7 +213,7 @@
 
 **Check:**
 - Confirmation succeeds
-- Dashboard status card updates to "docs_confirmed" or "board_initial_review"
+- Dashboard status card updates to "board_initial_review"
 - Membership Applications sheet: status advances to "board_initial_review"
 - Board receives notification email (check board@geabotswana.org inbox): ADM_NEW_APPLICATION_BOARD_TO_BOARD
 
@@ -234,7 +234,7 @@
 6. Click **"Approve for RSO Review"**
 
 **Check:**
-- Application status in sheet advances to "rso_review"
+- Application status in sheet advances to "rso_docs_review"
 - RSO receives email to rso-approve@geabotswana.org: ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE
   - Email contains applicant name, application ID, and one-time approval link (for EACH submitted document)
 - Applicant portal status card updates to "rso_review"

@@ -16,7 +16,7 @@
  * 7. Treasurer activation (Step 10)
  *
  * Status progression:
- * awaiting_docs → docs_confirmed → board_initial_review →
+ * awaiting_docs → board_initial_review →
  * rso_review → board_final_review → approved_pending_payment →
  * payment_submitted → activated
  * ============================================================
@@ -426,12 +426,11 @@ function confirmDocumentsUploaded(applicationId, email) {
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
     if (appRow > 0) {
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "documents_confirmed_date")).setValue(new Date());
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_INITIAL_REVIEW);
     }
 
-    logAuditEntry(email, AUDIT_APPLICATION_DOCS_CONFIRMED, "Application", applicationId,
-                  "Documents confirmed and ready for board review");
+    logAuditEntry(email, AUDIT_APPLICATION_BOARD_INITIAL, "Application", applicationId,
+                  "Documents submitted and ready for board review");
 
     var applicantName      = application.primary_applicant_name || "";
     var applicantFirstName = applicantName.split(" ")[0] || "Applicant";
@@ -582,7 +581,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_reviewed_by")).setValue(boardEmail);
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_review_date")).setValue(new Date());
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_notes")).setValue(notes || "");
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_REVIEW);
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_DOCS_REVIEW);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_BOARD_INITIAL, "Application", applicationId, "Approved for RSO review");
 
@@ -750,7 +749,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
     // Verify application is in a state that allows final approval
     var currentStatus = String(application.status || "");
     var isValidState = (currentStatus === APP_STATUS_BOARD_FINAL_REVIEW ||
-                        currentStatus === APP_STATUS_RSO_DOCS_APPROVED);
+                        currentStatus === APP_STATUS_RSO_APPLICATION_REVIEW);
     if (!isValidState) {
       return { success: false, message: "Application is not in a state ready for final approval. Current status: " + currentStatus };
     }

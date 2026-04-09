@@ -1665,14 +1665,25 @@
       <!-- ========================================================== -->
       <div id="photos" class="page">
         <h1 class="page-title">Photo Review</h1>
-        
+
         <div class="info-box">
-          📸 Review and approve member ID photos. Rejected photos can be resubmitted by the member.
+          📸 Review and approve member ID photos. Click "View" to open photo in full viewer.
         </div>
-        
-        <div class="photo-grid" id="photoGrid">
+
+        <div id="photosTable" style="display: none;">
+          <table style="width: 100%; border-collapse: collapse; background: white;">
+            <thead>
+              <tr style="border-bottom: 2px solid #0A3161;">
+                <th style="text-align: left; padding: 12px; color: #0A3161; font-weight: 600;">Member Name</th>
+                <th style="text-align: left; padding: 12px; color: #0A3161; font-weight: 600;">Submitted</th>
+                <th style="text-align: center; padding: 12px; color: #0A3161; font-weight: 600;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="photosTableBody">
+            </tbody>
+          </table>
         </div>
-        
+
         <div id="photoEmpty" class="empty-state" style="display: none;">
           <div class="empty-state-icon">✓</div>
           <div class="empty-state-text">No pending photos</div>
@@ -2290,6 +2301,25 @@
       <img id="docViewerImg" src="" alt="Document" style="display:none; max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;">
       <embed id="docViewerPdf" src="" type="application/pdf" style="display:none; width:100%; height:100%; border:none;">
       <div id="docViewerError" style="display:none; color:#f88; font-family:sans-serif; font-size:14px; text-align:center; padding:20px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Viewer Modal -->
+<div id="photoViewerModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center;">
+  <div style="background:#222; border-radius:8px; width:90vw; max-width:960px; height:90vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.7);">
+    <div style="background:#1a3352; color:#fff; padding:12px 16px; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+      <span id="photoViewerTitle" style="font-size:14px; font-weight:600; font-family:sans-serif;">Photo Viewer</span>
+      <button onclick="closePhotoViewer()" style="background:transparent; border:none; color:#fff; font-size:28px; line-height:1; cursor:pointer; padding:0 4px; opacity:0.8;">&times;</button>
+    </div>
+    <div style="flex:1; overflow:auto; border-radius:0 0 8px 8px; background:#1a1a1a; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;">
+      <div id="photoViewerLoading" style="color:#aaa; font-family:sans-serif; font-size:14px;">Loading photo...</div>
+      <img id="photoViewerImg" src="" alt="Member Photo" style="display:none; max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;">
+      <div id="photoViewerError" style="display:none; color:#f88; font-family:sans-serif; font-size:14px; text-align:center; padding:20px;"></div>
+      <div id="photoViewerActions" style="display:none; margin-top:20px; display:flex; gap:8px;">
+        <button class="btn btn-primary" onclick="approvePhotoFromViewer();">Approve</button>
+        <button class="btn btn-danger" onclick="rejectPhotoFromViewer();">Reject</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5358,62 +5388,68 @@
   
   /**
    * Loads pending member photos for review.
-   * Displays them in a grid with approve/reject buttons.
+   * Displays them in a table with View, Approve, and Reject buttons.
    */
   function loadPhotos() {
-    var photoGrid = document.getElementById('photoGrid');
-    photoGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">Loading photos...</p>';
+    var photosTable = document.getElementById('photosTable');
+    var tbody = document.getElementById('photosTableBody');
+
+    if (!tbody) return; // Safety check
 
     apiCall('admin_pending_photos', {}).then(function(res) {
       if (!res.success) {
         showError('Failed to load photos: ' + res.message);
         return;
       }
-      
+
       var photos = res.data.photos || [];
-      
+
       if (photos.length === 0) {
-        photoGrid.innerHTML = '';
+        photosTable.style.display = 'none';
         document.getElementById('photoEmpty').style.display = 'block';
         return;
       }
-      
+
       document.getElementById('photoEmpty').style.display = 'none';
-      photoGrid.innerHTML = '';
-      
+      photosTable.style.display = 'block';
+      tbody.innerHTML = '';
+
       photos.forEach(function(photo) {
-        var card = document.createElement('div');
-        card.className = 'photo-card';
+        var row = document.createElement('tr');
+        row.style.borderBottom = '1px solid #e0e0e0';
 
-        // Build photo card safely using DOM methods to prevent XSS
-        var imageDiv = document.createElement('div');
-        imageDiv.className = 'photo-image';
-        if (photo.file_id) {
-          var img = document.createElement('img');
-          // Use the image proxy endpoint built into the webapp
-          img.src = '?action=img&id=' + encodeURIComponent(photo.file_id);
-          img.alt = 'Member photo';
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
-          imageDiv.appendChild(img);
-        } else {
-          imageDiv.textContent = '📸';
-        }
-        card.appendChild(imageDiv);
+        // Member name column
+        var nameCell = document.createElement('td');
+        nameCell.style.padding = '12px';
+        nameCell.textContent = photo.member_name || 'Unknown';
+        row.appendChild(nameCell);
 
-        var footerDiv = document.createElement('div');
-        footerDiv.className = 'photo-footer';
+        // Submitted date column
+        var dateCell = document.createElement('td');
+        dateCell.style.padding = '12px';
+        var submitted = new Date(photo.submitted_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+        dateCell.textContent = submitted;
+        row.appendChild(dateCell);
 
-        // Name (safe: textContent for user data)
-        var nameDiv = document.createElement('div');
-        nameDiv.className = 'photo-name';
-        nameDiv.textContent = photo.member_name || 'Unknown';
-        footerDiv.appendChild(nameDiv);
+        // Actions column
+        var actionCell = document.createElement('td');
+        actionCell.style.padding = '12px';
+        actionCell.style.textAlign = 'center';
+        actionCell.style.display = 'flex';
+        actionCell.style.gap = '8px';
+        actionCell.style.justifyContent = 'center';
 
-        // Action buttons (safe: event handlers instead of onclick strings)
-        var actionsDiv = document.createElement('div');
-        actionsDiv.className = 'photo-actions';
+        var viewBtn = document.createElement('button');
+        viewBtn.className = 'btn btn-secondary btn-small';
+        viewBtn.textContent = 'View';
+        viewBtn.onclick = (function(fileId, memberName, individualId) {
+          return function() { openPhotoViewer(fileId, memberName, individualId); };
+        })(photo.file_id, photo.member_name, photo.individual_id);
+        actionCell.appendChild(viewBtn);
 
         var approveBtn = document.createElement('button');
         approveBtn.className = 'btn btn-primary btn-small';
@@ -5421,7 +5457,7 @@
         approveBtn.onclick = (function(individualId) {
           return function() { approvePhoto(individualId); };
         })(photo.individual_id);
-        actionsDiv.appendChild(approveBtn);
+        actionCell.appendChild(approveBtn);
 
         var rejectBtn = document.createElement('button');
         rejectBtn.className = 'btn btn-danger btn-small';
@@ -5429,11 +5465,10 @@
         rejectBtn.onclick = (function(individualId) {
           return function() { openPhotoRejectModal(individualId); };
         })(photo.individual_id);
-        actionsDiv.appendChild(rejectBtn);
+        actionCell.appendChild(rejectBtn);
 
-        footerDiv.appendChild(actionsDiv);
-        card.appendChild(footerDiv);
-        photoGrid.appendChild(card);
+        row.appendChild(actionCell);
+        tbody.appendChild(row);
       });
     });
   }
@@ -5500,7 +5535,94 @@
       loadPhotos();
     });
   }
-  
+
+  /**
+   * Opens the photo viewer modal and loads the photo image.
+   */
+  function openPhotoViewer(fileId, memberName, individualId) {
+    if (!fileId) {
+      showError('Photo ID not available');
+      return;
+    }
+
+    var modal = document.getElementById('photoViewerModal');
+    var titleEl = document.getElementById('photoViewerTitle');
+    var loading = document.getElementById('photoViewerLoading');
+    var imgEl = document.getElementById('photoViewerImg');
+    var errorEl = document.getElementById('photoViewerError');
+    var actionsEl = document.getElementById('photoViewerActions');
+
+    // Reset state
+    titleEl.textContent = (memberName || 'Member') + ' - Photo Viewer';
+    loading.style.display = 'block';
+    imgEl.style.display = 'none';
+    imgEl.src = '';
+    errorEl.style.display = 'none';
+    actionsEl.style.display = 'none';
+
+    modal.style.display = 'flex';
+    modal.onclick = function(e) { if (e.target === modal) closePhotoViewer(); };
+
+    // Store data for approve/reject actions
+    window.currentPhotoFileId = fileId;
+    window.currentPhotoMemberName = memberName;
+    window.currentPhotoIndividualId = individualId;
+
+    apiCall('get_file_data', { file_id: fileId }).then(function(res) {
+      loading.style.display = 'none';
+      if (!res.success) {
+        errorEl.textContent = 'Error loading photo: ' + res.message;
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      var dataUrl = res.data.data_url;
+      imgEl.src = dataUrl;
+      imgEl.style.display = 'block';
+      actionsEl.style.display = 'flex';
+    }).catch(function(err) {
+      loading.style.display = 'none';
+      errorEl.textContent = 'Error loading photo: ' + err.message;
+      errorEl.style.display = 'block';
+    });
+  }
+
+  /**
+   * Closes the photo viewer modal.
+   */
+  function closePhotoViewer() {
+    var modal = document.getElementById('photoViewerModal');
+    document.getElementById('photoViewerImg').src = '';
+    modal.style.display = 'none';
+    window.currentPhotoFileId = null;
+    window.currentPhotoMemberName = null;
+    window.currentPhotoIndividualId = null;
+  }
+
+  /**
+   * Approves the photo from the viewer modal.
+   */
+  function approvePhotoFromViewer() {
+    if (!window.currentPhotoIndividualId) {
+      showError('Photo data not available');
+      return;
+    }
+    approvePhoto(window.currentPhotoIndividualId);
+    closePhotoViewer();
+  }
+
+  /**
+   * Rejects the photo from the viewer modal.
+   */
+  function rejectPhotoFromViewer() {
+    if (!window.currentPhotoIndividualId) {
+      showError('Photo data not available');
+      return;
+    }
+    openPhotoRejectModal(window.currentPhotoIndividualId);
+    closePhotoViewer();
+  }
+
   // ============================================================ //
   // SECTION: PAYMENTS                                            //
   // ============================================================ //

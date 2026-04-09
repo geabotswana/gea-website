@@ -6231,18 +6231,23 @@
           p.textContent = 'Documents sent to RSO for review. Awaiting RSO decision.';
           actionsDiv.appendChild(p);
         } else if (app.status === 'board_final_review') {
-          var finalApproveBtn = document.createElement('button');
-          finalApproveBtn.className = 'btn btn-primary';
-          finalApproveBtn.textContent = 'Final Approve & Request Payment';
-
-          // If RSO recommended denial, add a warning
+          // If RSO has denied, show danger button and explain the situation
           if (app.rso_status === 'denied_recommendation') {
-            finalApproveBtn.style.opacity = '0.6';
-            finalApproveBtn.title = 'RSO recommended denial - you can still approve if you believe the application meets requirements';
+            var denialWarningBtn = document.createElement('button');
+            denialWarningBtn.className = 'btn btn-danger';
+            denialWarningBtn.textContent = '⚠️ Override RSO Denial & Approve';
+            denialWarningBtn.style.background = '#c62828';
+            denialWarningBtn.title = 'RSO has denied property access. Approving will not grant GEA access unless RSO approves separately.';
+            denialWarningBtn.onclick = function() { approveApplicationStage(applicationId, 'board_final'); };
+            actionsDiv.appendChild(denialWarningBtn);
+          } else {
+            var finalApproveBtn = document.createElement('button');
+            finalApproveBtn.className = 'btn btn-primary';
+            finalApproveBtn.textContent = 'Final Approve & Request Payment';
+            finalApproveBtn.onclick = function() { approveApplicationStage(applicationId, 'board_final'); };
+            actionsDiv.appendChild(finalApproveBtn);
           }
 
-          finalApproveBtn.onclick = function() { approveApplicationStage(applicationId, 'board_final'); };
-          actionsDiv.appendChild(finalApproveBtn);
 
           var finalDenyBtn = document.createElement('button');
           finalDenyBtn.className = 'btn btn-danger';
@@ -6333,6 +6338,37 @@
   }
 
   function approveApplicationStage(applicationId, stage) {
+    // If this is board final review and there's an RSO denial, show stronger confirmation
+    if (stage === 'board_final') {
+      // Fetch application details to check for RSO denial
+      apiCall('admin_application_detail', { application_id: applicationId }).then(function(res) {
+        if (res.success && res.data && res.data.application) {
+          var app = res.data.application;
+          if (app.rso_status === 'denied_recommendation') {
+            // Show stronger warning dialog for RSO denial override
+            showConfirmDialog({
+              title: '⚠️ RSO Has Denied This Application',
+              message: 'IMPORTANT: The RSO has denied access to GEA properties for this applicant.\n\nEven if you approve the membership, the RSO will not permit this person on GEA grounds. You cannot override the RSO\'s security decision.\n\nAre you sure you want to proceed with approval?',
+              headerColor: '#d32f2f',
+              confirmText: 'Yes, Approve Anyway',
+              confirmClass: 'btn-danger',
+              onConfirm: function() {
+                _completeApproval(applicationId, stage);
+              }
+            });
+            return;
+          }
+        }
+        // No RSO denial - show normal approval dialog
+        _showNormalApprovalDialog(applicationId, stage);
+      });
+    } else {
+      // Not board_final stage - show normal approval dialog
+      _showNormalApprovalDialog(applicationId, stage);
+    }
+  }
+
+  function _showNormalApprovalDialog(applicationId, stage) {
     showConfirmDialog({
       title: 'Approve Application',
       message: 'Optionally add an internal note before approving.',
@@ -6342,22 +6378,26 @@
       confirmText: 'Approve',
       confirmClass: 'btn-primary',
       onConfirm: function(notes) {
-        apiCall('admin_approve_application', {
-          application_id: applicationId,
-          stage: stage,
-          notes: notes || ''
-        }).then(function(res) {
-          if (res.success) {
-            closeModal('appDetailModal');
-            loadApplications(currentApplicationStatusFilter);
-            showNotification('Application approved!');
-          } else {
-            showError(res.message || 'Error approving application');
-          }
-        }).catch(function(err) {
-          showError('Error: ' + err.message);
-        });
+        _completeApproval(applicationId, stage, notes);
       }
+    });
+  }
+
+  function _completeApproval(applicationId, stage, notes) {
+    apiCall('admin_approve_application', {
+      application_id: applicationId,
+      stage: stage,
+      notes: notes || ''
+    }).then(function(res) {
+      if (res.success) {
+        closeModal('appDetailModal');
+        loadApplications(currentApplicationStatusFilter);
+        showNotification('Application approved!');
+      } else {
+        showError(res.message || 'Error approving application');
+      }
+    }).catch(function(err) {
+      showError('Error: ' + err.message);
     });
   }
 

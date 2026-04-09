@@ -27,17 +27,17 @@
 **Admin Portal login note:** Admin credentials are in the Administrators tab of the System Backend. Both Board and Treasurer use email + password to log in — not just email.
 
 **Suggested test data:**
-- Primary applicant: Robert Osei, robert.osei.test@[yourdomain]
-- Spouse: Margaret Osei
-- Child 1: Daniel Osei, age 14 (under 18 — not voting eligible)
-- Child 2: Sophie Osei, age 19 (over 18 — should be voting eligible)
-- Staff: Grace Mokobi (household staff)
+- Primary applicant: William Peterson, michael+fullfamily@raneyworld.com
+- Spouse: Sarah Peterson (US)
+- Child 1: Emma Peterson (US)
+- Child 2: Lucas Peterson (US)
+- Staff: Thabo Motswana (Botswana — household staff)
 
 ---
 
 ## Pre-conditions
 
-- No existing application for robert.osei.test@[yourdomain]
+- No existing application for michael+fullfamily@raneyworld.com
 - Scene 01 has been run (confirms baseline application flow works)
 
 ---
@@ -69,7 +69,15 @@
 **Who:** Applicant
 **Where:** Portal — Step 2
 
-**Action:** Fill in Robert Osei's details (name, email, phone, citizenship, employment office, etc.)
+**Action:** Fill in William Peterson's details (name, email, phone, citizenship, employment office, etc.):
+- First Name: William
+- Last Name: Peterson
+- Email: michael+fullfamily@raneyworld.com
+- Phone: +267 71 234502
+- Country of Citizenship: United States
+- Employment Office: U.S. Embassy Gaborone
+- Job Title: Consular Officer
+- Posting Date: 2022-06-15
 
 **Check:** Same as Scene 01, Step 3. No errors, form advances.
 
@@ -81,7 +89,7 @@
 
 **Action:**
 1. Click "Add Spouse"
-2. Fill in: First Name = Margaret, Last Name = Osei, email = [optional test email], phone = [any]
+2. Fill in: First Name = Sarah, Last Name = Peterson, email = [optional test email], phone = [any]
 3. Confirm spouse is added to the family list
 
 **Check:**
@@ -98,7 +106,7 @@
 
 **Action:**
 1. Click "Add Child"
-2. Fill in: First Name = Daniel, Last Name = Osei, Date of Birth = [14 years ago]
+2. Fill in: First Name = Emma, Last Name = Peterson, Date of Birth = [approximately 10-12 years ago, to be under 18]
 3. Confirm child is added
 
 **Check:**
@@ -116,7 +124,7 @@
 
 **Action:**
 1. Click "Add Child"
-2. Fill in: First Name = Sophie, Last Name = Osei, Date of Birth = [19 years ago]
+2. Fill in: First Name = Lucas, Last Name = Peterson, Date of Birth = [approximately 15-17 years ago, to be 17-19 for voting eligibility threshold]
 3. Confirm child is added
 
 **Check:**
@@ -134,7 +142,7 @@
 
 **Action:**
 1. Click "Add Staff Member"
-2. Fill in: First Name = Grace, Last Name = Mokobi, Role = Household Staff (or equivalent dropdown)
+2. Fill in: First Name = Thabo, Last Name = Motswana, Role = Household Staff (or equivalent dropdown)
 3. Start date = [any past date], Omang # = [any 8-digit number], phone = [any]
 4. Confirm staff member is added
 
@@ -156,18 +164,18 @@
 **Check:**
 
 **Member Directory — Households sheet:**
-- New row: household_name = "Osei", active = FALSE, membership_level_id = "full_family"
+- New row: household_name = "Peterson", active = FALSE, membership_level_id = "full_family"
 
 **Member Directory — Individuals sheet:**
-- 5 rows: Robert (primary), Margaret (spouse), Daniel (child), Sophie (child), Grace (staff)
+- 5 rows: William (primary), Sarah (spouse), Emma (child), Lucas (child), Thabo (staff)
 - All have household_id = same HSH-XXXX
-- Sophie: voting_eligible = TRUE (age ≥ 17)
-- Daniel: voting_eligible = FALSE
-- Grace: role indicates staff (not primary member)
+- Lucas: voting_eligible = TRUE (age ≥ 17)
+- Emma: voting_eligible = FALSE (age < 17)
+- Thabo: role indicates staff (not primary member)
 - All: active = FALSE
 
 **Applications sheet:**
-- One row with email = Robert's email, household_type = "Family", status = "awaiting_docs"
+- One row with email = michael+fullfamily@raneyworld.com, household_type = "Family", status = "awaiting_docs"
 
 **Applicant receives:** Credentials email (MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT)
 
@@ -192,15 +200,15 @@
 **Where:** Non-Member Portal → Documents page (after logging in with credentials)
 
 **Action:**
-1. Log in as Robert Osei
+1. Log in as William Peterson
 2. Go to Documents page
-3. Upload Passport for Robert (primary applicant)
-4. Upload Photo for Robert
-5. Upload Omang (or Passport) for Margaret
-6. Upload Photo for Margaret
-7. Upload Passport for Sophie (over 18 — requires ID document)
-8. Note: Daniel (under 18) may not require documents — verify what the portal shows
-9. Note: Grace (staff) requires Omang — upload for Grace
+3. Upload Passport for William (use test-data/id-documents/William_Peterson_passport.png)
+4. Upload Photo for William
+5. Upload Passport for Sarah
+6. Upload Photo for Sarah
+7. Upload Passport for Lucas (over 17 — requires ID document)
+8. Note: Emma (under 17) may not require documents — verify what the portal shows
+9. Note: Thabo (staff) requires Omang — upload Omang for Thabo
 10. Confirm all uploads show "Pending"
 
 **Check:**
@@ -278,16 +286,16 @@ Same as Scene 01 Step 12. Applicant notified and can now see Payment page.
 **Who:** Treasurer
 **Where:** Admin Portal → Payments
 
-**Action:** Approve Robert Osei's payment
+**Action:** Approve William Peterson's payment
 
 **Check (ALL 5 household members must activate):**
 
 **Individuals sheet:**
-- Robert Osei: active = TRUE
-- Margaret Osei: active = TRUE
-- Daniel Osei: active = TRUE
-- Sophie Osei: active = TRUE
-- Grace Mokobi: active = TRUE
+- William Peterson: active = TRUE
+- Sarah Peterson: active = TRUE
+- Emma Peterson: active = TRUE
+- Lucas Peterson: active = TRUE
+- Thabo Motswana: active = TRUE
 
 **Households sheet:**
 - active = TRUE, expiration = next July 31
@@ -305,7 +313,7 @@ Same as Scene 01 Step 12. Applicant notified and can now see Payment page.
 This scene is **PASS** when all 15 steps complete and all 5 household members are active.
 
 Key end state:
-- Osei family (Full Family) is fully activated
+- Peterson family (Full Family) is fully activated
 - All member IDs are consistent across tables
 - family_dues > individual_dues was confirmed on the payment page
 - Activation cascade confirmed for all 5 individuals

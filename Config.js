@@ -637,6 +637,7 @@ var AUDIT_HOUSEHOLD_PHONE_SYNC_FAILED   = "HOUSEHOLD_PHONE_SYNC_FAILED";
 var AUDIT_APPLICATION_CREATED             = "APPLICATION_CREATED";
 var AUDIT_APPLICATION_BOARD_INITIAL       = "APPLICATION_BOARD_INITIAL";
 var AUDIT_APPLICATION_RSO_REVIEWED        = "APPLICATION_RSO_REVIEWED";
+var AUDIT_APPLICATION_RSO_DENIED          = "APPLICATION_RSO_DENIED";
 var AUDIT_APPLICATION_BOARD_FINAL         = "APPLICATION_BOARD_FINAL";
 var AUDIT_APPLICATION_PAYMENT_SUBMITTED   = "APPLICATION_PAYMENT_SUBMITTED";
 var AUDIT_APPLICATION_ACTIVATED           = "APPLICATION_ACTIVATED";
@@ -974,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.37";
-var SYSTEM_BUILD_DATE       = "2026-04-08";
+var SYSTEM_VERSION          = "2.4.38";
+var SYSTEM_BUILD_DATE       = "2026-04-09";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Remove docs_confirmed intermediate status; simplify workflow to awaiting_docs → board_initial_review";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-08 15:33:17";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add RSO application denial recommendation with board review override capability";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-09 08:01:13";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

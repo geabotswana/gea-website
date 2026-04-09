@@ -2174,6 +2174,32 @@
   </div>
 </div>
 
+<!-- RSO Deny Application Modal -->
+<div id="rsoDenyAppModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Deny Application</h2>
+      <button class="modal-close" onclick="document.getElementById('rsoDenyAppModal').style.display='none';">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:#555; margin-bottom:16px;">RSO has the authority to recommend denial of an application if documents raise concerns or if the applicant does not meet requirements.</p>
+      <div class="form-group">
+        <label class="form-label">Denial Recommendation <span style="color:#d32f2f;">*</span></label>
+        <textarea id="rsoDenyReason" class="form-input" rows="4" placeholder="Explain why you are recommending denial. This will be sent to the Board, who can decide to accept or override your recommendation."></textarea>
+      </div>
+      <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:12px; margin-bottom:16px;">
+        <p style="margin:0; font-size:13px; color:#856404;">
+          <strong>Note:</strong> The Board will review your recommendation and decide whether to accept the denial or approve the application anyway. They will contact the applicant with a diplomatic message.
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('rsoDenyAppModal').style.display='none';">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmRsoDenyApplication();">Recommend Denial</button>
+    </div>
+  </div>
+</div>
+
 <!-- Reservation Detail and Action Modal -->
 <div id="resDetailModal" class="modal-overlay">
   <div class="modal">
@@ -5999,6 +6025,44 @@
         statusDiv.appendChild(document.createTextNode(new Date(app.submitted_date).toLocaleDateString()));
         content.appendChild(statusDiv);
 
+        // RSO Denial Message Warning (if present)
+        if (app.rso_status === 'denied_recommendation' && app.rso_private_notes) {
+          var denialBanner = document.createElement('div');
+          denialBanner.style.marginBottom = '20px';
+          denialBanner.style.padding = '12px 16px';
+          denialBanner.style.background = '#fff3cd';
+          denialBanner.style.border = '1px solid #ffc107';
+          denialBanner.style.borderRadius = '6px';
+          denialBanner.style.display = 'flex';
+          denialBanner.style.gap = '12px';
+          denialBanner.style.alignItems = 'flex-start';
+
+          var warningIcon = document.createElement('span');
+          warningIcon.style.fontSize = '18px';
+          warningIcon.style.color = '#856404';
+          warningIcon.textContent = '⚠️';
+          denialBanner.appendChild(warningIcon);
+
+          var denialContent = document.createElement('div');
+          var denialTitle = document.createElement('div');
+          denialTitle.style.fontWeight = '600';
+          denialTitle.style.color = '#856404';
+          denialTitle.style.marginBottom = '8px';
+          denialTitle.textContent = 'RSO Denial Recommendation';
+          denialContent.appendChild(denialTitle);
+
+          var denialMessage = document.createElement('div');
+          denialMessage.style.fontSize = '13px';
+          denialMessage.style.color = '#555';
+          denialMessage.style.whiteSpace = 'pre-wrap';
+          denialMessage.style.wordWrap = 'break-word';
+          denialMessage.textContent = app.rso_private_notes;
+          denialContent.appendChild(denialMessage);
+
+          denialBanner.appendChild(denialContent);
+          content.appendChild(denialBanner);
+        }
+
         // Household Members Section (if family membership)
         if (individuals.length > 1 || app.household_type === 'Family') {
           var membersHeading = document.createElement('h3');
@@ -6170,6 +6234,13 @@
           var finalApproveBtn = document.createElement('button');
           finalApproveBtn.className = 'btn btn-primary';
           finalApproveBtn.textContent = 'Final Approve & Request Payment';
+
+          // If RSO recommended denial, add a warning
+          if (app.rso_status === 'denied_recommendation') {
+            finalApproveBtn.style.opacity = '0.6';
+            finalApproveBtn.title = 'RSO recommended denial - you can still approve if you believe the application meets requirements';
+          }
+
           finalApproveBtn.onclick = function() { approveApplicationStage(applicationId, 'board_final'); };
           actionsDiv.appendChild(finalApproveBtn);
 
@@ -6643,13 +6714,27 @@
 
         var actionTd = document.createElement('td');
         actionTd.style.whiteSpace = 'nowrap';
+        actionTd.style.display = 'flex';
+        actionTd.style.gap = '8px';
+
         var approveBtn = document.createElement('button');
         approveBtn.className = 'btn btn-primary btn-small';
-        approveBtn.textContent = 'Approve Application';
+        approveBtn.textContent = 'Approve';
         approveBtn.onclick = (function(appId) {
           return function() { rsoApproveApplicationPrompt(appId); };
         })(app.application_id);
         actionTd.appendChild(approveBtn);
+
+        var denyBtn = document.createElement('button');
+        denyBtn.className = 'btn btn-secondary btn-small';
+        denyBtn.textContent = 'Deny';
+        denyBtn.style.background = '#d32f2f';
+        denyBtn.style.color = '#fff';
+        denyBtn.onclick = (function(appId) {
+          return function() { rsoDenyApplicationPrompt(appId); };
+        })(app.application_id);
+        actionTd.appendChild(denyBtn);
+
         tr.appendChild(actionTd);
 
         tbody.appendChild(tr);
@@ -6676,6 +6761,35 @@
           loadRsoDocuments(); // Reload to update both sections
         });
       }
+    });
+  }
+
+  function rsoDenyApplicationPrompt(applicationId) {
+    // Store the application ID for use in the confirm function
+    window._rsoDenyAppId = applicationId;
+    // Clear previous text
+    document.getElementById('rsoDenyReason').value = '';
+    // Show the modal
+    document.getElementById('rsoDenyAppModal').style.display = 'block';
+  }
+
+  function confirmRsoDenyApplication() {
+    var reason = document.getElementById('rsoDenyReason').value.trim();
+    if (!reason) {
+      showError('Please provide a denial recommendation.');
+      return;
+    }
+
+    var appId = window._rsoDenyAppId;
+    document.getElementById('rsoDenyAppModal').style.display = 'none';
+
+    apiCall('rso_deny_application', {
+      application_id: appId,
+      denial_message: reason
+    }).then(function(res) {
+      if (!res.success) { showError(res.message); return; }
+      showToast('Application denial recommended. Board will review.', 'info');
+      loadRsoDocuments(); // Reload to update both sections
     });
   }
 

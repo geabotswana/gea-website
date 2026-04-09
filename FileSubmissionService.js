@@ -366,6 +366,52 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
   }
 }
 
+function rsoDenyApplication(applicationId, rsoEmail, denialMessage) {
+  try {
+    var readiness = checkApplicationDocumentReadiness(applicationId);
+    if (!readiness.ok) {
+      return { ok: false, message: "Could not check document status." };
+    }
+    if (!readiness.allApproved) {
+      return { ok: false, message: "Not all required documents are approved. Missing: " + readiness.missingDocs.join(", ") };
+    }
+
+    // Get application from ApplicationService
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { ok: false, message: "Application not found." };
+    }
+
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appRow = _findApplicationRow(applicationId);
+
+    // Update application status to RSO_APPLICATION_REVIEW with denial flag
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("denied_recommendation");
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(denialMessage);
+
+    logAuditEntry(rsoEmail, "APPLICATION_RSO_DENIED", "Application", applicationId,
+      "RSO recommended denial of application");
+
+    // Send email to board with denial message
+    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+    sendEmailFromTemplate("ADM_RSO_APPLICATION_DENIED_TO_BOARD", boardEmail, {
+      FIRST_NAME:       "Board",
+      APPLICANT_NAME:   application.primary_applicant_name || "",
+      APPLICATION_ID:   applicationId,
+      DENIAL_MESSAGE:   denialMessage,
+      NEXT_STEPS:       "RSO has recommended denial. You may accept this recommendation or approve the application if you believe it meets requirements. Please contact the applicant with a diplomatic response."
+    });
+
+    return { ok: true, message: "Application denial recommended. Board will review." };
+  } catch (e) {
+    Logger.log("ERROR rsoDenyApplication: " + e);
+    return { ok: false, message: String(e) };
+  }
+}
+
 function checkDocumentExpirationWarnings() {
   var submissions = _getAllSubmissions_();
   var warningsSent = 0;

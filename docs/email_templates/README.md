@@ -25,17 +25,20 @@ Your reservation {{RESERVATION_ID}} has been approved.
 - Must match exactly — spelling matters
 - Never delete or rename a variable; ask the Treasurer if you're unsure
 
-## Folder Structure
+## Template Organization
 
-| Folder | Templates | Purpose |
-|--------|-----------|---------|
-| `administrative/` | 12 | Board notifications, RSO communications, internal FYIs |
-| `documents/` | 7 | Document submissions, approvals, photo workflow |
-| `membership/` | 12 | Applications, renewals, welcome emails, milestones |
-| `notifications/` | — | Reserved for future general announcements |
-| `payments/` | 8 | Payment submissions, verifications, rejections |
-| `reservations/` | 12 | Facility bookings, approvals, guest list reminders |
-| `system/` | — | Reserved for future system/account emails |
+All 80 templates are stored in this directory as individual `.txt` files. They are organized by **semantic naming convention** (not subdirectories):
+
+| Prefix | Category | Count | Purpose |
+|--------|----------|-------|---------|
+| `ADM_*` | Administrative | 17 | Board notifications, RSO communications, internal FYIs |
+| `DOC_*` | Documents | 7 | Document submissions, approvals, photo workflow |
+| `MEM_*` | Membership | 16 | Applications, renewals, welcome emails, milestones |
+| `PAY_*` | Payments | 8 | Payment submissions, verifications, rejections |
+| `RES_*` | Reservations | 22 | Facility bookings, approvals, guest list reminders |
+| `SYS_*` | System | 2 | Account & password management emails |
+
+**Tip:** Use the prefix to quickly find the template you need (e.g., all payment-related templates start with `PAY_`).
 
 ## Formatting Tips
 

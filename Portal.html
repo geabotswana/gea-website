@@ -7253,7 +7253,13 @@ function submitPasswordReset(event) {
 
   function _closeHouseholdModal() {
     var overlay = document.getElementById('hhModalOverlay');
-    if (overlay) overlay.parentNode.removeChild(overlay);
+    if (overlay) {
+      // Remove Esc key listener if it exists
+      if (overlay.escHandler) {
+        document.removeEventListener('keydown', overlay.escHandler);
+      }
+      overlay.parentNode.removeChild(overlay);
+    }
   }
 
   function _refreshHouseholdSection() {
@@ -7277,6 +7283,23 @@ function submitPasswordReset(event) {
     modal.appendChild(h);
 
     overlay.appendChild(modal);
+
+    // Close modal when clicking overlay background (outside the modal box)
+    overlay.onclick = function(e) {
+      if (e.target === overlay) {
+        _closeHouseholdModal();
+      }
+    };
+
+    // Close modal on Esc key
+    var escHandler = function(e) {
+      if (e.key === 'Escape') {
+        _closeHouseholdModal();
+      }
+    };
+    overlay.escHandler = escHandler;
+    document.addEventListener('keydown', escHandler);
+
     return { overlay: overlay, modal: modal };
   }
 
@@ -7480,7 +7503,8 @@ function submitPasswordReset(event) {
         first_name:    firstNameInput.value.trim(),
         last_name:     lastNameInput.value.trim(),
         email:         emailInput.value.trim(),
-        phone_primary: phoneInput.value.trim()
+        phone_primary: phoneInput.value.trim(),
+        citizenship_country: citizenshipInput.value.trim()
       };
       if (rel === 'Child')  params.date_of_birth = dobInput.value;
       if (rel === 'Staff') {

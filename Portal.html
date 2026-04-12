@@ -7388,14 +7388,10 @@ function submitPasswordReset(event) {
     }
 
     if (relationship === 'Staff') {
-      roleInput  = _buildTextInput('e.g. Nanny, Driver');
       startInput = _buildDateInput('');
       endInput   = _buildDateInput('');
-      omangInput = _buildTextInput('Omang / National ID number');
-      modal.appendChild(_buildLabeledInput('Role *', roleInput));
       modal.appendChild(_buildLabeledInput('Start Date', startInput));
       modal.appendChild(_buildLabeledInput('End Date', endInput));
-      modal.appendChild(_buildLabeledInput('Omang Number *', omangInput));
     }
 
     var errorP = document.createElement('p');
@@ -7418,8 +7414,6 @@ function submitPasswordReset(event) {
       }
 
       if (relationship === 'Staff') {
-        params.omang_number          = omangInput.value.trim();
-        params.employment_role       = roleInput.value.trim();
         params.employment_start_date = startInput.value;
         params.employment_end_date   = endInput.value;
       }
@@ -7473,14 +7467,10 @@ function submitPasswordReset(event) {
     }
 
     if (rel === 'Staff') {
-      roleInput  = _buildTextInput('Role', member.employment_role);
       startInput = _buildDateInput(member.employment_start_date);
       endInput   = _buildDateInput(member.employment_end_date);
-      omangInput = _buildTextInput('Omang Number', member.omang_number);
-      modal.appendChild(_buildLabeledInput('Role', roleInput));
       modal.appendChild(_buildLabeledInput('Start Date', startInput));
       modal.appendChild(_buildLabeledInput('End Date', endInput));
-      modal.appendChild(_buildLabeledInput('Omang Number', omangInput));
     }
 
     var errorP = document.createElement('p');
@@ -7498,10 +7488,8 @@ function submitPasswordReset(event) {
       };
       if (rel === 'Child')  params.date_of_birth = dobInput.value;
       if (rel === 'Staff') {
-        params.employment_role       = roleInput.value.trim();
         params.employment_start_date = startInput.value;
         params.employment_end_date   = endInput.value;
-        params.omang_number          = omangInput.value.trim();
       }
 
       btns.submitBtn.disabled = true;

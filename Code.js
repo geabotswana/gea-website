@@ -2493,9 +2493,8 @@ function _handleAddHouseholdMember(p) {
       if (staffExists) {
         return errorResponse("This household already has an active staff member.", "BUSINESS_RULE");
       }
-      if (!p.omang_number || !p.phone_primary || !p.employment_role) {
-        return errorResponse(
-          "omang_number, phone_primary, and employment_role are required for staff.", "INVALID_PARAM");
+      if (!p.phone_primary) {
+        return errorResponse("phone_primary is required for staff.", "INVALID_PARAM");
       }
     }
 

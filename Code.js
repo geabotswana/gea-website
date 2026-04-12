@@ -2553,8 +2553,17 @@ function _handleRemoveHouseholdMember(p) {
       return errorResponse("The primary member cannot be removed.", "BUSINESS_RULE");
     }
 
-    var result = deactivateMember(p.individual_id, auth.session.email);
-    if (!result.ok) return errorResponse(result.error, "SERVER_ERROR");
+    // For applicants (household not yet active), delete the member record entirely
+    // For active members, deactivate instead
+    var hh = getHouseholdById(member.household_id);
+    if (hh && !hh.active) {
+      // Applicant household - delete the record
+      deleteMemberRecord(p.individual_id, auth.session.email);
+    } else {
+      // Active household - deactivate instead
+      var result = deactivateMember(p.individual_id, auth.session.email);
+      if (!result.ok) return errorResponse(result.error, "SERVER_ERROR");
+    }
 
     return successResponse({}, "Member removed from household.");
   } catch (e) {

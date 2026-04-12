@@ -451,6 +451,37 @@ function deactivateMember(individualId, actingBy) {
   }
 }
 
+/**
+ * Deletes a member record from the Individuals sheet entirely.
+ * Used for removing members during the application phase before household activation.
+ * @param {string} individualId
+ * @param {string} deletedBy
+ * @returns {boolean}
+ */
+function deleteMemberRecord(individualId, deletedBy) {
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+                  .getSheetByName(TAB_INDIVIDUALS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var idCol = headers.indexOf("individual_id");
+
+    // Find the row with this individual_id
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][idCol] === individualId) {
+        sheet.deleteRow(i + 1); // Google Sheets uses 1-based indexing
+        logAuditEntry(deletedBy, "MEMBER_DELETED", "Individual", individualId,
+                      "Deleted member record: " + (data[i][headers.indexOf("first_name")] || "") +
+                      " " + (data[i][headers.indexOf("last_name")] || ""));
+        return true;
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR deleteMemberRecord(" + individualId + "): " + e);
+  }
+  return false;
+}
+
 
 // ============================================================
 // PHOTO MANAGEMENT

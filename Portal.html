@@ -7122,8 +7122,10 @@ function submitPasswordReset(event) {
       card.appendChild(row);
     });
 
-    // Only show add family member buttons for Family membership types
-    if (hh.household_type === 'Family') {
+    // Only show add family member buttons for Family household types
+    // Check both household_type (new) and membership_type (legacy) for compatibility
+    var isFamilyHousehold = hh.household_type === 'Family' || hh.membership_type === 'Family';
+    if (isFamilyHousehold) {
       var addBtns = document.createElement('div');
       addBtns.style.display = 'flex';
       addBtns.style.gap = '8px';
@@ -7233,8 +7235,10 @@ function submitPasswordReset(event) {
       card.appendChild(row);
     });
 
-    // Only show add staff member button for Family membership types
-    if (!hasStaff && hh.household_type === 'Family') {
+    // Only show add staff member button for Family household types
+    // Check both household_type (new) and membership_type (legacy) for compatibility
+    var isFamilyHousehold = hh.household_type === 'Family' || hh.membership_type === 'Family';
+    if (!hasStaff && isFamilyHousehold) {
       var addBtn = document.createElement('button');
       addBtn.className = 'btn';
       addBtn.style.minHeight = '44px';
@@ -7250,8 +7254,6 @@ function submitPasswordReset(event) {
       footer.style.fontSize = '12px';
       footer.style.color = '#888';
       footer.style.marginTop = '12px';
-      footer.style.paddingTop = '12px';
-      footer.style.borderTop = '1px solid #eee';
       footer.textContent = 'To add a new household staff member, you must remove the current one.';
       card.appendChild(footer);
     }

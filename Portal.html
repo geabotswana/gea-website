@@ -2552,7 +2552,6 @@
       panel.innerHTML =
         '<h3 class=\"card-title\" style=\"margin-top:0;\">Portal Debug (Temporary)</h3>' +
         '<pre id=\"portalDebugPre\" style=\"white-space:pre-wrap;word-break:break-word;margin:0;font-size:12px;line-height:1.45;\"></pre>';
-      content.insertBefore(panel, content.firstChild);
     }
 
     var pre = document.getElementById('portalDebugPre');
@@ -7103,11 +7102,12 @@ function submitPasswordReset(event) {
       rel.style.fontSize = '13px';
       rel.textContent = '(' + (m.relationship_to_primary || '') + ')';
       info.appendChild(rel);
-      if (m.date_of_birth) {
+      var formattedDob = formatDateOfBirth(m.date_of_birth);
+      if (formattedDob) {
         var dob = document.createElement('div');
         dob.style.fontSize = '12px';
         dob.style.color = '#888';
-        dob.textContent = 'DOB: ' + m.date_of_birth;
+        dob.textContent = 'DOB: ' + formattedDob;
         info.appendChild(dob);
       }
       row.appendChild(info);
@@ -8824,6 +8824,39 @@ function submitPasswordReset(event) {
       formatted += ' <i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:14px;margin-left:4px;vertical-align:middle;" title="Available on WhatsApp"></i>';
     }
     return formatted;
+  }
+
+  function formatDateOfBirth(dateValue) {
+    if (!dateValue) return '';
+
+    // If it's a Date object, convert to YYYY-MM-DD
+    if (dateValue instanceof Date) {
+      var year = dateValue.getFullYear();
+      var month = String(dateValue.getMonth() + 1).padStart(2, '0');
+      var day = String(dateValue.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    // If it's a string, try to parse and reformat
+    var str = String(dateValue).trim();
+    if (!str) return '';
+
+    // Check if it's already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      return str;
+    }
+
+    // Try to parse as ISO or common date formats
+    var parsed = new Date(str);
+    if (isNaN(parsed.getTime())) {
+      // If parsing fails, return the original string (might already be formatted)
+      return str;
+    }
+
+    var year = parsed.getFullYear();
+    var month = String(parsed.getMonth() + 1).padStart(2, '0');
+    var day = String(parsed.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
   }
 
   function loadProfile() {

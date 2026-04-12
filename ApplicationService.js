@@ -44,6 +44,9 @@ function createApplicationRecord(formData, createdBy) {
   try {
     Logger.log("[DEBUG] createApplicationRecord called with formData: " + JSON.stringify(formData));
     Logger.log("[DEBUG] createdBy: " + createdBy);
+    Logger.log("[DEBUG] household_type from formData: " + formData.household_type);
+    Logger.log("[DEBUG] HOUSEHOLD_FAMILY constant: " + HOUSEHOLD_FAMILY);
+    Logger.log("[DEBUG] HOUSEHOLD_INDIVIDUAL constant: " + HOUSEHOLD_INDIVIDUAL);
 
     // Validate required fields
     var required = ["first_name", "last_name", "email", "country_code_primary", "phone_primary", "membership_category"];
@@ -77,6 +80,7 @@ function createApplicationRecord(formData, createdBy) {
     // Create Household record with three-part phone system
     var householdId = generateId("HSH");
     var householdType = formData.household_type || HOUSEHOLD_INDIVIDUAL;
+    Logger.log("[DEBUG] Determined householdType: " + householdType + " (from formData.household_type: " + formData.household_type + ")");
     var primaryApplicantName = capitalizeName(formData.first_name) + " " + capitalizeName(formData.last_name);
 
     // Format dates as YYYY-MM-DD

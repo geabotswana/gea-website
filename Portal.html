@@ -7423,7 +7423,7 @@ function submitPasswordReset(event) {
     var lastNameInput  = _buildTextInput('Last name',  member.last_name);
     var emailInput     = _buildTextInput('Email',      member.email);
     var phoneInput     = _buildTextInput('Phone',      member.phone_primary);
-    var dobInput       = _buildDateInput(member.date_of_birth);
+    var dobInput       = _buildDateInput(formatDateOfBirth(member.date_of_birth));
 
     modal.appendChild(_buildLabeledInput('First Name', firstNameInput));
     modal.appendChild(_buildLabeledInput('Last Name',  lastNameInput));
@@ -7437,8 +7437,8 @@ function submitPasswordReset(event) {
     }
 
     if (rel === 'Staff') {
-      startInput = _buildDateInput(member.employment_start_date);
-      endInput   = _buildDateInput(member.employment_end_date);
+      startInput = _buildDateInput(formatDateOfBirth(member.employment_start_date));
+      endInput   = _buildDateInput(formatDateOfBirth(member.employment_end_date));
       modal.appendChild(_buildLabeledInput('Start Date', startInput));
       modal.appendChild(_buildLabeledInput('End Date', endInput));
     }

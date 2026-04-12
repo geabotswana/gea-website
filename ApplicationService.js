@@ -374,7 +374,7 @@ function getApplicationForApplicant(email) {
         var proratedUsd = Math.round(annualDuesUsd * (qInfo.percentage / 100) * 100) / 100;
         var exchangeRate = getExchangeRate();
         duesInfo = {
-          membership_category: application.membership_category || household.membership_type || "",
+          membership_category: application.membership_category || household.membership_category || "",
           annual_dues_usd:    annualDuesUsd,
           current_quarter:    qInfo.name,
           quarter_percentage: qInfo.percentage,

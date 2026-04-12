@@ -6925,12 +6925,14 @@ function submitPasswordReset(event) {
     var members = data.members || [];
     var selfId  = data.self_id;
 
+    var isStaffMember = function(m) {
+      // Handle both new ("Staff") and legacy ("Household Staff") relationship types
+      return m.relationship_to_primary === 'Staff' || m.relationship_to_primary === 'Household Staff';
+    };
     var family = members.filter(function(m) {
-      return m.relationship_to_primary !== 'Staff';
+      return !isStaffMember(m);
     });
-    var staff = members.filter(function(m) {
-      return m.relationship_to_primary === 'Staff';
-    });
+    var staff = members.filter(isStaffMember);
     var hasSpouse = members.some(function(m) {
       return m.relationship_to_primary === 'Spouse';
     });
@@ -7002,10 +7004,10 @@ function submitPasswordReset(event) {
     card.appendChild(title);
 
     var familyCount = members.filter(function(m) {
-      return m.relationship_to_primary !== 'Staff';
+      return m.relationship_to_primary !== 'Staff' && m.relationship_to_primary !== 'Household Staff';
     }).length;
     var staffCount = members.filter(function(m) {
-      return m.relationship_to_primary === 'Staff';
+      return m.relationship_to_primary === 'Staff' || m.relationship_to_primary === 'Household Staff';
     }).length;
 
     // Format phone number from household fields

@@ -398,8 +398,8 @@ function createMemberRecord(householdId, individualData, createdBy) {
     // Calculate age-based fields
     if (individualData.date_of_birth) {
       var age = calculateAge(individualData.date_of_birth);
-      individualData.can_access_unaccompanied = age >= AGE_UNACCOMPANIED_ACCESS;
-      individualData.fitness_center_eligible  = age >= AGE_FITNESS_CENTER;
+      individualData.can_access_unaccompanied = age >= AGE_REC_CENTER_UNACCOMPANIED;
+      individualData.fitness_center_eligible  = age >= AGE_GYM_USAGE;
       individualData.voting_eligible          = age >= AGE_VOTING;
       individualData.office_eligible          = age >= AGE_OFFICE_ELIGIBLE;
     }
@@ -414,7 +414,11 @@ function createMemberRecord(householdId, individualData, createdBy) {
                   " [" + (individualData.relationship_to_primary || "") + "]");
     return id;
   } catch (e) {
-    Logger.log("ERROR createMemberRecord: " + e);
+    Logger.log("ERROR createMemberRecord: " + e.toString() + " | Stack: " + e.stack);
+    Logger.log("createMemberRecord details - householdId: " + householdId +
+               " | firstName: " + individualData.first_name +
+               " | lastName: " + individualData.last_name +
+               " | dob: " + individualData.date_of_birth);
     return null;
   }
 }

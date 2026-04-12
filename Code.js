@@ -1906,6 +1906,7 @@ function _safePublicHousehold(hh) {
     household_name:             hh.household_name,
     household_type:             hh.household_type || "",
     membership_type:            hh.membership_type,
+    membership_category:        hh.membership_category || "",
     application_status:         hh.application_status,
     active:                     hh.active,
     email:                      primaryEmail,

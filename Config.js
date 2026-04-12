@@ -979,7 +979,7 @@ var SYSTEM_VERSION          = "2.4.51";
 var SYSTEM_BUILD_DATE       = "2026-04-12";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Feature: Display membership type and allow household type changes (#121)";
+var SYSTEM_LAST_FEATURE     = "Fix: Add membership_category to household data & fix age constants (#122)";
 var DEPLOYMENT_TIMESTAMP    = "2026-04-12 17:36:15";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 

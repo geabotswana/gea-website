@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.53";
+var SYSTEM_VERSION          = "2.4.54";
 var SYSTEM_BUILD_DATE       = "2026-04-12";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Complete household_type migration and field naming standardization (#124)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-12 21:25:35";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Remove debug deployment info display from portal";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-12 22:04:19";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

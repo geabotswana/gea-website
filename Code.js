@@ -2402,14 +2402,14 @@ function _handleGetHouseholdMembers(p) {
         last_name:                 m.last_name  || "",
         email:                     m.email      || "",
         relationship_to_primary:   m.relationship_to_primary || "",
-        date_of_birth:             m.date_of_birth ? formatDate(new Date(m.date_of_birth)) : "",
+        date_of_birth:             m.date_of_birth || "",
         country_code_primary:      m.country_code_primary  || "",
         phone_primary:             m.phone_primary         || "",
         phone_primary_whatsapp:    m.phone_primary_whatsapp || false,
         omang_number:              m.omang_number          || "",
         employment_role:           m.employment_role       || "",
-        employment_start_date:     m.employment_start_date ? formatDate(new Date(m.employment_start_date)) : "",
-        employment_end_date:       m.employment_end_date   ? formatDate(new Date(m.employment_end_date))   : "",
+        employment_start_date:     m.employment_start_date || "",
+        employment_end_date:       m.employment_end_date   || "",
         doc_status: {
           photo:    docStatus.photo      || null,
           passport: docStatus.passport   || null,
@@ -2604,8 +2604,7 @@ function _handleEditHouseholdMember(p) {
       allowed.push("date_of_birth");
     }
     if (rel === RELATIONSHIP_STAFF) {
-      allowed = allowed.concat(["omang_number", "employment_role",
-                                "employment_start_date", "employment_end_date"]);
+      allowed = allowed.concat(["employment_start_date", "employment_end_date"]);
     }
 
     var updated = 0;

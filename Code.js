@@ -1298,7 +1298,7 @@ function _handleAdminWaitlistList(p) {
  *       {
  *         "household_id": "HH-2026-001",
  *         "household_name": "Smith Family",
- *         "membership_type": "ACTIVE",
+ *         "household_type": "Family",
  *         "status": "Approved",
  *         "membership_expiration_date": "Dec 31, 2026",
  *         "email": "john@state.gov"

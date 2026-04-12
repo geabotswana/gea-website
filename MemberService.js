@@ -265,7 +265,7 @@ function isVotingEligible(individualId) {
   if (!m || !m.date_of_birth) return false;
   if (calculateAge(m.date_of_birth) < AGE_VOTING) return false;
   var hh = getHouseholdById(m.household_id);
-  return hh && hh.membership_type === CATEGORY_FULL;
+  return hh && hh.membership_category === CATEGORY_FULL;
 }
 
 
@@ -677,7 +677,7 @@ function checkExpiringMemberships() {
       var vars = {
         FIRST_NAME:       _getPrimaryFirstName(hh.household_id),
         FULL_NAME:        hh.household_name,
-        MEMBERSHIP_LEVEL: hh.membership_type,
+        MEMBERSHIP_LEVEL: hh.membership_category,
         EXPIRATION_DATE:  formatDate(expDate),
         DUES_USD:         level ? level.annual_dues_usd : "",
         DUES_BWP:         level ? level.annual_dues_bwp : ""

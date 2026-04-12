@@ -1043,7 +1043,7 @@ function sendRsoDailySummary() {
       if (r.event_name) block += "Event: " + r.event_name + "\n";
       block += "Reserved By: " + (hh ? hh.household_name : r.household_id) + "\n";
       block += "Contact: " + r.submitted_by_email + "\n";
-      block += "Membership: " + (hh ? hh.membership_type + " - " + hh.household_type : "") + "\n";
+      block += "Membership: " + (hh ? hh.membership_category + " " + hh.household_type : "") + "\n";
       block += "Household Attending: " +
                members.filter(function(m) {
                  return m.relationship_to_primary !== RELATIONSHIP_STAFF;
@@ -1781,7 +1781,7 @@ function _sendReservationNotifications(params, row, hh, limitCheck) {
 
     // Send approval request to board / MGT
     var limitVars = Object.assign({}, baseVars, {
-      MEMBERSHIP_LEVEL:     hh.membership_type,
+      MEMBERSHIP_LEVEL:     hh.membership_category,
       MEMBERSHIP_STATUS:    hh.active ? "Active" : "Inactive",
       HOUSEHOLD_NAME:       hh.household_name,
       LEOBO_USAGE:          getLeoboReservationsThisMonth(params.householdId, params.eventDate),

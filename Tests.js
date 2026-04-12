@@ -570,8 +570,8 @@ function testMemberLookup() {
   var hh = getHouseholdById(member.household_id);
   _assert("getHouseholdById returns household", hh !== null, "null");
   if (hh) {
-    _assert("Household has membership_type", hh.membership_type !== undefined);
-    _assert("Household has active field",    hh.active !== undefined);
+    _assert("Household has household_type", hh.household_type !== undefined);
+    _assert("Household has active field",   hh.active !== undefined);
   }
 
   // Test getHouseholdMembers

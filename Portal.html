@@ -7016,7 +7016,7 @@ function submitPasswordReset(event) {
     var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp) || '—';
 
     // Compute Type display value: membership_category + household_type
-    var typeDisplay = (hh.membership_category || '') + ' ' + (hh.household_type || 'Individual');
+    var typeDisplay = (hh.membership_category || '') + ' ' + (hh.membership_type || 'Individual');
     typeDisplay = typeDisplay.trim() || '—';
 
     var isAwaitingDocs = appStatus === 'awaiting_docs';
@@ -7049,7 +7049,7 @@ function submitPasswordReset(event) {
         typeBtn.style.minHeight = '32px';
         typeBtn.textContent = pair[1] + ' (click to toggle)';
         typeBtn.onclick = function() {
-          var newType = (hh.household_type === 'Family' ? 'Individual' : 'Family');
+          var newType = (hh.membership_type === 'Family' ? 'Individual' : 'Family');
           _openChangeHouseholdTypeModal(hh, newType);
         };
         val.appendChild(typeBtn);
@@ -7144,7 +7144,7 @@ function submitPasswordReset(event) {
 
     // Only show add family member buttons for Family household types
     // Check both household_type (new) and membership_type (legacy) for compatibility
-    var isFamilyHousehold = hh.household_type === 'Family' || hh.membership_type === 'Family';
+    var isFamilyHousehold = hh.membership_type === 'Family';
     if (isFamilyHousehold) {
       var addBtns = document.createElement('div');
       addBtns.style.display = 'flex';
@@ -7257,7 +7257,7 @@ function submitPasswordReset(event) {
 
     // Only show add staff member button for Family household types
     // Check both household_type (new) and membership_type (legacy) for compatibility
-    var isFamilyHousehold = hh.household_type === 'Family' || hh.membership_type === 'Family';
+    var isFamilyHousehold = hh.membership_type === 'Family';
     if (!hasStaff && isFamilyHousehold) {
       var addBtn = document.createElement('button');
       addBtn.className = 'btn';
@@ -7388,14 +7388,10 @@ function submitPasswordReset(event) {
     }
 
     if (relationship === 'Staff') {
-      roleInput  = _buildTextInput('e.g. Nanny, Driver');
       startInput = _buildDateInput('');
       endInput   = _buildDateInput('');
-      omangInput = _buildTextInput('Omang / National ID number');
-      modal.appendChild(_buildLabeledInput('Role *', roleInput));
       modal.appendChild(_buildLabeledInput('Start Date', startInput));
       modal.appendChild(_buildLabeledInput('End Date', endInput));
-      modal.appendChild(_buildLabeledInput('Omang Number *', omangInput));
     }
 
     var errorP = document.createElement('p');
@@ -7418,8 +7414,6 @@ function submitPasswordReset(event) {
       }
 
       if (relationship === 'Staff') {
-        params.omang_number          = omangInput.value.trim();
-        params.employment_role       = roleInput.value.trim();
         params.employment_start_date = startInput.value;
         params.employment_end_date   = endInput.value;
       }
@@ -7473,14 +7467,10 @@ function submitPasswordReset(event) {
     }
 
     if (rel === 'Staff') {
-      roleInput  = _buildTextInput('Role', member.employment_role);
       startInput = _buildDateInput(member.employment_start_date);
       endInput   = _buildDateInput(member.employment_end_date);
-      omangInput = _buildTextInput('Omang Number', member.omang_number);
-      modal.appendChild(_buildLabeledInput('Role', roleInput));
       modal.appendChild(_buildLabeledInput('Start Date', startInput));
       modal.appendChild(_buildLabeledInput('End Date', endInput));
-      modal.appendChild(_buildLabeledInput('Omang Number', omangInput));
     }
 
     var errorP = document.createElement('p');
@@ -7498,10 +7488,8 @@ function submitPasswordReset(event) {
       };
       if (rel === 'Child')  params.date_of_birth = dobInput.value;
       if (rel === 'Staff') {
-        params.employment_role       = roleInput.value.trim();
         params.employment_start_date = startInput.value;
         params.employment_end_date   = endInput.value;
-        params.omang_number          = omangInput.value.trim();
       }
 
       btns.submitBtn.disabled = true;
@@ -7581,7 +7569,7 @@ function submitPasswordReset(event) {
     var parts = _buildModalOverlay('Change Household Type');
     var modal = parts.modal;
 
-    var currentType = household.household_type || 'Individual';
+    var currentType = household.membership_type || 'Individual';
     var message = document.createElement('p');
     message.style.color = '#555';
     message.textContent = 'Change household type from "' + currentType + '" to "' + newType + '"?';

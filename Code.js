@@ -998,7 +998,6 @@ function _handleCard(p) {
       individual_id:      m.individual_id,
       name:               m.first_name + " " + m.last_name,
       relationship:       m.relationship_to_primary,
-      membership_type:    hh ? hh.membership_type : "",
       household_type:     hh ? hh.household_type : "",
       expiration_date:    hh ? formatDate(new Date(hh.membership_expiration_date)) : "",
       photo_status:       m.photo_status,
@@ -1905,7 +1904,6 @@ function _safePublicHousehold(hh) {
     household_id:               hh.household_id,
     household_name:             hh.household_name,
     household_type:             hh.household_type || "",
-    membership_type:            hh.membership_type,
     membership_category:        hh.membership_category || "",
     application_status:         hh.application_status,
     active:                     hh.active,
@@ -2402,14 +2400,14 @@ function _handleGetHouseholdMembers(p) {
         last_name:                 m.last_name  || "",
         email:                     m.email      || "",
         relationship_to_primary:   m.relationship_to_primary || "",
-        date_of_birth:             m.date_of_birth ? formatDate(new Date(m.date_of_birth)) : "",
+        date_of_birth:             m.date_of_birth || "",
         country_code_primary:      m.country_code_primary  || "",
         phone_primary:             m.phone_primary         || "",
         phone_primary_whatsapp:    m.phone_primary_whatsapp || false,
         omang_number:              m.omang_number          || "",
         employment_role:           m.employment_role       || "",
-        employment_start_date:     m.employment_start_date ? formatDate(new Date(m.employment_start_date)) : "",
-        employment_end_date:       m.employment_end_date   ? formatDate(new Date(m.employment_end_date))   : "",
+        employment_start_date:     m.employment_start_date || "",
+        employment_end_date:       m.employment_end_date   || "",
         doc_status: {
           photo:    docStatus.photo      || null,
           passport: docStatus.passport   || null,
@@ -2469,7 +2467,7 @@ function _handleAddHouseholdMember(p) {
     var existing = getHouseholdMembers(member.household_id);
 
     if (rel === RELATIONSHIP_SPOUSE) {
-      if (hh.household_type !== HOUSEHOLD_FAMILY) {
+      if (hh.membership_type !== HOUSEHOLD_FAMILY) {
         return errorResponse("A spouse can only be added to a Family household.", "BUSINESS_RULE");
       }
       var spouseExists = false;
@@ -2493,9 +2491,8 @@ function _handleAddHouseholdMember(p) {
       if (staffExists) {
         return errorResponse("This household already has an active staff member.", "BUSINESS_RULE");
       }
-      if (!p.omang_number || !p.phone_primary || !p.employment_role) {
-        return errorResponse(
-          "omang_number, phone_primary, and employment_role are required for staff.", "INVALID_PARAM");
+      if (!p.phone_primary) {
+        return errorResponse("phone_primary is required for staff.", "INVALID_PARAM");
       }
     }
 
@@ -2605,8 +2602,7 @@ function _handleEditHouseholdMember(p) {
       allowed.push("date_of_birth");
     }
     if (rel === RELATIONSHIP_STAFF) {
-      allowed = allowed.concat(["omang_number", "employment_role",
-                                "employment_start_date", "employment_end_date"]);
+      allowed = allowed.concat(["employment_start_date", "employment_end_date"]);
     }
 
     var updated = 0;
@@ -3192,7 +3188,7 @@ function _handleGetDuesInfo(p) {
     var pricingHeaders = pricingData.length ? pricingData[0] : [];
 
     var annualDuesUsd = 0;
-    var membershipCategory = hh.membership_type || "";
+    var membershipCategory = hh.membership_category || "";
     var availableYears = [];
 
     for (var i = 1; i < pricingData.length; i++) {

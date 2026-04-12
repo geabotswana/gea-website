@@ -5277,8 +5277,8 @@
         // Build row safely using DOM methods to prevent XSS
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.household_name || 'Unknown'; return td; })());
 
-        // Member Type: combine category (membership_type) with household type (Individual/Family)
-        var memberTypeText = (household.membership_type || 'Unknown') + ' ' + (household.household_type || 'Unknown');
+        // Member Type: combine category (membership_category) with household type (Individual/Family)
+        var memberTypeText = (household.membership_category || 'Unknown') + ' ' + (household.household_type || 'Unknown');
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = memberTypeText; return td; })());
 
         var badgeTd = document.createElement('td');

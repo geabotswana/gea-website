@@ -619,7 +619,7 @@ function sendMonthlyCollectionsReport() {
       lines.push("", "=== NEW MEMBERS THIS MONTH ===");
       newThisMonth.forEach(function(hh) {
         lines.push("  " + (hh.household_name || hh.household_id)
-          + (hh.membership_type ? " (" + hh.membership_type + ")" : ""));
+          + (hh.membership_category ? " (" + hh.membership_category + ")" : ""));
       });
     }
 

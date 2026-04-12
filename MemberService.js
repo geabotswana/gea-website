@@ -414,7 +414,11 @@ function createMemberRecord(householdId, individualData, createdBy) {
                   " [" + (individualData.relationship_to_primary || "") + "]");
     return id;
   } catch (e) {
-    Logger.log("ERROR createMemberRecord: " + e);
+    Logger.log("ERROR createMemberRecord: " + e.toString() + " | Stack: " + e.stack);
+    Logger.log("createMemberRecord details - householdId: " + householdId +
+               " | firstName: " + individualData.first_name +
+               " | lastName: " + individualData.last_name +
+               " | dob: " + individualData.date_of_birth);
     return null;
   }
 }

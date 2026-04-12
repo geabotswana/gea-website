@@ -219,6 +219,7 @@ function _routeAction(action, params) {
     case "add_household_member":     return _handleAddHouseholdMember(params);
     case "remove_household_member":  return _handleRemoveHouseholdMember(params);
     case "edit_household_member":    return _handleEditHouseholdMember(params);
+    case "update_household_type":    return _handleUpdateHouseholdType(params);
     case "submit_guest_list":        return _handleSubmitGuestList(params);
     case "get_guest_list":           return _handleGetGuestList(params);
     case "get_guest_profiles":       return _handleGetGuestProfiles(params);
@@ -2624,6 +2625,51 @@ function _handleEditHouseholdMember(p) {
   } catch (e) {
     Logger.log("ERROR _handleEditHouseholdMember: " + e);
     return errorResponse("Could not edit household member.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleUpdateHouseholdType
+ * PURPOSE: Change household type from Individual to Family or vice versa.
+ *          Only allowed for applicant households (before activation).
+ *
+ * @param {Object} p  { token, household_type }
+ * @returns {Object}  Success/error response
+ */
+function _handleUpdateHouseholdType(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    if (!p.household_type) {
+      return errorResponse("household_type is required.", "INVALID_PARAM");
+    }
+
+    if (p.household_type !== HOUSEHOLD_INDIVIDUAL && p.household_type !== HOUSEHOLD_FAMILY) {
+      return errorResponse("household_type must be 'Individual' or 'Family'.", "INVALID_PARAM");
+    }
+
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var hh = getHouseholdById(member.household_id);
+    if (!hh) return errorResponse("Household not found.", "NOT_FOUND");
+
+    // Only allow changing household type for applicant households (not yet active)
+    if (hh.active) {
+      return errorResponse("Cannot change household type after membership is activated.", "BUSINESS_RULE");
+    }
+
+    // Update household type
+    updateHouseholdField(member.household_id, "household_type", p.household_type, auth.session.email);
+
+    logAuditEntry(auth.session.email, "HOUSEHOLD_TYPE_CHANGED", "Household", member.household_id,
+                  "Changed from " + (hh.household_type || "Individual") + " to " + p.household_type);
+
+    return successResponse({}, "Household type updated to " + p.household_type + ".");
+  } catch (e) {
+    Logger.log("ERROR _handleUpdateHouseholdType: " + e);
+    return errorResponse("Could not update household type.", "SERVER_ERROR");
   }
 }
 

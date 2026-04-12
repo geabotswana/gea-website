@@ -2467,7 +2467,7 @@ function _handleAddHouseholdMember(p) {
     var existing = getHouseholdMembers(member.household_id);
 
     if (rel === RELATIONSHIP_SPOUSE) {
-      if (hh.membership_type !== HOUSEHOLD_FAMILY) {
+      if (hh.household_type !== HOUSEHOLD_FAMILY) {
         return errorResponse("A spouse can only be added to a Family household.", "BUSINESS_RULE");
       }
       var spouseExists = false;

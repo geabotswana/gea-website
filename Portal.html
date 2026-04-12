@@ -7143,7 +7143,6 @@ function submitPasswordReset(event) {
     });
 
     // Only show add family member buttons for Family household types
-    // Check both household_type (new) and membership_type (legacy) for compatibility
     var isFamilyHousehold = hh.household_type === 'Family';
     if (isFamilyHousehold) {
       var addBtns = document.createElement('div');
@@ -7256,7 +7255,6 @@ function submitPasswordReset(event) {
     });
 
     // Only show add staff member button for Family household types
-    // Check both household_type (new) and membership_type (legacy) for compatibility
     var isFamilyHousehold = hh.household_type === 'Family';
     if (!hasStaff && isFamilyHousehold) {
       var addBtn = document.createElement('button');
@@ -8990,7 +8988,7 @@ function submitPasswordReset(event) {
         }
 
         addCardDetailRow('Status:', card.status, true);
-        addCardDetailRow('Type:', card.membership_type);
+        addCardDetailRow('Type:', card.household_type);
         addCardDetailRow('Expires:', card.expiration_date);
         addCardDetailRow('Relationship:', card.relationship);
 

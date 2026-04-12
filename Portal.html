@@ -6920,7 +6920,7 @@ function submitPasswordReset(event) {
    * Builds the My Household section. Makes an API call to fetch members,
    * then renders overview, family, and staff cards.
    */
-  function _renderHouseholdInto(wrapper, data) {
+  function _renderHouseholdInto(wrapper, data, appStatus) {
     var hh      = data.household;
     var members = data.members || [];
     var selfId  = data.self_id;
@@ -6939,7 +6939,7 @@ function submitPasswordReset(event) {
     var hasStaff = staff.length > 0;
 
     while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
-    wrapper.appendChild(_buildHouseholdOverviewCard(hh, members));
+    wrapper.appendChild(_buildHouseholdOverviewCard(hh, members, appStatus));
     wrapper.appendChild(_buildFamilyMembersCard(family, selfId, hh, hasSpouse));
     wrapper.appendChild(_buildHouseholdStaffCard(staff, selfId, hasStaff, hh));
   }
@@ -6949,7 +6949,8 @@ function submitPasswordReset(event) {
 
     // Serve from cache if available
     if (applicantPortalState.householdData) {
-      _renderHouseholdInto(wrapper, applicantPortalState.householdData);
+      var appStatus = applicantPortalState.application ? applicantPortalState.application.status : '';
+      _renderHouseholdInto(wrapper, applicantPortalState.householdData, appStatus);
       return wrapper;
     }
 
@@ -6976,7 +6977,8 @@ function submitPasswordReset(event) {
         return;
       }
       applicantPortalState.householdData = res.data; // cache for subsequent tab visits
-      _renderHouseholdInto(wrapper, res.data);
+      var appStatus = applicantPortalState.application ? applicantPortalState.application.status : '';
+      _renderHouseholdInto(wrapper, res.data, appStatus);
     }).catch(function(err) {
       while (wrapper.firstChild) wrapper.removeChild(wrapper.firstChild);
       var errCard = document.createElement('div');
@@ -6992,7 +6994,7 @@ function submitPasswordReset(event) {
     return wrapper;
   }
 
-  function _buildHouseholdOverviewCard(hh, members) {
+  function _buildHouseholdOverviewCard(hh, members, appStatus) {
     var card = document.createElement('div');
     card.className = 'card';
     card.style.padding = '16px';
@@ -7013,15 +7015,21 @@ function submitPasswordReset(event) {
     // Format phone number from household fields
     var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp) || '—';
 
+    // Compute Type display value: membership_category + household_type
+    var typeDisplay = (hh.membership_category || '') + ' ' + (hh.household_type || 'Individual');
+    typeDisplay = typeDisplay.trim() || '—';
+
+    var isAwaitingDocs = appStatus === 'awaiting_docs';
+
     [
-      ['Household Name', hh.household_name || '—', false],
-      ['Household ID',   hh.household_id   || '—', false],
-      ['Type',           hh.household_type  || '—', false],
-      ['Primary Contact', (hh.primary_first_name || '') + ' ' + (hh.primary_last_name || ''), false],
-      ['Email',          hh.primary_email   || '—', false],
-      ['Phone',          phoneDisplay, true],  // may contain WhatsApp icon HTML
-      ['Family Members', String(familyCount), false],
-      ['Staff Members',  String(staffCount), false]
+      ['Household Name', hh.household_name || '—', false, false],
+      ['Household ID',   hh.household_id   || '—', false, false],
+      ['Type',           typeDisplay, false, true],  // 4th param: is editable
+      ['Primary Contact', (hh.primary_first_name || '') + ' ' + (hh.primary_last_name || ''), false, false],
+      ['Email',          hh.primary_email   || '—', false, false],
+      ['Phone',          phoneDisplay, true, false],  // may contain WhatsApp icon HTML
+      ['Family Members', String(familyCount), false, false],
+      ['Staff Members',  String(staffCount), false, false]
     ].forEach(function(pair) {
       var row = document.createElement('div');
       row.style.display = 'flex';
@@ -7033,7 +7041,19 @@ function submitPasswordReset(event) {
       label.style.flexShrink = '0';
       label.textContent = pair[0] + ':';
       var val = document.createElement('span');
-      if (pair[2]) {
+
+      // Handle Type field specially if editable and awaiting docs
+      if (pair[0] === 'Type' && pair[3] && isAwaitingDocs) {
+        var typeBtn = document.createElement('button');
+        typeBtn.className = 'btn btn-small';
+        typeBtn.style.minHeight = '32px';
+        typeBtn.textContent = pair[1] + ' (click to toggle)';
+        typeBtn.onclick = function() {
+          var newType = (hh.household_type === 'Family' ? 'Individual' : 'Family');
+          _openChangeHouseholdTypeModal(hh, newType);
+        };
+        val.appendChild(typeBtn);
+      } else if (pair[2]) {
         val.innerHTML = pair[1]; // safe: only hardcoded WhatsApp icon HTML, no user data
       } else {
         val.textContent = pair[1];
@@ -7551,6 +7571,56 @@ function submitPasswordReset(event) {
 
     // Style confirm button as danger
     btns.submitBtn.className = 'btn btn-danger';
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
+  function _openChangeHouseholdTypeModal(household, newType) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Change Household Type');
+    var modal = parts.modal;
+
+    var currentType = household.household_type || 'Individual';
+    var message = document.createElement('p');
+    message.style.color = '#555';
+    message.textContent = 'Change household type from "' + currentType + '" to "' + newType + '"?';
+    modal.appendChild(message);
+
+    var info = document.createElement('p');
+    info.style.fontSize = '12px';
+    info.style.color = '#888';
+    info.style.marginTop = '12px';
+    info.textContent = 'This will change what type of family configuration applies to your household.';
+    modal.appendChild(info);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Confirm Change', function() {
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Changing...';
+
+      // Call backend to update household type
+      apiCall('update_household_type', { household_type: newType }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to change household type.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Confirm Change';
+          return;
+        }
+        _closeHouseholdModal();
+        _refreshHouseholdSection();
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Confirm Change';
+      });
+    });
 
     modal.appendChild(btns.row);
     document.body.appendChild(parts.overlay);

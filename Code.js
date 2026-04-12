@@ -998,7 +998,8 @@ function _handleCard(p) {
       individual_id:      m.individual_id,
       name:               m.first_name + " " + m.last_name,
       relationship:       m.relationship_to_primary,
-      household_type:     hh ? hh.household_type : "",
+      membership_type:    hh ? hh.membership_type : "",
+      household_type:     hh ? hh.membership_type : "",
       expiration_date:    hh ? formatDate(new Date(hh.membership_expiration_date)) : "",
       photo_status:       m.photo_status,
       photo_url:          m.photo_approved_url || "",
@@ -1903,7 +1904,8 @@ function _safePublicHousehold(hh) {
   return {
     household_id:               hh.household_id,
     household_name:             hh.household_name,
-    household_type:             hh.household_type || "",
+    household_type:             hh.membership_type || "",
+    membership_type:            hh.membership_type,
     membership_category:        hh.membership_category || "",
     application_status:         hh.application_status,
     active:                     hh.active,
@@ -2657,11 +2659,11 @@ function _handleUpdateHouseholdType(p) {
       return errorResponse("Cannot change household type after membership is activated.", "BUSINESS_RULE");
     }
 
-    // Update household type
-    updateHouseholdField(member.household_id, "household_type", p.household_type, auth.session.email);
+    // Update household type (stored as membership_type in Households table)
+    updateHouseholdField(member.household_id, "membership_type", p.household_type, auth.session.email);
 
     logAuditEntry(auth.session.email, "HOUSEHOLD_TYPE_CHANGED", "Household", member.household_id,
-                  "Changed from " + (hh.household_type || "Individual") + " to " + p.household_type);
+                  "Changed from " + (hh.membership_type || "Individual") + " to " + p.household_type);
 
     return successResponse({}, "Household type updated to " + p.household_type + ".");
   } catch (e) {
@@ -3188,7 +3190,7 @@ function _handleGetDuesInfo(p) {
     var pricingHeaders = pricingData.length ? pricingData[0] : [];
 
     var annualDuesUsd = 0;
-    var membershipCategory = hh.membership_category || "";
+    var membershipCategory = hh.membership_type || "";
     var availableYears = [];
 
     for (var i = 1; i < pricingData.length; i++) {

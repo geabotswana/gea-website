@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.45";
+var SYSTEM_VERSION          = "2.4.46";
 var SYSTEM_BUILD_DATE       = "2026-04-12";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: Show household members for applicants during application process";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-12 15:12:33";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: Correct household staff classification in family members list";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-12 15:27:41";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

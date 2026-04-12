@@ -157,7 +157,7 @@ function createApplicationRecord(formData, createdBy) {
         first_name: capitalizeName(formData.staff_first_name),
         last_name: capitalizeName(formData.staff_last_name),
         email: "", // Staff members don't have email
-        relationship_to_primary: "Household Staff",
+        relationship_to_primary: RELATIONSHIP_STAFF,
         active: false,
         date_of_birth: "",
         passport_number: "",

@@ -7161,6 +7161,13 @@ function submitPasswordReset(event) {
     title.textContent = 'Household Staff';
     card.appendChild(title);
 
+    var subtitle = document.createElement('p');
+    subtitle.style.fontSize = '12px';
+    subtitle.style.color = '#666';
+    subtitle.style.marginBottom = '12px';
+    subtitle.textContent = 'Only one household staff member is allowed per family.';
+    card.appendChild(subtitle);
+
     if (staff.length === 0) {
       var empty = document.createElement('p');
       empty.style.color = '#666';
@@ -7235,6 +7242,18 @@ function submitPasswordReset(event) {
       addBtn.textContent = '+ Add Staff Member';
       addBtn.onclick = function() { _openAddMemberModal('Staff'); };
       card.appendChild(addBtn);
+    }
+
+    // Show footer message if staff member already exists
+    if (hasStaff) {
+      var footer = document.createElement('p');
+      footer.style.fontSize = '12px';
+      footer.style.color = '#888';
+      footer.style.marginTop = '12px';
+      footer.style.paddingTop = '12px';
+      footer.style.borderTop = '1px solid #eee';
+      footer.textContent = 'To add a new household staff member, you must remove the current one.';
+      card.appendChild(footer);
     }
 
     return card;

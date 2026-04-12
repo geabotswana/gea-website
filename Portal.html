@@ -7448,7 +7448,7 @@ function submitPasswordReset(event) {
     var emailInput     = _buildTextInput('Email',      member.email);
     var phoneInput     = _buildTextInput('Phone',      member.phone_primary);
     var dobInput       = _buildDateInput(formatDateOfBirth(member.date_of_birth));
-    var citizenshipInput = _buildCitizenshipSelect(member.citizenship);
+    var citizenshipInput = _buildCitizenshipSelect(member.citizenship_country);
 
     modal.appendChild(_buildLabeledInput('First Name', firstNameInput));
     modal.appendChild(_buildLabeledInput('Last Name',  lastNameInput));

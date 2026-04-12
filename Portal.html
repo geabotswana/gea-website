@@ -1983,7 +1983,6 @@
         <i class="fas fa-lock" style="margin-right: 6px;"></i>Change Password
       </button>
       <button class="btn-logout" onclick="logout();">Logout</button>
-      <div id="deploymentInfo" style="font-size: 11px; color: #999; margin-top: 12px; text-align: center; white-space: nowrap;"></div>
     </div>
   </header>
   
@@ -3458,33 +3457,6 @@ function submitPasswordReset(event) {
       document.getElementById('headerHouseholdName').textContent = householdName;
     }
 
-    // Fetch and display deployment timestamp (via Promise wrapper).
-    // Anchor for reviewers: function showAuthenticatedUI -> deployment_info block.
-    // NOTE: google.script.run does not return a Promise directly.
-    apiCall('deployment_info', {})
-      .then(function(response) {
-        // Support both legacy and normalized response shapes.
-        var timestamp = response && response.result && response.result.timestamp
-          ? response.result.timestamp
-          : (response && response.data && response.data.timestamp ? response.data.timestamp : '');
-
-        if (!timestamp) return;
-
-        var deploymentDiv = document.getElementById('deploymentInfo');
-        if (deploymentDiv) {
-          deploymentDiv.textContent = 'Code: ' + timestamp + ' CAT';
-        }
-        updatePortalDebug({
-          deployment_info_error: ''
-        });
-      })
-      .catch(function(err) {
-        updatePortalDebug({
-          probe_message: 'deployment_info fetch failed',
-          deployment_info_error: (err && err.message) ? String(err.message) : 'Unknown deployment_info error'
-        });
-        console.warn('[showAuthenticatedUI/deployment_info] unavailable:', err);
-      });
   }
   
   /**

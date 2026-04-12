@@ -98,6 +98,7 @@ function createApplicationRecord(formData, createdBy) {
       household_id: householdId,
       primary_member_id: individualId,
       household_name: householdName,
+      household_type: householdType,
       membership_type: householdType,
       membership_category: formData.membership_category,
       membership_level_id: _getMembershipLevelId(formData.membership_category, householdType),

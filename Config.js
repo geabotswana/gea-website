@@ -979,8 +979,8 @@ var SYSTEM_VERSION          = "2.4.47";
 var SYSTEM_BUILD_DATE       = "2026-04-12";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: Correct household staff relationship classification (#117)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-12 15:32:00";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: Add household_type field and support legacy staff relationship values";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-12 15:54:39";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -7313,6 +7313,27 @@ function submitPasswordReset(event) {
     return input;
   }
 
+  function _buildCitizenshipSelect(value) {
+    var select = document.createElement('select');
+    select.style.cssText = 'width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;' +
+      'box-sizing:border-box;font-size:14px;';
+
+    var option = document.createElement('option');
+    option.value = '';
+    option.textContent = '-- Select citizenship --';
+    select.appendChild(option);
+
+    getCitizenshipCountries().forEach(function(country) {
+      var opt = document.createElement('option');
+      opt.value = country.code;
+      opt.textContent = country.name + ' (' + country.code + ')';
+      select.appendChild(opt);
+    });
+
+    select.value = value || '';
+    return select;
+  }
+
   function _buildModalButtons(submitText, onSubmit) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
@@ -7344,10 +7365,12 @@ function submitPasswordReset(event) {
     var emailInput      = _buildTextInput('Email (optional)');
     var phoneInput      = _buildTextInput('Phone number');
     var dobInput        = _buildDateInput('');
+    var citizenshipInput = _buildCitizenshipSelect('');
 
     modal.appendChild(_buildLabeledInput('First Name *', firstNameInput));
     modal.appendChild(_buildLabeledInput('Last Name *', lastNameInput));
     modal.appendChild(_buildLabeledInput('Email', emailInput));
+    modal.appendChild(_buildLabeledInput('Citizenship', citizenshipInput));
 
     var omangInput, roleInput, startInput, endInput;
 
@@ -7374,7 +7397,8 @@ function submitPasswordReset(event) {
         relationship: relationship,
         first_name:   firstNameInput.value.trim(),
         last_name:    lastNameInput.value.trim(),
-        email:        emailInput.value.trim()
+        email:        emailInput.value.trim(),
+        citizenship:  citizenshipInput.value.trim()
       };
 
       if (relationship === 'Child') {
@@ -7424,11 +7448,13 @@ function submitPasswordReset(event) {
     var emailInput     = _buildTextInput('Email',      member.email);
     var phoneInput     = _buildTextInput('Phone',      member.phone_primary);
     var dobInput       = _buildDateInput(formatDateOfBirth(member.date_of_birth));
+    var citizenshipInput = _buildCitizenshipSelect(member.citizenship);
 
     modal.appendChild(_buildLabeledInput('First Name', firstNameInput));
     modal.appendChild(_buildLabeledInput('Last Name',  lastNameInput));
     modal.appendChild(_buildLabeledInput('Email',      emailInput));
     modal.appendChild(_buildLabeledInput('Phone',      phoneInput));
+    modal.appendChild(_buildLabeledInput('Citizenship', citizenshipInput));
 
     var omangInput, roleInput, startInput, endInput;
 

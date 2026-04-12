@@ -2404,6 +2404,7 @@ function _handleGetHouseholdMembers(p) {
         country_code_primary:      m.country_code_primary  || "",
         phone_primary:             m.phone_primary         || "",
         phone_primary_whatsapp:    m.phone_primary_whatsapp || false,
+        citizenship:               m.citizenship           || "",
         omang_number:              m.omang_number          || "",
         employment_role:           m.employment_role       || "",
         employment_start_date:     m.employment_start_date || "",
@@ -2505,6 +2506,7 @@ function _handleAddHouseholdMember(p) {
       country_code_primary:    p.country_code_primary  ? sanitizeInput(p.country_code_primary) : "",
       phone_primary:           p.phone_primary         ? sanitizeInput(p.phone_primary)   : "",
       phone_primary_whatsapp:  p.phone_primary_whatsapp === true || p.phone_primary_whatsapp === "true",
+      citizenship:             p.citizenship           ? sanitizeInput(p.citizenship)     : "",
       omang_number:            p.omang_number          ? sanitizeInput(p.omang_number)    : "",
       employment_role:         p.employment_role       ? sanitizeInput(p.employment_role) : "",
       employment_start_date:   p.employment_start_date || "",
@@ -2597,7 +2599,7 @@ function _handleEditHouseholdMember(p) {
 
     var rel = target.relationship_to_primary;
     var allowed = ["first_name", "last_name", "email",
-                   "country_code_primary", "phone_primary", "phone_primary_whatsapp"];
+                   "country_code_primary", "phone_primary", "phone_primary_whatsapp", "citizenship"];
     if (rel === RELATIONSHIP_CHILD) {
       allowed.push("date_of_birth");
     }

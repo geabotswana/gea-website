@@ -146,9 +146,8 @@ function getHouseholdMembers(householdId) {
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
     var hhCol   = headers.indexOf("household_id");
-    var actCol  = headers.indexOf("active");
     for (var i = 1; i < data.length; i++) {
-      if (data[i][hhCol] === householdId && data[i][actCol] === true) {
+      if (data[i][hhCol] === householdId) {
         members.push(rowToObject(headers, data[i]));
       }
     }

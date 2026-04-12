@@ -7016,7 +7016,7 @@ function submitPasswordReset(event) {
     var phoneDisplay = formatPhoneWithWhatsApp(hh.country_code_primary, hh.phone_primary, hh.phone_primary_whatsapp) || '—';
 
     // Compute Type display value: membership_category + household_type
-    var typeDisplay = (hh.membership_category || '') + ' ' + (hh.membership_type || 'Individual');
+    var typeDisplay = (hh.membership_category || '') + ' ' + (hh.household_type || 'Individual');
     typeDisplay = typeDisplay.trim() || '—';
 
     var isAwaitingDocs = appStatus === 'awaiting_docs';
@@ -7049,7 +7049,7 @@ function submitPasswordReset(event) {
         typeBtn.style.minHeight = '32px';
         typeBtn.textContent = pair[1] + ' (click to toggle)';
         typeBtn.onclick = function() {
-          var newType = (hh.membership_type === 'Family' ? 'Individual' : 'Family');
+          var newType = (hh.household_type === 'Family' ? 'Individual' : 'Family');
           _openChangeHouseholdTypeModal(hh, newType);
         };
         val.appendChild(typeBtn);
@@ -7143,8 +7143,7 @@ function submitPasswordReset(event) {
     });
 
     // Only show add family member buttons for Family household types
-    // Check both household_type (new) and membership_type (legacy) for compatibility
-    var isFamilyHousehold = hh.membership_type === 'Family';
+    var isFamilyHousehold = hh.household_type === 'Family';
     if (isFamilyHousehold) {
       var addBtns = document.createElement('div');
       addBtns.style.display = 'flex';
@@ -7256,8 +7255,7 @@ function submitPasswordReset(event) {
     });
 
     // Only show add staff member button for Family household types
-    // Check both household_type (new) and membership_type (legacy) for compatibility
-    var isFamilyHousehold = hh.membership_type === 'Family';
+    var isFamilyHousehold = hh.household_type === 'Family';
     if (!hasStaff && isFamilyHousehold) {
       var addBtn = document.createElement('button');
       addBtn.className = 'btn';
@@ -7569,7 +7567,7 @@ function submitPasswordReset(event) {
     var parts = _buildModalOverlay('Change Household Type');
     var modal = parts.modal;
 
-    var currentType = household.membership_type || 'Individual';
+    var currentType = household.household_type || 'Individual';
     var message = document.createElement('p');
     message.style.color = '#555';
     message.textContent = 'Change household type from "' + currentType + '" to "' + newType + '"?';
@@ -8990,7 +8988,7 @@ function submitPasswordReset(event) {
         }
 
         addCardDetailRow('Status:', card.status, true);
-        addCardDetailRow('Type:', card.membership_type);
+        addCardDetailRow('Type:', card.household_type);
         addCardDetailRow('Expires:', card.expiration_date);
         addCardDetailRow('Relationship:', card.relationship);
 

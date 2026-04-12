@@ -1298,7 +1298,7 @@ function _handleAdminWaitlistList(p) {
  *       {
  *         "household_id": "HH-2026-001",
  *         "household_name": "Smith Family",
- *         "membership_type": "ACTIVE",
+ *         "household_type": "Family",
  *         "status": "Approved",
  *         "membership_expiration_date": "Dec 31, 2026",
  *         "email": "john@state.gov"
@@ -2467,7 +2467,7 @@ function _handleAddHouseholdMember(p) {
     var existing = getHouseholdMembers(member.household_id);
 
     if (rel === RELATIONSHIP_SPOUSE) {
-      if (hh.membership_type !== HOUSEHOLD_FAMILY) {
+      if (hh.household_type !== HOUSEHOLD_FAMILY) {
         return errorResponse("A spouse can only be added to a Family household.", "BUSINESS_RULE");
       }
       var spouseExists = false;

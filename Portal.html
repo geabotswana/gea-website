@@ -7943,7 +7943,7 @@ function submitPasswordReset(event) {
 
       // Add expiration date if provided
       if (expirationDate) {
-        payload.document_expiration_date = new Date(expirationDate);
+        payload.document_expiration_date = expirationDate;
       }
 
       apiCall('upload_document', payload).then(function(res) {

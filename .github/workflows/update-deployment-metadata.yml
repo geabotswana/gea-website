@@ -60,10 +60,11 @@ jobs:
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
           NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
 
-          # Update Config.js using perl for safer substitution
-          perl -i -pe 's/var SYSTEM_VERSION\s*=\s*"[^"]*";/var SYSTEM_VERSION          = "'$NEW_VERSION'";/' Config.js
-          perl -i -pe 's/var SYSTEM_BUILD_DATE\s*=\s*"[^"]*";/var SYSTEM_BUILD_DATE       = "'$(date +%Y-%m-%d)'";/' Config.js
-          perl -i -pe 's/var SYSTEM_LAST_FEATURE\s*=\s*"[^"]*";/var SYSTEM_LAST_FEATURE     = "'$FEATURE'";/' Config.js
+          # Update Config.js with proper escaping of special characters in commit message
+          ESCAPED_FEATURE=$(printf '%s\n' "$FEATURE" | sed -e 's/[\/&]/\\&/g')
+          sed -i "s|var SYSTEM_VERSION.*=.*|var SYSTEM_VERSION          = \"$NEW_VERSION\";|" Config.js
+          sed -i "s|var SYSTEM_BUILD_DATE.*|var SYSTEM_BUILD_DATE       = \"$(date +%Y-%m-%d)\";|" Config.js
+          sed -i "s|var SYSTEM_LAST_FEATURE.*|var SYSTEM_LAST_FEATURE     = \"$ESCAPED_FEATURE\";|" Config.js
 
           echo "✅ Updated version from $CURRENT_VERSION → $NEW_VERSION"
           echo "✅ Feature: $FEATURE"

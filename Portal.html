@@ -7835,6 +7835,7 @@ function submitPasswordReset(event) {
     noBtn.onclick = function() { confirmSpan.remove(); triggerBtn.style.display = ''; };
     yesBtn.onclick = function() {
       yesBtn.disabled = true;
+      yesBtn.textContent = 'Removing...';
       apiCall('remove_document', { individual_id: individualId, document_type: docType })
         .then(function(res) {
           if (res.ok) {

@@ -2558,8 +2558,9 @@ function _handleRemoveHouseholdMember(p) {
     // For active members, deactivate instead
     var hh = getHouseholdById(member.household_id);
     if (hh && !hh.active) {
-      // Applicant household - delete the record
+      // Applicant household - delete the record and all file submissions
       deleteMemberRecord(p.individual_id, auth.session.email);
+      removeAllFileSubmissionsForIndividual(p.individual_id, auth.session.email);
     } else {
       // Active household - deactivate instead
       var result = deactivateMember(p.individual_id, auth.session.email);

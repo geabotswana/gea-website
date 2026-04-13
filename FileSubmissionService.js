@@ -647,6 +647,43 @@ function removeDocumentSubmission(individualId, documentType, callerEmail) {
   }
 }
 
+/**
+ * Removes ALL file submissions for an individual (used when member is deleted from application).
+ * Deletes rows from File Submissions sheet and cleans up associated Drive files.
+ */
+function removeAllFileSubmissionsForIndividual(individualId, callerEmail) {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var deletedCount = 0;
+
+    // Iterate backwards to safely delete rows
+    for (var i = data.length - 1; i >= 1; i--) {
+      var obj = rowToObject(headers, data[i]);
+      if (obj.individual_id === individualId) {
+        var fileId = obj.file_id;
+        sheet.deleteRow(i + 1);
+        deletedCount++;
+
+        // Clean up associated Drive file
+        if (fileId) {
+          try { DriveApp.getFileById(fileId).setTrashed(true); } catch (fe) { /* file already gone */ }
+        }
+      }
+    }
+
+    if (deletedCount > 0) {
+      logAuditEntry(callerEmail, 'member_deleted_with_submissions', 'FileSubmission', individualId,
+        'Deleted ' + deletedCount + ' file submission(s) when member was removed');
+    }
+    return { ok: true, deletedCount: deletedCount };
+  } catch (e) {
+    logError('removeAllFileSubmissionsForIndividual', e);
+    return { ok: false, deletedCount: 0 };
+  }
+}
+
 function _expireCurrentSubmission_(individualId, documentType) {
   var sheet = _getFileSubmissionsSheet_();
   var data = sheet.getDataRange().getValues();

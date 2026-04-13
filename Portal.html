@@ -7926,6 +7926,18 @@ function submitPasswordReset(event) {
       return;
     }
 
+    // Validate that expiration date is in the future
+    if (expirationDate) {
+      var selectedDate = new Date(expirationDate + 'T00:00:00');
+      var today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDate <= today) {
+        showError('Document expiration date must be in the future.');
+        return;
+      }
+    }
+
     closeDocExpirationModal();
 
     var btn = upload.btn;

@@ -1016,3 +1016,57 @@ function _createSignedDomainDelegationJwt() {
     return null;
   }
 }
+
+/**
+ * Sends an email from a template with a file attachment.
+ * Uses GmailApp.sendEmail() for simpler attachment support.
+ *
+ * @param {string} templateName    Semantic name of email template
+ * @param {string} recipient       Email address
+ * @param {Object} variables       Placeholder values for template
+ * @param {string} fileId          Google Drive file ID to attach
+ * @returns {boolean}              true if sent successfully
+ */
+function sendEmailFromTemplateWithAttachment(templateName, recipient, variables, fileId) {
+  try {
+    variables = variables || {};
+
+    var template = getEmailTemplate(templateName);
+    if (!template) {
+      Logger.log("ERROR sendEmailFromTemplateWithAttachment: Template not found: " + templateName);
+      return false;
+    }
+
+    // Get the file to attach
+    var file = null;
+    try {
+      file = DriveApp.getFileById(fileId);
+    } catch (e) {
+      Logger.log("ERROR sendEmailFromTemplateWithAttachment: File not found: " + fileId);
+      return false;
+    }
+
+    // Substitute variables in subject and body
+    var subject = substituteTemplateVariables(template.subject, variables);
+    var plainBody = substituteTemplateVariables(template.body, variables);
+    var htmlBody = buildHtmlEmail(subject, plainBody);
+
+    var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
+
+    // Send via GmailApp with attachment
+    GmailApp.sendEmail(to, subject, plainBody, {
+      htmlBody: htmlBody,
+      name: EMAIL_SENDER_NAME,
+      replyTo: EMAIL_BOARD,
+      attachments: [file],
+      charset: "UTF-8"
+    });
+
+    Logger.log("Email sent with attachment: " + templateName + " → " + to);
+    return true;
+
+  } catch (e) {
+    Logger.log("ERROR sendEmailFromTemplateWithAttachment: " + e);
+    return false;
+  }
+}

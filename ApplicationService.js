@@ -994,9 +994,19 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var _appName7      = application.primary_applicant_name || "";
     var _appFirstName7 = _appName7.split(" ")[0] || "Applicant";
 
-    sendEmailFromTemplate("MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER", application.primary_applicant_email, {
-      APPLICANT_NAME: _appFirstName7
-    });
+    // Send membership activation email with handbook attachment (if handbook file ID is configured)
+    var handbookFileId = getConfigValue("MEMBERSHIP_HANDBOOK_FILE_ID");
+    if (handbookFileId) {
+      // Send email with handbook attachment
+      sendEmailFromTemplateWithAttachment("MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER", application.primary_applicant_email, {
+        APPLICANT_NAME: _appFirstName7
+      }, handbookFileId);
+    } else {
+      // Fallback: send email without attachment if handbook not configured
+      sendEmailFromTemplate("MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER", application.primary_applicant_email, {
+        APPLICANT_NAME: _appFirstName7
+      });
+    }
 
     sendEmailFromTemplate("ADM_BOARD_FINAL_APPROVAL_TO_BOARD", boardEmail, {
       FIRST_NAME:       "Board",

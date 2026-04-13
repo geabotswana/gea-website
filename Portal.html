@@ -7285,7 +7285,8 @@ function submitPasswordReset(event) {
   }
 
   function _refreshHouseholdSection() {
-    applicantPortalState.householdData = null; // invalidate cache after mutation
+    applicantPortalState.householdData = null; // invalidate household cache after mutation
+    applicantPortalState.application = null;  // also invalidate application cache (documents, etc.) for consistency
     renderApplicantPortalSection('household');
   }
 

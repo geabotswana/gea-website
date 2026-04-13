@@ -2074,7 +2074,7 @@ function _handleUploadDocument(p) {
       submitted_date: new Date(),
       doc_number: p.doc_number || "",
       doc_expiry_date: p.doc_expiry || "",
-      document_expiration_date: p.document_expiration_date ? new Date(p.document_expiration_date) : "",
+      document_expiration_date: p.document_expiration_date || "",
       doc_country: p.doc_country || "",
       passport_type: p.passport_type || "",
       is_current: true,

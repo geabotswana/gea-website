@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.63";
+var SYSTEM_VERSION          = "2.4.64";
 var SYSTEM_BUILD_DATE       = "2026-04-16";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add My Household feature for member portal (#136)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-16 14:13:00";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Polish: Show timestamp on login pages and populate email template drive_file_ids (#137)";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-16 14:31:05";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

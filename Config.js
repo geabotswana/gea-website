@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.62";
+var SYSTEM_VERSION          = "2.4.63";
 var SYSTEM_BUILD_DATE       = "2026-04-16";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Merge pull request #135 from geabotswana/claude/add-upload-banner-XfvDT";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-16 09:34:23";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add My Household feature for member portal (#136)";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-16 14:13:00";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

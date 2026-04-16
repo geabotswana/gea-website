@@ -1,0 +1,30 @@
+Hi Board,
+
+MEMBER DOCUMENT SUBMITTED — FOR AWARENESS
+
+A member has submitted an identity document for verification. The RSO is reviewing it.
+
+SUBMISSION DETAILS:
+Member: {{MEMBER_NAME}}
+Document Type: {{DOCUMENT_TYPE}}
+Submitted: {{SUBMISSION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+REVIEW PROCESS:
+1. RSO reviews document (3-5 business days)
+2. Document is then submitted to you for approval
+3. You will receive notification when RSO review is complete
+
+TIMELINE:
+- RSO review: 3-5 business days
+- Board review: 2-3 business days (after RSO approval)
+- Total: 5-8 business days estimated
+
+YOUR ACTION:
+You will receive a separate notification once the RSO has completed their review and the document is ready for your approval.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need further details.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

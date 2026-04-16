@@ -1,0 +1,33 @@
+Hi {{FIRST_NAME}},
+
+DOCUMENT RESUBMISSION REQUIRED
+
+Your submitted {{DOCUMENT_TYPE}} does not meet verification requirements. Please resubmit a corrected document by {{RESUBMIT_DEADLINE}}.
+
+FEEDBACK FROM THE BOARD:
+{{BOARD_REJECTION_MESSAGE}}
+
+HOW TO RESUBMIT:
+1. Log into your member portal: {{PORTAL_URL}}
+2. Go to Profile
+3. Upload a corrected {{DOCUMENT_TYPE}}
+4. We'll review and notify you of the decision
+
+DOCUMENT REQUIREMENTS:
+- Document must be current and valid
+- All text must be clear and legible
+- Document must be properly scanned or photographed
+- Information must match our records
+- Ensure document type matches what was requested
+
+TIMELINE:
+- You'll receive a response within 5-8 business days after resubmission
+
+URGENT:
+Please resubmit by {{RESUBMIT_DEADLINE}} so we can process your request quickly.
+
+NEED HELP?
+Questions about document requirements? Contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

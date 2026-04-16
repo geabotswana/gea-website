@@ -1,0 +1,23 @@
+Hi {{FIRST_NAME}},
+
+✓ PHOTO APPROVED!
+
+Great news! Your profile photo has been approved by the GEA Board!
+
+APPROVAL DETAILS:
+Approved: {{APPROVED_DATE}}
+Status: Active in Your Profile
+
+WHAT THIS MEANS:
+- Your profile is now complete
+- Your photo is active in the GEA system
+- Your member information is fully updated
+
+YOUR PROFILE:
+View and manage your profile anytime: {{PORTAL_URL}}
+
+QUESTIONS?
+If you have any questions about your profile or need to update your photo in the future, contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

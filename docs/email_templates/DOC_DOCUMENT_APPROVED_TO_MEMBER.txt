@@ -1,0 +1,24 @@
+Hi {{FIRST_NAME}},
+
+✓ DOCUMENT APPROVED!
+
+Great news! Your {{DOCUMENT_TYPE}} has been approved and verified!
+
+APPROVAL DETAILS:
+Document Type: {{DOCUMENT_TYPE}}
+Approved: {{APPROVED_DATE}}
+Status: Verified in Your Profile
+
+WHAT THIS MEANS:
+- Your document is verified and accepted
+- Your profile is fully updated
+- Your membership documents are now complete
+
+YOUR PROFILE:
+View your profile information anytime: {{PORTAL_URL}}
+
+QUESTIONS?
+If you have any questions or need to update your documents in the future, contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

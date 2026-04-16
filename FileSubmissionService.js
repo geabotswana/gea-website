@@ -70,6 +70,30 @@ function uploadFileSubmission(params) {
 
     if (documentType === "passport" || documentType === "omang") {
       generateRsoApprovalLink(payload.submission_id);
+
+      // Send notifications for document submission
+      var individual = getMemberById(payload.individual_id);
+      if (individual) {
+        var reviewDeadline = new Date();
+        reviewDeadline.setDate(reviewDeadline.getDate() + 8);  // 8 days for review window
+
+        // Notify board for awareness
+        sendEmailFromTemplate("DOC_DOCUMENT_RECEIVED_TO_BOARD", EMAIL_BOARD, {
+          MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+          DOCUMENT_TYPE: documentType.charAt(0).toUpperCase() + documentType.slice(1),
+          SUBMISSION_DATE: formatDate(payload.submitted_date),
+          SUBMISSION_ID: payload.submission_id
+        });
+
+        // Notify RSO to review
+        sendEmailFromTemplate("DOC_DOCUMENT_RECEIVED_TO_RSO", EMAIL_RSO_APPROVE, {
+          MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+          DOCUMENT_TYPE: documentType.charAt(0).toUpperCase() + documentType.slice(1),
+          SUBMISSION_DATE: formatDate(payload.submitted_date),
+          SUBMISSION_ID: payload.submission_id,
+          REVIEW_DEADLINE: formatDate(reviewDeadline)
+        });
+      }
     }
 
     logAuditEntry(params.user_email || "member", AUDIT_FILE_SUBMISSION_CREATED, "FileSubmission", payload.submission_id,
@@ -530,6 +554,83 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
       copyApprovedPhotoToCloudStorage(submission_id, found.obj.individual_id);
     }
 
+    // Send approval/rejection emails
+    var individual = getMemberById(found.obj.individual_id);
+    if (individual) {
+      if (docType === "photo") {
+        if (approved) {
+          // Photo approved - notify member and board
+          sendEmailFromTemplate("DOC_PHOTO_APPROVED_TO_MEMBER_POST_ACTIVATION", individual.email, {
+            FIRST_NAME: individual.first_name || "Member",
+            APPROVED_DATE: formatDate(new Date()),
+            PORTAL_URL: "https://geabotswana.org/member.html"
+          });
+          sendEmailFromTemplate("DOC_PHOTO_APPROVED_TO_BOARD", EMAIL_BOARD, {
+            MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+            APPROVED_BY: userEmail,
+            APPROVED_DATE: formatDate(new Date()),
+            SUBMISSION_ID: submission_id
+          });
+        } else {
+          // Photo rejected - notify member and board
+          sendEmailFromTemplate("DOC_PHOTO_REJECTED_TO_MEMBER_WITH_BOARD_MESSAGE", individual.email, {
+            FIRST_NAME: individual.first_name || "Member",
+            BOARD_REJECTION_MESSAGE: rejectionReason || "Your photo was rejected. Please resubmit.",
+            PORTAL_URL: "https://geabotswana.org/member.html",
+            RESUBMIT_DEADLINE: formatDate(new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000)))
+          });
+          sendEmailFromTemplate("DOC_PHOTO_REJECTION_TO_BOARD", EMAIL_BOARD, {
+            MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+            REJECTED_BY: userEmail,
+            REJECTION_DATE: formatDate(new Date()),
+            SUBMISSION_ID: submission_id,
+            BOARD_REJECTION_MESSAGE: rejectionReason || "Rejected by board",
+            RESUBMIT_DEADLINE: formatDate(new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000)))
+          });
+        }
+      } else if (docType === "passport" || docType === "omang") {
+        if (approved) {
+          // Document approved - notify member and board
+          sendEmailFromTemplate("DOC_DOCUMENT_APPROVED_TO_MEMBER", individual.email, {
+            FIRST_NAME: individual.first_name || "Member",
+            DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+            APPROVED_DATE: formatDate(new Date()),
+            PORTAL_URL: "https://geabotswana.org/member.html"
+          });
+          sendEmailFromTemplate("DOC_DOCUMENT_APPROVED_TO_BOARD", EMAIL_BOARD, {
+            MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+            DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+            APPROVED_BY: userEmail,
+            APPROVED_DATE: formatDate(new Date()),
+            SUBMISSION_ID: submission_id
+          });
+        } else {
+          // Document rejected - send to board to compose message, then to member
+          var resubmitDeadline = new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000));
+          sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_BOARD", EMAIL_BOARD, {
+            MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+            DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+            REJECTED_BY: userEmail,
+            REJECTION_DATE: formatDate(new Date()),
+            SUBMISSION_ID: submission_id,
+            RSO_REJECTION_MESSAGE: found.obj.member_facing_rejection_reason || rejectionReason || "Rejected",
+            SUGGESTED_DEADLINE: formatDate(resubmitDeadline),
+            RESUBMISSION_DAYS: "10"
+          });
+          // Also notify member if rejection reason provided
+          if (rejectionReason) {
+            sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_MEMBER_WITH_BOARD_MESSAGE", individual.email, {
+              FIRST_NAME: individual.first_name || "Member",
+              DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+              BOARD_REJECTION_MESSAGE: rejectionReason || "Your document was rejected.",
+              PORTAL_URL: "https://geabotswana.org/member.html",
+              RESUBMIT_DEADLINE: formatDate(resubmitDeadline)
+            });
+          }
+        }
+      }
+    }
+
     logAuditEntry(userEmail,
       approved ? AUDIT_FILE_SUBMISSION_GEA_APPROVED : AUDIT_FILE_SUBMISSION_GEA_REJECTED,
       "FileSubmission", submission_id,
@@ -850,10 +951,21 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
       "FileSubmission", submissionId,
       approve ? "Approved via RSO portal" : "Rejected via RSO portal: " + rejectionReason);
 
-    // Send rejection notification to board
-    if (!approve) {
-      var individual = getMemberById(found.obj.individual_id);
-      var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+    var individual = getMemberById(found.obj.individual_id);
+    var boardEmail = EMAIL_BOARD;
+
+    if (approve) {
+      // RSO approved - notify board that document is ready for their final review
+      if (individual) {
+        sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_BOARD", boardEmail, {
+          APPLICANT_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+          APPLICATION_ID: found.obj.application_id || submissionId,
+          APPROVAL_DEADLINE: formatDate(new Date(new Date().getTime() + (3 * 24 * 60 * 60 * 1000))),
+          BOARD_ITEM_TYPE: "Document Review: " + docType
+        });
+      }
+    } else {
+      // RSO rejected - notify board with rejection reason
       var applicantName = individual ? (individual.first_name + " " + individual.last_name) : "Unknown";
       sendEmailFromTemplate("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD", boardEmail, {
         FIRST_NAME:        "Board",

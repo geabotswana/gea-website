@@ -1,0 +1,33 @@
+Hi {{FIRST_NAME}},
+
+PHOTO RESUBMISSION REQUIRED
+
+Your submitted photo does not meet our requirements. Please resubmit a new photo by {{RESUBMIT_DEADLINE}}.
+
+FEEDBACK FROM THE BOARD:
+{{BOARD_REJECTION_MESSAGE}}
+
+HOW TO RESUBMIT:
+1. Log into your member portal: {{PORTAL_URL}}
+2. Go to Profile
+3. Upload a new profile photo
+4. We'll review and notify you of the decision
+
+PHOTO GUIDELINES:
+- Recent, clear photo of your face
+- Professional or casual appearance acceptable
+- Good lighting (face clearly visible)
+- Single person in photo
+- Neutral or natural background
+
+TIMELINE:
+- You'll receive a response within 3-5 business days after resubmission
+
+URGENT:
+Please resubmit by {{RESUBMIT_DEADLINE}} so we can process your profile update quickly.
+
+NEED HELP?
+Questions about photo requirements? Contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

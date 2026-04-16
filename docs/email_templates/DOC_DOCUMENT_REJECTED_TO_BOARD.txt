@@ -1,0 +1,40 @@
+Hi Board,
+
+DOCUMENT REJECTED — BOARD ACTION REQUIRED
+
+A member's submitted {{DOCUMENT_TYPE}} has been rejected by RSO review. You need to communicate the rejection diplomatically to the member.
+
+REJECTION DETAILS:
+Member: {{MEMBER_NAME}}
+Document Type: {{DOCUMENT_TYPE}}
+Rejected By: {{REJECTED_BY}}
+Rejection Date: {{REJECTION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+RSO FEEDBACK:
+{{RSO_REJECTION_MESSAGE}}
+
+YOUR ACTION REQUIRED:
+1. Log in to the Board Admin Portal
+2. Navigate to Document Reviews
+3. Compose a diplomatic rejection message based on RSO feedback
+4. Click "Send" to notify the member
+
+RESUBMISSION DEADLINE:
+Set resubmission deadline for: {{SUGGESTED_DEADLINE}}
+
+PROCESS:
+- Draft a professional, diplomatic message explaining why the document was not accepted
+- Provide clear guidance on what needs to be corrected
+- Include the resubmission deadline
+- Send via the portal
+
+TIMELINE:
+- Member will have {{RESUBMISSION_DAYS}} days to resubmit corrected document
+- Resubmitted document will follow normal review process (RSO, then you)
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

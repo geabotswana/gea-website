@@ -159,7 +159,57 @@
       font-size: 11px;
       opacity: 0.85;
     }
-    
+
+    /* ============================================================ */
+    /* AVATAR STYLING                                               */
+    /* Profile photo display in header, dashboard, profile page     */
+    /* ============================================================ */
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.3);
+      background: var(--color-secondary-blue);
+    }
+
+    .avatar-small {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--color-border-gray);
+      background: var(--color-secondary-blue);
+    }
+
+    .avatar-large {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--color-primary);
+      background: var(--color-secondary-blue);
+      margin: 0 auto 16px;
+      display: block;
+    }
+
+    .avatar-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--color-white);
+      font-size: 14px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-blue) 100%);
+    }
+
+    .member-with-avatar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     /* ============================================================ */
     /* LOGIN SCREEN                                                 */
     /* Centered form shown when no token                            */
@@ -1975,9 +2025,12 @@
       <div class="header-title" id="headerTitle">Member Portal</div>
     </div>
     <div class="header-right">
-      <div class="header-user">
-        <div class="header-user-name" id="headerUserName">—</div>
-        <div class="header-user-role" id="headerHouseholdName">—</div>
+      <div class="header-user" style="display: flex; align-items: center; gap: 12px;">
+        <img id="headerUserAvatar" class="avatar" style="display: none;" alt="User avatar">
+        <div>
+          <div class="header-user-name" id="headerUserName">—</div>
+          <div class="header-user-role" id="headerHouseholdName">—</div>
+        </div>
       </div>
       <button class="btn-logout" onclick="openPasswordChangeForm();" title="Change your password">
         <i class="fas fa-lock" style="margin-right: 6px;"></i>Change Password
@@ -5870,9 +5923,28 @@ function submitPasswordReset(event) {
     members.forEach(function(m) {
       var row = document.createElement('tr');
 
-      // Name column
+      // Name column with avatar
       var nameTd = document.createElement('td');
-      nameTd.textContent = (m.first_name || '') + ' ' + (m.last_name || '');
+      nameTd.style.display = 'flex';
+      nameTd.style.alignItems = 'center';
+      nameTd.style.gap = '8px';
+
+      var avatar = document.createElement('img');
+      avatar.className = 'avatar-small';
+      avatar.style.display = 'none';
+      avatar.alt = 'Avatar';
+      avatar.onerror = function() { this.style.display = 'none'; };
+      nameTd.appendChild(avatar);
+
+      var nameSpan = document.createElement('span');
+      nameSpan.textContent = (m.first_name || '') + ' ' + (m.last_name || '');
+      nameTd.appendChild(nameSpan);
+
+      // Load avatar in background
+      (function(memberId, avatarEl) {
+        loadMemberAvatar(memberId, avatarEl);
+      })(m.individual_id, avatar);
+
       row.appendChild(nameTd);
 
       // Role column
@@ -8220,6 +8292,9 @@ function submitPasswordReset(event) {
           ? data.member.first_name + ' ' + data.member.last_name
           : data.member.email.split('@')[0];
         document.getElementById('headerUserName').textContent = memberName;
+
+        // Load user's avatar
+        loadMemberAvatar(data.member.individual_id, 'headerUserAvatar');
       }
       if (data.household) {
         document.getElementById('headerHouseholdName').textContent = data.household.household_name || 'Household';
@@ -9507,7 +9582,60 @@ function submitPasswordReset(event) {
     var options = { year: 'numeric', month: 'short', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
   }
-  
+
+  /**
+   * Load member's approved profile photo and display as avatar
+   * @param {string} individualId - Individual ID to load photo for
+   * @param {string|HTMLElement} avatarElement - Element ID or element to display avatar in
+   */
+  function loadMemberAvatar(individualId, avatarElement) {
+    if (!individualId) return;
+
+    // Handle string ID vs element
+    var el = typeof avatarElement === 'string'
+      ? document.getElementById(avatarElement)
+      : avatarElement;
+
+    if (!el) return;
+
+    apiCall('get_member_photo', { individual_id: individualId }).then(function(res) {
+      if (!res.success || !res.data || !res.data.file_id) {
+        // No approved photo - keep element hidden
+        return;
+      }
+
+      var fileId = res.data.file_id;
+      var proxyUrl = buildImageProxyUrl(fileId);
+
+      if (el.tagName === 'IMG') {
+        el.src = proxyUrl;
+        el.style.display = 'block';
+      } else {
+        // Element is a container - add img inside
+        var img = document.createElement('img');
+        img.className = 'avatar-small';
+        img.src = proxyUrl;
+        img.alt = 'Member avatar';
+        img.onerror = function() { this.style.display = 'none'; };
+        el.appendChild(img);
+      }
+    }).catch(function(err) {
+      // Silently fail - no approved photo
+      console.log('No avatar available for individual: ' + individualId);
+    });
+  }
+
+  /**
+   * Build image proxy URL for serving Drive files
+   * @param {string} fileId - Google Drive file ID
+   * @returns {string} - Proxy URL to load image from
+   */
+  function buildImageProxyUrl(fileId) {
+    if (!fileId) return '';
+    var base = window.location.href.split('?')[0];
+    return base + '?action=img&id=' + encodeURIComponent(fileId);
+  }
+
   // ============================================================ //
   // SECTION: CARD                                                //
   // ============================================================ //

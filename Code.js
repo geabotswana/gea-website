@@ -223,6 +223,7 @@ function _routeAction(action, params) {
     case "submit_guest_list":        return _handleSubmitGuestList(params);
     case "get_guest_list":           return _handleGetGuestList(params);
     case "get_guest_profiles":       return _handleGetGuestProfiles(params);
+    case "get_member_photo":         return _handleGetMemberPhoto(params);
 
     // ── BOARD / ADMIN ────────────────────────────────────────
     case "admin_pending":      return _handleAdminPending(params);
@@ -811,6 +812,73 @@ function _handleProfile(p) {
     member:    _safePublicMember(member),
     household: _safePublicHousehold(hh)
   });
+}
+
+/**
+ * HANDLER: _handleGetMemberPhoto
+ * PURPOSE: Get approved profile photo for display in member portal.
+ *          Returns Drive file_id if approved photo exists.
+ *          Validates requester is in same household.
+ * PARAMS: individual_id (required), token (required)
+ * RETURNS: { success, data: { file_id, mime_type } } or { success: false, message }
+ */
+function _handleGetMemberPhoto(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.ok) return auth.response;
+
+    if (!p.individual_id) {
+      return errorResponse("individual_id is required", "INVALID_PARAM");
+    }
+
+    // Get requester's household
+    var requester = getMemberByEmail(auth.session.email);
+    if (!requester) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    // Get requested member
+    var requestedMember = getMemberById(String(p.individual_id).trim());
+    if (!requestedMember) return errorResponse("Member not found", "NOT_FOUND");
+
+    // Access control: only same household can view
+    if (requester.household_id !== requestedMember.household_id) {
+      return errorResponse("You can only view photos of household members", "FORBIDDEN");
+    }
+
+    // Look up approved photo
+    var submissions = _getSubmissionsForIndividual_(p.individual_id);
+    var approvedPhoto = null;
+
+    for (var i = 0; i < submissions.length; i++) {
+      var sub = submissions[i];
+      if (String(sub.document_type || "").toLowerCase() === "photo"
+          && (sub.status === "approved" || sub.status === "verified")
+          && sub.file_id) {
+        approvedPhoto = sub;
+        break;
+      }
+    }
+
+    if (!approvedPhoto) {
+      return errorResponse("No approved photo found", "NOT_FOUND");
+    }
+
+    // Verify Drive file is accessible
+    try {
+      var file = DriveApp.getFileById(approvedPhoto.file_id);
+      var mimeType = file.getMimeType() || "image/jpeg";
+      return successResponse({
+        file_id: approvedPhoto.file_id,
+        mime_type: mimeType,
+        submitted_date: approvedPhoto.submitted_date
+      });
+    } catch (e) {
+      Logger.log("ERROR _handleGetMemberPhoto (file_id=" + approvedPhoto.file_id + "): " + e);
+      return errorResponse("Photo file is no longer accessible", "SERVER_ERROR");
+    }
+  } catch (e) {
+    Logger.log("ERROR _handleGetMemberPhoto: " + e);
+    return errorResponse("Error retrieving member photo: " + e.toString(), "SERVER_ERROR");
+  }
 }
 
 function _handleReservations(p) {

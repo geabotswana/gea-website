@@ -1,0 +1,32 @@
+Hi Board,
+
+DOCUMENT REJECTION NOTICE SENT
+
+A member's {{DOCUMENT_TYPE}} rejection has been communicated to them. Both RSO and your feedback have been documented.
+
+REJECTION DETAILS:
+Member: {{MEMBER_NAME}}
+Document Type: {{DOCUMENT_TYPE}}
+Originally Rejected By: {{ORIGINALLY_REJECTED_BY}}
+Board Message Sent: {{REJECTION_SENT_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+FEEDBACK DOCUMENTED:
+RSO Feedback: {{RSO_REJECTION_MESSAGE}}
+
+Board Message Sent to Member: {{BOARD_REJECTION_MESSAGE}}
+
+RESUBMISSION DEADLINE:
+{{RESUBMIT_DEADLINE}}
+
+NEXT STEPS:
+- Member will attempt to resubmit a corrected document
+- When resubmitted, document will go to RSO for re-review
+- You will be notified when RSO review is complete
+- Follow-up review process: RSO → Board
+
+QUESTIONS?
+Contact board@geabotswana.org if you need further details.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

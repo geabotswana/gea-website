@@ -1,0 +1,30 @@
+Hi RSO,
+
+DOCUMENT REQUIRES RSO REVIEW
+
+A member has submitted an identity document for verification. Your review is needed.
+
+SUBMISSION DETAILS:
+Member: {{MEMBER_NAME}}
+Document Type: {{DOCUMENT_TYPE}}
+Submitted: {{SUBMISSION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+YOUR ACTION REQUIRED:
+Review the submitted document for clarity and authenticity.
+
+PROCESS:
+1. Log in to the RSO Portal
+2. Navigate to Document Reviews
+3. Review the submitted {{DOCUMENT_TYPE}}
+4. Approve or reject with feedback
+5. Document will then move to board review (if approved)
+
+DEADLINE:
+Please complete your review by {{REVIEW_DEADLINE}}
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

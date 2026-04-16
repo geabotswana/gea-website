@@ -1,0 +1,23 @@
+Hi Board,
+
+DOCUMENT APPROVAL CONFIRMED
+
+A member's identity document has been approved and verified.
+
+APPROVAL DETAILS:
+Member: {{MEMBER_NAME}}
+Document Type: {{DOCUMENT_TYPE}}
+Approved By: {{APPROVED_BY}}
+Approval Date: {{APPROVED_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+NEXT STEPS:
+- Document is now verified in member's profile
+- Member has been notified of approval
+- Profile documentation is complete
+
+QUESTIONS?
+Contact board@geabotswana.org if you need further details.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

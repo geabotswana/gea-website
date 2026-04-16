@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.59";
+var SYSTEM_VERSION          = "2.4.60";
 var SYSTEM_BUILD_DATE       = "2026-04-16";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Member portal avatars: display approved profile photos in header, dashboard household members, and profile sections";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-16 08:11:25";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Email templates: 11 new post-activation photo and document approval/rejection notifications for members, board, and RSO";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-16 08:50:24";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

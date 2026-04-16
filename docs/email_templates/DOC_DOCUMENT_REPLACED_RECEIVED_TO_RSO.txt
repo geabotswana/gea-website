@@ -1,0 +1,34 @@
+Hi RSO,
+
+IDENTITY DOCUMENT REPLACEMENT REQUIRES REVIEW
+
+A household member has submitted an updated identity document for verification. Your review is needed.
+
+SUBMISSION DETAILS:
+Member: {{MEMBER_NAME}}
+Document Type: {{DOCUMENT_TYPE}}
+Submitted: {{SUBMISSION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+YOUR ACTION REQUIRED:
+Review the submitted document for clarity and authenticity.
+
+PROCESS:
+1. Log in to the RSO Portal
+2. Navigate to Document Reviews
+3. Review the submitted {{DOCUMENT_TYPE}}
+4. Approve or reject with feedback
+5. Document will then move to board review (if approved)
+
+DEADLINE:
+Please complete your review by {{REVIEW_DEADLINE}}
+
+NOTES:
+- This is a replacement document; the member is updating their records
+- Previous document file remains in Drive as historical record
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

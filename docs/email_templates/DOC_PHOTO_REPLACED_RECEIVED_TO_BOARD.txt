@@ -1,0 +1,26 @@
+Hi Board,
+
+MEMBER PHOTO REPLACEMENT SUBMITTED
+
+A household member's updated profile photo has been submitted for review.
+
+SUBMISSION DETAILS:
+Member: {{MEMBER_NAME}}
+Submitted: {{SUBMISSION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+ACTION REQUIRED:
+Review the new photo and approve or request changes.
+
+PROCESS:
+1. Log in to the Board Admin Portal
+2. Navigate to Household Documents → Photos for Review
+3. Approve or reject the new photo
+4. If approved, the old photo will be automatically deactivated and removed from Cloud Storage
+5. If rejected, the member will be notified with your feedback
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

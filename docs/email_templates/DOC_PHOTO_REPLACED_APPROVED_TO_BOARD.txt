@@ -1,0 +1,26 @@
+Hi Board,
+
+PROFILE PHOTO REPLACEMENT APPROVED
+
+A household member's updated profile photo has been approved.
+
+APPROVAL DETAILS:
+Member: {{MEMBER_NAME}}
+Approved By: {{APPROVED_BY}}
+Approval Date: {{APPROVED_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+ACTIONS COMPLETED:
+- New photo is now active in member's profile
+- Previous photo has been removed from Cloud Storage
+- Member has been notified of approval
+- Previous photo file in Drive remains as historical record
+
+NEXT STEPS:
+No further action needed. The photo update is complete.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need further details.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

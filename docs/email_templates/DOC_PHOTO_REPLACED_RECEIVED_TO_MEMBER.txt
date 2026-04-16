@@ -1,0 +1,22 @@
+Hi {{FIRST_NAME}},
+
+PROFILE PHOTO REPLACEMENT RECEIVED
+
+We've received your updated profile photo for review.
+
+SUBMISSION DETAILS:
+Submitted: {{SUBMISSION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+WHAT HAPPENS NEXT:
+The Board will review your new photo and approve or request changes. You'll receive an email with the decision within 3-5 business days.
+
+REVIEW TIMELINE:
+- Board review: 3-5 business days
+- You'll be notified of the decision via email
+
+QUESTIONS?
+If you have any questions about the photo submission process, contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

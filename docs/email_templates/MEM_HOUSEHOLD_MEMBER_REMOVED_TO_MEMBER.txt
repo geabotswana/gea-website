@@ -1,0 +1,28 @@
+Hi {{PRIMARY_MEMBER_NAME}},
+
+HOUSEHOLD MEMBER REMOVED
+
+A household member has been removed from your household record.
+
+REMOVAL DETAILS:
+Member Removed: {{REMOVED_MEMBER_NAME}}
+Relationship: {{REMOVED_MEMBER_RELATIONSHIP}}
+Removal Date: {{REMOVAL_DATE}}
+
+WHAT THIS MEANS:
+- {{REMOVED_MEMBER_NAME}} is no longer listed as a household member
+- Their profile is no longer active in the GEA system
+- Any pending documents or applications for this member have been canceled
+- Their profile photo has been removed from our backup systems
+
+NEXT STEPS:
+If this removal was made in error, please contact board@geabotswana.org to restore the member's account.
+
+YOUR HOUSEHOLD:
+View your updated household members anytime: {{PORTAL_URL}}
+
+QUESTIONS?
+If you have any questions about this removal or your household information, contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

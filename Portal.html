@@ -2273,6 +2273,158 @@
                 font-size: 13px; display: none;"></div>
   </div>
 </div>
+        <!-- ============================================================ -->
+        <!-- CONTACT INFORMATION (Email) - EDITABLE                      -->
+        <!-- ============================================================ -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Contact Information</h2>
+          </div>
+          <div style="padding: 20px;">
+            <!-- Primary Email -->
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Primary Email</h3>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input id="emailPrimary" type="email" class="form-input" placeholder="your.email@example.com">
+            </div>
+
+            <!-- Secondary Email (Optional) -->
+            <h3 style="font-size: 14px; font-weight: 600; margin: 20px 0 12px 0;">Secondary Email (Optional)</h3>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input id="emailSecondary" type="email" class="form-input" placeholder="alternative.email@example.com">
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="saveContactInfo()" style="margin-top: 16px;">Save Contact Information</button>
+            <div id="contactMessage" style="margin-top: 12px; padding: 12px; border-radius: 4px; font-size: 13px; display: none;"></div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- EMERGENCY CONTACT - EDITABLE                                -->
+        <!-- ============================================================ -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Emergency Contact</h2>
+          </div>
+          <div style="padding: 20px;">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input id="emergencyContactName" type="text" class="form-input" placeholder="Full name">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Relationship</label>
+              <input id="emergencyContactRelationship" type="text" class="form-input" placeholder="e.g., Spouse, Parent, Sibling">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label class="form-label">Country</label>
+                <select id="countryEmergency" class="form-input">
+                  <option value="">-- Select Country --</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input id="emergencyContactPhone" type="tel" class="form-input" placeholder="e.g., 71234567">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <input type="checkbox" id="emergencyContactWhatsApp">
+                This number is on WhatsApp
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input id="emergencyContactEmail" type="email" class="form-input" placeholder="emergency@example.com">
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="saveEmergencyContact()" style="margin-top: 16px;">Save Emergency Contact</button>
+            <div id="emergencyMessage" style="margin-top: 12px; padding: 12px; border-radius: 4px; font-size: 13px; display: none;"></div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- PROFILE PHOTO - UPLOAD                                      -->
+        <!-- ============================================================ -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Profile Photo</h2>
+          </div>
+          <div style="padding: 20px;">
+            <p style="color: #666; margin-bottom: 15px; font-size: 13px;">Upload a clear profile photo (JPG, PNG, max 3 MB). RSO will review and GEA admin will approve.</p>
+
+            <div id="photoStatusArea" style="margin-bottom: 20px; padding: 12px; background: #f9f9f9; border-radius: 4px;">
+              <p style="text-align: center; color: #999;">Loading photo status...</p>
+            </div>
+
+            <div id="photoUploadArea" style="display: none;">
+              <input type="file" id="photoInput" class="form-input" accept=".jpg,.jpeg,.png" style="margin-bottom: 12px;">
+              <button type="button" class="btn btn-primary" onclick="uploadPhoto()" style="width: 100%;">Upload Photo</button>
+              <div id="photoUploadMessage" style="margin-top: 12px; padding: 12px; border-radius: 4px; font-size: 13px; display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- ID DOCUMENTS - UPLOAD & VIEW                                -->
+        <!-- ============================================================ -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Identity Documents</h2>
+          </div>
+          <div style="padding: 20px;">
+            <p style="color: #666; margin-bottom: 15px; font-size: 13px;">Upload your passport or national ID (omang). RSO reviews documents, then GEA admin approves for membership verification.</p>
+
+            <!-- Document Status Display -->
+            <div id="documentStatusArea" style="margin-bottom: 20px;">
+              <div id="passportStatus" style="margin-bottom: 12px; padding: 12px; background: #f9f9f9; border-radius: 4px; border-left: 4px solid #e0e0e0;">
+                <p style="text-align: center; color: #999;">Loading document status...</p>
+              </div>
+              <div id="omangStatus" style="padding: 12px; background: #f9f9f9; border-radius: 4px; border-left: 4px solid #e0e0e0;">
+                <p style="text-align: center; color: #999;">Loading document status...</p>
+              </div>
+            </div>
+
+            <!-- Document Upload -->
+            <div style="border-top: 1px solid #e0e0e0; padding-top: 16px;">
+              <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Upload New Document</h3>
+
+              <div class="form-group">
+                <label class="form-label">Document Type</label>
+                <select id="documentTypeSelect" class="form-input">
+                  <option value="">-- Select document type --</option>
+                  <option value="passport">Passport</option>
+                  <option value="omang">National ID (Omang)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Expiration Date (if applicable)</label>
+                <input id="documentExpirationDate" type="date" class="form-input">
+                <small style="color: #999;">Leave blank if document doesn't expire</small>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Select File</label>
+                <input type="file" id="documentInput" class="form-input" accept=".jpg,.jpeg,.png,.pdf" style="margin-bottom: 12px;">
+                <small style="color: #999;">JPG, PNG, or PDF (max 10 MB)</small>
+              </div>
+
+              <button type="button" class="btn btn-primary" onclick="uploadDocument()" style="width: 100%;">Upload Document</button>
+              <div id="documentUploadMessage" style="margin-top: 12px; padding: 12px; border-radius: 4px; font-size: 13px; display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- PERSONAL INFORMATION - VIEW ONLY                            -->
+        <!-- ============================================================ -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Personal Information</h2>
@@ -8978,8 +9130,382 @@ function submitPasswordReset(event) {
         if (member.phone_secondary_whatsapp) {
           document.getElementById('phoneSecondaryWhatsApp').checked = true;
         }
+
+        // Initialize emergency contact form
+        initEmergencyContactForm();
+
+        // Pre-populate email fields
+        if (member.email_primary) {
+          document.getElementById('emailPrimary').value = member.email_primary;
+        } else if (member.email) {
+          document.getElementById('emailPrimary').value = member.email;
+        }
+        if (member.email_secondary) {
+          document.getElementById('emailSecondary').value = member.email_secondary;
+        }
+
+        // Pre-populate emergency contact fields
+        if (member.emergency_contact_name) {
+          document.getElementById('emergencyContactName').value = member.emergency_contact_name;
+        }
+        if (member.emergency_contact_relationship) {
+          document.getElementById('emergencyContactRelationship').value = member.emergency_contact_relationship;
+        }
+        if (member.country_code_emergency) {
+          document.getElementById('countryEmergency').value = member.country_code_emergency;
+        }
+        if (member.phone_emergency) {
+          document.getElementById('emergencyContactPhone').value = member.phone_emergency;
+        }
+        if (member.phone_emergency_whatsapp) {
+          document.getElementById('emergencyContactWhatsApp').checked = true;
+        }
+        if (member.emergency_contact_email) {
+          document.getElementById('emergencyContactEmail').value = member.emergency_contact_email;
+        }
+
+        // Load file status (photo and documents)
+        loadFileStatus(member.individual_id);
       }, 100);
     });
+  }
+
+  /**
+   * Initialize emergency contact country dropdown
+   */
+  function initEmergencyContactForm() {
+    var countrySelect = document.getElementById('countryEmergency');
+    if (!countrySelect) return;
+
+    countrySelect.innerHTML = '<option value="">-- Select Country --</option>';
+    for (var i = 0; i < COUNTRY_DIAL_CODES.length; i++) {
+      var country = COUNTRY_DIAL_CODES[i];
+      var opt = document.createElement('option');
+      opt.value = country.code;
+      opt.textContent = country.name + ' (+' + country.dial + ')';
+      countrySelect.appendChild(opt);
+    }
+  }
+
+  /**
+   * Save contact information (emails)
+   */
+  function saveContactInfo() {
+    var emailPrimary = document.getElementById('emailPrimary').value.trim();
+    var emailSecondary = document.getElementById('emailSecondary').value.trim();
+
+    if (!emailPrimary) {
+      showError('Primary email is required');
+      return;
+    }
+
+    // Basic email validation
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailPrimary)) {
+      showError('Primary email is invalid');
+      return;
+    }
+    if (emailSecondary && !emailRegex.test(emailSecondary)) {
+      showError('Secondary email is invalid');
+      return;
+    }
+
+    var msgEl = document.getElementById('contactMessage');
+    msgEl.textContent = 'Saving...';
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#e3f2fd';
+    msgEl.style.color = '#1565C0';
+
+    apiCall('profile', {
+      method: 'update',
+      email_primary: emailPrimary,
+      email_secondary: emailSecondary
+    }).then(function(res) {
+      if (!res.success) {
+        msgEl.textContent = 'Error: ' + res.message;
+        msgEl.style.background = '#ffebee';
+        msgEl.style.color = '#C62828';
+        return;
+      }
+
+      msgEl.textContent = 'Contact information saved successfully!';
+      msgEl.style.background = '#e8f5e9';
+      msgEl.style.color = '#2E7D32';
+      setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+    });
+  }
+
+  /**
+   * Save emergency contact information
+   */
+  function saveEmergencyContact() {
+    var name = document.getElementById('emergencyContactName').value.trim();
+    var relationship = document.getElementById('emergencyContactRelationship').value.trim();
+    var countryCode = document.getElementById('countryEmergency').value;
+    var phone = document.getElementById('emergencyContactPhone').value.trim();
+    var whatsapp = document.getElementById('emergencyContactWhatsApp').checked;
+    var email = document.getElementById('emergencyContactEmail').value.trim();
+
+    if (!name) {
+      showError('Emergency contact name is required');
+      return;
+    }
+
+    if (phone && !countryCode) {
+      showError('Country code is required for emergency contact phone');
+      return;
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showError('Emergency contact email is invalid');
+      return;
+    }
+
+    var msgEl = document.getElementById('emergencyMessage');
+    msgEl.textContent = 'Saving...';
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#e3f2fd';
+    msgEl.style.color = '#1565C0';
+
+    apiCall('profile', {
+      method: 'update',
+      emergency_contact_name: name,
+      country_code_emergency: countryCode,
+      phone_emergency: phone,
+      phone_emergency_whatsapp: whatsapp,
+      emergency_contact_email: email
+    }).then(function(res) {
+      if (!res.success) {
+        msgEl.textContent = 'Error: ' + res.message;
+        msgEl.style.background = '#ffebee';
+        msgEl.style.color = '#C62828';
+        return;
+      }
+
+      msgEl.textContent = 'Emergency contact saved successfully!';
+      msgEl.style.background = '#e8f5e9';
+      msgEl.style.color = '#2E7D32';
+      setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+    });
+  }
+
+  /**
+   * Load file submission status (photos and documents)
+   */
+  function loadFileStatus(individualId) {
+    apiCall('get_file_status', { individual_id: individualId }).then(function(res) {
+      if (!res.success) {
+        document.getElementById('photoStatusArea').innerHTML = '<p style="color: #999;">Could not load photo status</p>';
+        document.getElementById('passportStatus').innerHTML = '<p style="color: #999;">Could not load document status</p>';
+        document.getElementById('omangStatus').innerHTML = '<p style="color: #999;">Could not load document status</p>';
+        return;
+      }
+
+      var data = res.data;
+
+      // Populate photo status
+      displayPhotoStatus(data.photo);
+
+      // Populate document status
+      displayDocumentStatus(data.passport, 'passport');
+      displayDocumentStatus(data.omang, 'omang');
+    });
+  }
+
+  /**
+   * Display photo status
+   */
+  function displayPhotoStatus(photoData) {
+    var container = document.getElementById('photoStatusArea');
+    var uploadArea = document.getElementById('photoUploadArea');
+    var statusHtml = '';
+
+    if (!photoData || photoData.status === 'none') {
+      statusHtml = '<p style="color: #666; margin: 0;">✓ Photo submission: <strong>Not yet submitted</strong></p>';
+      uploadArea.style.display = 'block';
+    } else if (photoData.status === 'submitted') {
+      statusHtml = '<p style="color: #666; margin: 0;">📤 Photo submission: <strong>Pending review</strong> — Submitted ' + formatDate(photoData.submitted_date) + '</p>';
+      uploadArea.style.display = 'none';
+    } else if (photoData.status === 'approved') {
+      statusHtml = '<p style="color: #2E7D32; margin: 0;">✓ Photo submission: <strong>Approved</strong></p>';
+      uploadArea.style.display = 'none';
+    } else if (photoData.status === 'rejected') {
+      statusHtml = '<div style="color: #C62828;"><p style="margin: 0 0 8px;">❌ Photo submission: <strong>Rejected</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (photoData.rejection_reason || 'Not specified') + '</p></div>';
+      uploadArea.style.display = 'block';
+    } else {
+      statusHtml = '<p style="color: #666; margin: 0;">Status: ' + photoData.status + '</p>';
+      uploadArea.style.display = photoData.can_resubmit ? 'block' : 'none';
+    }
+
+    container.innerHTML = statusHtml;
+  }
+
+  /**
+   * Display document status
+   */
+  function displayDocumentStatus(docData, docType) {
+    var containerId = docType === 'passport' ? 'passportStatus' : 'omangStatus';
+    var container = document.getElementById(containerId);
+    var docLabel = docType === 'passport' ? 'Passport' : 'National ID (Omang)';
+    var statusHtml = '';
+
+    if (!docData || docData.status === 'none') {
+      statusHtml = '<p style="color: #666; margin: 0;">✓ ' + docLabel + ': <strong>Not yet submitted</strong></p>';
+    } else if (docData.status === 'submitted') {
+      statusHtml = '<p style="color: #666; margin: 0;">📤 ' + docLabel + ': <strong>Awaiting RSO review</strong> — Submitted ' + formatDate(docData.submitted_date) + '</p>';
+    } else if (docData.status === 'rso_approved') {
+      statusHtml = '<p style="color: #FFA500; margin: 0;">👁 ' + docLabel + ': <strong>RSO approved, awaiting GEA review</strong></p>';
+    } else if (docData.status === 'verified') {
+      statusHtml = '<p style="color: #2E7D32; margin: 0;">✓ ' + docLabel + ': <strong>Verified</strong>';
+      if (docData.expiration_date) {
+        statusHtml += ' — Expires ' + formatDate(docData.expiration_date);
+      }
+      statusHtml += '</p>';
+    } else if (docData.status === 'rso_rejected') {
+      statusHtml = '<div style="color: #FFA500;"><p style="margin: 0 0 8px;">⚠️ ' + docLabel + ': <strong>Rejected by RSO</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (docData.rejection_reason || 'Not specified') + '</p></div>';
+    } else if (docData.status === 'gea_rejected' || docData.status === 'rejected') {
+      statusHtml = '<div style="color: #C62828;"><p style="margin: 0 0 8px;">❌ ' + docLabel + ': <strong>Rejected</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (docData.rejection_reason || 'Not specified') + '</p></div>';
+    } else {
+      statusHtml = '<p style="color: #666; margin: 0;">Status: ' + docData.status + '</p>';
+    }
+
+    container.innerHTML = statusHtml;
+  }
+
+  /**
+   * Upload profile photo
+   */
+  function uploadPhoto() {
+    var fileInput = document.getElementById('photoInput');
+    var file = fileInput.files[0];
+
+    if (!file) {
+      showError('Please select a photo file');
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      showError('Photo must be less than 3 MB');
+      return;
+    }
+
+    if (!/^image\/(jpeg|png)$/.test(file.type)) {
+      showError('Photo must be JPG or PNG format');
+      return;
+    }
+
+    var msgEl = document.getElementById('photoUploadMessage');
+    msgEl.textContent = 'Uploading...';
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#e3f2fd';
+    msgEl.style.color = '#1565C0';
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var base64 = e.target.result.split(',')[1];
+
+      apiCall('upload_file', {
+        individual_id: currentUser.individual_id,
+        document_type: 'photo',
+        file_data_base64: base64,
+        file_name: file.name,
+        file_size_bytes: file.size,
+        file_content_type: file.type
+      }).then(function(res) {
+        if (!res.success) {
+          msgEl.textContent = 'Upload failed: ' + res.message;
+          msgEl.style.background = '#ffebee';
+          msgEl.style.color = '#C62828';
+          return;
+        }
+
+        msgEl.textContent = 'Photo uploaded successfully! RSO will review it shortly.';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        fileInput.value = '';
+        setTimeout(function() {
+          msgEl.style.display = 'none';
+          loadFileStatus(currentUser.individual_id);
+        }, 2000);
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Upload identity document
+   */
+  function uploadDocument() {
+    var docType = document.getElementById('documentTypeSelect').value;
+    var fileInput = document.getElementById('documentInput');
+    var expirationDate = document.getElementById('documentExpirationDate').value;
+    var file = fileInput.files[0];
+
+    if (!docType) {
+      showError('Please select a document type');
+      return;
+    }
+
+    if (!file) {
+      showError('Please select a document file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showError('Document must be less than 10 MB');
+      return;
+    }
+
+    var msgEl = document.getElementById('documentUploadMessage');
+    msgEl.textContent = 'Uploading...';
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#e3f2fd';
+    msgEl.style.color = '#1565C0';
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var base64 = e.target.result.split(',')[1];
+
+      apiCall('upload_file', {
+        individual_id: currentUser.individual_id,
+        document_type: docType,
+        document_expiration_date: expirationDate,
+        file_data_base64: base64,
+        file_name: file.name,
+        file_size_bytes: file.size,
+        file_content_type: file.type
+      }).then(function(res) {
+        if (!res.success) {
+          msgEl.textContent = 'Upload failed: ' + res.message;
+          msgEl.style.background = '#ffebee';
+          msgEl.style.color = '#C62828';
+          return;
+        }
+
+        msgEl.textContent = 'Document uploaded successfully! RSO will review it shortly.';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        document.getElementById('documentTypeSelect').value = '';
+        document.getElementById('documentExpirationDate').value = '';
+        fileInput.value = '';
+        setTimeout(function() {
+          msgEl.style.display = 'none';
+          loadFileStatus(currentUser.individual_id);
+        }, 2000);
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Format date for display
+   */
+  function formatDate(dateValue) {
+    if (!dateValue) return '—';
+    var date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '—';
+    var options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
   }
   
   // ============================================================ //

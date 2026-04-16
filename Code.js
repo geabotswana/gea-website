@@ -792,8 +792,10 @@ function _handleProfile(p) {
 
   // If method=update, apply changes
   if (p.method === "update") {
-    var allowed = ["phone", "emergency_contact_name", "emergency_contact_phone",
-                   "emergency_contact_email"];
+    var allowed = ["email_primary", "email_secondary", "phone_primary", "phone_secondary",
+                   "country_code_primary", "country_code_secondary", "phone_primary_whatsapp",
+                   "phone_secondary_whatsapp", "emergency_contact_name", "emergency_contact_phone",
+                   "emergency_contact_email", "country_code_emergency"];
     for (var i = 0; i < allowed.length; i++) {
       var field = allowed[i];
       if (p[field] !== undefined) {
@@ -2174,7 +2176,8 @@ function _handleFileUpload(p) {
       file_name: p.file_name,
       file_size_bytes: Number(p.file_size_bytes || 0),
       upload_device_type: p.upload_device_type || "web",
-      user_email: auth.session.email
+      user_email: auth.session.email,
+      document_expiration_date: p.document_expiration_date || ""
     });
 
     if (!result.ok) return errorResponse(result.error, result.code || "UPLOAD_FAILED");

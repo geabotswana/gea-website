@@ -1,0 +1,24 @@
+Hi {{FIRST_NAME}},
+
+IDENTITY DOCUMENT REPLACEMENT RECEIVED
+
+We've received your updated {{DOCUMENT_TYPE}} for verification.
+
+SUBMISSION DETAILS:
+Document Type: {{DOCUMENT_TYPE}}
+Submitted: {{SUBMISSION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+WHAT HAPPENS NEXT:
+Your document will be reviewed by the RSO for authenticity and clarity, then by the Board for final approval. You'll receive an email with the decision within 5-8 business days.
+
+REVIEW TIMELINE:
+- RSO review: 3-5 business days
+- Board review: 2-3 business days (after RSO approval)
+- Total: 5-8 business days estimated
+
+QUESTIONS?
+If you have any questions about the document verification process, contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

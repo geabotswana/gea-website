@@ -1,0 +1,25 @@
+Hi {{FIRST_NAME}},
+
+✓ IDENTITY DOCUMENT APPROVED!
+
+Your updated {{DOCUMENT_TYPE}} has been approved and verified!
+
+APPROVAL DETAILS:
+Document Type: {{DOCUMENT_TYPE}}
+Approved: {{APPROVED_DATE}}
+Status: Verified in Your Profile
+Previous document: Deactivated
+
+WHAT THIS MEANS:
+- Your document is verified and accepted
+- Your profile is fully updated with the new document
+- Your membership documents are current
+
+YOUR PROFILE:
+View your profile information anytime: {{PORTAL_URL}}
+
+QUESTIONS?
+If you have any questions about your documents or need to update them in the future, contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

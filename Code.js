@@ -2633,7 +2633,18 @@ function _handleRemoveHouseholdMember(p) {
       deleteMemberRecord(p.individual_id, auth.session.email);
       removeAllFileSubmissionsForIndividual(p.individual_id, auth.session.email);
     } else {
-      // Active household - deactivate instead
+      // Active household - deactivate and handle cleanup
+
+      // Set end_date for staff members before deactivating
+      if (target.relationship_to_primary === RELATIONSHIP_STAFF) {
+        var today = formatDate(new Date());
+        updateMemberField(p.individual_id, "employment_end_date", today, auth.session.email);
+      }
+
+      // Auto-reject any pending documents/photos with automated message
+      autoRejectPendingSubmissionsOnMemberRemoval(p.individual_id, auth.session.email);
+
+      // Deactivate the member
       var result = deactivateMember(p.individual_id, auth.session.email);
       if (!result.ok) return errorResponse(result.error, "SERVER_ERROR");
     }

@@ -1,0 +1,32 @@
+Hi Board,
+
+PROFILE PHOTO REPLACEMENT REJECTED
+
+A household member's profile photo replacement has been rejected and the member has been notified.
+
+REJECTION DETAILS:
+Member: {{MEMBER_NAME}}
+Rejected By: {{REJECTED_BY}}
+Rejection Date: {{REJECTION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+BOARD MESSAGE SENT TO MEMBER:
+{{BOARD_REJECTION_MESSAGE}}
+
+RESUBMISSION DEADLINE:
+{{RESUBMIT_DEADLINE}}
+
+NEXT STEPS:
+- Member will attempt to resubmit a new photo
+- You will be notified when the new submission arrives
+- Resubmitted photo will follow normal review process
+
+ACTIONS COMPLETED:
+- Rejected photo has been deleted from Drive
+- Member has been notified with your feedback
+
+QUESTIONS?
+Contact board@geabotswana.org if you need further details.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

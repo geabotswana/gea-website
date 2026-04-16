@@ -10240,7 +10240,14 @@ function submitPasswordReset(event) {
     docUploadArea.style.display = 'none';
     docUploadArea.style.borderTop = '1px solid #e0e0e0';
     docUploadArea.style.paddingTop = '16px';
-    docUploadArea.innerHTML = '<h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Upload/Replace Document</h4>';
+
+    var docUploadHeading = document.createElement('h4');
+    docUploadHeading.id = 'docUploadHeading_' + member.individual_id;
+    docUploadHeading.style.fontSize = '13px';
+    docUploadHeading.style.fontWeight = '600';
+    docUploadHeading.style.marginBottom = '12px';
+    docUploadHeading.textContent = 'Upload Document';
+    docUploadArea.appendChild(docUploadHeading);
 
     var docTypeGroup = document.createElement('div');
     docTypeGroup.className = 'form-group';
@@ -10381,25 +10388,39 @@ function submitPasswordReset(event) {
     var container = document.getElementById(containerId + individualId);
     var docLabel = docType === 'passport' ? 'Passport' : 'National ID (Omang)';
     var statusHtml = '';
+    var uploadArea = document.getElementById('docUploadArea_' + individualId);
+    var uploadHeading = document.getElementById('docUploadHeading_' + individualId);
 
     if (!docData || docData.status === 'none') {
       statusHtml = '<p style="color: #666; margin: 0;">✓ ' + docLabel + ': <strong>Not yet submitted</strong></p>';
+      if (uploadArea) uploadArea.style.display = 'block';
+      if (uploadHeading) uploadHeading.textContent = 'Upload Document';
     } else if (docData.status === 'submitted') {
       statusHtml = '<p style="color: #666; margin: 0;">📤 ' + docLabel + ': <strong>Awaiting RSO review</strong> — Submitted ' + formatDate(docData.submitted_date) + '</p>';
+      if (uploadArea) uploadArea.style.display = 'none';
     } else if (docData.status === 'rso_approved') {
       statusHtml = '<p style="color: #FFA500; margin: 0;">👁 ' + docLabel + ': <strong>RSO approved, awaiting GEA review</strong></p>';
+      if (uploadArea) uploadArea.style.display = 'none';
     } else if (docData.status === 'verified') {
       statusHtml = '<p style="color: #2E7D32; margin: 0;">✓ ' + docLabel + ': <strong>Verified</strong>';
       if (docData.expiration_date) {
         statusHtml += ' — Expires ' + formatDate(docData.expiration_date);
       }
       statusHtml += '</p>';
+      if (uploadArea) uploadArea.style.display = 'block';
+      if (uploadHeading) uploadHeading.textContent = 'Upload/Replace Document';
     } else if (docData.status === 'rso_rejected') {
       statusHtml = '<div style="color: #FFA500;"><p style="margin: 0 0 8px;">⚠️ ' + docLabel + ': <strong>Rejected by RSO</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (docData.rejection_reason || 'Not specified') + '</p></div>';
+      if (uploadArea) uploadArea.style.display = 'block';
+      if (uploadHeading) uploadHeading.textContent = 'Upload Document';
     } else if (docData.status === 'gea_rejected' || docData.status === 'rejected') {
       statusHtml = '<div style="color: #C62828;"><p style="margin: 0 0 8px;">❌ ' + docLabel + ': <strong>Rejected</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (docData.rejection_reason || 'Not specified') + '</p></div>';
+      if (uploadArea) uploadArea.style.display = 'block';
+      if (uploadHeading) uploadHeading.textContent = 'Upload Document';
     } else {
       statusHtml = '<p style="color: #666; margin: 0;">Status: ' + docData.status + '</p>';
+      if (uploadArea) uploadArea.style.display = 'block';
+      if (uploadHeading) uploadHeading.textContent = 'Upload Document';
     }
 
     container.innerHTML = statusHtml;

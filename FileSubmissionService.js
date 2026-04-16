@@ -1003,3 +1003,50 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     return { ok: false, error: String(e) };
   }
 }
+
+/**
+ * Auto-reject all pending file submissions for a member being removed from household.
+ * Used when member is removed to clean up pending documents/photos.
+ *
+ * @param {string} individualId
+ * @param {string} actingBy - Email of person performing the action
+ * @returns {Object} { ok: boolean, rejectedCount: number }
+ */
+function autoRejectPendingSubmissionsOnMemberRemoval(individualId, actingBy) {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var rejectedCount = 0;
+    var today = formatDate(new Date());
+
+    // Status values that are considered "pending" (not final)
+    var pendingStatuses = ['submitted', 'rso_approved', 'gea_pending'];
+
+    for (var i = data.length - 1; i >= 1; i--) {
+      var obj = rowToObject(headers, data[i]);
+      if (obj.individual_id === individualId && pendingStatuses.includes(obj.status)) {
+        // Update submission to rejected with automated message
+        _setSubmissionFields_(data[i], {
+          status: 'rejected',
+          rejection_reason: 'Subject individual has been removed from member household',
+          gea_reviewed_by: actingBy,
+          gea_review_date: today,
+          is_current: false
+        });
+        rejectedCount++;
+      }
+    }
+
+    if (rejectedCount > 0) {
+      logAuditEntry(actingBy, 'pending_submissions_auto_rejected_on_member_removal',
+        'FileSubmission', individualId,
+        'Auto-rejected ' + rejectedCount + ' pending submission(s) when member was removed');
+    }
+
+    return { ok: true, rejectedCount: rejectedCount };
+  } catch (e) {
+    Logger.log("ERROR autoRejectPendingSubmissionsOnMemberRemoval: " + e);
+    return { ok: false, rejectedCount: 0, error: String(e) };
+  }
+}

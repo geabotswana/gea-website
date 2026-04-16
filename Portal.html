@@ -2073,8 +2073,9 @@
 
           <!-- Household Members -->
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h2 class="card-title">Household Members</h2>
+              <button type="button" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="showPage('myHousehold'); return false;">Manage</button>
             </div>
             <div id="householdMembers">
               <p style="text-align: center; color: #999; padding: 20px;">Loading...</p>
@@ -2485,6 +2486,21 @@
           <div id="profileContent">
             <p style="text-align: center; color: #999; padding: 20px;">Loading...</p>
           </div>
+        </div>
+
+        <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: MY HOUSEHOLD                                          -->
+      <!-- View and manage household members (photos, documents)      -->
+      <!-- ========================================================== -->
+      <div id="myHousehold" class="page">
+        <h1 class="page-title">My Household</h1>
+        <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
+
+        <div id="householdMembersContainer">
+          <p style="text-align: center; color: #999; padding: 20px;">Loading household members...</p>
         </div>
 
         <a class="back-to-dashboard" onclick="showPage('dashboard'); return false;">← Back to Dashboard</a>
@@ -5471,7 +5487,7 @@ function submitPasswordReset(event) {
    */
   function showPage(pageName) {
     // Check if applicant is trying to access member-only pages
-    if (currentUser && currentUser.is_applicant && ['dashboard', 'reservations', 'profile', 'card', 'payment', 'rules'].includes(pageName)) {
+    if (currentUser && currentUser.is_applicant && ['dashboard', 'reservations', 'profile', 'myHousehold', 'card', 'payment', 'rules'].includes(pageName)) {
       // Applicants can only view their application status
       pageName = 'applicant';
     }
@@ -5507,6 +5523,9 @@ function submitPasswordReset(event) {
         break;
       case 'rules':
         loadRules();
+        break;
+      case 'myHousehold':
+        loadMyHousehold();
         break;
       case 'applicant':
         loadApplicantPortal();
@@ -10057,6 +10076,526 @@ function submitPasswordReset(event) {
       (opts.onConfirm || function() {})();
     };
     dialog.style.display = 'flex';
+  }
+
+  // ============================================================ //
+  // SECTION: MY HOUSEHOLD                                        //
+  // Manage household members (photos, documents, removal)        //
+  // ============================================================ //
+
+  /**
+   * Load and display household members with their photos/documents
+   */
+  function loadMyHousehold() {
+    apiCall('get_household_members', {}).then(function(res) {
+      if (!res.success) {
+        document.getElementById('householdMembersContainer').innerHTML =
+          '<p style="color: #c62828; padding: 20px;">Failed to load household members</p>';
+        return;
+      }
+
+      var members = res.data.members || [];
+      var container = document.getElementById('householdMembersContainer');
+      container.innerHTML = '';
+
+      if (members.length === 0) {
+        container.innerHTML = '<p style="color: #999; padding: 20px;">No household members found</p>';
+        return;
+      }
+
+      // Display each household member
+      members.forEach(function(member) {
+        var memberCard = createHouseholdMemberCard(member);
+        container.appendChild(memberCard);
+      });
+    });
+  }
+
+  /**
+   * Create HTML card for a single household member
+   */
+  function createHouseholdMemberCard(member) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '20px';
+
+    var header = document.createElement('div');
+    header.className = 'card-header';
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+
+    var title = document.createElement('h2');
+    title.className = 'card-title';
+    title.textContent = member.first_name + ' ' + member.last_name;
+    if (member.relationship) {
+      title.textContent += ' (' + member.relationship + ')';
+    }
+    header.appendChild(title);
+
+    // Delete button (only for non-primary members, shown later)
+    if (member.individual_id !== currentUser.individual_id) {
+      var deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'btn btn-danger';
+      deleteBtn.style.padding = '6px 12px';
+      deleteBtn.style.fontSize = '12px';
+      deleteBtn.innerHTML = '🗑 Remove';
+      deleteBtn.onclick = (function(memberId, memberName) {
+        return function() {
+          _portalConfirm({
+            title: 'Remove Household Member',
+            message: 'Are you sure you want to remove ' + memberName + ' from your household? This cannot be undone.',
+            confirmClass: 'btn-danger',
+            onConfirm: function() {
+              removeHouseholdMember(memberId, memberName);
+            }
+          });
+        };
+      })(member.individual_id, member.first_name + ' ' + member.last_name);
+      header.appendChild(deleteBtn);
+    }
+
+    card.appendChild(header);
+
+    var content = document.createElement('div');
+    content.style.padding = '20px';
+
+    // Photo section
+    var photoSection = document.createElement('div');
+    photoSection.style.marginBottom = '20px';
+    photoSection.innerHTML = '<h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Profile Photo</h3>';
+
+    var photoStatus = document.createElement('div');
+    photoStatus.id = 'photoStatus_' + member.individual_id;
+    photoStatus.style.marginBottom = '12px';
+    photoStatus.innerHTML = '<p style="color: #999;">Loading...</p>';
+    photoSection.appendChild(photoStatus);
+
+    var photoUploadArea = document.createElement('div');
+    photoUploadArea.id = 'photoUploadArea_' + member.individual_id;
+    photoUploadArea.style.display = 'none';
+
+    var photoInput = document.createElement('input');
+    photoInput.type = 'file';
+    photoInput.id = 'photoInput_' + member.individual_id;
+    photoInput.className = 'form-input';
+    photoInput.accept = '.jpg,.jpeg,.png';
+    photoInput.style.marginBottom = '12px';
+    photoUploadArea.appendChild(photoInput);
+
+    var uploadBtn = document.createElement('button');
+    uploadBtn.type = 'button';
+    uploadBtn.className = 'btn btn-primary';
+    uploadBtn.style.width = '100%';
+    uploadBtn.textContent = 'Upload/Replace Photo';
+    uploadBtn.onclick = (function(memberId) {
+      return function() {
+        triggerPhotoUpload(memberId);
+      };
+    })(member.individual_id);
+    photoUploadArea.appendChild(uploadBtn);
+
+    var photoMsg = document.createElement('div');
+    photoMsg.id = 'photoUploadMessage_' + member.individual_id;
+    photoMsg.style.marginTop = '12px';
+    photoMsg.style.padding = '12px';
+    photoMsg.style.borderRadius = '4px';
+    photoMsg.style.fontSize = '13px';
+    photoMsg.style.display = 'none';
+    photoUploadArea.appendChild(photoMsg);
+
+    photoSection.appendChild(photoUploadArea);
+    content.appendChild(photoSection);
+
+    // Documents section
+    var docSection = document.createElement('div');
+    docSection.innerHTML = '<h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Identity Documents</h3>';
+
+    // Passport status
+    var passportDiv = document.createElement('div');
+    passportDiv.id = 'passportStatus_' + member.individual_id;
+    passportDiv.style.marginBottom = '12px';
+    passportDiv.style.padding = '12px';
+    passportDiv.style.background = '#f9f9f9';
+    passportDiv.style.borderRadius = '4px';
+    passportDiv.style.borderLeft = '4px solid #e0e0e0';
+    passportDiv.innerHTML = '<p style="color: #999; margin: 0;">Loading...</p>';
+    docSection.appendChild(passportDiv);
+
+    // Omang status
+    var omangDiv = document.createElement('div');
+    omangDiv.id = 'omangStatus_' + member.individual_id;
+    omangDiv.style.marginBottom = '12px';
+    omangDiv.style.padding = '12px';
+    omangDiv.style.background = '#f9f9f9';
+    omangDiv.style.borderRadius = '4px';
+    omangDiv.style.borderLeft = '4px solid #e0e0e0';
+    omangDiv.innerHTML = '<p style="color: #999; margin: 0;">Loading...</p>';
+    docSection.appendChild(omangDiv);
+
+    // Document upload area
+    var docUploadArea = document.createElement('div');
+    docUploadArea.id = 'docUploadArea_' + member.individual_id;
+    docUploadArea.style.display = 'none';
+    docUploadArea.style.borderTop = '1px solid #e0e0e0';
+    docUploadArea.style.paddingTop = '16px';
+    docUploadArea.innerHTML = '<h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Upload/Replace Document</h4>';
+
+    var docTypeGroup = document.createElement('div');
+    docTypeGroup.className = 'form-group';
+    var docTypeLabel = document.createElement('label');
+    docTypeLabel.className = 'form-label';
+    docTypeLabel.textContent = 'Document Type';
+    var docTypeSelect = document.createElement('select');
+    docTypeSelect.id = 'documentTypeSelect_' + member.individual_id;
+    docTypeSelect.className = 'form-input';
+    docTypeSelect.innerHTML = '<option value="">-- Select document type --</option><option value="passport">Passport</option><option value="omang">National ID (Omang)</option>';
+    docTypeGroup.appendChild(docTypeLabel);
+    docTypeGroup.appendChild(docTypeSelect);
+    docUploadArea.appendChild(docTypeGroup);
+
+    var expirationGroup = document.createElement('div');
+    expirationGroup.className = 'form-group';
+    var expirationLabel = document.createElement('label');
+    expirationLabel.className = 'form-label';
+    expirationLabel.textContent = 'Expiration Date (if applicable)';
+    var expirationInput = document.createElement('input');
+    expirationInput.type = 'date';
+    expirationInput.id = 'documentExpirationDate_' + member.individual_id;
+    expirationInput.className = 'form-input';
+    expirationGroup.appendChild(expirationLabel);
+    expirationGroup.appendChild(expirationInput);
+    var expirationSmall = document.createElement('small');
+    expirationSmall.style.color = '#999';
+    expirationSmall.textContent = 'Leave blank if document doesn\'t expire';
+    expirationGroup.appendChild(expirationSmall);
+    docUploadArea.appendChild(expirationGroup);
+
+    var fileGroup = document.createElement('div');
+    fileGroup.className = 'form-group';
+    var fileLabel = document.createElement('label');
+    fileLabel.className = 'form-label';
+    fileLabel.textContent = 'Select File';
+    var fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = 'documentInput_' + member.individual_id;
+    fileInput.className = 'form-input';
+    fileInput.accept = '.jpg,.jpeg,.png,.pdf';
+    fileInput.style.marginBottom = '12px';
+    fileGroup.appendChild(fileLabel);
+    fileGroup.appendChild(fileInput);
+    var fileSmall = document.createElement('small');
+    fileSmall.style.color = '#999';
+    fileSmall.textContent = 'JPG, PNG, or PDF (max 10 MB)';
+    fileGroup.appendChild(fileSmall);
+    docUploadArea.appendChild(fileGroup);
+
+    var uploadDocBtn = document.createElement('button');
+    uploadDocBtn.type = 'button';
+    uploadDocBtn.className = 'btn btn-primary';
+    uploadDocBtn.style.width = '100%';
+    uploadDocBtn.textContent = 'Upload Document';
+    uploadDocBtn.onclick = (function(memberId) {
+      return function() {
+        triggerDocumentUpload(memberId);
+      };
+    })(member.individual_id);
+    docUploadArea.appendChild(uploadDocBtn);
+
+    var docMsg = document.createElement('div');
+    docMsg.id = 'documentUploadMessage_' + member.individual_id;
+    docMsg.style.marginTop = '12px';
+    docMsg.style.padding = '12px';
+    docMsg.style.borderRadius = '4px';
+    docMsg.style.fontSize = '13px';
+    docMsg.style.display = 'none';
+    docUploadArea.appendChild(docMsg);
+
+    docSection.appendChild(docUploadArea);
+    content.appendChild(docSection);
+
+    card.appendChild(content);
+
+    // Load file status for this member
+    setTimeout(function() {
+      loadFileStatusForMember(member.individual_id);
+    }, 100);
+
+    return card;
+  }
+
+  /**
+   * Load file status for a specific member and update their card display
+   */
+  function loadFileStatusForMember(individualId) {
+    apiCall('get_file_status', { individual_id: individualId }).then(function(res) {
+      if (!res.success) {
+        return;
+      }
+
+      var data = res.data;
+
+      // Display photo status
+      displayPhotoStatusForMember(data.photo, individualId);
+
+      // Display document status
+      displayDocumentStatusForMember(data.passport, 'passport', individualId);
+      displayDocumentStatusForMember(data.omang, 'omang', individualId);
+    });
+  }
+
+  /**
+   * Display photo status for a specific member
+   */
+  function displayPhotoStatusForMember(photoData, individualId) {
+    var container = document.getElementById('photoStatus_' + individualId);
+    var uploadArea = document.getElementById('photoUploadArea_' + individualId);
+    var statusHtml = '';
+
+    if (!photoData || photoData.status === 'none') {
+      statusHtml = '<p style="color: #666; margin: 0;">✓ Photo submission: <strong>Not yet submitted</strong></p>';
+      uploadArea.style.display = 'block';
+    } else if (photoData.status === 'submitted') {
+      statusHtml = '<p style="color: #666; margin: 0;">📤 Photo submission: <strong>Pending review</strong> — Submitted ' + formatDate(photoData.submitted_date) + '</p>';
+      uploadArea.style.display = 'none';
+    } else if (photoData.status === 'approved') {
+      statusHtml = '<p style="color: #2E7D32; margin: 0;">✓ Photo submission: <strong>Approved</strong></p>';
+      uploadArea.style.display = 'block'; // Allow replacing
+    } else if (photoData.status === 'rejected') {
+      statusHtml = '<div style="color: #C62828;"><p style="margin: 0 0 8px;">❌ Photo submission: <strong>Rejected</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (photoData.rejection_reason || 'Not specified') + '</p></div>';
+      uploadArea.style.display = 'block';
+    } else {
+      statusHtml = '<p style="color: #666; margin: 0;">Status: ' + photoData.status + '</p>';
+      uploadArea.style.display = photoData.can_resubmit ? 'block' : 'none';
+    }
+
+    container.innerHTML = statusHtml;
+  }
+
+  /**
+   * Display document status for a specific member
+   */
+  function displayDocumentStatusForMember(docData, docType, individualId) {
+    var containerId = docType === 'passport' ? 'passportStatus_' : 'omangStatus_';
+    var container = document.getElementById(containerId + individualId);
+    var docLabel = docType === 'passport' ? 'Passport' : 'National ID (Omang)';
+    var statusHtml = '';
+
+    if (!docData || docData.status === 'none') {
+      statusHtml = '<p style="color: #666; margin: 0;">✓ ' + docLabel + ': <strong>Not yet submitted</strong></p>';
+    } else if (docData.status === 'submitted') {
+      statusHtml = '<p style="color: #666; margin: 0;">📤 ' + docLabel + ': <strong>Awaiting RSO review</strong> — Submitted ' + formatDate(docData.submitted_date) + '</p>';
+    } else if (docData.status === 'rso_approved') {
+      statusHtml = '<p style="color: #FFA500; margin: 0;">👁 ' + docLabel + ': <strong>RSO approved, awaiting GEA review</strong></p>';
+    } else if (docData.status === 'verified') {
+      statusHtml = '<p style="color: #2E7D32; margin: 0;">✓ ' + docLabel + ': <strong>Verified</strong>';
+      if (docData.expiration_date) {
+        statusHtml += ' — Expires ' + formatDate(docData.expiration_date);
+      }
+      statusHtml += '</p>';
+    } else if (docData.status === 'rso_rejected') {
+      statusHtml = '<div style="color: #FFA500;"><p style="margin: 0 0 8px;">⚠️ ' + docLabel + ': <strong>Rejected by RSO</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (docData.rejection_reason || 'Not specified') + '</p></div>';
+    } else if (docData.status === 'gea_rejected' || docData.status === 'rejected') {
+      statusHtml = '<div style="color: #C62828;"><p style="margin: 0 0 8px;">❌ ' + docLabel + ': <strong>Rejected</strong></p><p style="margin: 0; font-size: 12px; color: #999;">Reason: ' + (docData.rejection_reason || 'Not specified') + '</p></div>';
+    } else {
+      statusHtml = '<p style="color: #666; margin: 0;">Status: ' + docData.status + '</p>';
+    }
+
+    container.innerHTML = statusHtml;
+  }
+
+  /**
+   * Trigger photo upload for a household member
+   */
+  var _pendingPhotoUpload = {};
+
+  function triggerPhotoUpload(individualId) {
+    var fileInput = document.getElementById('photoInput_' + individualId);
+    _pendingPhotoUpload = {
+      individualId: individualId,
+      fileInput: fileInput
+    };
+    fileInput.click();
+    fileInput.onchange = function() {
+      proceedWithPhotoUpload();
+    };
+  }
+
+  /**
+   * Process photo upload after file selected
+   */
+  function proceedWithPhotoUpload() {
+    var fileInput = _pendingPhotoUpload.fileInput;
+    var individualId = _pendingPhotoUpload.individualId;
+    var file = fileInput.files[0];
+
+    if (!file) {
+      showError('Please select a photo file');
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      showError('Photo must be less than 3 MB');
+      return;
+    }
+
+    if (!/^image\/(jpeg|png)$/.test(file.type)) {
+      showError('Photo must be JPG or PNG format');
+      return;
+    }
+
+    var msgEl = document.getElementById('photoUploadMessage_' + individualId);
+    msgEl.textContent = 'Uploading...';
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#e3f2fd';
+    msgEl.style.color = '#1565C0';
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var base64 = e.target.result.split(',')[1];
+
+      apiCall('upload_file', {
+        individual_id: individualId,
+        document_type: 'photo',
+        file_data_base64: base64,
+        file_name: file.name,
+        file_size_bytes: file.size,
+        file_content_type: file.type
+      }).then(function(res) {
+        if (!res.success) {
+          msgEl.textContent = 'Upload failed: ' + res.message;
+          msgEl.style.background = '#ffebee';
+          msgEl.style.color = '#C62828';
+          return;
+        }
+
+        msgEl.textContent = 'Photo uploaded successfully! RSO will review it shortly.';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        fileInput.value = '';
+        setTimeout(function() {
+          msgEl.style.display = 'none';
+          loadFileStatusForMember(individualId);
+        }, 2000);
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Trigger document upload for a household member
+   */
+  var _pendingDocumentUpload = {};
+
+  function triggerDocumentUpload(individualId) {
+    var fileInput = document.getElementById('documentInput_' + individualId);
+    _pendingDocumentUpload = {
+      individualId: individualId,
+      fileInput: fileInput
+    };
+    fileInput.click();
+    fileInput.onchange = function() {
+      proceedWithDocumentUpload();
+    };
+  }
+
+  /**
+   * Process document upload after file selected
+   */
+  function proceedWithDocumentUpload() {
+    var individualId = _pendingDocumentUpload.individualId;
+    var docType = document.getElementById('documentTypeSelect_' + individualId).value;
+    var fileInput = _pendingDocumentUpload.fileInput;
+    var expirationDate = document.getElementById('documentExpirationDate_' + individualId).value;
+    var file = fileInput.files[0];
+
+    if (!docType) {
+      showError('Please select a document type');
+      return;
+    }
+
+    if (!file) {
+      showError('Please select a document file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showError('Document must be less than 10 MB');
+      return;
+    }
+
+    var msgEl = document.getElementById('documentUploadMessage_' + individualId);
+    msgEl.textContent = 'Uploading...';
+    msgEl.style.display = 'block';
+    msgEl.style.background = '#e3f2fd';
+    msgEl.style.color = '#1565C0';
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var base64 = e.target.result.split(',')[1];
+
+      apiCall('upload_file', {
+        individual_id: individualId,
+        document_type: docType,
+        document_expiration_date: expirationDate,
+        file_data_base64: base64,
+        file_name: file.name,
+        file_size_bytes: file.size,
+        file_content_type: file.type
+      }).then(function(res) {
+        if (!res.success) {
+          msgEl.textContent = 'Upload failed: ' + res.message;
+          msgEl.style.background = '#ffebee';
+          msgEl.style.color = '#C62828';
+          return;
+        }
+
+        msgEl.textContent = 'Document uploaded successfully! RSO will review it shortly.';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        document.getElementById('documentTypeSelect_' + individualId).value = '';
+        document.getElementById('documentExpirationDate_' + individualId).value = '';
+        fileInput.value = '';
+        setTimeout(function() {
+          msgEl.style.display = 'none';
+          loadFileStatusForMember(individualId);
+        }, 2000);
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Remove a household member
+   */
+  function removeHouseholdMember(individualId, memberName) {
+    var msgEl = document.createElement('div');
+    msgEl.style.position = 'fixed';
+    msgEl.style.top = '50%';
+    msgEl.style.left = '50%';
+    msgEl.style.transform = 'translate(-50%, -50%)';
+    msgEl.style.background = '#fff';
+    msgEl.style.padding = '20px';
+    msgEl.style.borderRadius = '8px';
+    msgEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    msgEl.style.zIndex = '2000';
+    msgEl.textContent = 'Removing household member...';
+    document.body.appendChild(msgEl);
+
+    apiCall('remove_household_member', {
+      individual_id: individualId
+    }).then(function(res) {
+      document.body.removeChild(msgEl);
+
+      if (!res.success) {
+        showError('Failed to remove member: ' + res.message);
+        return;
+      }
+
+      showToast(memberName + ' has been removed from the household.', 'success');
+      loadMyHousehold();
+    });
   }
 
   function _closePortalConfirm() {

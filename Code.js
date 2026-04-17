@@ -238,6 +238,13 @@ function _routeAction(action, params) {
     case "admin_guest_histories":          return _handleAdminGuestHistories(params);
     case "admin_rso_pending_documents":    return _handleAdminRsoPendingDocuments(params);
     case "admin_rso_approve_document":     return _handleAdminRsoApproveDocument(params);
+    case "admin_rso_pending_member_documents": return _handleAdminRsoPendingMemberDocuments(params);
+    case "approve_rso_member_document":    return _handleApproveRsoMemberDocument(params);
+    case "reject_rso_member_document":     return _handleRejectRsoMemberDocument(params);
+    case "admin_member_document_rejections": return _handleAdminMemberDocumentRejections(params);
+    case "admin_send_document_rejection_response": return _handleAdminSendDocumentRejectionResponse(params);
+    case "admin_application_rejections": return _handleAdminApplicationRejections(params);
+    case "admin_send_application_rejection_response": return _handleAdminSendApplicationRejectionResponse(params);
     case "admin_rso_applications_ready":   return _handleAdminRsoApplicationsReady(params);
     case "admin_rso_approved_calendar":    return _handleAdminRsoApprovedCalendar(params);
     case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
@@ -2935,7 +2942,8 @@ function _handleRsoDenyApplication(p) {
     var result = rsoDenyApplication(
       p.application_id,
       auth.session.email,
-      p.denial_message
+      p.denial_message,
+      p.allow_reapplication || false
     );
 
     if (result.ok) {
@@ -4174,6 +4182,216 @@ function _handleAdminCalendar(p) {
   } catch (e) {
     Logger.log("ERROR _handleAdminCalendar: " + e);
     return errorResponse("Could not load reservation calendar.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoPendingMemberDocuments
+ * PURPOSE: RSO reviews post-activation member document replacements (passport/omang).
+ * OPTIONAL PARAMS: document_type (passport|omang|null for all)
+ * RETURNS: { success, data: { documents: [...] } }
+ */
+function _handleAdminRsoPendingMemberDocuments(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var fileSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+    var fileData = fileSheet.getDataRange().getValues();
+    var fileHeaders = fileData[0];
+    var docs = [];
+
+    for (var i = 1; i < fileData.length; i++) {
+      var file = rowToObject(fileHeaders, fileData[i]);
+      // Only post-activation documents: not part of applications, status=submitted, not photo
+      if (file.document_type && (file.document_type === "passport" || file.document_type === "omang") &&
+          file.status === "submitted" && !file.application_id) {
+        if (p.document_type && file.document_type !== p.document_type) continue;
+
+        var individual = getMemberById(file.individual_id);
+        docs.push({
+          submission_id: file.submission_id,
+          member_name: individual ? (individual.first_name + " " + individual.last_name) : file.individual_id,
+          member_email: individual ? individual.email : "",
+          individual_id: file.individual_id,
+          document_type: file.document_type,
+          submitted_date: formatDate(file.submitted_date),
+          file_id: file.file_id
+        });
+      }
+    }
+
+    return successResponse({ documents: docs });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoPendingMemberDocuments: " + e);
+    return errorResponse("Could not load member documents.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleApproveRsoMemberDocument
+ * PURPOSE: RSO approves a post-activation member document.
+ * PARAMS: submission_id
+ * RETURNS: { success }
+ */
+function _handleApproveRsoMemberDocument(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+  if (!p.submission_id) return errorResponse("submission_id required.", "INVALID_PARAM");
+
+  try {
+    var result = approveRsoMemberDocument(p.submission_id, auth.session.email);
+    if (!result.ok) return errorResponse(result.error || "Approval failed", "APPROVAL_FAILED");
+    return successResponse({}, "Document approved");
+  } catch (e) {
+    Logger.log("ERROR _handleApproveRsoMemberDocument: " + e);
+    return errorResponse("Could not approve document: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRejectRsoMemberDocument
+ * PURPOSE: RSO rejects a post-activation member document (board will compose message).
+ * PARAMS: submission_id, rejection_reason
+ * RETURNS: { success }
+ */
+function _handleRejectRsoMemberDocument(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+  if (!p.submission_id) return errorResponse("submission_id required.", "INVALID_PARAM");
+
+  try {
+    var result = rejectRsoMemberDocument(p.submission_id, p.rejection_reason || "Rejected by RSO", auth.session.email);
+    if (!result.ok) return errorResponse(result.error || "Rejection failed", "REJECTION_FAILED");
+    return successResponse({}, "Document rejected");
+  } catch (e) {
+    Logger.log("ERROR _handleRejectRsoMemberDocument: " + e);
+    return errorResponse("Could not reject document: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminMemberDocumentRejections
+ * PURPOSE: Board views member documents rejected by RSO (awaiting board response).
+ * RETURNS: { success, data: { rejections: [...] } }
+ */
+function _handleAdminMemberDocumentRejections(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var fileSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
+    var fileData = fileSheet.getDataRange().getValues();
+    var fileHeaders = fileData[0];
+    var rejections = [];
+
+    for (var i = 1; i < fileData.length; i++) {
+      var file = rowToObject(fileHeaders, fileData[i]);
+      // RSO-rejected member documents: status=rso_rejected, no application_id (post-activation)
+      if (file.status === "rso_rejected" && !file.application_id &&
+          (file.document_type === "passport" || file.document_type === "omang")) {
+        var individual = getMemberById(file.individual_id);
+        rejections.push({
+          submission_id: file.submission_id,
+          member_name: individual ? (individual.first_name + " " + individual.last_name) : file.individual_id,
+          member_email: individual ? individual.email : "",
+          document_type: file.document_type,
+          rejection_date: formatDate(file.rso_review_date),
+          rso_rejection_reason: file.member_facing_rejection_reason || ""
+        });
+      }
+    }
+
+    return successResponse({ rejections: rejections });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminMemberDocumentRejections: " + e);
+    return errorResponse("Could not load rejections.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminSendDocumentRejectionResponse
+ * PURPOSE: Board sends diplomatic rejection message to member (after RSO rejection).
+ * PARAMS: submission_id, board_rejection_message
+ * RETURNS: { success }
+ */
+function _handleAdminSendDocumentRejectionResponse(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  if (!p.submission_id) return errorResponse("submission_id required.", "INVALID_PARAM");
+  if (!p.board_rejection_message) return errorResponse("board_rejection_message required.", "INVALID_PARAM");
+
+  try {
+    var result = sendBoardDocumentRejectionResponse(p.submission_id, p.board_rejection_message, auth.session.email);
+    if (!result.ok) return errorResponse(result.error || "Failed to send response", "SEND_FAILED");
+    return successResponse({}, "Rejection response sent");
+  } catch (e) {
+    Logger.log("ERROR _handleAdminSendDocumentRejectionResponse: " + e);
+    return errorResponse("Could not send response: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminApplicationRejections
+ * PURPOSE: Board views membership applications rejected by RSO (awaiting board response).
+ * RETURNS: { success, data: { rejections: [...] } }
+ */
+function _handleAdminApplicationRejections(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appData = appSheet.getDataRange().getValues();
+    var appHeaders = appData[0];
+    var rejections = [];
+
+    for (var i = 1; i < appData.length; i++) {
+      var app = rowToObject(appHeaders, appData[i]);
+      // RSO-denied applications: status=RSO_APPLICATION_REVIEW, rso_status=denied_recommendation
+      if (app.status === APP_STATUS_RSO_APPLICATION_REVIEW && app.rso_status === "denied_recommendation" &&
+          !app.board_rejection_message) {  // Not yet responded to by board
+        rejections.push({
+          application_id: app.application_id,
+          applicant_name: app.primary_applicant_name || "",
+          applicant_email: app.primary_applicant_email || "",
+          rso_denial_message: app.rso_private_notes || "",
+          allow_reapplication: app.allow_reapplication === "true" || app.allow_reapplication === true
+        });
+      }
+    }
+
+    return successResponse({ rejections: rejections });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminApplicationRejections: " + e);
+    return errorResponse("Could not load application rejections.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminSendApplicationRejectionResponse
+ * PURPOSE: Board sends diplomatic rejection message to applicant (after RSO denial).
+ * PARAMS: application_id, board_rejection_message, allow_reapplication
+ * RETURNS: { success }
+ */
+function _handleAdminSendApplicationRejectionResponse(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  if (!p.application_id) return errorResponse("application_id required.", "INVALID_PARAM");
+  if (!p.board_rejection_message) return errorResponse("board_rejection_message required.", "INVALID_PARAM");
+
+  try {
+    var result = sendBoardApplicationRejectionResponse(
+      p.application_id,
+      p.board_rejection_message,
+      p.allow_reapplication || false,
+      auth.session.email
+    );
+    if (!result.ok) return errorResponse(result.error || "Failed to send response", "SEND_FAILED");
+    return successResponse({}, "Rejection response sent");
+  } catch (e) {
+    Logger.log("ERROR _handleAdminSendApplicationRejectionResponse: " + e);
+    return errorResponse("Could not send response: " + e.toString(), "SERVER_ERROR");
   }
 }
 

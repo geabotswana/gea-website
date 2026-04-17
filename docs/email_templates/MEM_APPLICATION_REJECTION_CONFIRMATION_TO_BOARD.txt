@@ -1,0 +1,27 @@
+Hi Board,
+
+APPLICATION REJECTION NOTIFICATION SENT
+
+An application has been rejected and the applicant has been notified.
+
+APPLICANT INFORMATION:
+Applicant: {{APPLICANT_NAME}}
+Application ID: {{APPLICATION_ID}}
+
+REJECTION REASONS:
+
+RSO Review Team Concerns:
+{{RSO_REASON}}
+
+Your Message to Applicant:
+{{BOARD_MESSAGE}}
+
+Reapplication Allowed: {{ALLOW_REAPPLICATION}}
+
+Notification Sent: {{NOTIFICATION_DATE}}
+
+AUDIT TRAIL:
+This confirms that the applicant has been notified of the rejection and has been provided with next steps and contact information.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

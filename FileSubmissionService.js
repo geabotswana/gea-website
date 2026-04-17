@@ -389,7 +389,7 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
   }
 }
 
-function rsoDenyApplication(applicationId, rsoEmail, denialMessage) {
+function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReapplication) {
   try {
     var readiness = checkApplicationDocumentReadiness(applicationId);
     if (!readiness.ok) {
@@ -414,9 +414,10 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage) {
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(denialMessage);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "allow_reapplication")).setValue(allowReapplication ? "true" : "false");
 
     logAuditEntry(rsoEmail, "APPLICATION_RSO_DENIED", "Application", applicationId,
-      "RSO recommended denial of application");
+      "RSO recommended denial of application" + (allowReapplication ? " (reapplication allowed)" : " (permanent)"));
 
     // Send email to board with denial message
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
@@ -425,6 +426,7 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage) {
       APPLICANT_NAME:   application.primary_applicant_name || "",
       APPLICATION_ID:   applicationId,
       DENIAL_MESSAGE:   denialMessage,
+      ALLOW_REAPPLICATION: allowReapplication ? "Yes" : "No",
       NEXT_STEPS:       "RSO has recommended denial. You may accept this recommendation or approve the application if you believe it meets requirements. Please contact the applicant with a diplomatic response."
     });
 
@@ -1047,5 +1049,229 @@ function autoRejectPendingSubmissionsOnMemberRemoval(individualId, actingBy) {
   } catch (e) {
     Logger.log("ERROR autoRejectPendingSubmissionsOnMemberRemoval: " + e);
     return { ok: false, rejectedCount: 0, error: String(e) };
+  }
+}
+
+/**
+ * RSO approves a post-activation member document (passport/omang replacement).
+ * Document is marked as verified. Member and board are notified.
+ */
+function approveRsoMemberDocument(submission_id, rso_email) {
+  try {
+    var found = _findSubmissionById_(submission_id);
+    if (!found) return { ok: false, error: "Submission not found" };
+
+    var docType = String(found.obj.document_type || "").toLowerCase();
+    if (docType !== "passport" && docType !== "omang") {
+      return { ok: false, error: "RSO approval only applies to passport/omang" };
+    }
+
+    // Mark as verified (final approval for post-activation documents)
+    var patchObj = {
+      status: "verified",
+      rso_reviewed_by: rso_email,
+      rso_review_date: new Date(),
+      is_current: true,
+      expiration_warning_6m_sent_date: "",
+      expiration_warning_1m_sent_date: ""
+    };
+
+    _setSubmissionFields_(found, patchObj);
+
+    // Send approval notifications
+    var individual = getMemberById(found.obj.individual_id);
+    if (individual) {
+      sendEmailFromTemplate("DOC_DOCUMENT_APPROVED_TO_MEMBER", individual.email, {
+        FIRST_NAME: individual.first_name || "Member",
+        DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+        APPROVED_DATE: formatDate(new Date()),
+        PORTAL_URL: "https://geabotswana.org/member.html"
+      });
+      sendEmailFromTemplate("DOC_DOCUMENT_APPROVED_TO_BOARD", EMAIL_BOARD, {
+        MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+        DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+        APPROVED_BY: rso_email,
+        APPROVED_DATE: formatDate(new Date()),
+        SUBMISSION_ID: submission_id
+      });
+    }
+
+    logAuditEntry(rso_email, AUDIT_FILE_SUBMISSION_RSO_APPROVED, "FileSubmission", submission_id,
+      "RSO approved " + docType + " replacement for member");
+
+    return { ok: true };
+  } catch (e) {
+    Logger.log("ERROR approveRsoMemberDocument: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * RSO rejects a post-activation member document (passport/omang replacement).
+ * Document is marked as rejected. Board is notified to compose diplomatic message.
+ */
+function rejectRsoMemberDocument(submission_id, rso_rejection_reason, rso_email) {
+  try {
+    var found = _findSubmissionById_(submission_id);
+    if (!found) return { ok: false, error: "Submission not found" };
+
+    var docType = String(found.obj.document_type || "").toLowerCase();
+    if (docType !== "passport" && docType !== "omang") {
+      return { ok: false, error: "RSO approval only applies to passport/omang" };
+    }
+
+    var resubmitDeadline = new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000));
+
+    // Mark as rejected
+    var patchObj = {
+      status: "rso_rejected",
+      rso_reviewed_by: rso_email,
+      rso_review_date: new Date(),
+      member_facing_rejection_reason: rso_rejection_reason,
+      is_current: false,
+      disabled_date: new Date()
+    };
+
+    _setSubmissionFields_(found, patchObj);
+
+    // Notify board to compose diplomatic message
+    var individual = getMemberById(found.obj.individual_id);
+    if (individual) {
+      sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_BOARD", EMAIL_BOARD, {
+        MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+        DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+        REJECTED_BY: rso_email,
+        REJECTION_DATE: formatDate(new Date()),
+        SUBMISSION_ID: submission_id,
+        RSO_REJECTION_MESSAGE: rso_rejection_reason || "Rejected",
+        SUGGESTED_DEADLINE: formatDate(resubmitDeadline),
+        RESUBMISSION_DAYS: "10"
+      });
+    }
+
+    logAuditEntry(rso_email, AUDIT_FILE_SUBMISSION_RSO_REJECTED, "FileSubmission", submission_id,
+      "RSO rejected " + docType + " replacement: " + rso_rejection_reason);
+
+    return { ok: true };
+  } catch (e) {
+    Logger.log("ERROR rejectRsoMemberDocument: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * Board sends diplomatic rejection message to member (after RSO rejection).
+ * Document is marked as board_rejected_member_notified.
+ * Member gets email with both RSO and board messages.
+ * Board gets confirmation email.
+ */
+function sendBoardDocumentRejectionResponse(submission_id, board_rejection_message, board_email) {
+  try {
+    var found = _findSubmissionById_(submission_id);
+    if (!found) return { ok: false, error: "Submission not found" };
+
+    var docType = String(found.obj.document_type || "").toLowerCase();
+    if (docType !== "passport" && docType !== "omang") {
+      return { ok: false, error: "Document rejection response only applies to passport/omang" };
+    }
+
+    var rsoRejectionReason = found.obj.member_facing_rejection_reason || "";
+
+    // Mark as board_rejected_member_notified (final state)
+    var patchObj = {
+      status: "board_rejected_member_notified",
+      board_rejection_message: board_rejection_message,
+      board_notified_by: board_email,
+      board_notification_date: new Date()
+    };
+
+    _setSubmissionFields_(found, patchObj);
+
+    // Send email to member with both RSO and board messages
+    var individual = getMemberById(found.obj.individual_id);
+    if (individual) {
+      sendEmailFromTemplate("DOC_MEMBER_DOCUMENT_REJECTED_BY_BOARD", individual.email, {
+        FIRST_NAME: individual.first_name || "Member",
+        DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+        RSO_REJECTION_REASON: rsoRejectionReason,
+        BOARD_REJECTION_MESSAGE: board_rejection_message,
+        RESUBMISSION_INSTRUCTIONS: "Please review the feedback above and resubmit your document. You can upload a new document through your member portal.",
+        PORTAL_URL: "https://geabotswana.org/member.html",
+        SUPPORT_EMAIL: EMAIL_BOARD
+      });
+
+      // Send board confirmation with both messages for audit trail
+      sendEmailFromTemplate("DOC_BOARD_DOCUMENT_REJECTION_CONFIRMATION", EMAIL_BOARD, {
+        MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+        DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
+        RSO_REASON: rsoRejectionReason,
+        BOARD_MESSAGE: board_rejection_message,
+        SUBMISSION_ID: submission_id,
+        NOTIFICATION_DATE: formatDate(new Date())
+      });
+    }
+
+    logAuditEntry(board_email, AUDIT_FILE_SUBMISSION_BOARD_REJECTED, "FileSubmission", submission_id,
+      "Board sent diplomatic rejection to member for " + docType + " replacement");
+
+    return { ok: true };
+  } catch (e) {
+    Logger.log("ERROR sendBoardDocumentRejectionResponse: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * Board sends diplomatic rejection message to applicant (after RSO denial).
+ * Updates application with board message and sends email to applicant.
+ */
+function sendBoardApplicationRejectionResponse(applicationId, boardMessage, allowReapplication, boardEmail) {
+  try {
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appRow = _findApplicationRow(applicationId);
+    if (!appRow) return { ok: false, error: "Application not found" };
+
+    var application = _getApplicationById(applicationId);
+    if (!application) return { ok: false, error: "Application not found" };
+
+    // Record board message and mark as responded
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_rejection_message")).setValue(boardMessage);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_notified_by")).setValue(boardEmail);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_notification_date")).setValue(new Date());
+
+    // Send email to applicant with RSO + board messages
+    var applicantEmail = application.primary_applicant_email;
+    if (applicantEmail) {
+      var reapplicationInfo = allowReapplication
+        ? "You are welcome to reapply in the future. Please contact the board if you have questions about the process or would like to discuss your application."
+        : "Please note that you are not eligible to reapply at this time. If you believe this decision is in error, you may contact the board to discuss.";
+
+      sendEmailFromTemplate("MEM_APPLICATION_REJECTED_BY_BOARD_TO_APPLICANT", applicantEmail, {
+        FIRST_NAME: application.primary_applicant_first_name || "Applicant",
+        APPLICATION_ID: applicationId,
+        RSO_REASON: application.rso_private_notes || "",
+        BOARD_MESSAGE: boardMessage,
+        REAPPLICATION_INFO: reapplicationInfo,
+        SUPPORT_EMAIL: getConfigValue("EMAIL_BOARD") || "board@geabotswana.org"
+      });
+
+      // Send board confirmation with both messages for audit trail
+      sendEmailFromTemplate("MEM_APPLICATION_REJECTION_CONFIRMATION_TO_BOARD", getConfigValue("EMAIL_BOARD") || "board@geabotswana.org", {
+        APPLICANT_NAME: application.primary_applicant_name || "",
+        APPLICATION_ID: applicationId,
+        RSO_REASON: application.rso_private_notes || "",
+        BOARD_MESSAGE: boardMessage,
+        ALLOW_REAPPLICATION: allowReapplication ? "Yes" : "No",
+        NOTIFICATION_DATE: formatDate(new Date())
+      });
+    }
+
+    logAuditEntry(boardEmail, "APPLICATION_BOARD_REJECTION_RESPONSE", "Application", applicationId,
+      "Board sent diplomatic rejection response to applicant");
+
+    return { ok: true };
+  } catch (e) {
+    Logger.log("ERROR sendBoardApplicationRejectionResponse: " + e);
+    return { ok: false, error: String(e) };
   }
 }

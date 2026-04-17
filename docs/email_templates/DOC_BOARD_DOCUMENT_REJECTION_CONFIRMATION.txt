@@ -1,0 +1,24 @@
+Hi Board,
+
+MEMBER DOCUMENT REJECTION NOTIFICATION SENT
+
+A {{DOCUMENT_TYPE}} submission has been rejected and the member has been notified.
+
+MEMBER INFORMATION:
+Member: {{MEMBER_NAME}}
+Document Type: {{DOCUMENT_TYPE}}
+Submission ID: {{SUBMISSION_ID}}
+
+REJECTION REASONS:
+RSO Review Team: {{RSO_REASON}}
+
+Your Message to Member:
+{{BOARD_MESSAGE}}
+
+Notification Sent: {{NOTIFICATION_DATE}}
+
+AUDIT TRAIL:
+This confirms that the member has been notified of the rejection and has been provided with resubmission instructions. The member has 10 days to submit a revised document.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

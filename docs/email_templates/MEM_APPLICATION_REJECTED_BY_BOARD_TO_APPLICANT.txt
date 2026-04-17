@@ -1,0 +1,24 @@
+Hi {{FIRST_NAME}},
+
+GEA MEMBERSHIP APPLICATION STATUS
+
+Thank you for your interest in joining the Gaborone Employee Association. We have completed our review of your membership application.
+
+APPLICATION REVIEW OUTCOME
+
+We have decided not to approve your application at this time.
+
+NEXT STEPS
+
+{{BOARD_MESSAGE}}
+
+QUESTIONS & REAPPLICATION
+
+{{REAPPLICATION_INFO}}
+
+If you have any questions about this decision or would like to discuss your application further, please contact us at {{SUPPORT_EMAIL}}.
+
+Application Reference: {{APPLICATION_ID}}
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

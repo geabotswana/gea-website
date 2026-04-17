@@ -1,0 +1,19 @@
+Hi {{FIRST_NAME}},
+
+DOCUMENT SUBMISSION NOT APPROVED
+
+Your {{DOCUMENT_TYPE}} submission was reviewed and could not be approved at this time.
+
+MESSAGE FROM GEA BOARD:
+{{BOARD_REJECTION_MESSAGE}}
+
+NEXT STEPS:
+{{RESUBMISSION_INSTRUCTIONS}}
+
+You have 10 days to resubmit your document. If you have questions or need assistance, please contact the board.
+
+QUESTIONS?
+Contact {{SUPPORT_EMAIL}} if you need further clarification or assistance with your submission.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

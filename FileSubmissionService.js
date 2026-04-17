@@ -69,29 +69,17 @@ function uploadFileSubmission(params) {
     _appendRowByHeaders_(submissionSheet, payload);
 
     if (documentType === "passport" || documentType === "omang") {
+      // Generate RSO approval link and send action-required email via generateRsoApprovalLink()
       generateRsoApprovalLink(payload.submission_id);
 
-      // Send notifications for document submission
+      // Notify board for awareness (background notification, no action needed)
       var individual = getMemberById(payload.individual_id);
       if (individual) {
-        var reviewDeadline = new Date();
-        reviewDeadline.setDate(reviewDeadline.getDate() + 8);  // 8 days for review window
-
-        // Notify board for awareness
         sendEmailFromTemplate("DOC_DOCUMENT_RECEIVED_TO_BOARD", EMAIL_BOARD, {
           MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
           DOCUMENT_TYPE: documentType.charAt(0).toUpperCase() + documentType.slice(1),
           SUBMISSION_DATE: formatDate(payload.submitted_date),
           SUBMISSION_ID: payload.submission_id
-        });
-
-        // Notify RSO to review
-        sendEmailFromTemplate("DOC_DOCUMENT_RECEIVED_TO_RSO", EMAIL_RSO_APPROVE, {
-          MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
-          DOCUMENT_TYPE: documentType.charAt(0).toUpperCase() + documentType.slice(1),
-          SUBMISSION_DATE: formatDate(payload.submitted_date),
-          SUBMISSION_ID: payload.submission_id,
-          REVIEW_DEADLINE: formatDate(reviewDeadline)
         });
       }
     } else if (documentType === "photo") {

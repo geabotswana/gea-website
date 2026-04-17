@@ -389,7 +389,7 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
   }
 }
 
-function rsoDenyApplication(applicationId, rsoEmail, denialMessage) {
+function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReapplication) {
   try {
     var readiness = checkApplicationDocumentReadiness(applicationId);
     if (!readiness.ok) {
@@ -414,9 +414,10 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage) {
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(denialMessage);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "allow_reapplication")).setValue(allowReapplication ? "true" : "false");
 
     logAuditEntry(rsoEmail, "APPLICATION_RSO_DENIED", "Application", applicationId,
-      "RSO recommended denial of application");
+      "RSO recommended denial of application" + (allowReapplication ? " (reapplication allowed)" : " (permanent)"));
 
     // Send email to board with denial message
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
@@ -425,6 +426,7 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage) {
       APPLICANT_NAME:   application.primary_applicant_name || "",
       APPLICATION_ID:   applicationId,
       DENIAL_MESSAGE:   denialMessage,
+      ALLOW_REAPPLICATION: allowReapplication ? "Yes" : "No",
       NEXT_STEPS:       "RSO has recommended denial. You may accept this recommendation or approve the application if you believe it meets requirements. Please contact the applicant with a diplomatic response."
     });
 
@@ -1215,6 +1217,61 @@ function sendBoardDocumentRejectionResponse(submission_id, board_rejection_messa
     return { ok: true };
   } catch (e) {
     Logger.log("ERROR sendBoardDocumentRejectionResponse: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * Board sends diplomatic rejection message to applicant (after RSO denial).
+ * Updates application with board message and sends email to applicant.
+ */
+function sendBoardApplicationRejectionResponse(applicationId, boardMessage, allowReapplication, boardEmail) {
+  try {
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appRow = _findApplicationRow(applicationId);
+    if (!appRow) return { ok: false, error: "Application not found" };
+
+    var application = _getApplicationById(applicationId);
+    if (!application) return { ok: false, error: "Application not found" };
+
+    // Record board message and mark as responded
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_rejection_message")).setValue(boardMessage);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_notified_by")).setValue(boardEmail);
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_notification_date")).setValue(new Date());
+
+    // Send email to applicant with RSO + board messages
+    var applicantEmail = application.primary_applicant_email;
+    if (applicantEmail) {
+      var reapplicationInfo = allowReapplication
+        ? "You are welcome to reapply in the future. Please contact the board if you have questions about the process or would like to discuss your application."
+        : "Please note that you are not eligible to reapply at this time. If you believe this decision is in error, you may contact the board to discuss.";
+
+      sendEmailFromTemplate("MEM_APPLICATION_REJECTED_BY_BOARD_TO_APPLICANT", applicantEmail, {
+        FIRST_NAME: application.primary_applicant_first_name || "Applicant",
+        APPLICATION_ID: applicationId,
+        RSO_REASON: application.rso_private_notes || "",
+        BOARD_MESSAGE: boardMessage,
+        REAPPLICATION_INFO: reapplicationInfo,
+        SUPPORT_EMAIL: getConfigValue("EMAIL_BOARD") || "board@geabotswana.org"
+      });
+
+      // Send board confirmation with both messages for audit trail
+      sendEmailFromTemplate("MEM_APPLICATION_REJECTION_CONFIRMATION_TO_BOARD", getConfigValue("EMAIL_BOARD") || "board@geabotswana.org", {
+        APPLICANT_NAME: application.primary_applicant_name || "",
+        APPLICATION_ID: applicationId,
+        RSO_REASON: application.rso_private_notes || "",
+        BOARD_MESSAGE: boardMessage,
+        ALLOW_REAPPLICATION: allowReapplication ? "Yes" : "No",
+        NOTIFICATION_DATE: formatDate(new Date())
+      });
+    }
+
+    logAuditEntry(boardEmail, "APPLICATION_BOARD_REJECTION_RESPONSE", "Application", applicationId,
+      "Board sent diplomatic rejection response to applicant");
+
+    return { ok: true };
+  } catch (e) {
+    Logger.log("ERROR sendBoardApplicationRejectionResponse: " + e);
     return { ok: false, error: String(e) };
   }
 }

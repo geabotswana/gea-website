@@ -243,6 +243,8 @@ function _routeAction(action, params) {
     case "reject_rso_member_document":     return _handleRejectRsoMemberDocument(params);
     case "admin_member_document_rejections": return _handleAdminMemberDocumentRejections(params);
     case "admin_send_document_rejection_response": return _handleAdminSendDocumentRejectionResponse(params);
+    case "admin_application_rejections": return _handleAdminApplicationRejections(params);
+    case "admin_send_application_rejection_response": return _handleAdminSendApplicationRejectionResponse(params);
     case "admin_rso_applications_ready":   return _handleAdminRsoApplicationsReady(params);
     case "admin_rso_approved_calendar":    return _handleAdminRsoApprovedCalendar(params);
     case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
@@ -2940,7 +2942,8 @@ function _handleRsoDenyApplication(p) {
     var result = rsoDenyApplication(
       p.application_id,
       auth.session.email,
-      p.denial_message
+      p.denial_message,
+      p.allow_reapplication || false
     );
 
     if (result.ok) {
@@ -4324,6 +4327,70 @@ function _handleAdminSendDocumentRejectionResponse(p) {
     return successResponse({}, "Rejection response sent");
   } catch (e) {
     Logger.log("ERROR _handleAdminSendDocumentRejectionResponse: " + e);
+    return errorResponse("Could not send response: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminApplicationRejections
+ * PURPOSE: Board views membership applications rejected by RSO (awaiting board response).
+ * RETURNS: { success, data: { rejections: [...] } }
+ */
+function _handleAdminApplicationRejections(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appData = appSheet.getDataRange().getValues();
+    var appHeaders = appData[0];
+    var rejections = [];
+
+    for (var i = 1; i < appData.length; i++) {
+      var app = rowToObject(appHeaders, appData[i]);
+      // RSO-denied applications: status=RSO_APPLICATION_REVIEW, rso_status=denied_recommendation
+      if (app.status === APP_STATUS_RSO_APPLICATION_REVIEW && app.rso_status === "denied_recommendation" &&
+          !app.board_rejection_message) {  // Not yet responded to by board
+        rejections.push({
+          application_id: app.application_id,
+          applicant_name: app.primary_applicant_name || "",
+          applicant_email: app.primary_applicant_email || "",
+          rso_denial_message: app.rso_private_notes || "",
+          allow_reapplication: app.allow_reapplication === "true" || app.allow_reapplication === true
+        });
+      }
+    }
+
+    return successResponse({ rejections: rejections });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminApplicationRejections: " + e);
+    return errorResponse("Could not load application rejections.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminSendApplicationRejectionResponse
+ * PURPOSE: Board sends diplomatic rejection message to applicant (after RSO denial).
+ * PARAMS: application_id, board_rejection_message, allow_reapplication
+ * RETURNS: { success }
+ */
+function _handleAdminSendApplicationRejectionResponse(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+  if (!p.application_id) return errorResponse("application_id required.", "INVALID_PARAM");
+  if (!p.board_rejection_message) return errorResponse("board_rejection_message required.", "INVALID_PARAM");
+
+  try {
+    var result = sendBoardApplicationRejectionResponse(
+      p.application_id,
+      p.board_rejection_message,
+      p.allow_reapplication || false,
+      auth.session.email
+    );
+    if (!result.ok) return errorResponse(result.error || "Failed to send response", "SEND_FAILED");
+    return successResponse({}, "Rejection response sent");
+  } catch (e) {
+    Logger.log("ERROR _handleAdminSendApplicationRejectionResponse: " + e);
     return errorResponse("Could not send response: " + e.toString(), "SERVER_ERROR");
   }
 }

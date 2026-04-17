@@ -1406,6 +1406,11 @@
         <span>Applications</span>
         <span id="applications-badge" class="badge">0</span>
       </div>
+      <div class="nav-item" data-page="application-rejections" onclick="showPage('application-rejections', event)">
+        <span class="nav-icon">❌</span>
+        <span>Application Rejections</span>
+        <span id="application-rejections-badge" class="badge" style="display:none;">0</span>
+      </div>
       <div class="nav-item" data-page="photos" onclick="showPage('photos', event)">
         <span class="nav-icon">📸</span>
         <span>Photo Review</span>
@@ -1921,6 +1926,65 @@
       </div>
 
       <!-- ========================================================== -->
+      <!-- PAGE: APPLICATION REJECTIONS (Board Response to RSO)        -->
+      <!-- Board composes diplomatic messages for RSO-denied apps      -->
+      <!-- ========================================================== -->
+      <div id="application-rejections" class="page">
+        <h1 class="page-title">Application Rejections</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">RSO has recommended denial of these applications. Review the RSO recommendation and compose a diplomatic message to send to the applicant.</p>
+
+        <div class="card">
+          <div class="table-container">
+            <table id="appRejectTable">
+              <thead>
+                <tr>
+                  <th>Applicant</th>
+                  <th>Application ID</th>
+                  <th>RSO Recommendation</th>
+                  <th>Reapplication</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="appRejectTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div id="appRejectEmpty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">✓</div>
+            <div class="empty-state-text">No pending application rejections</div>
+            <div class="empty-state-subtext">All RSO denials have been addressed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Application Rejection Modal (Board Compose Message) -->
+      <div id="boardComposeAppRejectModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="boardComposeAppRejectTitle">
+        <div class="modal" style="max-width:650px;">
+          <div class="modal-header">
+            <h2 class="modal-title" id="boardComposeAppRejectTitle">Compose Rejection Response</h2>
+            <button class="modal-close" onclick="closeBoardComposeAppRejectModal();" aria-label="Close">&times;</button>
+          </div>
+          <div style="padding:20px;">
+            <div style="margin-bottom:16px;">
+              <p style="margin:0 0 8px 0; font-size:13px; color:#666;"><strong>Applicant:</strong> <span id="bcAppApplicantName"></span></p>
+              <p style="margin:0 0 8px 0; font-size:13px; color:#666;"><strong>Application ID:</strong> <span id="bcAppApplicationId"></span></p>
+              <p style="margin:0; font-size:13px; color:#666;"><strong>RSO Recommendation:</strong></p>
+              <p id="bcAppRsoReason" style="margin:8px 0 0 0; padding:8px 12px; background:#f5f5f5; border-left:3px solid #ff9800; font-size:13px; color:#555;"></p>
+              <p style="margin:8px 0 0 0; font-size:12px; color:#999;"><strong>Reapplication Allowed:</strong> <span id="bcAppAllowReapplication" style="font-weight:bold; color:#d32f2f;"></span></p>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block; font-weight:500; font-size:14px; margin-bottom:8px;">Your Message to Applicant:</label>
+              <textarea id="bcAppBoardMessage" style="width:100%; min-height:140px; padding:10px; border:1px solid #ddd; border-radius:4px; font-family:sans-serif; font-size:13px;" placeholder="Compose a diplomatic message to the applicant. Include next steps (e.g., whether they can reapply, when, how to contact you for more information)."></textarea>
+            </div>
+          </div>
+          <div style="padding:12px 20px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeBoardComposeAppRejectModal();">Cancel</button>
+            <button class="btn btn-primary" onclick="submitBoardApplicationRejection();">Send to Applicant</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
       <!-- PAGE: RESERVATION CALENDAR (RES.5.5)                       -->
       <!-- Interactive month calendar for all board-visible reservations -->
       <!-- ========================================================== -->
@@ -2297,9 +2361,16 @@
         <label class="form-label">Denial Recommendation <span style="color:#d32f2f;">*</span></label>
         <textarea id="rsoDenyReason" class="form-input" rows="4" placeholder="Explain why you are recommending denial. This will be sent to the Board, who can decide to accept or override your recommendation."></textarea>
       </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="rsoAllowReapplication" style="width:18px; height:18px; cursor:pointer;">
+          <span style="font-size:14px; color:#555;">Allow applicant to reapply in the future</span>
+        </label>
+        <p style="font-size:12px; color:#999; margin:8px 0 0 26px;">Check this if the denial is temporary (missing documents, visa issues, etc.). Uncheck if the denial is permanent (does not meet membership requirements).</p>
+      </div>
       <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:6px; padding:12px; margin-bottom:16px;">
         <p style="margin:0; font-size:13px; color:#856404;">
-          <strong>Note:</strong> The Board will review your recommendation and decide whether to accept the denial or approve the application anyway. They will contact the applicant with a diplomatic message.
+          <strong>Note:</strong> The Board will review your recommendation and decide whether to accept the denial or approve the application anyway. They will contact the applicant with a diplomatic message that reflects your reapplication decision.
         </p>
       </div>
     </div>
@@ -2983,6 +3054,7 @@
       'res-calendar':        ['board', 'mgt'],
       'members':             ['board'],
       'applications':        ['board'],                                // board-only (requires board auth)
+      'application-rejections': ['board'],                             // board-only response to RSO rejections
       'photos':              ['board'],                                // board-only (requires board auth)
       'member-doc-rejections': ['board'],                              // board-only response to RSO rejections
       'guest-lists':         ['board', 'rso_approve'],                 // rso_approve can review
@@ -3170,6 +3242,9 @@
         break;
       case 'applications':
         loadApplications('');
+        break;
+      case 'application-rejections':
+        loadApplicationRejections();
         break;
       case 'guest-lists':
         loadGuestLists();
@@ -6925,6 +7000,103 @@
   }
 
   // ============================================================ //
+  // SECTION: APPLICATION REJECTIONS (Board Response to RSO)      //
+  // ============================================================ //
+
+  function loadApplicationRejections() {
+    var tbody = document.getElementById('appRejectTableBody');
+    var empty = document.getElementById('appRejectEmpty');
+    tbody.innerHTML = '';
+    empty.style.display = 'none';
+
+    apiCall('admin_application_rejections', {}).then(function(res) {
+      if (!res.success) { showError(res.message); return; }
+      var rejections = res.data.rejections || [];
+
+      if (rejections.length === 0) {
+        empty.style.display = '';
+        return;
+      }
+
+      rejections.forEach(function(rej) {
+        var tr = document.createElement('tr');
+
+        var tdApplicant = document.createElement('td');
+        tdApplicant.textContent = rej.applicant_name;
+        tr.appendChild(tdApplicant);
+
+        var tdAppId = document.createElement('td');
+        tdAppId.textContent = rej.application_id;
+        tr.appendChild(tdAppId);
+
+        var tdReason = document.createElement('td');
+        tdReason.style.maxWidth = '300px';
+        tdReason.style.overflow = 'hidden';
+        tdReason.style.textOverflow = 'ellipsis';
+        tdReason.style.whiteSpace = 'nowrap';
+        tdReason.textContent = rej.rso_denial_message;
+        tr.appendChild(tdReason);
+
+        var tdReapply = document.createElement('td');
+        tdReapply.textContent = rej.allow_reapplication ? '✓ Yes' : '✗ No';
+        tdReapply.style.fontWeight = 'bold';
+        tdReapply.style.color = rej.allow_reapplication ? '#4CAF50' : '#d32f2f';
+        tr.appendChild(tdReapply);
+
+        var tdAction = document.createElement('td');
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-small';
+        btn.textContent = 'Respond';
+        btn.onclick = (function(appId, applicantName, denialMsg, allowReapply) {
+          return function() { openBoardComposeAppRejectModal(appId, applicantName, denialMsg, allowReapply); };
+        })(rej.application_id, rej.applicant_name, rej.rso_denial_message, rej.allow_reapplication);
+        tdAction.appendChild(btn);
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+      });
+
+      // Update badge
+      var badge = document.getElementById('application-rejections-badge');
+      if (badge) { badge.textContent = rejections.length; badge.style.display = rejections.length > 0 ? '' : 'none'; }
+    }).catch(function(e) { showError('Failed to load rejections: ' + e); });
+  }
+
+  function openBoardComposeAppRejectModal(applicationId, applicantName, rsoMessage, allowReapplication) {
+    document.getElementById('bcAppApplicantName').textContent = applicantName;
+    document.getElementById('bcAppApplicationId').textContent = applicationId;
+    document.getElementById('bcAppRsoReason').textContent = rsoMessage;
+    document.getElementById('bcAppAllowReapplication').textContent = allowReapplication ? 'Yes' : 'No';
+    document.getElementById('bcAppBoardMessage').value = '';
+    document.getElementById('boardComposeAppRejectModal').dataset.applicationId = applicationId;
+    document.getElementById('boardComposeAppRejectModal').dataset.allowReapplication = allowReapplication;
+    document.getElementById('boardComposeAppRejectModal').style.display = 'block';
+  }
+
+  function closeBoardComposeAppRejectModal() {
+    document.getElementById('boardComposeAppRejectModal').style.display = 'none';
+  }
+
+  function submitBoardApplicationRejection() {
+    var applicationId = document.getElementById('boardComposeAppRejectModal').dataset.applicationId;
+    var allowReapplication = document.getElementById('boardComposeAppRejectModal').dataset.allowReapplication === 'true';
+    var boardMessage = (document.getElementById('bcAppBoardMessage').value || '').trim();
+
+    if (!boardMessage) { showError('Please enter a message to send to the applicant.'); return; }
+
+    apiCall('admin_send_application_rejection_response', {
+      application_id: applicationId,
+      board_rejection_message: boardMessage,
+      allow_reapplication: allowReapplication
+    }).then(function(res) {
+      if (!res.success) { showError('Failed to send response: ' + res.message); return; }
+      showSuccess('Rejection response sent to applicant');
+      closeBoardComposeAppRejectModal();
+      loadApplicationRejections();
+    }).catch(function(e) { showError('Error: ' + e); });
+  }
+
+  // ============================================================ //
   // SECTION: PAYMENT MANAGEMENT                                  //
   // ============================================================ //
 
@@ -7233,11 +7405,13 @@
     }
 
     var appId = window._rsoDenyAppId;
+    var allowReapplication = document.getElementById('rsoAllowReapplication').checked;
     document.getElementById('rsoDenyAppModal').style.display = 'none';
 
     apiCall('rso_deny_application', {
       application_id: appId,
-      denial_message: reason
+      denial_message: reason,
+      allow_reapplication: allowReapplication
     }).then(function(res) {
       if (!res.success) { showError(res.message); return; }
       showToast('Application denial recommended. Board will review.', 'info');

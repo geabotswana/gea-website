@@ -1411,6 +1411,11 @@
         <span>Photo Review</span>
         <span id="photos-badge" class="badge" style="display:none;">0</span>
       </div>
+      <div class="nav-item" data-page="member-doc-rejections" onclick="showPage('member-doc-rejections', event)">
+        <span class="nav-icon">📄</span>
+        <span>Document Rejections</span>
+        <span id="member-doc-rejections-badge" class="badge" style="display:none;">0</span>
+      </div>
       <div class="nav-item" data-page="guest-lists" onclick="showPage('guest-lists', event)">
         <span class="nav-icon">📋</span>
         <span>Guest Lists</span>
@@ -1435,13 +1440,18 @@
       <!-- RSO-only nav items (hidden for board/mgt) -->
       <div class="nav-item" data-page="rso-documents" onclick="showPage('rso-documents', event)">
         <span class="nav-icon">🔍</span>
-        <span>Document Review</span>
+        <span>Applicant Document Review</span>
         <span id="rso-documents-badge" class="badge" style="display:none;">0</span>
       </div>
       <div class="nav-item" data-page="rso-applications" onclick="showPage('rso-applications', event)">
         <span class="nav-icon">📋</span>
-        <span>Application Review</span>
+        <span>Membership Application Review</span>
         <span id="rso-applications-badge" class="badge" style="display:none;">0</span>
+      </div>
+      <div class="nav-item" data-page="rso-member-documents" onclick="showPage('rso-member-documents', event)">
+        <span class="nav-icon">📄</span>
+        <span>Member Document Review</span>
+        <span id="rso-member-documents-badge" class="badge" style="display:none;">0</span>
       </div>
       <div class="nav-item" data-page="rso-calendar" onclick="showPage('rso-calendar', event)">
         <span class="nav-icon">📅</span>
@@ -1695,7 +1705,65 @@
           <div class="empty-state-subtext">All member photos have been reviewed</div>
         </div>
       </div>
-      
+
+      <!-- ========================================================== -->
+      <!-- PAGE: MEMBER DOCUMENT REJECTIONS (Board Response to RSO)    -->
+      <!-- Board composes diplomatic messages for RSO-rejected docs    -->
+      <!-- ========================================================== -->
+      <div id="member-doc-rejections" class="page">
+        <h1 class="page-title">Member Document Rejections</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">RSO has rejected document submissions. Review rejection reason and compose a diplomatic notification to send to the member.</p>
+
+        <div class="card">
+          <div class="table-container">
+            <table id="memberDocRejectTable">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Document Type</th>
+                  <th>Rejected By RSO</th>
+                  <th>RSO Reason</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="memberDocRejectTableBody">
+              </tbody>
+            </table>
+          </div>
+          <div id="memberDocRejectEmpty" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">✓</div>
+            <div class="empty-state-text">No pending member document rejections</div>
+            <div class="empty-state-subtext">All RSO rejections have been addressed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Member Document Rejection Modal (Board Compose Message) -->
+      <div id="boardComposeRejectModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="boardComposeRejectTitle">
+        <div class="modal" style="max-width:600px;">
+          <div class="modal-header">
+            <h2 class="modal-title" id="boardComposeRejectTitle">Compose Member Notification</h2>
+            <button class="modal-close" onclick="closeBoardComposeRejectModal();" aria-label="Close">&times;</button>
+          </div>
+          <div style="padding:20px;">
+            <div style="margin-bottom:16px;">
+              <p style="margin:0 0 8px 0; font-size:13px; color:#666;"><strong>Member:</strong> <span id="bcMemberName"></span></p>
+              <p style="margin:0 0 8px 0; font-size:13px; color:#666;"><strong>Document Type:</strong> <span id="bcDocType"></span></p>
+              <p style="margin:0; font-size:13px; color:#666;"><strong>RSO Rejection Reason:</strong></p>
+              <p id="bcRsoReason" style="margin:8px 0 0 0; padding:8px 12px; background:#f5f5f5; border-left:3px solid #ff9800; font-size:13px; color:#555;"></p>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label style="display:block; font-weight:500; font-size:14px; margin-bottom:8px;">Your Message to Member:</label>
+              <textarea id="bcBoardMessage" style="width:100%; min-height:120px; padding:10px; border:1px solid #ddd; border-radius:4px; font-family:sans-serif; font-size:13px;" placeholder="Compose a diplomatic message to the member about the rejected document. Include resubmission instructions."></textarea>
+            </div>
+          </div>
+          <div style="padding:12px 20px; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeBoardComposeRejectModal();">Cancel</button>
+            <button class="btn btn-primary" onclick="submitBoardDocumentRejection();">Send to Member</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ========================================================== -->
       <!-- PAGE: PAYMENTS                                             -->
       <!-- Payment verification and confirmation                      -->
@@ -2062,11 +2130,11 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- PAGE: RSO DOCUMENT REVIEW (rso_approve only)               -->
+      <!-- PAGE: RSO APPLICANT DOCUMENT REVIEW (rso_approve only)      -->
       <!-- ========================================================== -->
       <div id="rso-documents" class="page">
-        <h1 class="page-title">Document Review</h1>
-        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review passport and omang submissions from membership applicants. Approved documents proceed to GEA admin for final review.</p>
+        <h1 class="page-title">Applicant Document Review</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review passport and omang submissions from membership applicants. Approved documents proceed to Application Review stage.</p>
 
         <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
           <label style="font-weight:500; font-size:14px;">Document type:</label>
@@ -2084,13 +2152,35 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- PAGE: RSO APPLICATION REVIEW (rso_approve only)             -->
+      <!-- PAGE: RSO MEMBERSHIP APPLICATION REVIEW (rso_approve only)   -->
       <!-- ========================================================== -->
       <div id="rso-applications" class="page">
-        <h1 class="page-title">Application Review</h1>
-        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review and approve or deny membership applications. All required documents must be approved before this stage.</p>
+        <h1 class="page-title">Membership Application Review</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review and approve or deny membership applications. All required applicant documents must be approved before this stage.</p>
 
         <div id="rsoAppsReadyContent">
+          <p style="color:#aaa;">Loading...</p>
+        </div>
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- PAGE: RSO MEMBER DOCUMENT REVIEW (rso_approve only)         -->
+      <!-- ========================================================== -->
+      <div id="rso-member-documents" class="page">
+        <h1 class="page-title">Member Document Review</h1>
+        <p style="color:#666; margin-bottom:20px; font-size:14px;">Review passport and omang replacement submissions from existing members. Approved documents are marked as verified.</p>
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <label style="font-weight:500; font-size:14px;">Document type:</label>
+          <select id="rsoMemberDocTypeFilter" class="form-input" style="width:auto;" onchange="loadRsoMemberDocuments()">
+            <option value="">All</option>
+            <option value="passport">Passport</option>
+            <option value="omang">Omang</option>
+          </select>
+          <button class="btn btn-secondary btn-small" onclick="loadRsoMemberDocuments()">Refresh</button>
+        </div>
+
+        <div id="rsoMemberDocsContent">
           <p style="color:#aaa;">Loading...</p>
         </div>
       </div>
@@ -2894,12 +2984,14 @@
       'members':             ['board'],
       'applications':        ['board'],                                // board-only (requires board auth)
       'photos':              ['board'],                                // board-only (requires board auth)
+      'member-doc-rejections': ['board'],                              // board-only response to RSO rejections
       'guest-lists':         ['board', 'rso_approve'],                 // rso_approve can review
       'payments':            ['board'],
       'reports':             ['board'],
       'administrators':      ['board'],
       'rso-documents':       ['rso_approve'],
       'rso-applications':    ['rso_approve'],                           // rso_approve reviews applications
+      'rso-member-documents': ['rso_approve'],                          // rso_approve reviews member document replacements
       'rso-calendar':        ['rso_approve', 'rso_notify'],
       'rso-approved-guests': ['rso_approve', 'rso_notify']
     };
@@ -3070,6 +3162,9 @@
       case 'photos':
         loadPhotos();
         break;
+      case 'member-doc-rejections':
+        loadMemberDocumentRejections();
+        break;
       case 'payments':
         loadPayments();
         break;
@@ -3093,6 +3188,9 @@
         break;
       case 'rso-applications':
         loadRsoAppsReady();
+        break;
+      case 'rso-member-documents':
+        loadRsoMemberDocuments();
         break;
       case 'rso-calendar':
         if (!document.getElementById('rsoCalMonth').value) {
@@ -5704,6 +5802,99 @@
   }
 
   // ============================================================ //
+  // SECTION: MEMBER DOCUMENT REJECTIONS (Board Response to RSO)  //
+  // ============================================================ //
+  // Board composes diplomatic messages for RSO-rejected documents //
+  // ============================================================ //
+
+  function loadMemberDocumentRejections() {
+    var tbody = document.getElementById('memberDocRejectTableBody');
+    var empty = document.getElementById('memberDocRejectEmpty');
+    tbody.innerHTML = '';
+    empty.style.display = 'none';
+
+    apiCall('admin_member_document_rejections', {}).then(function(res) {
+      if (!res.success) { showError(res.message); return; }
+      var rejections = res.data.rejections || [];
+
+      if (rejections.length === 0) {
+        empty.style.display = '';
+        return;
+      }
+
+      rejections.forEach(function(rej) {
+        var tr = document.createElement('tr');
+
+        var tdMember = document.createElement('td');
+        tdMember.textContent = rej.member_name;
+        tr.appendChild(tdMember);
+
+        var tdType = document.createElement('td');
+        tdType.textContent = rej.document_type;
+        tr.appendChild(tdType);
+
+        var tdDate = document.createElement('td');
+        tdDate.textContent = rej.rejection_date;
+        tr.appendChild(tdDate);
+
+        var tdReason = document.createElement('td');
+        tdReason.style.maxWidth = '300px';
+        tdReason.style.overflow = 'hidden';
+        tdReason.style.textOverflow = 'ellipsis';
+        tdReason.style.whiteSpace = 'nowrap';
+        tdReason.textContent = rej.rso_rejection_reason;
+        tr.appendChild(tdReason);
+
+        var tdAction = document.createElement('td');
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-small';
+        btn.textContent = 'Respond';
+        btn.onclick = (function(submissionId, memberName, docType, reason) {
+          return function() { openBoardComposeRejectModal(submissionId, memberName, docType, reason); };
+        })(rej.submission_id, rej.member_name, rej.document_type, rej.rso_rejection_reason);
+        tdAction.appendChild(btn);
+        tr.appendChild(tdAction);
+
+        tbody.appendChild(tr);
+      });
+
+      // Update badge
+      var badge = document.getElementById('member-doc-rejections-badge');
+      if (badge) { badge.textContent = rejections.length; badge.style.display = rejections.length > 0 ? '' : 'none'; }
+    }).catch(function(e) { showError('Failed to load rejections: ' + e); });
+  }
+
+  function openBoardComposeRejectModal(submissionId, memberName, docType, rsoReason) {
+    document.getElementById('bcMemberName').textContent = memberName;
+    document.getElementById('bcDocType').textContent = docType;
+    document.getElementById('bcRsoReason').textContent = rsoReason;
+    document.getElementById('bcBoardMessage').value = '';
+    document.getElementById('boardComposeRejectModal').dataset.submissionId = submissionId;
+    document.getElementById('boardComposeRejectModal').style.display = 'block';
+  }
+
+  function closeBoardComposeRejectModal() {
+    document.getElementById('boardComposeRejectModal').style.display = 'none';
+  }
+
+  function submitBoardDocumentRejection() {
+    var submissionId = document.getElementById('boardComposeRejectModal').dataset.submissionId;
+    var boardMessage = (document.getElementById('bcBoardMessage').value || '').trim();
+
+    if (!boardMessage) { showError('Please enter a message to send to the member.'); return; }
+
+    apiCall('admin_send_document_rejection_response', {
+      submission_id: submissionId,
+      board_rejection_message: boardMessage
+    }).then(function(res) {
+      if (!res.success) { showError('Failed to send response: ' + res.message); return; }
+      showSuccess('Rejection response sent to member');
+      closeBoardComposeRejectModal();
+      loadMemberDocumentRejections();
+    }).catch(function(e) { showError('Error: ' + e); });
+  }
+
+  // ============================================================ //
   // SECTION: PAYMENTS                                            //
   // ============================================================ //
   // Verify and confirm payment submissions                       //
@@ -7430,6 +7621,105 @@
       _rsoPendingDocRejectId = null;
       loadRsoDocuments();
     });
+  }
+
+  // ============================================================ //
+  // SECTION: RSO PORTAL — MEMBER DOCUMENT REVIEW                 //
+  // ============================================================ //
+
+  function loadRsoMemberDocuments() {
+    var container = document.getElementById('rsoMemberDocsContent');
+    container.innerHTML = '<p style="color:#aaa;">Loading...</p>';
+    var docType = document.getElementById('rsoMemberDocTypeFilter').value;
+
+    // Load post-activation member documents pending RSO review
+    apiCall('admin_rso_pending_member_documents', { document_type: docType || null }).then(function(res) {
+      if (!res.success) { container.innerHTML = '<p style="color:#c00;">Error: ' + res.message + '</p>'; return; }
+      var docs = res.data.documents || [];
+      // Update badge
+      var badge = document.getElementById('rso-member-documents-badge');
+      if (badge) { badge.textContent = docs.length; badge.style.display = docs.length > 0 ? '' : 'none'; }
+
+      if (docs.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#10003;</div><div class="empty-state-text">No member documents pending review</div></div>';
+        return;
+      }
+      var table = document.createElement('div');
+      table.className = 'table-container';
+      var tbl = document.createElement('table');
+      var thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Member</th><th>Type</th><th>Submitted</th><th>Actions</th></tr>';
+      tbl.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      docs.forEach(function(doc) {
+        var tr = document.createElement('tr');
+
+        var nameTd = document.createElement('td');
+        var nameSpan = document.createElement('span');
+        nameSpan.textContent = doc.member_name;
+        var emailSmall = document.createElement('small');
+        emailSmall.style.color = '#999';
+        emailSmall.textContent = doc.member_email;
+        nameTd.appendChild(nameSpan);
+        nameTd.appendChild(document.createElement('br'));
+        nameTd.appendChild(emailSmall);
+        tr.appendChild(nameTd);
+
+        var typeTd = document.createElement('td');
+        typeTd.textContent = doc.document_type.charAt(0).toUpperCase() + doc.document_type.slice(1);
+        tr.appendChild(typeTd);
+
+        var dateTd = document.createElement('td');
+        dateTd.textContent = doc.submitted_date || '';
+        tr.appendChild(dateTd);
+
+        var actionsTd = document.createElement('td');
+        actionsTd.style.whiteSpace = 'nowrap';
+
+        var approveBtn = document.createElement('button');
+        approveBtn.className = 'btn btn-success btn-small';
+        approveBtn.style.marginRight = '4px';
+        approveBtn.textContent = 'Approve';
+        approveBtn.onclick = (function(d) {
+          return function() { approveRsoMemberDocument(d.submission_id, d.member_name); };
+        })(doc);
+        actionsTd.appendChild(approveBtn);
+
+        var rejectBtn = document.createElement('button');
+        rejectBtn.className = 'btn btn-danger btn-small';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.onclick = (function(d) {
+          return function() { rejectRsoMemberDocument(d.submission_id, d.member_name); };
+        })(doc);
+        actionsTd.appendChild(rejectBtn);
+
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
+      });
+      tbl.appendChild(tbody);
+      table.appendChild(tbl);
+      container.innerHTML = '';
+      container.appendChild(table);
+    }).catch(function() { container.innerHTML = '<p style="color:#c00;">Failed to load documents.</p>'; });
+  }
+
+  function approveRsoMemberDocument(submissionId, memberName) {
+    if (!confirm('Approve ' + memberName + '\'s document?')) return;
+    apiCall('approve_rso_member_document', { submission_id: submissionId }).then(function(res) {
+      if (!res.success) { showError('Failed to approve: ' + res.message); return; }
+      showSuccess('Document approved for ' + memberName);
+      loadRsoMemberDocuments();
+    }).catch(function(e) { showError('Error: ' + e); });
+  }
+
+  function rejectRsoMemberDocument(submissionId, memberName) {
+    var reason = prompt('Enter rejection reason for ' + memberName + ':');
+    if (!reason) return;
+    apiCall('reject_rso_member_document', { submission_id: submissionId, rejection_reason: reason }).then(function(res) {
+      if (!res.success) { showError('Failed to reject: ' + res.message); return; }
+      showSuccess('Document rejected for ' + memberName + '. Board will review.');
+      loadRsoMemberDocuments();
+    }).catch(function(e) { showError('Error: ' + e); });
   }
 
   // ============================================================ //

@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.65";
-var SYSTEM_BUILD_DATE       = "2026-04-16";
+var SYSTEM_VERSION          = "2.4.66";
+var SYSTEM_BUILD_DATE       = "2026-04-17";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Show document upload buttons when no documents uploaded in My Household (#138)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-16 14:38:50";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Refactor: Clear file upload UX with explicit Submit workflow (#139)";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-17 08:54:37";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

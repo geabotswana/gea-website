@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.71";
+var SYSTEM_VERSION          = "2.4.72";
 var SYSTEM_BUILD_DATE       = "2026-04-17";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Feature: Board application rejection workflow (RSO denial with reapplication flag)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-17 10:49:11";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Feature: RSO rejection workflows with board diplomatic messaging";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-17 10:57:58";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

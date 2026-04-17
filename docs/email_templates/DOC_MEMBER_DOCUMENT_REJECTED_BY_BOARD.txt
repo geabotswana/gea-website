@@ -4,9 +4,6 @@ DOCUMENT SUBMISSION NOT APPROVED
 
 Your {{DOCUMENT_TYPE}} submission was reviewed and could not be approved at this time.
 
-REASON FROM REVIEW TEAM:
-{{RSO_REJECTION_REASON}}
-
 MESSAGE FROM GEA BOARD:
 {{BOARD_REJECTION_MESSAGE}}
 

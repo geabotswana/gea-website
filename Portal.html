@@ -10182,6 +10182,15 @@ function submitPasswordReset(event) {
     photoInput.className = 'form-input';
     photoInput.accept = '.jpg,.jpeg,.png';
     photoInput.style.marginBottom = '12px';
+    photoInput.onchange = (function(memberId) {
+      return function() {
+        _pendingPhotoUpload = {
+          individualId: memberId,
+          fileInput: this
+        };
+        proceedWithPhotoUpload();
+      };
+    })(member.individual_id);
     photoUploadArea.appendChild(photoInput);
 
     var uploadBtn = document.createElement('button');
@@ -10290,6 +10299,15 @@ function submitPasswordReset(event) {
     fileInput.className = 'form-input';
     fileInput.accept = '.jpg,.jpeg,.png,.pdf';
     fileInput.style.marginBottom = '12px';
+    fileInput.onchange = (function(memberId) {
+      return function() {
+        _pendingDocumentUpload = {
+          individualId: memberId,
+          fileInput: this
+        };
+        proceedWithDocumentUpload();
+      };
+    })(member.individual_id);
     fileGroup.appendChild(fileLabel);
     fileGroup.appendChild(fileInput);
     var fileSmall = document.createElement('small');

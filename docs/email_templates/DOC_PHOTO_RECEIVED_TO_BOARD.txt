@@ -1,0 +1,28 @@
+Hi Board,
+
+MEMBER PROFILE PHOTO SUBMITTED — FOR REVIEW
+
+A member has submitted a profile photo for approval.
+
+SUBMISSION DETAILS:
+Member: {{MEMBER_NAME}}
+Submitted: {{SUBMISSION_DATE}}
+Reference ID: {{SUBMISSION_ID}}
+
+NEXT STEPS:
+1. Review photo for appropriateness and clarity
+2. Approve or request resubmission
+3. You will see submission details in the Admin Portal
+
+TIMELINE:
+- Board review: 2-3 business days
+- Member notified of approval/rejection status
+
+YOUR ACTION:
+Please log into the Admin Portal to review and approve this photo submission.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need further details.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

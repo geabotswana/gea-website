@@ -94,6 +94,17 @@ function uploadFileSubmission(params) {
           REVIEW_DEADLINE: formatDate(reviewDeadline)
         });
       }
+    } else if (documentType === "photo") {
+      // Send notifications for photo submission to GEA Board (not RSO)
+      var individual = getMemberById(payload.individual_id);
+      if (individual) {
+        // Notify board to review
+        sendEmailFromTemplate("DOC_PHOTO_RECEIVED_TO_BOARD", EMAIL_BOARD, {
+          MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+          SUBMISSION_DATE: formatDate(payload.submitted_date),
+          SUBMISSION_ID: payload.submission_id
+        });
+      }
     }
 
     logAuditEntry(params.user_email || "member", AUDIT_FILE_SUBMISSION_CREATED, "FileSubmission", payload.submission_id,

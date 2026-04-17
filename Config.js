@@ -975,12 +975,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.68";
+var SYSTEM_VERSION          = "2.4.69";
 var SYSTEM_BUILD_DATE       = "2026-04-17";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: Route photo submission notifications to GEA Board instead of RSO";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-17 09:32:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: Remove duplicate RSO email on document submission";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-17 09:34:30";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

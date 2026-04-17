@@ -10182,28 +10182,19 @@ function submitPasswordReset(event) {
     photoInput.className = 'form-input';
     photoInput.accept = '.jpg,.jpeg,.png';
     photoInput.style.marginBottom = '12px';
-    photoInput.onchange = (function(memberId) {
-      return function() {
-        _pendingPhotoUpload = {
-          individualId: memberId,
-          fileInput: this
-        };
-        proceedWithPhotoUpload();
-      };
-    })(member.individual_id);
     photoUploadArea.appendChild(photoInput);
 
-    var uploadBtn = document.createElement('button');
-    uploadBtn.type = 'button';
-    uploadBtn.className = 'btn btn-primary';
-    uploadBtn.style.width = '100%';
-    uploadBtn.textContent = 'Upload/Replace Photo';
-    uploadBtn.onclick = (function(memberId) {
+    var submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.style.width = '100%';
+    submitBtn.textContent = 'Submit Photo';
+    submitBtn.onclick = (function(memberId) {
       return function() {
-        triggerPhotoUpload(memberId);
+        submitPhotoUpload(memberId);
       };
     })(member.individual_id);
-    photoUploadArea.appendChild(uploadBtn);
+    photoUploadArea.appendChild(submitBtn);
 
     var photoMsg = document.createElement('div');
     photoMsg.id = 'photoUploadMessage_' + member.individual_id;
@@ -10299,15 +10290,6 @@ function submitPasswordReset(event) {
     fileInput.className = 'form-input';
     fileInput.accept = '.jpg,.jpeg,.png,.pdf';
     fileInput.style.marginBottom = '12px';
-    fileInput.onchange = (function(memberId) {
-      return function() {
-        _pendingDocumentUpload = {
-          individualId: memberId,
-          fileInput: this
-        };
-        proceedWithDocumentUpload();
-      };
-    })(member.individual_id);
     fileGroup.appendChild(fileLabel);
     fileGroup.appendChild(fileInput);
     var fileSmall = document.createElement('small');
@@ -10320,10 +10302,10 @@ function submitPasswordReset(event) {
     uploadDocBtn.type = 'button';
     uploadDocBtn.className = 'btn btn-primary';
     uploadDocBtn.style.width = '100%';
-    uploadDocBtn.textContent = 'Upload Document';
+    uploadDocBtn.textContent = 'Submit Document';
     uploadDocBtn.onclick = (function(memberId) {
       return function() {
-        triggerDocumentUpload(memberId);
+        submitDocumentUpload(memberId);
       };
     })(member.individual_id);
     docUploadArea.appendChild(uploadDocBtn);
@@ -10449,18 +10431,6 @@ function submitPasswordReset(event) {
    */
   var _pendingPhotoUpload = {};
 
-  function triggerPhotoUpload(individualId) {
-    var fileInput = document.getElementById('photoInput_' + individualId);
-    _pendingPhotoUpload = {
-      individualId: individualId,
-      fileInput: fileInput
-    };
-    fileInput.click();
-    fileInput.onchange = function() {
-      proceedWithPhotoUpload();
-    };
-  }
-
   /**
    * Process photo upload after file selected
    */
@@ -10485,7 +10455,7 @@ function submitPasswordReset(event) {
     }
 
     var msgEl = document.getElementById('photoUploadMessage_' + individualId);
-    msgEl.textContent = 'Uploading...';
+    msgEl.textContent = 'Submitting...';
     msgEl.style.display = 'block';
     msgEl.style.background = '#e3f2fd';
     msgEl.style.color = '#1565C0';
@@ -10523,23 +10493,6 @@ function submitPasswordReset(event) {
   }
 
   /**
-   * Trigger document upload for a household member
-   */
-  var _pendingDocumentUpload = {};
-
-  function triggerDocumentUpload(individualId) {
-    var fileInput = document.getElementById('documentInput_' + individualId);
-    _pendingDocumentUpload = {
-      individualId: individualId,
-      fileInput: fileInput
-    };
-    fileInput.click();
-    fileInput.onchange = function() {
-      proceedWithDocumentUpload();
-    };
-  }
-
-  /**
    * Process document upload after file selected
    */
   function proceedWithDocumentUpload() {
@@ -10565,7 +10518,7 @@ function submitPasswordReset(event) {
     }
 
     var msgEl = document.getElementById('documentUploadMessage_' + individualId);
-    msgEl.textContent = 'Uploading...';
+    msgEl.textContent = 'Submitting...';
     msgEl.style.display = 'block';
     msgEl.style.background = '#e3f2fd';
     msgEl.style.color = '#1565C0';
@@ -10603,6 +10556,50 @@ function submitPasswordReset(event) {
       });
     };
     reader.readAsDataURL(file);
+  }
+
+  /**
+   * Submit photo upload for a household member
+   */
+  function submitPhotoUpload(individualId) {
+    var fileInput = document.getElementById('photoInput_' + individualId);
+    var file = fileInput.files[0];
+
+    if (!file) {
+      showError('Please select a photo file');
+      return;
+    }
+
+    _pendingPhotoUpload = {
+      individualId: individualId,
+      fileInput: fileInput
+    };
+    proceedWithPhotoUpload();
+  }
+
+  /**
+   * Submit document upload for a household member
+   */
+  function submitDocumentUpload(individualId) {
+    var fileInput = document.getElementById('documentInput_' + individualId);
+    var docType = document.getElementById('documentTypeSelect_' + individualId).value;
+    var file = fileInput.files[0];
+
+    if (!docType) {
+      showError('Please select a document type');
+      return;
+    }
+
+    if (!file) {
+      showError('Please select a document file');
+      return;
+    }
+
+    _pendingDocumentUpload = {
+      individualId: individualId,
+      fileInput: fileInput
+    };
+    proceedWithDocumentUpload();
   }
 
   /**

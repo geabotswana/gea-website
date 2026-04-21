@@ -178,6 +178,7 @@ function _routeAction(action, params) {
     case "admin_login": return _handleAdminLogin(params);
     case "admin_session": return _handleAdminSession(params);
     case "check_sessions_schema": return _handleCheckSessionsSchema(params);
+    case "migrate_submission_type": return _handleMigrateSubmissionType(params);
     case "logout":      return _handleLogout(params);
     case "password_reset_request": return _handlePasswordResetRequest(params);
     case "password_reset_complete": return _handlePasswordResetComplete(params);
@@ -551,6 +552,25 @@ function _handleCheckSessionsSchema(p) {
   } catch (e) {
     Logger.log("ERROR _handleCheckSessionsSchema: " + e);
     return errorResponse("Could not check Sessions schema: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: Migrate File Submissions submission_type field
+ * PURPOSE: Backfills the submission_type column for existing file submissions.
+ *          Sets "applicant" for rows with application_id, "member" for others.
+ * ACCESS: Board only
+ */
+function _handleMigrateSubmissionType(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var result = migrateSubmissionTypeField();
+    return successResponse(result);
+  } catch (e) {
+    Logger.log("ERROR _handleMigrateSubmissionType: " + e);
+    return errorResponse("Migration failed: " + e.toString(), "SERVER_ERROR");
   }
 }
 

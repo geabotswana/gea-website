@@ -2612,3 +2612,84 @@ function fixSessionsSchema() {
   var result = ensureSessionsRoleColumn();
   Logger.log("Result: " + JSON.stringify(result));
 }
+
+
+// ============================================================
+// FILE SUBMISSION DIAGNOSTICS
+// ============================================================
+
+/**
+ * Diagnostic: Check File Submissions sheet submission_type population.
+ * Shows how many rows have submission_type populated vs. missing.
+ */
+function diagnoseSubmissionType() {
+  Logger.log("\n=== DIAGNOSTIC: File Submissions submission_type Field ===");
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName("File Submissions");
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var submissionTypeCol = headers.indexOf("submission_type");
+    var applicationIdCol = headers.indexOf("application_id");
+    var statusCol = headers.indexOf("status");
+    var documentTypeCol = headers.indexOf("document_type");
+    var individualIdCol = headers.indexOf("individual_id");
+
+    if (submissionTypeCol === -1) {
+      Logger.log("✗ submission_type column not found!");
+      return;
+    }
+
+    var populated = 0;
+    var missing = 0;
+    var forRsoReview = 0;
+    var applicantDocs = 0;
+    var memberDocs = 0;
+
+    for (var i = 1; i < data.length; i++) {
+      var submissionType = String(data[i][submissionTypeCol] || "").trim();
+      var applicationId = String(data[i][applicationIdCol] || "").trim();
+      var status = String(data[i][statusCol] || "").toLowerCase().trim();
+      var docType = String(data[i][documentTypeCol] || "").toLowerCase().trim();
+
+      if (submissionType) {
+        populated++;
+        if (submissionType === "applicant") applicantDocs++;
+        if (submissionType === "member") memberDocs++;
+      } else {
+        missing++;
+      }
+
+      // Count documents pending RSO review
+      if ((docType === "passport" || docType === "omang") && status === "submitted") {
+        forRsoReview++;
+      }
+    }
+
+    Logger.log("Total rows: " + (data.length - 1));
+    Logger.log("submission_type populated: " + populated);
+    Logger.log("submission_type missing: " + missing);
+    Logger.log("  - Applicant documents: " + applicantDocs);
+    Logger.log("  - Member documents: " + memberDocs);
+    Logger.log("\nDocuments pending RSO review (status=submitted, type=passport|omang): " + forRsoReview);
+
+    if (missing > 0) {
+      Logger.log("\n⚠️  " + missing + " rows missing submission_type!");
+      Logger.log("Run fixSubmissionType() to backfill these values.");
+    } else {
+      Logger.log("\n✓ All rows have submission_type populated");
+    }
+  } catch (e) {
+    Logger.log("ERROR diagnoseSubmissionType: " + e);
+  }
+}
+
+/**
+ * Fixes missing submission_type values in File Submissions sheet.
+ * Safe to run multiple times (idempotent).
+ */
+function fixSubmissionType() {
+  Logger.log("\n=== FIXING: File Submissions submission_type ===");
+  var result = migrateSubmissionTypeField();
+  Logger.log("Result: " + JSON.stringify(result));
+}

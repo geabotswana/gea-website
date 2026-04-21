@@ -10511,9 +10511,9 @@ function submitPasswordReset(event) {
   }
 
   /**
-   * Process document upload after file selected
+   * Process document upload after file selected (Member Portal)
    */
-  function proceedWithDocumentUpload() {
+  function proceedWithMemberDocumentUpload() {
     var individualId = _pendingDocumentUpload.individualId;
     var docTypeEl = document.getElementById('documentTypeSelect_' + individualId);
     var docType = docTypeEl ? docTypeEl.value : "";
@@ -10619,7 +10619,7 @@ function submitPasswordReset(event) {
       individualId: individualId,
       fileInput: fileInput
     };
-    proceedWithDocumentUpload();
+    proceedWithMemberDocumentUpload();
   }
 
   /**

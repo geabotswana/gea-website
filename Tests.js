@@ -2231,35 +2231,52 @@ function testGetCurrentMembershipYear() {
 function testPhotoExpirationCalculation() {
   Logger.log("\n--- TEST: Photo Expiration Calculation ---");
 
-  // Test 1: Child photo (under 17) should expire in 1 year
+  // Test 1: Child photo (under 17) uploaded during regular membership year
   // Born: 2010-01-15 (child, 15 years old on April 21, 2026)
   // Upload: April 21, 2026 (during 2025-26 membership year)
-  // Should expire: August 1, 2026 (start of next membership year)
+  // Should expire: August 1, 2026 (1 year from membership year start Aug 2025)
   var childDOB = new Date(2010, 0, 15);
   var uploadDate = new Date(2026, 3, 21); // April 21, 2026
   var childExpiry = calculatePhotoExpirationDate(childDOB, uploadDate);
-  _assert("Child photo expires in 1 year",
+  _assert("Child photo during regular year expires in 1 year",
     childExpiry && childExpiry.getFullYear() === 2026 && childExpiry.getMonth() === 7 && childExpiry.getDate() === 1,
     childExpiry ? childExpiry.toLocaleDateString() : "null");
 
-  // Test 2: Adult photo (17+) should expire in 3 years
+  // Test 2: Adult photo (17+) uploaded during regular membership year
   // Born: 2005-01-15 (adult, 21 years old on April 21, 2026)
   // Upload: April 21, 2026 (during 2025-26 membership year)
-  // Should expire: August 1, 2028 (three membership years later)
+  // Should expire: August 1, 2028 (3 years from membership year start Aug 2025)
   var adultDOB = new Date(2005, 0, 15);
   var adultExpiry = calculatePhotoExpirationDate(adultDOB, uploadDate);
-  _assert("Adult photo expires in 3 years",
+  _assert("Adult photo during regular year expires in 3 years",
     adultExpiry && adultExpiry.getFullYear() === 2028 && adultExpiry.getMonth() === 7 && adultExpiry.getDate() === 1,
     adultExpiry ? adultExpiry.toLocaleDateString() : "null");
 
-  // Test 3: Membership year start calculation
+  // Test 3: Child photo uploaded during renewal season (July/expiry month)
+  // Upload: July 10, 2026 (renewal season, applies to next year 2026-27)
+  // Should expire: August 1, 2027 (1 year from next membership year start Aug 2026)
+  var julyUploadDate = new Date(2026, 6, 10); // July 10, 2026
+  var childJulyExpiry = calculatePhotoExpirationDate(childDOB, julyUploadDate);
+  _assert("Child photo during renewal season (July) applies to next year",
+    childJulyExpiry && childJulyExpiry.getFullYear() === 2027 && childJulyExpiry.getMonth() === 7 && childJulyExpiry.getDate() === 1,
+    childJulyExpiry ? childJulyExpiry.toLocaleDateString() : "null");
+
+  // Test 4: Adult photo uploaded during renewal season (July/expiry month)
+  // Upload: July 10, 2026 (renewal season, applies to next year 2026-27)
+  // Should expire: August 1, 2029 (3 years from next membership year start Aug 2026)
+  var adultJulyExpiry = calculatePhotoExpirationDate(adultDOB, julyUploadDate);
+  _assert("Adult photo during renewal season (July) applies to next year",
+    adultJulyExpiry && adultJulyExpiry.getFullYear() === 2029 && adultJulyExpiry.getMonth() === 7 && adultJulyExpiry.getDate() === 1,
+    adultJulyExpiry ? adultJulyExpiry.toLocaleDateString() : "null");
+
+  // Test 5: Membership year start calculation
   // April 21, 2026 (in 2025-26 year) should give August 1, 2025
   var membershipStart = getMembershipYearStartDate(uploadDate);
   _assert("Membership year start for April 2026 is Aug 1, 2025",
     membershipStart && membershipStart.getFullYear() === 2025 && membershipStart.getMonth() === 7 && membershipStart.getDate() === 1,
     membershipStart ? membershipStart.toLocaleDateString() : "null");
 
-  // Test 4: August 15, 2026 should give August 1, 2026 (already in 2026-27 year)
+  // Test 6: August 15, 2026 should give August 1, 2026 (already in 2026-27 year)
   var aug2026Date = new Date(2026, 7, 15);
   var membershipStart2 = getMembershipYearStartDate(aug2026Date);
   _assert("Membership year start for August 2026 is Aug 1, 2026",

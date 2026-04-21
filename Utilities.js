@@ -584,6 +584,9 @@ function getMembershipYearStartDate(referenceDate) {
  * Children under PHOTO_EXPIRATION_AGE_THRESHOLD: expires after 1 membership year
  * Adults: expires after 3 membership years
  *
+ * Special case: Photos uploaded in the membership expiry month (renewal season)
+ * apply to the next membership year.
+ *
  * @param {Date} dateOfBirth      Individual's date of birth
  * @param {Date} approvalDate     Photo approval date (when it becomes current)
  * @returns {Date}  The expiration date
@@ -608,6 +611,13 @@ function calculatePhotoExpirationDate(dateOfBirth, approvalDate) {
 
   // Get the membership year start date at time of approval
   var membershipYearStart = getMembershipYearStartDate(approval);
+
+  // If uploaded in the expiry month (renewal season), apply to next membership year
+  var approvalMonth = approval.getMonth() + 1; // Convert from 0-11 to 1-12
+  if (approvalMonth === MEMBERSHIP_EXPIRY_MONTH) {
+    // Move to next membership year start
+    membershipYearStart.setFullYear(membershipYearStart.getFullYear() + 1);
+  }
 
   // Add the number of years
   var expirationDate = new Date(membershipYearStart);

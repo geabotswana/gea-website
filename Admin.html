@@ -3434,11 +3434,83 @@
   // ============================================================ //
   
   /**
+   * Updates all sidebar badges based on current pending items.
+   * Called on page load and when dashboards update.
+   */
+  function updateSidebarBadges() {
+    // Load dashboard stats for badge counts
+    apiCall('admin_dashboard_stats', {}).then(function(res) {
+      if (res.success && res.data) {
+        var data = res.data;
+
+        // Update Applications badge
+        var appBadge = document.getElementById('applications-badge');
+        if (appBadge) {
+          appBadge.textContent = data.pending_applications || 0;
+          appBadge.style.display = (data.pending_applications > 0) ? '' : 'none';
+        }
+
+        // Update Photos badge
+        var photoBadge = document.getElementById('photos-badge');
+        if (photoBadge) {
+          photoBadge.textContent = data.pending_photos || 0;
+          photoBadge.style.display = (data.pending_photos > 0) ? '' : 'none';
+        }
+      }
+    });
+
+    // Load waitlist badge count
+    apiCall('admin_waitlist_list', {}).then(function(res) {
+      if (res.success && res.data) {
+        var badge = document.getElementById('waitlist-badge');
+        var count = res.data.count || 0;
+        if (badge) {
+          badge.textContent = count;
+          badge.style.display = count > 0 ? '' : 'none';
+        }
+      }
+    });
+
+    // Load RSO-specific badges if user is RSO
+    var userRole = currentUser ? currentUser.role : 'board';
+    var isRsoApprove = userRole === 'rso_approve' || userRole === 'rso' || userRole === 'rso-approve';
+
+    if (isRsoApprove) {
+      // Update RSO Documents badge (ADR + MDR)
+      apiCall('admin_rso_document_dashboard_stats', {}).then(function(res) {
+        if (res.success && res.data) {
+          var total = (res.data.adr_count || 0) + (res.data.mdr_count || 0);
+          var badge = document.getElementById('rso-documents-badge');
+          if (badge) {
+            badge.textContent = total;
+            badge.style.display = total > 0 ? '' : 'none';
+          }
+        }
+      });
+
+      // Update RSO Applications badge
+      apiCall('admin_rso_applications_ready', {}).then(function(res) {
+        if (res.success && res.data) {
+          var count = res.data.applications ? res.data.applications.length : 0;
+          var badge = document.getElementById('rso-applications-badge');
+          if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? '' : 'none';
+          }
+        }
+      });
+    }
+  }
+
+  /**
    * Loads the dashboard with summary statistics.
    * Calls the backend for counts of pending items and upcoming activity.
    * Updates the stat cards and lists on the dashboard page.
    */
   function loadDashboard() {
+    // Update sidebar badges immediately on load
+    updateSidebarBadges();
+
     // Check user role for RSO-specific dashboard
     var userRole = currentUser ? currentUser.role : 'board';
     console.log('DEBUG: loadDashboard called - currentUser:', currentUser);
@@ -3477,20 +3549,6 @@
           boardPending.textContent = '(' + (data.board_pending_applications || 0) + ' awaiting board)';
         }
 
-        // Update Applications badge in sidebar
-        var appBadge = document.getElementById('applications-badge');
-        if (appBadge) {
-          appBadge.textContent = data.pending_applications || 0;
-          appBadge.style.display = (data.pending_applications > 0) ? '' : 'none';
-        }
-
-        // Update Photos badge in sidebar
-        var photoBadge = document.getElementById('photos-badge');
-        if (photoBadge) {
-          photoBadge.textContent = data.pending_photos || 0;
-          photoBadge.style.display = (data.pending_photos > 0) ? '' : 'none';
-        }
-
         // Photo submissions pending
         document.getElementById('dashPhotoCount').textContent = data.pending_photos || '0';
 
@@ -3505,18 +3563,6 @@
       }
     });
 
-    // Load waitlist badge count
-    apiCall('admin_waitlist_list', {}).then(function(res) {
-      if (res.success && res.data) {
-        var badge = document.getElementById('waitlist-badge');
-        var count = res.data.count || 0;
-        if (badge) {
-          badge.textContent = count;
-          badge.style.display = count > 0 ? '' : 'none';
-        }
-      }
-    });
-
     // Populate upcoming reservations list
     var upcomingHtml = '<p style="text-align: center; color: #999; padding: 20px;">Loading upcoming reservations...</p>';
     document.getElementById('dashUpcomingList').innerHTML = upcomingHtml;
@@ -3528,6 +3574,9 @@
    * Loads RSO approval dashboard with RSO-specific metrics.
    */
   function _loadRsoApprovalDashboard() {
+    // Update sidebar badges for RSO user
+    updateSidebarBadges();
+
     console.log('DEBUG: _loadRsoApprovalDashboard called');
     var dashContainer = document.getElementById('dashboard');
     console.log('DEBUG: dashboard element found:', !!dashContainer);
@@ -3595,6 +3644,9 @@
    * Shows: Event Calendar, Approved Guest Lists, and Member Directory.
    */
   function _loadRsoNotifyDashboard() {
+    // Update sidebar badges for RSO coordinator
+    updateSidebarBadges();
+
     var dashContainer = document.getElementById('dashboard');
     if (!dashContainer) return;
 

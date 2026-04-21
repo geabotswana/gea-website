@@ -7407,21 +7407,23 @@
 
   function loadRsoAppsReady() {
     var container = document.getElementById('rsoAppsReadyContent');
-    var section = document.getElementById('rsoAppsReadySection');
+    if (!container) {
+      console.error('ERROR: rsoAppsReadyContent element not found');
+      return;
+    }
 
     apiCall('admin_rso_applications_ready', {}).then(function(res) {
       if (!res.success) {
-        section.style.display = 'none';
+        container.innerHTML = '<p style="color:#999;">No applications ready for review</p>';
         return;
       }
 
       var apps = res.data.applications || [];
       if (apps.length === 0) {
-        section.style.display = 'none';
+        container.innerHTML = '<p style="color:#999;">No applications ready for review</p>';
         return;
       }
 
-      section.style.display = 'block';
       var table = document.createElement('div');
       table.className = 'table-container';
       var tbl = document.createElement('table');
@@ -7484,8 +7486,9 @@
       table.appendChild(tbl);
       container.innerHTML = '';
       container.appendChild(table);
-    }).catch(function() {
-      section.style.display = 'none';
+    }).catch(function(err) {
+      console.error('Error loading RSO applications:', err);
+      container.innerHTML = '<p style="color:#d32f2f;">Error loading applications. Please try again.</p>';
     });
   }
 

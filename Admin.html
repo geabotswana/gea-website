@@ -2689,12 +2689,19 @@
     if (currentToken) {
       // User has a valid session token — fetch admin data and show authenticated UI
       apiCall('admin_session', {}).then(function(res) {
+        console.log('DEBUG: admin_session response:', res);
+        console.log('DEBUG: res.data:', res.data);
+        console.log('DEBUG: res.data.role:', res.data ? res.data.role : 'N/A');
+
         if (res.success && res.data) {
           currentUser = { admin: res.data.admin, role: res.data.role };
+          console.log('DEBUG: currentUser set to:', currentUser);
+          console.log('DEBUG: currentUser.role:', currentUser.role);
           _navigateToRoleLandingPage(res.data.role);  // set active page BEFORE showAuthenticatedUI so _applyNavRoleFilter won't redirect
           showAuthenticatedUI();
         } else {
           // Token invalid, clear and show login
+          console.log('DEBUG: admin_session failed - res.success:', res.success, 'res.data:', res.data);
           sessionStorage.removeItem('gea_token');
           currentToken = null;
           currentUser = null;
@@ -3410,8 +3417,11 @@
   function loadDashboard() {
     // Check user role for RSO-specific dashboard
     var userRole = currentUser ? currentUser.role : 'board';
+    console.log('DEBUG: loadDashboard called - currentUser:', currentUser);
+    console.log('DEBUG: loadDashboard - userRole:', userRole);
     var isRsoApprove = userRole === 'rso_approve' || userRole === 'rso' || userRole === 'rso-approve';
     var isRsoNotify = userRole === 'rso_notify' || userRole === 'rso-notify';
+    console.log('DEBUG: loadDashboard - isRsoApprove:', isRsoApprove, 'isRsoNotify:', isRsoNotify);
 
     if (isRsoApprove) {
       // Load RSO approval dashboard (full access to review and approve)

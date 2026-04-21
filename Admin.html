@@ -3489,12 +3489,17 @@
     var rsoHtml = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">';
 
     rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #0A3161; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
-    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Documents Pending Review</div>';
-    rsoHtml += '<div style="font-size: 32px; color: #0A3161; font-weight: 600;" id="rsoDashDocCount">—</div>';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Applicant Documents (ADR)</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #0A3161; font-weight: 600;" id="rsoDashAdrCount">—</div>';
+    rsoHtml += '</div>';
+
+    rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #1976D2; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Member Documents (MDR)</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #1976D2; font-weight: 600;" id="rsoDashMdrCount">—</div>';
     rsoHtml += '</div>';
 
     rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #2E7D32; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
-    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Applications Ready for Review</div>';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Applications Ready for Review (MAR)</div>';
     rsoHtml += '<div style="font-size: 32px; color: #2E7D32; font-weight: 600;" id="rsoDashAppCount">—</div>';
     rsoHtml += '</div>';
 
@@ -3507,11 +3512,13 @@
 
     dashContent.innerHTML = rsoHtml;
 
-    // Load document count
-    apiCall('admin_rso_pending_documents', {}).then(function(res) {
+    // Load document dashboard stats (ADR and MDR)
+    apiCall('admin_rso_document_dashboard_stats', {}).then(function(res) {
       if (res.success && res.data) {
-        var docCount = document.getElementById('rsoDashDocCount');
-        if (docCount) docCount.textContent = res.data.count || 0;
+        var adrCount = document.getElementById('rsoDashAdrCount');
+        if (adrCount) adrCount.textContent = res.data.adr_count || 0;
+        var mdrCount = document.getElementById('rsoDashMdrCount');
+        if (mdrCount) mdrCount.textContent = res.data.mdr_count || 0;
       }
     });
 

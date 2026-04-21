@@ -237,6 +237,7 @@ function _routeAction(action, params) {
     case "admin_finalize_guest_list":      return _handleAdminFinalizeGuestList(params);
     case "admin_guest_histories":          return _handleAdminGuestHistories(params);
     case "admin_rso_pending_documents":    return _handleAdminRsoPendingDocuments(params);
+    case "admin_rso_document_dashboard_stats": return _handleAdminRsoDocumentDashboardStats(params);
     case "admin_rso_approve_document":     return _handleAdminRsoApproveDocument(params);
     case "admin_rso_pending_member_documents": return _handleAdminRsoPendingMemberDocuments(params);
     case "approve_rso_member_document":    return _handleApproveRsoMemberDocument(params);
@@ -4040,18 +4041,40 @@ function _handleAdminResendEmail(p) {
 
 /**
  * HANDLER: _handleAdminRsoPendingDocuments
- * PURPOSE: rso_approve views passport/omang documents awaiting RSO review.
+ * PURPOSE: rso_approve views applicant (ADR) passport/omang documents awaiting RSO review.
  * RETURNS: { success, data: { documents: [...], count } }
  */
 function _handleAdminRsoPendingDocuments(p) {
   var auth = requireAuth(p.token, "rso_approve");
   if (!auth.ok) return auth.response;
   try {
-    var docs = getDocumentsForRsoReview(p.document_type || null);
+    var docs = getApplicantDocumentsForRsoReview(p.document_type || null);
     return successResponse({ documents: docs, count: docs.length });
   } catch (e) {
     Logger.log("ERROR _handleAdminRsoPendingDocuments: " + e);
     return errorResponse("Could not load documents.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminRsoDocumentDashboardStats
+ * PURPOSE: Returns document counts for RSO dashboard (both ADR and MDR)
+ * RETURNS: { success, data: { adr_count, mdr_count, total_count } }
+ */
+function _handleAdminRsoDocumentDashboardStats(p) {
+  var auth = requireAuth(p.token, "rso_approve");
+  if (!auth.ok) return auth.response;
+  try {
+    var adrDocs = getApplicantDocumentsForRsoReview();
+    var mdrDocs = getMemberDocumentsForRsoReview();
+    return successResponse({
+      adr_count: adrDocs.length,
+      mdr_count: mdrDocs.length,
+      total_count: adrDocs.length + mdrDocs.length
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminRsoDocumentDashboardStats: " + e);
+    return errorResponse("Could not load document stats.", "SERVER_ERROR");
   }
 }
 
@@ -4196,32 +4219,20 @@ function _handleAdminRsoPendingMemberDocuments(p) {
   if (!auth.ok) return auth.response;
 
   try {
-    var fileSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
-    var fileData = fileSheet.getDataRange().getValues();
-    var fileHeaders = fileData[0];
-    var docs = [];
+    var docs = getMemberDocumentsForRsoReview(p.document_type || null);
+    var formatted = docs.map(function(doc) {
+      return {
+        submission_id: doc.submission_id,
+        member_name: doc.applicant_name,
+        member_email: doc.applicant_email,
+        individual_id: doc.individual_id,
+        document_type: doc.document_type,
+        submitted_date: doc.submitted_date,
+        file_id: doc.file_id
+      };
+    });
 
-    for (var i = 1; i < fileData.length; i++) {
-      var file = rowToObject(fileHeaders, fileData[i]);
-      // Only post-activation documents: not part of applications, status=submitted, not photo
-      if (file.document_type && (file.document_type === "passport" || file.document_type === "omang") &&
-          file.status === "submitted" && !file.application_id) {
-        if (p.document_type && file.document_type !== p.document_type) continue;
-
-        var individual = getMemberById(file.individual_id);
-        docs.push({
-          submission_id: file.submission_id,
-          member_name: individual ? (individual.first_name + " " + individual.last_name) : file.individual_id,
-          member_email: individual ? individual.email : "",
-          individual_id: file.individual_id,
-          document_type: file.document_type,
-          submitted_date: formatDate(file.submitted_date),
-          file_id: file.file_id
-        });
-      }
-    }
-
-    return successResponse({ documents: docs });
+    return successResponse({ documents: formatted, count: formatted.length });
   } catch (e) {
     Logger.log("ERROR _handleAdminRsoPendingMemberDocuments: " + e);
     return errorResponse("Could not load member documents.", "SERVER_ERROR");

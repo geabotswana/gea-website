@@ -2192,12 +2192,20 @@ function _handleUploadDocument(p) {
       return errorResponse("Invalid document type.", "INVALID_PARAM");
     }
 
-    // Decode base64 to blob
+    // Decode base64 to blob with proper MIME type
     var ext = p.file_name.indexOf('.') !== -1 ? p.file_name.split('.').pop().toLowerCase() : 'bin';
     var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
     var meaningfulName = p.individual_id + '_' + p.document_type + '_' + dateStr + '.' + ext;
     var decodedBytes = Utilities.base64Decode(p.file_data_base64);
-    var blob = Utilities.newBlob(decodedBytes, "application/octet-stream", meaningfulName);
+
+    // Detect MIME type based on file extension
+    var mimeType = "application/octet-stream";
+    var extLower = ext.toLowerCase();
+    if (extLower === 'png') mimeType = "image/png";
+    else if (extLower === 'jpg' || extLower === 'jpeg') mimeType = "image/jpeg";
+    else if (extLower === 'pdf') mimeType = "application/pdf";
+
+    var blob = Utilities.newBlob(decodedBytes, mimeType, meaningfulName);
 
     // Use FileSubmissionService to handle upload
     var uploadParams = {

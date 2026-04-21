@@ -3425,17 +3425,21 @@
 
     if (isRsoApprove) {
       // Load RSO approval dashboard (full access to review and approve)
+      console.log('DEBUG: Calling _loadRsoApprovalDashboard and returning');
       _loadRsoApprovalDashboard();
+      console.log('DEBUG: Returned from _loadRsoApprovalDashboard, exiting loadDashboard');
       return;
     }
 
     if (isRsoNotify) {
       // Load RSO coordinator dashboard (read-only: calendar and guest lists only)
+      console.log('DEBUG: Calling _loadRsoNotifyDashboard and returning');
       _loadRsoNotifyDashboard();
       return;
     }
 
     // Load board/mgt dashboard statistics from backend
+    console.log('DEBUG: Executing board/mgt dashboard code');
     apiCall('admin_dashboard_stats', {}).then(function(res) {
       if (res.success && res.data) {
         var data = res.data;
@@ -3500,7 +3504,9 @@
    * Loads RSO approval dashboard with RSO-specific metrics.
    */
   function _loadRsoApprovalDashboard() {
+    console.log('DEBUG: _loadRsoApprovalDashboard called');
     var dashContent = document.getElementById('dashboardContent');
+    console.log('DEBUG: dashContent element found:', !!dashContent);
     if (!dashContent) return;
 
     // Show RSO-specific dashboard
@@ -3528,7 +3534,9 @@
 
     rsoHtml += '</div>';
 
+    console.log('DEBUG: Setting dashContent.innerHTML to RSO dashboard HTML');
     dashContent.innerHTML = rsoHtml;
+    console.log('DEBUG: dashContent.innerHTML set. Current HTML:', dashContent.innerHTML.substring(0, 100) + '...');
 
     // Load document dashboard stats (ADR and MDR)
     apiCall('admin_rso_document_dashboard_stats', {}).then(function(res) {

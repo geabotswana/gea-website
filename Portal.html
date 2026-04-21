@@ -8143,9 +8143,12 @@ function submitPasswordReset(event) {
       // For passport and omang, show expiration date modal
       if (docType === 'passport' || docType === 'omang') {
         var docTypeLabel = docType === 'passport' ? 'Passport' : 'OMANG';
-        document.getElementById('docExpirationDocType').textContent = docTypeLabel;
-        document.getElementById('docExpirationDateInput').value = '';
-        document.getElementById('docExpirationModal').style.display = 'flex';
+        var docTypeEl = document.getElementById('docExpirationDocType');
+        var dateInput = document.getElementById('docExpirationDateInput');
+        var modal = document.getElementById('docExpirationModal');
+        if (docTypeEl) docTypeEl.textContent = docTypeLabel;
+        if (dateInput) dateInput.value = '';
+        if (modal) modal.style.display = 'flex';
       } else {
         // For other documents, proceed directly
         proceedWithDocumentUpload();

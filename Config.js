@@ -414,6 +414,13 @@ var DOC_TYPE_NONE       = "None";
 // Passport expiration warning (months before expiry to notify member)
 var PASSPORT_WARNING_MONTHS     = 6;
 
+// Photo expiration policy (soft expiration - request renewal but don't deactivate)
+var PHOTO_EXPIRATION_AGE_THRESHOLD = 17;  // Age at which photo expiration policy changes
+var PHOTO_EXPIRATION_YEARS_CHILD   = 1;   // Child photo valid for 1 membership year
+var PHOTO_EXPIRATION_YEARS_ADULT   = 3;   // Adult photo valid for 3 membership years
+var MEMBERSHIP_YEAR_START_MONTH     = 8;  // August (month 8) is start of membership year
+var MEMBERSHIP_YEAR_START_DAY       = 1;  // August 1 is the exact start date
+
 // Youth document policy
 var YOUTH_DOCUMENT_REQUIRED     = false; // Require docs for under-16? (pending review)
 
@@ -975,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.72";
-var SYSTEM_BUILD_DATE       = "2026-04-17";
+var SYSTEM_VERSION          = "2.4.74";
+var SYSTEM_BUILD_DATE       = "2026-04-21";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Feature: RSO rejection workflows with board diplomatic messaging";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-17 10:57:58";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Feature: Photo expiration dates based on membership year and age (child 1yr, adult 3yr)";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-21 15:50:12";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

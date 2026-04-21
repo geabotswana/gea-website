@@ -44,6 +44,18 @@ function uploadFileSubmission(params) {
     var file = folder.createFile(params.file_blob).setName(params.file_name);
 
     var submissionSheet = _getFileSubmissionsSheet_();
+    var applicationId = params.application_id || "";
+
+    // Calculate photo expiration date if not provided
+    var expirationDate = params.document_expiration_date || "";
+    if (isPhoto && !expirationDate) {
+      var individual = getMemberById(params.individual_id);
+      if (individual && individual.date_of_birth) {
+        var calculatedExpiry = calculatePhotoExpirationDate(individual.date_of_birth, new Date());
+        expirationDate = calculatedExpiry || "";
+      }
+    }
+
     var payload = {
       submission_id: generateId("FSB"),
       individual_id: params.individual_id,
@@ -59,8 +71,9 @@ function uploadFileSubmission(params) {
       is_current: true,
       member_facing_rejection_reason: "",
       disabled_date: "",
-      application_id: params.application_id || "",
-      document_expiration_date: params.document_expiration_date || "",
+      application_id: applicationId,
+      submission_type: applicationId ? "applicant" : "member",
+      document_expiration_date: expirationDate,
       expiration_warning_6m_sent_date: "",
       expiration_warning_1m_sent_date: ""
     };
@@ -448,6 +461,8 @@ function checkDocumentExpirationWarnings() {
     var s = submissions[i];
     if (!s.is_current || (s.status !== "verified" && s.status !== "approved")) continue;
     var docType = String(s.document_type || "").toLowerCase();
+    // Only send expiration warnings for passports and onangs, not photos
+    // Photos show need for renewal in Member Portal, no emails
     if (docType !== "passport" && docType !== "omang") continue;
     if (!s.document_expiration_date) continue;
     var expiry = new Date(s.document_expiration_date);
@@ -853,6 +868,28 @@ function _allRequiredFilesComplete_(submissions) {
 // ============================================================
 
 /**
+ * Returns all applicant (ADR) passport/omang submissions with status="submitted" awaiting RSO review.
+ * Filters by submission_type="applicant".
+ *
+ * @param {string|null} documentTypeFilter  "passport", "omang", or null for all
+ * @returns {Array}
+ */
+function getApplicantDocumentsForRsoReview(documentTypeFilter) {
+  return _getDocumentsForRsoReviewByType_("applicant", documentTypeFilter);
+}
+
+/**
+ * Returns all member (MDR) passport/omang submissions with status="submitted" awaiting RSO review.
+ * Filters by submission_type="member".
+ *
+ * @param {string|null} documentTypeFilter  "passport", "omang", or null for all
+ * @returns {Array}
+ */
+function getMemberDocumentsForRsoReview(documentTypeFilter) {
+  return _getDocumentsForRsoReviewByType_("member", documentTypeFilter);
+}
+
+/**
  * Returns all passport/omang submissions with status="submitted" awaiting RSO review.
  * Optionally filtered by document_type.
  *
@@ -860,6 +897,18 @@ function _allRequiredFilesComplete_(submissions) {
  * @returns {Array}
  */
 function getDocumentsForRsoReview(documentTypeFilter) {
+  return _getDocumentsForRsoReviewByType_(null, documentTypeFilter);
+}
+
+/**
+ * Helper: Returns documents for RSO review, filtered by type and document type.
+ *
+ * @param {string|null} submissionType  "applicant", "member", or null for all
+ * @param {string|null} documentTypeFilter  "passport", "omang", or null for all
+ * @returns {Array}
+ * @private
+ */
+function _getDocumentsForRsoReviewByType_(submissionType, documentTypeFilter) {
   try {
     var sheet   = _getFileSubmissionsSheet_();
     var data    = sheet.getDataRange().getValues();
@@ -870,29 +919,28 @@ function getDocumentsForRsoReview(documentTypeFilter) {
       var obj = rowToObject(headers, data[i]);
       var docType = String(obj.document_type || "").toLowerCase();
       var status  = String(obj.status || "").toLowerCase();
+      var subType = String(obj.submission_type || "").toLowerCase();
 
       // RSO reviews passport and omang only; status must be "submitted"
       if (docType !== "passport" && docType !== "omang") continue;
       if (status !== "submitted") continue;
       if (documentTypeFilter && docType !== documentTypeFilter.toLowerCase()) continue;
+      if (submissionType && subType !== submissionType.toLowerCase()) continue;
 
       // Get applicant name from Individuals sheet
       var individual = getMemberById(obj.individual_id);
-      // Look up application_id via household so RSO can load full application context
-      var applicationId = "";
-      if (individual && individual.household_id) {
-        var app = _getApplicationByHouseholdId(individual.household_id);
-        if (app) applicationId = app.application_id || "";
-      }
+      var applicationId = obj.application_id || "";
+
       results.push({
         submission_id:   obj.submission_id,
         individual_id:   obj.individual_id,
         application_id:  applicationId,
+        submission_type: obj.submission_type || "unknown",
         applicant_name:  individual ? (individual.first_name + " " + individual.last_name) : "(unknown)",
         applicant_email: individual ? individual.email : "",
         document_type:   obj.document_type,
         status:          obj.status,
-        submitted_date:  obj.submission_timestamp ? formatDate(new Date(obj.submission_timestamp), true) : "",
+        submitted_date:  obj.submitted_date ? formatDate(new Date(obj.submitted_date), true) : "",
         file_id:         obj.file_id || "",
         file_name:       obj.file_name || ""
       });
@@ -1272,6 +1320,48 @@ function sendBoardApplicationRejectionResponse(applicationId, boardMessage, allo
     return { ok: true };
   } catch (e) {
     Logger.log("ERROR sendBoardApplicationRejectionResponse: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * MIGRATION: Backfill submission_type field for existing documents.
+ * Sets "applicant" if application_id is not empty, "member" if empty.
+ * Run once to populate all existing documents.
+ */
+function migrateSubmissionTypeField() {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var submissionTypeColIndex = headers.indexOf("submission_type");
+    var applicationIdColIndex = headers.indexOf("application_id");
+
+    if (submissionTypeColIndex === -1) {
+      Logger.log("WARNING: submission_type column not found in File Submissions sheet");
+      return { ok: false, error: "submission_type column not found" };
+    }
+
+    if (applicationIdColIndex === -1) {
+      Logger.log("WARNING: application_id column not found in File Submissions sheet");
+      return { ok: false, error: "application_id column not found" };
+    }
+
+    var updatedCount = 0;
+    for (var i = 1; i < data.length; i++) {
+      var submissionType = String(data[i][submissionTypeColIndex] || "").trim();
+      if (!submissionType) {
+        var applicationId = String(data[i][applicationIdColIndex] || "").trim();
+        var newType = applicationId ? "applicant" : "member";
+        sheet.getRange(i + 1, submissionTypeColIndex + 1).setValue(newType);
+        updatedCount++;
+      }
+    }
+
+    Logger.log("SUCCESS: Migrated " + updatedCount + " documents with submission_type field");
+    return { ok: true, updated: updatedCount };
+  } catch (e) {
+    Logger.log("ERROR migrateSubmissionTypeField: " + e);
     return { ok: false, error: String(e) };
   }
 }

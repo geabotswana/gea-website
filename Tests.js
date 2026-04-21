@@ -2557,3 +2557,58 @@ function runAdminHandlerTests() {
   Logger.log("ADMIN HANDLER TESTS COMPLETE");
   Logger.log("========================================");
 }
+
+
+// ============================================================
+// SCHEMA MIGRATION & DIAGNOSTICS
+// ============================================================
+
+/**
+ * Diagnostic: Check Sessions sheet schema for role column.
+ * This identifies why currentUser.role is undefined on RSO admin login.
+ */
+function diagnoseSessionsSchema() {
+  Logger.log("\n=== DIAGNOSTIC: Sessions Sheet Schema ===");
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var rolCol  = headers.indexOf("role");
+
+    Logger.log("Sessions sheet headers: " + JSON.stringify(headers));
+    Logger.log("Total sessions: " + Math.max(0, data.length - 1));
+    Logger.log("role column exists: " + (rolCol >= 0));
+    Logger.log("role column index: " + rolCol);
+
+    if (rolCol < 0) {
+      Logger.log("\n⚠️  ISSUE FOUND: Sessions sheet is MISSING 'role' column!");
+      Logger.log("This is why currentUser.role is undefined on the frontend.");
+      Logger.log("\nFIX: Run fixSessionsSchema() to add and backfill the column.");
+    } else {
+      Logger.log("\n✓ Sessions sheet HAS role column");
+
+      // Check if role values are populated
+      var filledCount = 0;
+      for (var i = 1; i < data.length; i++) {
+        if (data[i][rolCol]) filledCount++;
+      }
+      Logger.log("Sessions with role populated: " + filledCount + "/" + (data.length - 1));
+
+      if (filledCount < data.length - 1) {
+        Logger.log("\n⚠️  Some sessions are missing role values. Run fixSessionsSchema() to backfill.");
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR diagnoseSessionsSchema: " + e);
+  }
+}
+
+/**
+ * Fixes the Sessions sheet by ensuring role column exists and backfilling data.
+ * Safe to run multiple times (idempotent).
+ */
+function fixSessionsSchema() {
+  Logger.log("\n=== FIXING: Sessions Sheet Schema ===");
+  var result = ensureSessionsRoleColumn();
+  Logger.log("Result: " + JSON.stringify(result));
+}

@@ -3476,14 +3476,23 @@
     var isRsoApprove = userRole === 'rso_approve' || userRole === 'rso' || userRole === 'rso-approve';
 
     if (isRsoApprove) {
-      // Update RSO Documents badge (ADR + MDR)
+      // Update RSO Applicant Documents (ADR) and Member Documents (MDR) badges separately
       apiCall('admin_rso_document_dashboard_stats', {}).then(function(res) {
         if (res.success && res.data) {
-          var total = (res.data.adr_count || 0) + (res.data.mdr_count || 0);
-          var badge = document.getElementById('rso-documents-badge');
-          if (badge) {
-            badge.textContent = total;
-            badge.style.display = total > 0 ? '' : 'none';
+          // Update ADR (Applicant Documents) badge
+          var adrCount = res.data.adr_count || 0;
+          var adrBadge = document.getElementById('rso-documents-badge');
+          if (adrBadge) {
+            adrBadge.textContent = adrCount;
+            adrBadge.style.display = adrCount > 0 ? '' : 'none';
+          }
+
+          // Update MDR (Member Documents) badge
+          var mdrCount = res.data.mdr_count || 0;
+          var mdrBadge = document.getElementById('rso-member-documents-badge');
+          if (mdrBadge) {
+            mdrBadge.textContent = mdrCount;
+            mdrBadge.style.display = mdrCount > 0 ? '' : 'none';
           }
         }
       });

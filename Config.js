@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.81";
+var SYSTEM_VERSION          = "2.4.82";
 var SYSTEM_BUILD_DATE       = "2026-04-21";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Feature: Populate sidebar badges immediately on admin login (#146)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-21 22:13:57";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: RSO document badges showing combined ADR+MDR count (#147)";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-21 22:38:38";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

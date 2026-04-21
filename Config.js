@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.87";
+var SYSTEM_VERSION          = "2.4.88";
 var SYSTEM_BUILD_DATE       = "2026-04-21";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: Rename member portal upload function to avoid conflict";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-22 00:20:38";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: Detect proper MIME type for uploaded photos";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-22 00:24:59";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -2689,12 +2689,19 @@
     if (currentToken) {
       // User has a valid session token — fetch admin data and show authenticated UI
       apiCall('admin_session', {}).then(function(res) {
+        console.log('DEBUG: admin_session response:', res);
+        console.log('DEBUG: res.data:', res.data);
+        console.log('DEBUG: res.data.role:', res.data ? res.data.role : 'N/A');
+
         if (res.success && res.data) {
           currentUser = { admin: res.data.admin, role: res.data.role };
+          console.log('DEBUG: currentUser set to:', currentUser);
+          console.log('DEBUG: currentUser.role:', currentUser.role);
           _navigateToRoleLandingPage(res.data.role);  // set active page BEFORE showAuthenticatedUI so _applyNavRoleFilter won't redirect
           showAuthenticatedUI();
         } else {
           // Token invalid, clear and show login
+          console.log('DEBUG: admin_session failed - res.success:', res.success, 'res.data:', res.data);
           sessionStorage.removeItem('gea_token');
           currentToken = null;
           currentUser = null;
@@ -3048,22 +3055,23 @@
 
     // Map nav page IDs to the roles that can see them (empty = all roles)
     var navRoles = {
-      'dashboard':           ['board', 'mgt', 'rso_approve'],           // board + mgt + rso_approve
+      'dashboard':           ['board', 'mgt', 'rso_approve', 'rso_notify'],  // board + mgt + rso roles
       'reservations':        ['board', 'mgt'],
       'waitlist':            ['board', 'mgt'],
       'res-calendar':        ['board', 'mgt'],
-      'members':             ['board'],
-      'applications':        ['board'],                                // board-only (requires board auth)
-      'application-rejections': ['board'],                             // board-only response to RSO rejections
-      'photos':              ['board'],                                // board-only (requires board auth)
-      'member-doc-rejections': ['board'],                              // board-only response to RSO rejections
-      'guest-lists':         ['board', 'rso_approve'],                 // rso_approve can review
+      'members':             ['board', 'rso_notify'],                        // board + rso_notify (for directory lookup)
+      'applications':        ['board'],                                      // board-only (requires board auth)
+      'application-rejections': ['board'],                                   // board-only response to RSO rejections
+      'photos':              ['board'],                                      // board-only (requires board auth)
+      'member-doc-rejections': ['board'],                                    // board-only response to RSO rejections
+      'guest-lists':         ['board', 'rso_approve'],                       // rso_approve can review
       'payments':            ['board'],
       'reports':             ['board'],
       'administrators':      ['board'],
+      'rules':               ['board'],
       'rso-documents':       ['rso_approve'],
-      'rso-applications':    ['rso_approve'],                           // rso_approve reviews applications
-      'rso-member-documents': ['rso_approve'],                          // rso_approve reviews member document replacements
+      'rso-applications':    ['rso_approve'],                                // rso_approve reviews applications
+      'rso-member-documents': ['rso_approve'],                               // rso_approve reviews member document replacements
       'rso-calendar':        ['rso_approve', 'rso_notify'],
       'rso-approved-guests': ['rso_approve', 'rso_notify']
     };
@@ -3409,11 +3417,21 @@
   function loadDashboard() {
     // Check user role for RSO-specific dashboard
     var userRole = currentUser ? currentUser.role : 'board';
+    console.log('DEBUG: loadDashboard called - currentUser:', currentUser);
+    console.log('DEBUG: loadDashboard - userRole:', userRole);
     var isRsoApprove = userRole === 'rso_approve' || userRole === 'rso' || userRole === 'rso-approve';
+    var isRsoNotify = userRole === 'rso_notify' || userRole === 'rso-notify';
+    console.log('DEBUG: loadDashboard - isRsoApprove:', isRsoApprove, 'isRsoNotify:', isRsoNotify);
 
     if (isRsoApprove) {
-      // Load RSO-specific dashboard
+      // Load RSO approval dashboard (full access to review and approve)
       _loadRsoApprovalDashboard();
+      return;
+    }
+
+    if (isRsoNotify) {
+      // Load RSO coordinator dashboard (read-only: calendar and guest lists only)
+      _loadRsoNotifyDashboard();
       return;
     }
 
@@ -3538,13 +3556,70 @@
       }
     });
   }
-  
+
+  /**
+   * Loads RSO coordinator (rso_notify) dashboard with read-only access.
+   * Shows: Event Calendar, Approved Guest Lists, and Member Directory.
+   */
+  function _loadRsoNotifyDashboard() {
+    var dashContent = document.getElementById('dashboardContent');
+    if (!dashContent) return;
+
+    // Show RSO coordinator (read-only) dashboard
+    var rsoHtml = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">';
+
+    rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #F57C00; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Approved Reservations</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #F57C00; font-weight: 600;" id="rsoNotifyReservationCount">—</div>';
+    rsoHtml += '<div style="font-size: 11px; color: #999; margin-top: 6px;">View in Event Calendar</div>';
+    rsoHtml += '</div>';
+
+    rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #2E7D32; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Approved Guest Lists</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #2E7D32; font-weight: 600;" id="rsoNotifyGuestListCount">—</div>';
+    rsoHtml += '<div style="font-size: 11px; color: #999; margin-top: 6px;">View approved guest lists</div>';
+    rsoHtml += '</div>';
+
+    rsoHtml += '<div class="stat-card" style="background: #fff; border-left: 4px solid #1565C0; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">';
+    rsoHtml += '<div style="font-size: 13px; color: #666; font-weight: 500; margin-bottom: 8px;">Member Directory</div>';
+    rsoHtml += '<div style="font-size: 32px; color: #1565C0; font-weight: 600;">📋</div>';
+    rsoHtml += '<div style="font-size: 11px; color: #999; margin-top: 6px;">Look up member contact info</div>';
+    rsoHtml += '</div>';
+
+    rsoHtml += '</div>';
+
+    rsoHtml += '<div class="info-box" style="margin-bottom: 20px;">';
+    rsoHtml += '<strong>Event Coordination Dashboard</strong><br/>';
+    rsoHtml += 'You have read-only access to: <strong>Event Calendar</strong>, <strong>Approved Guest Lists</strong>, and <strong>Member Directory</strong>. ';
+    rsoHtml += 'Use these to coordinate events and contact members as needed.';
+    rsoHtml += '</div>';
+
+    dashContent.innerHTML = rsoHtml;
+
+    // Load approved guest lists count
+    apiCall('admin_guest_lists', {}).then(function(res) {
+      if (res.success && res.data) {
+        var guestCount = document.getElementById('rsoNotifyGuestListCount');
+        if (guestCount) guestCount.textContent = res.data.approved_count || 0;
+      }
+    });
+
+    // Load this week's approved reservations
+    apiCall('admin_calendar', { month: null, facility: null, status: 'Approved' }).then(function(res) {
+      if (res.success && res.data) {
+        var count = (res.data.events || []).length;
+        var resCount = document.getElementById('rsoNotifyReservationCount');
+        if (resCount) resCount.textContent = count || 0;
+      }
+    });
+  }
+
   // ============================================================ //
   // SECTION: PENDING RESERVATIONS                                //
   // ============================================================ //
   // List, search, approve, and deny reservation requests         //
   // ============================================================ //
-  
+
   /**
    * Loads and displays the list of pending reservations.
    * Fetches from the backend and populates the reservations table.

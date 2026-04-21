@@ -533,6 +533,78 @@ function purgeExpiredSessions() {
   } catch (e) { Logger.log("ERROR purgeExpiredSessions: " + e); }
 }
 
+/**
+ * Ensures Sessions sheet has a "role" column.
+ * If missing, adds it after "email" column and backfills existing sessions from Administrators sheet.
+ * Run this once to migrate existing sessions.
+ */
+function ensureSessionsRoleColumn() {
+  Logger.log("Checking if Sessions sheet has 'role' column...");
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var rolCol  = headers.indexOf("role");
+
+    if (rolCol >= 0) {
+      Logger.log("✓ Sessions sheet already has 'role' column at index " + rolCol);
+      return { success: true, message: "role column already exists" };
+    }
+
+    // Find email column to insert role after it
+    var emlCol = headers.indexOf("email");
+    if (emlCol < 0) {
+      return { success: false, message: "email column not found in Sessions sheet" };
+    }
+
+    // Insert new "role" column after email
+    Logger.log("Adding 'role' column to Sessions sheet after email column...");
+    var newColIndex = emlCol + 2;  // 1-based index for insertColumn
+    sheet.insertColumn(newColIndex);
+
+    // Update header
+    sheet.getRange(1, newColIndex).setValue("role");
+
+    // Get Administrators sheet for backfilling
+    var adminSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var adminData  = adminSheet.getDataRange().getValues();
+    var adminHeaders = adminData[0];
+    var adminColIdx = _adminColMap(adminHeaders);
+
+    // Build lookup: email -> role
+    var emailToRole = {};
+    for (var i = 1; i < adminData.length; i++) {
+      var adminEmail = (adminData[i][adminColIdx.email] || "").toLowerCase().trim();
+      if (adminEmail) {
+        emailToRole[adminEmail] = adminData[i][adminColIdx.role] || "";
+      }
+    }
+
+    // Refresh data after insert
+    data = sheet.getDataRange().getValues();
+    headers = data[0];
+    var newRolCol = headers.indexOf("role");
+    var newEmlCol = headers.indexOf("email");
+
+    // Backfill role for all sessions
+    var backfilled = 0;
+    for (var i = 1; i < data.length; i++) {
+      var sessionEmail = (data[i][newEmlCol] || "").toLowerCase().trim();
+      var role = emailToRole[sessionEmail] || "";
+      if (role) {
+        sheet.getRange(i + 1, newRolCol + 1).setValue(role);
+        backfilled++;
+      }
+    }
+
+    Logger.log("✓ Added 'role' column and backfilled " + backfilled + " sessions");
+    return { success: true, message: "role column added and backfilled", backfilled: backfilled };
+  } catch (e) {
+    Logger.log("ERROR ensureSessionsRoleColumn: " + e);
+    return { success: false, message: "Migration failed: " + e.toString() };
+  }
+}
+
 
 // ============================================================
 // PASSWORD RESET

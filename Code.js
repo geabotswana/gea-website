@@ -177,6 +177,7 @@ function _routeAction(action, params) {
     case "login":       return _handleLogin(params);
     case "admin_login": return _handleAdminLogin(params);
     case "admin_session": return _handleAdminSession(params);
+    case "check_sessions_schema": return _handleCheckSessionsSchema(params);
     case "logout":      return _handleLogout(params);
     case "password_reset_request": return _handlePasswordResetRequest(params);
     case "password_reset_complete": return _handlePasswordResetComplete(params);
@@ -512,6 +513,45 @@ function _handleAdminSession(p) {
   }
 
   return successResponse({ admin: result.admin, role: result.role });
+}
+
+/**
+ * HANDLER: Check Sessions sheet schema and optionally migrate it.
+ * PURPOSE: Diagnoses and fixes missing role column in Sessions sheet.
+ * ACCESS: Board only (administrative function)
+ * PARAMS: action (optional: "check" | "fix")
+ */
+function _handleCheckSessionsSchema(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var rolCol  = headers.indexOf("role");
+
+    var diagnosis = {
+      has_role_column: rolCol >= 0,
+      role_column_index: rolCol,
+      total_sessions: Math.max(0, data.length - 1),
+      headers: headers
+    };
+
+    if (rolCol < 0 && p.action === "fix") {
+      // Attempt migration
+      var result = ensureSessionsRoleColumn();
+      return successResponse({
+        diagnosis: diagnosis,
+        migration: result
+      });
+    }
+
+    return successResponse(diagnosis);
+  } catch (e) {
+    Logger.log("ERROR _handleCheckSessionsSchema: " + e);
+    return errorResponse("Could not check Sessions schema: " + e.toString(), "SERVER_ERROR");
+  }
 }
 
 /**

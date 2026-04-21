@@ -461,8 +461,9 @@ function checkDocumentExpirationWarnings() {
     var s = submissions[i];
     if (!s.is_current || (s.status !== "verified" && s.status !== "approved")) continue;
     var docType = String(s.document_type || "").toLowerCase();
-    // Check passports, onangs, and photos (all can have expiration dates)
-    if (docType !== "passport" && docType !== "omang" && docType !== "photo") continue;
+    // Only send expiration warnings for passports and onangs, not photos
+    // Photos show need for renewal in Member Portal, no emails
+    if (docType !== "passport" && docType !== "omang") continue;
     if (!s.document_expiration_date) continue;
     var expiry = new Date(s.document_expiration_date);
     if (expiry <= now) continue; // Already expired

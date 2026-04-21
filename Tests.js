@@ -15,6 +15,9 @@
  *
  * Each test logs PASS or FAIL clearly. A test failure will not
  * stop the rest of the test from running — check all results.
+ *
+ * MIGRATION (v2.4.73): After deploying, run migrateSubmissionTypeField()
+ * to backfill submission_type for existing File Submissions documents.
  * ============================================================
  */
 

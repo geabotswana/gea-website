@@ -1310,3 +1310,45 @@ function sendBoardApplicationRejectionResponse(applicationId, boardMessage, allo
     return { ok: false, error: String(e) };
   }
 }
+
+/**
+ * MIGRATION: Backfill submission_type field for existing documents.
+ * Sets "applicant" if application_id is not empty, "member" if empty.
+ * Run once to populate all existing documents.
+ */
+function migrateSubmissionTypeField() {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var submissionTypeColIndex = headers.indexOf("submission_type");
+    var applicationIdColIndex = headers.indexOf("application_id");
+
+    if (submissionTypeColIndex === -1) {
+      Logger.log("WARNING: submission_type column not found in File Submissions sheet");
+      return { ok: false, error: "submission_type column not found" };
+    }
+
+    if (applicationIdColIndex === -1) {
+      Logger.log("WARNING: application_id column not found in File Submissions sheet");
+      return { ok: false, error: "application_id column not found" };
+    }
+
+    var updatedCount = 0;
+    for (var i = 1; i < data.length; i++) {
+      var submissionType = String(data[i][submissionTypeColIndex] || "").trim();
+      if (!submissionType) {
+        var applicationId = String(data[i][applicationIdColIndex] || "").trim();
+        var newType = applicationId ? "applicant" : "member";
+        sheet.getRange(i + 1, submissionTypeColIndex + 1).setValue(newType);
+        updatedCount++;
+      }
+    }
+
+    Logger.log("SUCCESS: Migrated " + updatedCount + " documents with submission_type field");
+    return { ok: true, updated: updatedCount };
+  } catch (e) {
+    Logger.log("ERROR migrateSubmissionTypeField: " + e);
+    return { ok: false, error: String(e) };
+  }
+}

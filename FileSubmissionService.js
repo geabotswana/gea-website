@@ -45,6 +45,17 @@ function uploadFileSubmission(params) {
 
     var submissionSheet = _getFileSubmissionsSheet_();
     var applicationId = params.application_id || "";
+
+    // Calculate photo expiration date if not provided
+    var expirationDate = params.document_expiration_date || "";
+    if (isPhoto && !expirationDate) {
+      var individual = getMemberById(params.individual_id);
+      if (individual && individual.date_of_birth) {
+        var calculatedExpiry = calculatePhotoExpirationDate(individual.date_of_birth, new Date());
+        expirationDate = calculatedExpiry || "";
+      }
+    }
+
     var payload = {
       submission_id: generateId("FSB"),
       individual_id: params.individual_id,
@@ -62,7 +73,7 @@ function uploadFileSubmission(params) {
       disabled_date: "",
       application_id: applicationId,
       submission_type: applicationId ? "applicant" : "member",
-      document_expiration_date: params.document_expiration_date || "",
+      document_expiration_date: expirationDate,
       expiration_warning_6m_sent_date: "",
       expiration_warning_1m_sent_date: ""
     };
@@ -450,7 +461,8 @@ function checkDocumentExpirationWarnings() {
     var s = submissions[i];
     if (!s.is_current || (s.status !== "verified" && s.status !== "approved")) continue;
     var docType = String(s.document_type || "").toLowerCase();
-    if (docType !== "passport" && docType !== "omang") continue;
+    // Check passports, onangs, and photos (all can have expiration dates)
+    if (docType !== "passport" && docType !== "omang" && docType !== "photo") continue;
     if (!s.document_expiration_date) continue;
     var expiry = new Date(s.document_expiration_date);
     if (expiry <= now) continue; // Already expired

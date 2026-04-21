@@ -2226,6 +2226,49 @@ function testGetCurrentMembershipYear() {
 
 
 /**
+ * Tests photo expiration date calculation.
+ */
+function testPhotoExpirationCalculation() {
+  Logger.log("\n--- TEST: Photo Expiration Calculation ---");
+
+  // Test 1: Child photo (under 17) should expire in 1 year
+  // Born: 2010-01-15 (child, 15 years old on April 21, 2026)
+  // Upload: April 21, 2026 (during 2025-26 membership year)
+  // Should expire: August 1, 2026 (start of next membership year)
+  var childDOB = new Date(2010, 0, 15);
+  var uploadDate = new Date(2026, 3, 21); // April 21, 2026
+  var childExpiry = calculatePhotoExpirationDate(childDOB, uploadDate);
+  _assert("Child photo expires in 1 year",
+    childExpiry && childExpiry.getFullYear() === 2026 && childExpiry.getMonth() === 7 && childExpiry.getDate() === 1,
+    childExpiry ? childExpiry.toLocaleDateString() : "null");
+
+  // Test 2: Adult photo (17+) should expire in 3 years
+  // Born: 2005-01-15 (adult, 21 years old on April 21, 2026)
+  // Upload: April 21, 2026 (during 2025-26 membership year)
+  // Should expire: August 1, 2028 (three membership years later)
+  var adultDOB = new Date(2005, 0, 15);
+  var adultExpiry = calculatePhotoExpirationDate(adultDOB, uploadDate);
+  _assert("Adult photo expires in 3 years",
+    adultExpiry && adultExpiry.getFullYear() === 2028 && adultExpiry.getMonth() === 7 && adultExpiry.getDate() === 1,
+    adultExpiry ? adultExpiry.toLocaleDateString() : "null");
+
+  // Test 3: Membership year start calculation
+  // April 21, 2026 (in 2025-26 year) should give August 1, 2025
+  var membershipStart = getMembershipYearStartDate(uploadDate);
+  _assert("Membership year start for April 2026 is Aug 1, 2025",
+    membershipStart && membershipStart.getFullYear() === 2025 && membershipStart.getMonth() === 7 && membershipStart.getDate() === 1,
+    membershipStart ? membershipStart.toLocaleDateString() : "null");
+
+  // Test 4: August 15, 2026 should give August 1, 2026 (already in 2026-27 year)
+  var aug2026Date = new Date(2026, 7, 15);
+  var membershipStart2 = getMembershipYearStartDate(aug2026Date);
+  _assert("Membership year start for August 2026 is Aug 1, 2026",
+    membershipStart2 && membershipStart2.getFullYear() === 2026 && membershipStart2.getMonth() === 7 && membershipStart2.getDate() === 1,
+    membershipStart2 ? membershipStart2.toLocaleDateString() : "null");
+}
+
+
+/**
  * Tests _buildReservationsReportStats_ returns the expected shape.
  */
 function testReservationsReportStats() {
@@ -2469,6 +2512,7 @@ function runReportTests() {
 
   testIsLastMondayOfMonth();
   testGetCurrentMembershipYear();
+  testPhotoExpirationCalculation();
   testReservationsReportStats();
   testEmailResend();
 

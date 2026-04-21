@@ -557,6 +557,67 @@ function capitalizeName(name) {
 
 
 // ============================================================
+// PHOTO EXPIRATION CALCULATION
+// ============================================================
+
+/**
+ * Calculates the start date of the current membership year.
+ * Membership year starts on August 1 and runs through July 31.
+ * @param {Date} referenceDate  Optional reference date (defaults to today)
+ * @returns {Date}  The August 1 start date of the membership year
+ */
+function getMembershipYearStartDate(referenceDate) {
+  var ref = referenceDate || new Date();
+  var year = ref.getFullYear();
+  var month = ref.getMonth() + 1; // Convert from 0-11 to 1-12
+
+  // If current date is before August 1, we're in the previous year's membership year
+  if (month < MEMBERSHIP_YEAR_START_MONTH) {
+    year--;
+  }
+
+  return new Date(year, MEMBERSHIP_YEAR_START_MONTH - 1, MEMBERSHIP_YEAR_START_DAY);
+}
+
+/**
+ * Calculates the photo expiration date based on individual's age.
+ * Children under PHOTO_EXPIRATION_AGE_THRESHOLD: expires after 1 membership year
+ * Adults: expires after 3 membership years
+ *
+ * @param {Date} dateOfBirth      Individual's date of birth
+ * @param {Date} approvalDate     Photo approval date (when it becomes current)
+ * @returns {Date}  The expiration date
+ */
+function calculatePhotoExpirationDate(dateOfBirth, approvalDate) {
+  if (!dateOfBirth || !approvalDate) return null;
+
+  var dob = new Date(dateOfBirth);
+  var approval = new Date(approvalDate);
+
+  // Calculate age at approval
+  var ageAtApproval = approval.getFullYear() - dob.getFullYear();
+  var monthDiff = approval.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && approval.getDate() < dob.getDate())) {
+    ageAtApproval--;
+  }
+
+  // Determine expiration policy
+  var yearsValid = ageAtApproval < PHOTO_EXPIRATION_AGE_THRESHOLD
+    ? PHOTO_EXPIRATION_YEARS_CHILD
+    : PHOTO_EXPIRATION_YEARS_ADULT;
+
+  // Get the membership year start date at time of approval
+  var membershipYearStart = getMembershipYearStartDate(approval);
+
+  // Add the number of years
+  var expirationDate = new Date(membershipYearStart);
+  expirationDate.setFullYear(expirationDate.getFullYear() + yearsValid);
+
+  return expirationDate;
+}
+
+
+// ============================================================
 // WEB APP RESPONSE HELPERS
 // ============================================================
 

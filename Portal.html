@@ -9546,7 +9546,8 @@ function submitPasswordReset(event) {
    * Upload identity document
    */
   function uploadDocument() {
-    var docType = document.getElementById('documentTypeSelect').value;
+    var docTypeEl = document.getElementById('documentTypeSelect');
+    var docType = docTypeEl ? docTypeEl.value : "";
     var fileInput = document.getElementById('documentInput');
     var expirationDateEl = document.getElementById('documentExpirationDate');
     var expirationDate = expirationDateEl ? expirationDateEl.value : "";
@@ -10514,7 +10515,8 @@ function submitPasswordReset(event) {
    */
   function proceedWithDocumentUpload() {
     var individualId = _pendingDocumentUpload.individualId;
-    var docType = document.getElementById('documentTypeSelect_' + individualId).value;
+    var docTypeEl = document.getElementById('documentTypeSelect_' + individualId);
+    var docType = docTypeEl ? docTypeEl.value : "";
     var fileInput = _pendingDocumentUpload.fileInput;
     var expirationDateEl = document.getElementById('documentExpirationDate_' + individualId);
     var expirationDate = expirationDateEl ? expirationDateEl.value : "";

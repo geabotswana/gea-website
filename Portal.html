@@ -8198,20 +8198,32 @@ function submitPasswordReset(event) {
         file_name: upload.file.name
       };
 
+      // Add application_id if available
+      if (applicantPortalState && applicantPortalState.application && applicantPortalState.application.application_id) {
+        payload.application_id = applicantPortalState.application.application_id;
+      }
+
       // Add expiration date if provided
       if (expirationDate) {
         payload.document_expiration_date = expirationDate;
       }
 
+      // Debug log
+      console.log('[UPLOAD_DOCUMENT] Starting upload for individual ' + upload.individualId + ', docType: ' + upload.docType, 'payload:', payload);
+
       apiCall('upload_document', payload).then(function(res) {
+        console.log('[UPLOAD_DOCUMENT] Response received:', res);
         if (res.success) {
+          console.log('[UPLOAD_DOCUMENT] Success! Reloading applicant portal.');
           showError('Document uploaded successfully!', 'success');
           loadApplicantPortal();
         } else {
+          console.log('[UPLOAD_DOCUMENT] Failed:', res.message);
           if (btn) { btn.disabled = false; btn.textContent = upload.originalText; }
           showError('Error uploading document: ' + res.message);
         }
       }).catch(function(err) {
+        console.log('[UPLOAD_DOCUMENT] Promise rejected:', err);
         if (btn) { btn.disabled = false; btn.textContent = upload.originalText; }
         showError('Error: ' + err.message);
       });

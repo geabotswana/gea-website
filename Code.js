@@ -2192,53 +2192,35 @@ function _handleUploadDocument(p) {
       return errorResponse("Invalid document type.", "INVALID_PARAM");
     }
 
-    // Decode base64 and create file with a meaningful name
+    // Decode base64 to blob
     var ext = p.file_name.indexOf('.') !== -1 ? p.file_name.split('.').pop().toLowerCase() : 'bin';
     var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
     var meaningfulName = p.individual_id + '_' + p.document_type + '_' + dateStr + '.' + ext;
-    var blob = Utilities.newBlob(Utilities.base64Decode(p.file_data_base64), "application/octet-stream", meaningfulName);
-    var folder = DriveApp.getFolderById(_getSubmissionFolderId_(p.document_type));
-    var file = folder.createFile(blob);
+    var decodedBytes = Utilities.base64Decode(p.file_data_base64);
+    var blob = Utilities.newBlob(decodedBytes, "application/octet-stream", meaningfulName);
 
-    // Create File Submission record
-    var submissionId = generateId("SUB");
-    var submissionData = {
-      submission_id: submissionId,
+    // Use FileSubmissionService to handle upload
+    var uploadParams = {
       individual_id: p.individual_id,
       document_type: p.document_type,
-      status: "submitted",
-      file_id: file.getId(),
+      file_blob: blob,
       file_name: meaningfulName,
-      submitted_date: new Date(),
-      doc_number: p.doc_number || "",
-      doc_expiry_date: p.doc_expiry || "",
-      document_expiration_date: p.document_expiration_date || "",
-      doc_country: p.doc_country || "",
-      passport_type: p.passport_type || "",
-      is_current: true,
+      file_size_bytes: decodedBytes.length,
+      upload_device_type: "web",
+      user_email: auth.session.email,
       application_id: p.application_id || "",
-      expiration_warning_6m_sent_date: "",
-      expiration_warning_1m_sent_date: "",
-      rso_reviewed_by: "",
-      rso_review_date: "",
-      gea_reviewed_by: "",
-      gea_review_date: "",
-      rejection_reason: "",
-      allow_resubmit: "",
-      cloud_storage_path: ""
+      document_expiration_date: p.document_expiration_date || ""
     };
 
-    var submissionSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
-    submissionSheet.appendRow(_objectToSubmissionRow(submissionData));
-
-    logAuditEntry(auth.session.email, AUDIT_FILE_SUBMISSION_CREATED, "FileSubmission", submissionId,
-                  "Uploaded " + p.document_type);
-
-    return successResponse({
-      submission_id: submissionId,
-      file_id: file.getId(),
-      message: "Document uploaded successfully."
-    });
+    var result = uploadFileSubmission(uploadParams);
+    if (result.ok) {
+      return successResponse({
+        submission_id: result.submission_id,
+        message: result.message
+      });
+    } else {
+      return errorResponse(result.error, result.code || "SERVER_ERROR");
+    }
 
   } catch (e) {
     return errorResponse("Error uploading document: " + e.toString(), "SERVER_ERROR");

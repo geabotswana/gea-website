@@ -7719,7 +7719,12 @@ function submitPasswordReset(event) {
 
     modal.appendChild(_buildLabeledInput('First Name', firstNameInput));
     modal.appendChild(_buildLabeledInput('Last Name',  lastNameInput));
-    modal.appendChild(_buildLabeledInput('Email',      emailInput));
+
+    // Email only for Spouse/Child, not for Staff
+    if (rel !== 'Staff') {
+      modal.appendChild(_buildLabeledInput('Email',      emailInput));
+    }
+
     modal.appendChild(_buildLabeledInput('Phone',      phoneInput));
     modal.appendChild(_buildLabeledInput('Citizenship', citizenshipInput));
 
@@ -7730,8 +7735,10 @@ function submitPasswordReset(event) {
     }
 
     if (rel === 'Staff') {
+      roleInput  = _buildTextInput('Employment role', member.employment_role);
       startInput = _buildDateInput(formatDateOfBirth(member.employment_start_date));
       endInput   = _buildDateInput(formatDateOfBirth(member.employment_end_date));
+      modal.appendChild(_buildLabeledInput('Employment Role', roleInput));
       modal.appendChild(_buildLabeledInput('Start Date', startInput));
       modal.appendChild(_buildLabeledInput('End Date', endInput));
     }
@@ -7746,12 +7753,18 @@ function submitPasswordReset(event) {
         individual_id: member.individual_id,
         first_name:    firstNameInput.value.trim(),
         last_name:     lastNameInput.value.trim(),
-        email:         emailInput.value.trim(),
         phone_primary: phoneInput.value.trim(),
         citizenship_country: citizenshipInput.value.trim()
       };
+
+      // Email only for non-Staff members
+      if (rel !== 'Staff') {
+        params.email = emailInput.value.trim();
+      }
+
       if (rel === 'Child')  params.date_of_birth = dobInput.value;
       if (rel === 'Staff') {
+        params.employment_role = roleInput.value.trim();
         params.employment_start_date = startInput.value;
         params.employment_end_date   = endInput.value;
       }

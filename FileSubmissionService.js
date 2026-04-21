@@ -931,6 +931,16 @@ function _getDocumentsForRsoReviewByType_(submissionType, documentTypeFilter) {
       var individual = getMemberById(obj.individual_id);
       var applicationId = obj.application_id || "";
 
+      // For applicant documents, only include if application is in rso_docs_review stage or later
+      if (submissionType === "applicant" && applicationId) {
+        var application = _getApplicationById(applicationId);
+        if (!application) continue;  // Application not found
+        // Only include if status is rso_docs_review or later in the progression
+        var allowedStatuses = ["rso_docs_review", "rso_application_review", "board_final_review",
+                               "approved_pending_payment", "payment_submitted", "payment_verified", "activated"];
+        if (allowedStatuses.indexOf(application.status) === -1) continue;
+      }
+
       results.push({
         submission_id:   obj.submission_id,
         individual_id:   obj.individual_id,

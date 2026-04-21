@@ -8163,7 +8163,8 @@ function submitPasswordReset(event) {
     if (!_pendingDocumentUpload) return;
 
     var upload = _pendingDocumentUpload;
-    var expirationDate = document.getElementById('docExpirationDateInput').value;
+    var expirationDateInput = document.getElementById('docExpirationDateInput');
+    var expirationDate = expirationDateInput ? expirationDateInput.value : "";
 
     // For passport/omang, validate expiration date
     if ((upload.docType === 'passport' || upload.docType === 'omang') && !expirationDate) {

@@ -2856,14 +2856,23 @@ function createTestApplicantForPaymentTesting() {
     }
     Logger.log("✓ Board initial decision: approved");
 
-    // Step 7: RSO application review
-    Logger.log("\nStep 7: RSO application review...");
+    // Step 7: RSO approves documents
+    Logger.log("\nStep 7: RSO approves documents...");
     var rsoAppReview = rsoApproveApplication(applicationId, "test_rso@example.com", "Test data generation");
     if (!rsoAppReview || !rsoAppReview.ok) {
       Logger.log("ERROR: RSO application review failed: " + JSON.stringify(rsoAppReview));
       return rsoAppReview;
     }
-    Logger.log("✓ RSO approved application");
+    Logger.log("✓ RSO approved documents (status now: rso_application_review)");
+
+    // Step 7b: RSO decides on application (moves to board final review)
+    Logger.log("\nStep 7b: RSO approves application for board final review...");
+    var rsoDecisionResult = rsoDecision(applicationId, "approved", "test_rso@example.com", "Test data generation", "");
+    if (!rsoDecisionResult || !rsoDecisionResult.success) {
+      Logger.log("ERROR: RSO decision failed: " + JSON.stringify(rsoDecisionResult));
+      return rsoDecisionResult;
+    }
+    Logger.log("✓ RSO decision: approved (status now: board_final_review)");
 
     // Step 8: Board final decision
     Logger.log("\nStep 8: Board final decision...");
@@ -2872,7 +2881,7 @@ function createTestApplicantForPaymentTesting() {
       Logger.log("ERROR: Board final decision failed: " + JSON.stringify(boardFinal));
       return boardFinal;
     }
-    Logger.log("✓ Board final decision: approved");
+    Logger.log("✓ Board final decision: approved (status now: approved_pending_payment)");
 
     // Step 9: Check application status
     Logger.log("\nStep 9: Checking application status...");

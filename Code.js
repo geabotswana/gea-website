@@ -261,6 +261,7 @@ function _routeAction(action, params) {
     case "admin_deny_application":    return _handleAdminDenyApplication(params);
     case "rso_approve_application":   return _handleRsoApproveApplication(params);
     case "rso_deny_application":      return _handleRsoDenyApplication(params);
+    case "rso_application_decision":  return _handleRsoApplicationDecision(params);
     case "admin_verify_payment":      return _handleAdminVerifyPayment(params);
     case "admin_pending_payments": return _handleAdminPendingPayments(params);
     case "admin_approve_payment": return _handleAdminApprovePayment(params);
@@ -2994,6 +2995,53 @@ function _handleRsoDenyApplication(p) {
     }
   } catch (e) {
     return errorResponse("Error denying application: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRsoApplicationDecision
+ * PURPOSE: RSO makes final decision on application (approve or deny)
+ * Moves application from RSO_APPLICATION_REVIEW to BOARD_FINAL_REVIEW (if approved)
+ * or back to BOARD_INITIAL_REVIEW (if denied for resubmission)
+ */
+function _handleRsoApplicationDecision(p) {
+  try {
+    var auth = requireAuth(p.token, "rso_approve");
+    if (!auth.ok) return auth.response;
+
+    if (!p.application_id) {
+      return errorResponse("application_id is required.", "INVALID_PARAM");
+    }
+    if (!p.decision || (p.decision !== "approved" && p.decision !== "denied")) {
+      return errorResponse("decision must be 'approved' or 'denied'.", "INVALID_PARAM");
+    }
+
+    var result;
+    if (p.decision === "approved") {
+      result = rsoDecision(
+        p.application_id,
+        "approved",
+        auth.session.email,
+        p.private_notes || "",
+        ""
+      );
+    } else {
+      result = rsoDecision(
+        p.application_id,
+        "denied",
+        auth.session.email,
+        p.private_notes || "",
+        p.public_reason || "Application requires additional information or revision"
+      );
+    }
+
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message, "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error making RSO decision: " + e.toString(), "SERVER_ERROR");
   }
 }
 

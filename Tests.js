@@ -2849,12 +2849,12 @@ function createTestApplicantForPaymentTesting() {
 
     // Step 6: Board initial decision
     Logger.log("\nStep 6: Board initial decision...");
-    var boardInitial = boardInitialDecision(applicationId, "approve", "test_board@example.com", "Test data generator approval", "Approved for processing");
+    var boardInitial = boardInitialDecision(applicationId, "approved", "test_board@example.com", "Test data generator approval", "Approved for processing");
     if (!boardInitial || !boardInitial.success) {
       Logger.log("ERROR: Board initial decision failed: " + JSON.stringify(boardInitial));
       return boardInitial;
     }
-    Logger.log("✓ Board initial decision: approve");
+    Logger.log("✓ Board initial decision: approved");
 
     // Step 7: RSO application review
     Logger.log("\nStep 7: RSO application review...");
@@ -2867,12 +2867,12 @@ function createTestApplicantForPaymentTesting() {
 
     // Step 8: Board final decision
     Logger.log("\nStep 8: Board final decision...");
-    var boardFinal = boardFinalDecision(applicationId, "approve", "test_board@example.com", "Test data generation", "Approved");
+    var boardFinal = boardFinalDecision(applicationId, "approved", "test_board@example.com", "Test data generation", "Approved");
     if (!boardFinal || !boardFinal.success) {
       Logger.log("ERROR: Board final decision failed: " + JSON.stringify(boardFinal));
       return boardFinal;
     }
-    Logger.log("✓ Board final decision: approve");
+    Logger.log("✓ Board final decision: approved");
 
     // Step 9: Check application status
     Logger.log("\nStep 9: Checking application status...");

@@ -2710,12 +2710,11 @@ function fixSubmissionType() {
  *
  * WHAT IT DOES:
  *   1. Creates a new applicant account with test household
- *   2. Submits application with questionnaire responses
- *   3. Uploads test documents (passport, omang, photo)
- *   4. RSO approves documents
- *   5. Board approves application
- *   6. Application moves to payment stage
- *   7. Returns applicant email for manual testing
+ *   2. Uploads test documents (passport, omang, photo)
+ *   3. RSO approves documents
+ *   4. Board approves application
+ *   5. Application moves to payment stage
+ *   6. Returns applicant email for manual testing
  *
  * @returns {Object} {email, applicant_id, password, stage}
  */
@@ -2732,19 +2731,190 @@ function createTestApplicantForPaymentTesting() {
 
     Logger.log("Step 1: Creating application record...");
 
-    // Questionnaire responses that route to Full member category
+    // Required fields for application creation
     var formData = {
       first_name: firstName,
       last_name: lastName,
       email: testEmail,
       password: testPassword,
       household_type: "individual",
-      q1_embassy_or_international: "yes",  // Determines category
-      q2_usg_funded_percentage: "75",
-      q3_visa_type: "A1",
-      q4_posting_start_date: new Date(new Date().getTime() - 365*24*60*60*1000).toISOString().split('T')[0],
-      q5_posting_end_date: new Date(new Date().getTime() + 365*24*60*60*1000).toISOString().split('T')[0]
+      country_code_primary: "US",
+      phone_primary: "+1-202-555-0123",
+      membership_category: "Full"
     };
+
+    var appRecord = createApplicationRecord(formData, "test_system");
+    if (!appRecord || !appRecord.application_id) {
+      Logger.log("ERROR: Failed to create application record");
+      Logger.log("Response: " + JSON.stringify(appRecord));
+      return { ok: false, error: "Application creation failed: " + (appRecord ? appRecord.message : "unknown") };
+    }
+
+    var applicationId = appRecord.application_id;
+    var householdId = appRecord.household_id;
+    var applicantId = appRecord.primary_applicant_id;
+    Logger.log("✓ Application created: " + applicationId);
+    Logger.log("✓ Household: " + householdId);
+    Logger.log("✓ Applicant individual: " + applicantId);
+
+    // Step 2: Create dummy test documents (small 1x1 pixel PNGs)
+    Logger.log("\nStep 2: Creating test documents...");
+    var testPhotoBlob = Utilities.newBlob(
+      Utilities.base64Decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="),
+      "image/png",
+      "test_photo.png"
+    );
+    var testPassportBlob = Utilities.newBlob(
+      Utilities.base64Decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="),
+      "image/png",
+      "test_passport.png"
+    );
+    var testOmangBlob = Utilities.newBlob(
+      Utilities.base64Decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="),
+      "image/png",
+      "test_omang.png"
+    );
+
+    // Step 3: Upload documents
+    Logger.log("\nStep 3: Uploading documents...");
+    var photoResult = uploadFileSubmission({
+      individual_id: applicantId,
+      document_type: "photo",
+      file_blob: testPhotoBlob,
+      file_name: "test_photo.png",
+      file_size_bytes: testPhotoBlob.getBytes().length,
+      application_id: applicationId,
+      user_email: testEmail
+    });
+    if (!photoResult.ok) {
+      Logger.log("ERROR uploading photo: " + photoResult.error);
+      return photoResult;
+    }
+    Logger.log("✓ Photo uploaded: " + photoResult.submission_id);
+
+    var passportResult = uploadFileSubmission({
+      individual_id: applicantId,
+      document_type: "passport",
+      file_blob: testPassportBlob,
+      file_name: "test_passport.png",
+      file_size_bytes: testPassportBlob.getBytes().length,
+      application_id: applicationId,
+      user_email: testEmail
+    });
+    if (!passportResult.ok) {
+      Logger.log("ERROR uploading passport: " + passportResult.error);
+      return passportResult;
+    }
+    Logger.log("✓ Passport uploaded: " + passportResult.submission_id);
+
+    var omangResult = uploadFileSubmission({
+      individual_id: applicantId,
+      document_type: "omang",
+      file_blob: testOmangBlob,
+      file_name: "test_omang.png",
+      file_size_bytes: testOmangBlob.getBytes().length,
+      application_id: applicationId,
+      user_email: testEmail
+    });
+    if (!omangResult.ok) {
+      Logger.log("ERROR uploading omang: " + omangResult.error);
+      return omangResult;
+    }
+    Logger.log("✓ Omang uploaded: " + omangResult.submission_id);
+
+    // Step 4: RSO approves documents
+    Logger.log("\nStep 4: RSO approving documents...");
+    var rsoApprovePassport = approveDocumentByRso(passportResult.submission_id, "approve", "", "test_rso@example.com");
+    if (!rsoApprovePassport.ok) {
+      Logger.log("ERROR: RSO failed to approve passport: " + rsoApprovePassport.error);
+      return rsoApprovePassport;
+    }
+    Logger.log("✓ Passport approved by RSO");
+
+    var rsoApproveOmang = approveDocumentByRso(omangResult.submission_id, "approve", "", "test_rso@example.com");
+    if (!rsoApproveOmang.ok) {
+      Logger.log("ERROR: RSO failed to approve omang: " + rsoApproveOmang.error);
+      return rsoApproveOmang;
+    }
+    Logger.log("✓ Omang approved by RSO");
+
+    // Step 5: Board approves photo
+    Logger.log("\nStep 5: Board approving photo...");
+    var boardPhotoApproval = _reviewFileSubmission_(photoResult.submission_id, "approve", "", "test_board@example.com");
+    if (!boardPhotoApproval.ok) {
+      Logger.log("ERROR: Board failed to approve photo: " + boardPhotoApproval.error);
+      return boardPhotoApproval;
+    }
+    Logger.log("✓ Photo approved by board");
+
+    // Step 6: Board initial decision
+    Logger.log("\nStep 6: Board initial decision...");
+    var boardInitial = boardInitialDecision(applicationId, "approve", "test_board@example.com", "Test data generator approval", "Approved for processing");
+    if (!boardInitial || !boardInitial.ok) {
+      Logger.log("ERROR: Board initial decision failed: " + JSON.stringify(boardInitial));
+      return boardInitial;
+    }
+    Logger.log("✓ Board initial decision: approve");
+
+    // Step 7: RSO application review
+    Logger.log("\nStep 7: RSO application review...");
+    var rsoAppReview = rsoApproveApplication(applicationId, "test_rso@example.com", "Test data generation");
+    if (!rsoAppReview || !rsoAppReview.ok) {
+      Logger.log("ERROR: RSO application review failed: " + JSON.stringify(rsoAppReview));
+      return rsoAppReview;
+    }
+    Logger.log("✓ RSO approved application");
+
+    // Step 8: Board final decision
+    Logger.log("\nStep 8: Board final decision...");
+    var boardFinal = boardFinalDecision(applicationId, "approve", "test_board@example.com", "Test data generation", "Approved");
+    if (!boardFinal || !boardFinal.ok) {
+      Logger.log("ERROR: Board final decision failed: " + JSON.stringify(boardFinal));
+      return boardFinal;
+    }
+    Logger.log("✓ Board final decision: approve");
+
+    // Step 9: Check application status
+    Logger.log("\nStep 9: Checking application status...");
+    var appStatus = getApplicationForApplicant(testEmail);
+    if (!appStatus || !appStatus.ok) {
+      Logger.log("ERROR: Failed to get application status: " + JSON.stringify(appStatus));
+      return appStatus;
+    }
+    Logger.log("✓ Application status: " + appStatus.status);
+
+    // Summary
+    Logger.log("\n" + "=".repeat(50));
+    Logger.log("TEST APPLICANT CREATED SUCCESSFULLY");
+    Logger.log("=".repeat(50));
+    Logger.log("\nTest Credentials:");
+    Logger.log("  Email: " + testEmail);
+    Logger.log("  Password: " + testPassword);
+    Logger.log("  Application ID: " + applicationId);
+    Logger.log("  Applicant ID: " + applicantId);
+    Logger.log("  Stage: " + appStatus.status);
+    Logger.log("\nNext steps:");
+    Logger.log("  1. Login to applicant portal with: " + testEmail);
+    Logger.log("  2. Navigate to Application Status");
+    Logger.log("  3. Should see status: " + appStatus.status);
+    Logger.log("  4. Submit payment proof to test payment workflow");
+    Logger.log("=".repeat(50) + "\n");
+
+    return {
+      ok: true,
+      email: testEmail,
+      password: testPassword,
+      applicant_id: applicantId,
+      application_id: applicationId,
+      stage: appStatus.status
+    };
+
+  } catch (e) {
+    Logger.log("ERROR createTestApplicantForPaymentTesting: " + e);
+    Logger.log("Stack: " + e.stack);
+    return { ok: false, error: String(e) };
+  }
+}
 
     var appRecord = createApplicationRecord(formData, "test_system");
     if (!appRecord || !appRecord.application_id) {

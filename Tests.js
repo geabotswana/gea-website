@@ -2877,7 +2877,7 @@ function createTestApplicantForPaymentTesting() {
     // Step 9: Check application status
     Logger.log("\nStep 9: Checking application status...");
     var appStatus = getApplicationForApplicant(testEmail);
-    if (!appStatus || !appStatus.ok) {
+    if (!appStatus || !appStatus.success) {
       Logger.log("ERROR: Failed to get application status: " + JSON.stringify(appStatus));
       return appStatus;
     }

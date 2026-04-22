@@ -877,6 +877,9 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
     var headers = paymentSheet.getRange(1, 1, 1, paymentSheet.getLastColumn()).getValues()[0];
 
+    // Log headers for diagnostics
+    Logger.log("[DEBUG submitPaymentProof] Sheet headers: " + JSON.stringify(headers));
+
     var paymentData = {
       payment_id: paymentId,
       household_id: application.household_id,
@@ -897,11 +900,28 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       notes: String(notes || "").substring(0, 500)
     };
 
-    // Build row using header mapping
+    Logger.log("[DEBUG submitPaymentProof] PaymentData keys: " + JSON.stringify(Object.keys(paymentData)));
+
+    // Build row using header mapping and validate all headers are found
     var row = [];
+    var missingKeys = [];
     for (var i = 0; i < headers.length; i++) {
-      row.push(paymentData[headers[i]] !== undefined ? paymentData[headers[i]] : "");
+      var headerName = headers[i];
+      if (paymentData[headerName] !== undefined) {
+        row.push(paymentData[headerName]);
+      } else {
+        row.push("");
+        if (!headerName.match(/^journal_entry_id|^recorded_by/)) {
+          missingKeys.push(headerName);
+        }
+      }
     }
+
+    if (missingKeys.length > 0) {
+      Logger.log("[WARN submitPaymentProof] Missing keys in paymentData: " + JSON.stringify(missingKeys));
+    }
+
+    Logger.log("[DEBUG submitPaymentProof] Row length: " + row.length + ", Headers length: " + headers.length);
     paymentSheet.appendRow(row);
 
     // Update application with payment info
@@ -920,7 +940,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     sendEmailFromTemplate("PAY_PAYMENT_PROOF_RECEIVED_TO_MEMBER", email, {
       FIRST_NAME:      _appFirstName6,
       PAYMENT_ID:      paymentId,
-      AMOUNT:          paymentData.amount_paid,
+      AMOUNT:          paymentData.amount,
       SUBMISSION_DATE: formatDate(new Date()),
       PORTAL_URL:      getConfigValue("PORTAL_URL") || ""
     });
@@ -930,7 +950,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       FIRST_NAME:      "Treasurer",
       MEMBER_NAME:     _appName6,
       PAYMENT_ID:      paymentId,
-      AMOUNT:          paymentData.amount_paid,
+      AMOUNT:          paymentData.amount,
       CURRENCY:        "BWP",
       STATUS:          "submitted",
       SUBMISSION_DATE: formatDate(new Date())

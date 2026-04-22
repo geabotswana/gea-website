@@ -1675,17 +1675,32 @@ function testPaymentSheet() {
     _assert("Payments sheet exists", paymentsSheet !== null);
 
     var headers = paymentsSheet.getRange(1, 1, 1, paymentsSheet.getLastColumn()).getValues()[0];
-    var requiredColumns = ['payment_id', 'household_id', 'household_name', 'payment_date',
-                          'payment_method', 'currency', 'amount', 'payment_type',
-                          'payment_submitted_date', 'payment_verified_date', 'payment_verified_by',
-                          'payment_confirmation_file_id', 'notes'];
+    Logger.log("  INFO: Actual column headers: " + JSON.stringify(headers));
+    Logger.log("  INFO: Total columns: " + headers.length);
 
+    var requiredColumns = ['payment_id', 'household_id', 'household_name', 'payment_date',
+                          'payment_method', 'currency', 'amount', 'amount_usd', 'amount_bwp',
+                          'payment_type', 'applied_to_period', 'payment_reference', 'payment_confirmation_file_id',
+                          'payment_submitted_date', 'payment_verified_date', 'payment_verified_by', 'notes'];
+
+    var missing = [];
     requiredColumns.forEach(function(col) {
       var exists = headers.indexOf(col) >= 0;
       _assert("Column '" + col + "' exists", exists);
+      if (!exists) missing.push(col);
     });
 
-    Logger.log("  INFO: Payments sheet has all required columns");
+    if (missing.length > 0) {
+      Logger.log("  WARN: Missing required columns: " + JSON.stringify(missing));
+    } else {
+      Logger.log("  INFO: Payments sheet has all required columns");
+    }
+
+    // Log column indices for diagnostics
+    Logger.log("  INFO: Column positions:");
+    for (var i = 0; i < headers.length; i++) {
+      Logger.log("    [" + i + "] = " + headers[i]);
+    }
   } catch (e) {
     Logger.log("  FAIL: Cannot access Payments sheet: " + e);
   }
@@ -2922,5 +2937,135 @@ function createTestApplicantForPaymentTesting() {
     Logger.log("ERROR createTestApplicantForPaymentTesting: " + e);
     Logger.log("Stack: " + e.stack);
     return { ok: false, error: String(e) };
+  }
+}
+
+
+/**
+ * DIAGNOSTIC: Test payment field mapping to identify column alignment issues
+ * Run this to debug the "$25 in amount_bwp" corruption issue
+ */
+function testPaymentFieldMapping() {
+  Logger.log("\n========== PAYMENT FIELD MAPPING DIAGNOSTIC ==========");
+
+  try {
+    // Get actual sheet structure
+    var paymentsSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
+    var headers = paymentsSheet.getRange(1, 1, 1, paymentsSheet.getLastColumn()).getValues()[0];
+
+    Logger.log("\n1. ACTUAL SHEET HEADERS (" + headers.length + " columns):");
+    for (var i = 0; i < headers.length; i++) {
+      Logger.log("  [" + i + "] = '" + headers[i] + "'");
+    }
+
+    // Expected field mapping (from submitPaymentProof)
+    var expectedFields = [
+      'payment_id', 'household_id', 'household_name', 'payment_date', 'payment_method',
+      'currency', 'amount', 'amount_usd', 'amount_bwp', 'payment_type', 'applied_to_period',
+      'payment_reference', 'payment_confirmation_file_id', 'payment_submitted_date',
+      'payment_verified_date', 'payment_verified_by', 'notes'
+    ];
+
+    Logger.log("\n2. EXPECTED FIELDS (" + expectedFields.length + " fields):");
+    expectedFields.forEach(function(field) {
+      Logger.log("  - " + field);
+    });
+
+    // Check for missing/extra columns
+    Logger.log("\n3. FIELD MAPPING CHECK:");
+    var missing = [];
+    var extra = [];
+
+    expectedFields.forEach(function(field) {
+      if (headers.indexOf(field) < 0) {
+        missing.push(field);
+        Logger.log("  ❌ MISSING: '" + field + "'");
+      } else {
+        Logger.log("  ✓ Found: '" + field + "' at position [" + headers.indexOf(field) + "]");
+      }
+    });
+
+    headers.forEach(function(header) {
+      if (expectedFields.indexOf(header) < 0 && header !== 'journal_entry_id' && header !== 'recorded_by') {
+        extra.push(header);
+        Logger.log("  ⚠️  EXTRA: '" + header + "' at position [" + headers.indexOf(header) + "]");
+      }
+    });
+
+    Logger.log("\n4. SUMMARY:");
+    Logger.log("  Missing columns: " + (missing.length === 0 ? "NONE" : JSON.stringify(missing)));
+    Logger.log("  Extra columns: " + (extra.length === 0 ? "NONE" : JSON.stringify(extra)));
+
+    // Test the mapping with sample data
+    Logger.log("\n5. FIELD MAPPING TEST:");
+    var testData = {
+      payment_id: "PAY-2026-TEST",
+      household_id: "HSH-2026-TEST",
+      household_name: "Test Household",
+      payment_date: new Date(),
+      payment_method: "Bank Transfer",
+      currency: "BWP",
+      amount: 750,
+      amount_usd: 50,
+      amount_bwp: 750,
+      payment_type: "Dues Payment",
+      applied_to_period: "2026-07",
+      payment_reference: "REF123",
+      payment_confirmation_file_id: "FILE123",
+      payment_submitted_date: new Date(),
+      payment_verified_date: "",
+      payment_verified_by: "",
+      notes: "$25 TEST"
+    };
+
+    Logger.log("  Test payload keys: " + JSON.stringify(Object.keys(testData)));
+    Logger.log("  Building row...");
+
+    var row = [];
+    var mappingIssues = [];
+    for (var i = 0; i < headers.length; i++) {
+      var headerName = headers[i];
+      var value = testData[headerName] !== undefined ? testData[headerName] : "";
+      row.push(value);
+
+      if (testData[headerName] === undefined && headerName !== 'journal_entry_id' && headerName !== 'recorded_by') {
+        mappingIssues.push("Header '" + headerName + "' [" + i + "] not found in testData");
+      }
+    }
+
+    Logger.log("  Row length: " + row.length + " (expected " + headers.length + ")");
+
+    if (mappingIssues.length > 0) {
+      Logger.log("\n  ⚠️  MAPPING ISSUES DETECTED:");
+      mappingIssues.forEach(function(issue) {
+        Logger.log("    - " + issue);
+      });
+    } else {
+      Logger.log("  ✓ All field mappings OK");
+    }
+
+    // Check what "$25" would write to
+    var notesIndex = headers.indexOf('notes');
+    var amountUsdIndex = headers.indexOf('amount_usd');
+    var amountBwpIndex = headers.indexOf('amount_bwp');
+
+    Logger.log("\n6. CORRUPTION CHECK (where does '$25' from notes go?):");
+    Logger.log("  notes column position: " + notesIndex);
+    Logger.log("  amount_usd column position: " + amountUsdIndex);
+    Logger.log("  amount_bwp column position: " + amountBwpIndex);
+
+    if (notesIndex >= 0 && amountBwpIndex >= 0) {
+      if (amountBwpIndex - notesIndex > 0) {
+        Logger.log("  ✓ No corruption risk: notes [" + notesIndex + "] before amount_bwp [" + amountBwpIndex + "]");
+      } else {
+        Logger.log("  ❌ RISK: notes [" + notesIndex + "] after amount_bwp [" + amountBwpIndex + "]");
+      }
+    }
+
+    Logger.log("\n========== END DIAGNOSTIC ==========\n");
+
+  } catch (e) {
+    Logger.log("ERROR in testPaymentFieldMapping: " + e);
+    Logger.log("Stack: " + e.stack);
   }
 }

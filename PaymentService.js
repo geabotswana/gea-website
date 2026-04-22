@@ -443,10 +443,26 @@ function _getPaymentsSheet_() {
 }
 
 /**
- * HELPER: Append row to sheet by headers
+ * HELPER: Append row to sheet by headers with validation
  */
 function _appendRowByHeaders_(sheet, obj) {
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  // Log headers and data for diagnostics
+  var missingKeys = [];
+  for (var i = 0; i < headers.length; i++) {
+    if (headers[i] && obj[headers[i]] === undefined &&
+        !headers[i].match(/^journal_entry_id|^recorded_by/)) {
+      missingKeys.push(headers[i]);
+    }
+  }
+
+  if (missingKeys.length > 0) {
+    Logger.log("[WARN] _appendRowByHeaders_: Missing keys in obj: " + JSON.stringify(missingKeys) +
+      "\n  Expected headers: " + JSON.stringify(headers) +
+      "\n  Provided keys: " + JSON.stringify(Object.keys(obj)));
+  }
+
   var row = [];
   for (var i = 0; i < headers.length; i++) row.push(obj[headers[i]] !== undefined ? obj[headers[i]] : "");
   sheet.appendRow(row);

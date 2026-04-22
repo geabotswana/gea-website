@@ -868,15 +868,20 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
 
     // Create Payment record
     var paymentId = generateId("PAY");
-    var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
 
     var duesAmount = _calculateDuesAmount(applicationId);
     var exchangeRate = getExchangeRate();
+    var now = new Date();
+
+    // Create payment using proper field mapping
+    var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
+    var headers = paymentSheet.getRange(1, 1, 1, paymentSheet.getLastColumn()).getValues()[0];
+
     var paymentData = {
       payment_id: paymentId,
       household_id: application.household_id,
       household_name: application.household_name || "",
-      payment_date: new Date(),
+      payment_date: now,
       payment_method: paymentMethod,
       currency: "BWP",
       amount: duesAmount,
@@ -886,13 +891,18 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       applied_to_period: getConfigValue("CURRENT_MEMBERSHIP_YEAR") || "",
       payment_reference: "",
       payment_confirmation_file_id: proofFileId || "",
-      payment_submitted_date: new Date(),
+      payment_submitted_date: now,
       payment_verified_date: "",
       payment_verified_by: "",
       notes: String(notes || "").substring(0, 500)
     };
 
-    paymentSheet.appendRow(_objectToRow(paymentData, TAB_PAYMENTS));
+    // Build row using header mapping
+    var row = [];
+    for (var i = 0; i < headers.length; i++) {
+      row.push(paymentData[headers[i]] !== undefined ? paymentData[headers[i]] : "");
+    }
+    paymentSheet.appendRow(row);
 
     // Update application with payment info
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);

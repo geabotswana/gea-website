@@ -7728,17 +7728,15 @@ function submitPasswordReset(event) {
     modal.appendChild(_buildLabeledInput('Phone',      phoneInput));
     modal.appendChild(_buildLabeledInput('Citizenship', citizenshipInput));
 
-    var omangInput, roleInput, startInput, endInput;
+    var omangInput, startInput, endInput;
 
     if (rel === 'Child') {
       modal.appendChild(_buildLabeledInput('Date of Birth', dobInput));
     }
 
     if (rel === 'Staff') {
-      roleInput  = _buildTextInput('Employment role', member.employment_role);
       startInput = _buildDateInput(formatDateOfBirth(member.employment_start_date));
       endInput   = _buildDateInput(formatDateOfBirth(member.employment_end_date));
-      modal.appendChild(_buildLabeledInput('Employment Role', roleInput));
       modal.appendChild(_buildLabeledInput('Start Date', startInput));
       modal.appendChild(_buildLabeledInput('End Date', endInput));
     }
@@ -7764,7 +7762,6 @@ function submitPasswordReset(event) {
 
       if (rel === 'Child')  params.date_of_birth = dobInput.value;
       if (rel === 'Staff') {
-        params.employment_role = roleInput.value.trim();
         params.employment_start_date = startInput.value;
         params.employment_end_date   = endInput.value;
       }

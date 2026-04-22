@@ -26,7 +26,7 @@ Log into your member portal: {{PORTAL_URL}}
 Your portal shows real-time updates on your application progress.
 
 QUESTIONS?
-Need help or have questions about your application? Contact board@geabotswana.org — we're here to help!
+Need help or have questions about your application? Contact board@geabotswana.org - we're here to help!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

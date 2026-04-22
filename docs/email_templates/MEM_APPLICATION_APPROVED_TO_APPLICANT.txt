@@ -9,7 +9,7 @@ Application ID: {{APPLICATION_ID}}
 Membership Fee: {{PAYMENT_AMOUNT}}
 Payment Due: {{PAYMENT_DEADLINE}}
 
-FINAL STEP — SUBMIT PAYMENT:
+FINAL STEP - SUBMIT PAYMENT:
 To activate your membership, submit your payment by {{PAYMENT_DEADLINE}}.
 
 HOW TO PAY:

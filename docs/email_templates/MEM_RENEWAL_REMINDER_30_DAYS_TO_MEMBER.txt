@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-MEMBERSHIP RENEWAL REMINDER — 30 DAYS
+MEMBERSHIP RENEWAL REMINDER - 30 DAYS
 
 Time to renew your GEA membership! You have 30 days to maintain your membership and continue enjoying all benefits.
 

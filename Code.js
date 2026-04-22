@@ -2192,20 +2192,12 @@ function _handleUploadDocument(p) {
       return errorResponse("Invalid document type.", "INVALID_PARAM");
     }
 
-    // Decode base64 to blob with proper MIME type
+    // Decode base64 to blob
     var ext = p.file_name.indexOf('.') !== -1 ? p.file_name.split('.').pop().toLowerCase() : 'bin';
     var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
     var meaningfulName = p.individual_id + '_' + p.document_type + '_' + dateStr + '.' + ext;
     var decodedBytes = Utilities.base64Decode(p.file_data_base64);
-
-    // Detect MIME type based on file extension
-    var mimeType = "application/octet-stream";
-    var extLower = ext.toLowerCase();
-    if (extLower === 'png') mimeType = "image/png";
-    else if (extLower === 'jpg' || extLower === 'jpeg') mimeType = "image/jpeg";
-    else if (extLower === 'pdf') mimeType = "application/pdf";
-
-    var blob = Utilities.newBlob(decodedBytes, mimeType, meaningfulName);
+    var blob = Utilities.newBlob(decodedBytes, "application/octet-stream", meaningfulName);
 
     // Use FileSubmissionService to handle upload
     var uploadParams = {
@@ -2535,7 +2527,6 @@ function _handleGetHouseholdMembers(p) {
         phone_primary_whatsapp:    m.phone_primary_whatsapp || false,
         citizenship_country:       m.citizenship_country   || "",
         omang_number:              m.omang_number          || "",
-        employment_role:           m.employment_role       || "",
         employment_start_date:     m.employment_start_date || "",
         employment_end_date:       m.employment_end_date   || "",
         doc_status: {
@@ -2637,7 +2628,6 @@ function _handleAddHouseholdMember(p) {
       phone_primary_whatsapp:  p.phone_primary_whatsapp === true || p.phone_primary_whatsapp === "true",
       citizenship_country:     p.citizenship           ? sanitizeInput(p.citizenship)     : "",
       omang_number:            p.omang_number          ? sanitizeInput(p.omang_number)    : "",
-      employment_role:         p.employment_role       ? sanitizeInput(p.employment_role) : "",
       employment_start_date:   p.employment_start_date || "",
       employment_end_date:     p.employment_end_date   || ""
     };

@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.99";
+var SYSTEM_VERSION          = "2.4.100";
 var SYSTEM_BUILD_DATE       = "2026-04-22";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix payment row creation to use proper header mapping";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-22 21:06:23";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add payment field mapping diagnostics to fix data corruption issue";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-22 21:20:00";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

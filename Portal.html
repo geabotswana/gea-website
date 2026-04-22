@@ -8339,13 +8339,16 @@ function submitPasswordReset(event) {
         var memberName = data.member.first_name && data.member.last_name
           ? data.member.first_name + ' ' + data.member.last_name
           : data.member.email.split('@')[0];
-        document.getElementById('headerUserName').textContent = memberName;
+        var headerUserName = document.getElementById('headerUserName');
+        if (headerUserName) headerUserName.textContent = memberName;
 
         // Load user's avatar
-        loadMemberAvatar(data.member.individual_id, 'headerUserAvatar');
+        var headerUserAvatar = document.getElementById('headerUserAvatar');
+        if (headerUserAvatar) loadMemberAvatar(data.member.individual_id, 'headerUserAvatar');
       }
       if (data.household) {
-        document.getElementById('headerHouseholdName').textContent = data.household.household_name || 'Household';
+        var headerHouseholdName = document.getElementById('headerHouseholdName');
+        if (headerHouseholdName) headerHouseholdName.textContent = data.household.household_name || 'Household';
       }
 
       // Render all dashboard components
@@ -8357,39 +8360,41 @@ function submitPasswordReset(event) {
 
       // Render quick action buttons safely using DOM
       var quickActionsContainer = document.getElementById('quickActionsContainer');
-      quickActionsContainer.innerHTML = '';
+      if (quickActionsContainer) {
+        quickActionsContainer.innerHTML = '';
 
-      var gridDiv = document.createElement('div');
-      gridDiv.className = 'quick-actions-grid';
+        var gridDiv = document.createElement('div');
+        gridDiv.className = 'quick-actions-grid';
 
-      var actions = [
-        { icon: '📅', label: 'Book Facility', page: 'reservations' },
-        { icon: '💰', label: 'Submit Payment', page: 'payment' },
-        { icon: '🎫', label: 'Digital Card', page: 'card' },
-        { icon: '📋', label: 'Rules & Regulations', page: 'rules' },
-        { icon: '👤', label: 'Edit Profile', page: 'profile' }
-      ];
+        var actions = [
+          { icon: '📅', label: 'Book Facility', page: 'reservations' },
+          { icon: '💰', label: 'Submit Payment', page: 'payment' },
+          { icon: '🎫', label: 'Digital Card', page: 'card' },
+          { icon: '📋', label: 'Rules & Regulations', page: 'rules' },
+          { icon: '👤', label: 'Edit Profile', page: 'profile' }
+        ];
 
-      actions.forEach(function(action) {
-        var btn = document.createElement('button');
-        btn.className = 'quick-action-btn';
-        btn.onclick = (function(pageName) {
-          return function() { showPage(pageName); };
-        })(action.page);
+        actions.forEach(function(action) {
+          var btn = document.createElement('button');
+          btn.className = 'quick-action-btn';
+          btn.onclick = (function(pageName) {
+            return function() { showPage(pageName); };
+          })(action.page);
 
-        var iconDiv = document.createElement('div');
-        iconDiv.className = 'quick-action-icon';
-        iconDiv.textContent = action.icon;
-        btn.appendChild(iconDiv);
+          var iconDiv = document.createElement('div');
+          iconDiv.className = 'quick-action-icon';
+          iconDiv.textContent = action.icon;
+          btn.appendChild(iconDiv);
 
-        var labelDiv = document.createElement('div');
-        labelDiv.textContent = action.label;
-        btn.appendChild(labelDiv);
+          var labelDiv = document.createElement('div');
+          labelDiv.textContent = action.label;
+          btn.appendChild(labelDiv);
 
-        gridDiv.appendChild(btn);
-      });
+          gridDiv.appendChild(btn);
+        });
 
-      quickActionsContainer.appendChild(gridDiv);
+        quickActionsContainer.appendChild(gridDiv);
+      }
     });
   }
   

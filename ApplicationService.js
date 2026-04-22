@@ -866,51 +866,79 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       return { success: false, message: "Application is not in payment stage." };
     }
 
+    // Validate required application fields
+    if (!application.household_id) {
+      Logger.log("[ERROR submitPaymentProof] Application missing household_id: " + applicationId);
+      return { success: false, message: "Application is missing household information." };
+    }
+
     // Create Payment record
     var paymentId = generateId("PAY");
 
+    // Calculate dues amount - validate result
     var duesAmount = _calculateDuesAmount(applicationId);
+    if (typeof duesAmount !== "number" || duesAmount <= 0) {
+      Logger.log("[ERROR submitPaymentProof] Invalid duesAmount: " + duesAmount + " for app " + applicationId);
+      return { success: false, message: "Could not calculate payment amount." };
+    }
+
     var exchangeRate = getExchangeRate();
+    if (typeof exchangeRate !== "number" || exchangeRate <= 0) {
+      Logger.log("[ERROR submitPaymentProof] Invalid exchangeRate: " + exchangeRate);
+      return { success: false, message: "Could not retrieve exchange rate." };
+    }
+
     var now = new Date();
+    var currentYear = getConfigValue("CURRENT_MEMBERSHIP_YEAR");
+    if (!currentYear) {
+      Logger.log("[ERROR submitPaymentProof] CURRENT_MEMBERSHIP_YEAR not configured");
+      return { success: false, message: "System configuration error: membership year not set." };
+    }
 
     // Create payment using proper field mapping
     var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
     var headers = paymentSheet.getRange(1, 1, 1, paymentSheet.getLastColumn()).getValues()[0];
 
-    // Log headers for diagnostics
-    Logger.log("[DEBUG submitPaymentProof] Sheet headers: " + JSON.stringify(headers));
+    // Validate household name - required for clarity in sheet
+    var householdName = application.household_name || ("Household " + application.household_id);
+    if (householdName === "") {
+      householdName = "Household " + application.household_id;
+    }
 
     var paymentData = {
       payment_id: paymentId,
-      household_id: application.household_id,
-      household_name: application.household_name || "",
+      household_id: String(application.household_id),
+      household_name: String(householdName),
       payment_date: now,
-      payment_method: paymentMethod,
+      payment_method: String(paymentMethod || ""),
       currency: "BWP",
       amount: duesAmount,
       amount_usd: Math.round(duesAmount / exchangeRate * 100) / 100,
       amount_bwp: duesAmount,
       payment_type: "Dues Payment",
-      applied_to_period: getConfigValue("CURRENT_MEMBERSHIP_YEAR") || "",
-      payment_reference: "",
-      payment_confirmation_file_id: proofFileId || "",
+      applied_to_period: String(currentYear),
+      payment_reference: String(proofFileId || ""),
+      payment_confirmation_file_id: String(proofFileId || ""),
       payment_submitted_date: now,
       payment_verified_date: "",
       payment_verified_by: "",
       notes: String(notes || "").substring(0, 500)
     };
 
-    Logger.log("[DEBUG submitPaymentProof] PaymentData keys: " + JSON.stringify(Object.keys(paymentData)));
+    Logger.log("[DEBUG submitPaymentProof] Payment created for household: " + householdName +
+      " amount: " + duesAmount + " BWP (" + paymentData.amount_usd + " USD)");
 
     // Build row using header mapping and validate all headers are found
     var row = [];
     var missingKeys = [];
     for (var i = 0; i < headers.length; i++) {
       var headerName = headers[i];
-      if (paymentData[headerName] !== undefined) {
-        row.push(paymentData[headerName]);
+      var value = paymentData[headerName];
+      if (value !== undefined) {
+        row.push(value);
       } else {
         row.push("");
+        // Only warn about missing keys that aren't legacy columns
         if (!headerName.match(/^journal_entry_id|^recorded_by/)) {
           missingKeys.push(headerName);
         }
@@ -921,7 +949,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       Logger.log("[WARN submitPaymentProof] Missing keys in paymentData: " + JSON.stringify(missingKeys));
     }
 
-    Logger.log("[DEBUG submitPaymentProof] Row length: " + row.length + ", Headers length: " + headers.length);
+    Logger.log("[DEBUG submitPaymentProof] Writing row with " + row.length + " values to " + headers.length + " columns");
     paymentSheet.appendRow(row);
 
     // Update application with payment info

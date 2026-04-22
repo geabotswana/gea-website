@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.102";
+var SYSTEM_VERSION          = "2.4.103";
 var SYSTEM_BUILD_DATE       = "2026-04-22";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix critical currency bug in payment submission";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-22 21:43:32";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix amount field calculation for BWP payments";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-22 21:45:44";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

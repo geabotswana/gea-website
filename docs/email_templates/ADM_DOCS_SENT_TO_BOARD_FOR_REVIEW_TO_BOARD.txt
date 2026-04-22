@@ -14,9 +14,9 @@ WHAT YOU NEED TO DO:
 Review the applicant's submitted documents in the Admin Portal under "Applications" → "Board Review". Check for completeness and compliance with GEA membership requirements.
 
 APPROVAL OPTIONS:
-1. Approve for RSO Review — Documents meet initial requirements and will proceed to the Regional Security Officer for security verification
-2. Request Additional Documents — Ask the applicant to resubmit missing or unclear documents
-3. Deny Application — Reject the application if it does not meet membership criteria
+1. Approve for RSO Review - Documents meet initial requirements and will proceed to the Regional Security Officer for security verification
+2. Request Additional Documents - Ask the applicant to resubmit missing or unclear documents
+3. Deny Application - Reject the application if it does not meet membership criteria
 
 EXPECTED TIMELINE:
 Please complete your initial review within 3 business days.

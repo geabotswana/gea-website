@@ -2527,7 +2527,6 @@ function _handleGetHouseholdMembers(p) {
         phone_primary_whatsapp:    m.phone_primary_whatsapp || false,
         citizenship_country:       m.citizenship_country   || "",
         omang_number:              m.omang_number          || "",
-        employment_role:           m.employment_role       || "",
         employment_start_date:     m.employment_start_date || "",
         employment_end_date:       m.employment_end_date   || "",
         doc_status: {
@@ -2629,7 +2628,6 @@ function _handleAddHouseholdMember(p) {
       phone_primary_whatsapp:  p.phone_primary_whatsapp === true || p.phone_primary_whatsapp === "true",
       citizenship_country:     p.citizenship           ? sanitizeInput(p.citizenship)     : "",
       omang_number:            p.omang_number          ? sanitizeInput(p.omang_number)    : "",
-      employment_role:         p.employment_role       ? sanitizeInput(p.employment_role) : "",
       employment_start_date:   p.employment_start_date || "",
       employment_end_date:     p.employment_end_date   || ""
     };

@@ -7424,13 +7424,6 @@ function submitPasswordReset(event) {
       var name = document.createElement('strong');
       name.textContent = (m.first_name || '') + ' ' + (m.last_name || '');
       info.appendChild(name);
-      if (m.employment_role) {
-        var role = document.createElement('div');
-        role.style.fontSize = '13px';
-        role.style.color = '#555';
-        role.textContent = 'Role: ' + m.employment_role;
-        info.appendChild(role);
-      }
       if (m.employment_start_date) {
         var dates = document.createElement('div');
         dates.style.fontSize = '12px';

@@ -9,7 +9,7 @@ Application ID: {{APPLICATION_ID}}
 Reason for Decision: {{DENIAL_REASON}}
 
 WHAT DOES THIS MEAN?
-Your application does not meet current membership eligibility requirements. This decision does not reflect on your character or qualifications — it simply means your circumstances do not align with GEA membership categories at this time.
+Your application does not meet current membership eligibility requirements. This decision does not reflect on your character or qualifications - it simply means your circumstances do not align with GEA membership categories at this time.
 
 CAN YOU REAPPLY?
 Yes. Your circumstances may change in the future. If you believe this was an error or your situation has changed, you may reapply after 90 days. Contact the board to discuss.

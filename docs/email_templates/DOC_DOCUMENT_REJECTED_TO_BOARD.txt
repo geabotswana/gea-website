@@ -1,6 +1,6 @@
 Hi Board,
 
-DOCUMENT REJECTED — BOARD ACTION REQUIRED
+DOCUMENT REJECTED - BOARD ACTION REQUIRED
 
 A member's submitted {{DOCUMENT_TYPE}} has been rejected by RSO review. You need to communicate the rejection diplomatically to the member.
 

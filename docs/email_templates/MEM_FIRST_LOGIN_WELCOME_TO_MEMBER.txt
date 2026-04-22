@@ -36,7 +36,7 @@ GETTING STARTED:
 Log in now: {{PORTAL_URL}}
 
 NEED HELP?
-Have questions? Contact board@geabotswana.org — we're here to help you get started!
+Have questions? Contact board@geabotswana.org - we're here to help you get started!
 
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

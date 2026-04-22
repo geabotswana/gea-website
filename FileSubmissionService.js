@@ -1046,8 +1046,16 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     var boardEmail = EMAIL_BOARD;
 
     if (approve) {
-      // RSO approved - document verification is final, no further board review needed
-      // Board will be notified when all documents are approved via checkApplicationDocumentReadiness
+      // RSO approved - notify board as informational notification
+      if (individual) {
+        sendEmailFromTemplate("ADM_DOCUMENT_APPROVED_BY_RSO_TO_BOARD", boardEmail, {
+          FIRST_NAME: "Board",
+          APPLICANT_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+          DOCUMENT_TYPE: docType,
+          APPLICATION_ID: found.obj.application_id || submissionId,
+          APPROVAL_DATE: formatDate(new Date())
+        });
+      }
     } else {
       // RSO rejected - notify board with rejection reason
       var applicantName = individual ? (individual.first_name + " " + individual.last_name) : "Unknown";

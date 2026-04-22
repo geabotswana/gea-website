@@ -2752,7 +2752,7 @@ function createTestApplicantForPaymentTesting() {
 
     var applicationId = appRecord.application_id;
     var householdId = appRecord.household_id;
-    var applicantId = appRecord.primary_applicant_id;
+    var applicantId = appRecord.individual_id;
     Logger.log("✓ Application created: " + applicationId);
     Logger.log("✓ Household: " + householdId);
     Logger.log("✓ Applicant individual: " + applicantId);

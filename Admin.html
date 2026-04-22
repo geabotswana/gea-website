@@ -3559,22 +3559,37 @@
         }
 
         // Photo submissions pending
-        document.getElementById('dashPhotoCount').textContent = data.pending_photos || '0';
+        var photoCount = document.getElementById('dashPhotoCount');
+        if (photoCount) {
+          photoCount.textContent = data.pending_photos || '0';
+        }
 
         // Unverified payments
-        document.getElementById('dashPaymentCount').textContent = data.unverified_payments || 0;
+        var paymentCount = document.getElementById('dashPaymentCount');
+        if (paymentCount) {
+          paymentCount.textContent = data.unverified_payments || 0;
+        }
 
         // Active members
-        document.getElementById('dashMemberCount').textContent = data.active_members || 0;
+        var memberCount = document.getElementById('dashMemberCount');
+        if (memberCount) {
+          memberCount.textContent = data.active_members || 0;
+        }
 
         // Reservations today
-        document.getElementById('dashTodayCount').textContent = data.reservations_today || 0;
+        var todayCount = document.getElementById('dashTodayCount');
+        if (todayCount) {
+          todayCount.textContent = data.reservations_today || 0;
+        }
       }
     });
 
     // Populate upcoming reservations list
     var upcomingHtml = '<p style="text-align: center; color: #999; padding: 20px;">Loading upcoming reservations...</p>';
-    document.getElementById('dashUpcomingList').innerHTML = upcomingHtml;
+    var upcomingList = document.getElementById('dashUpcomingList');
+    if (upcomingList) {
+      upcomingList.innerHTML = upcomingHtml;
+    }
 
     // In production, fetch from backend and render upcoming reservations here
   }

@@ -2850,7 +2850,7 @@ function createTestApplicantForPaymentTesting() {
     // Step 6: Board initial decision
     Logger.log("\nStep 6: Board initial decision...");
     var boardInitial = boardInitialDecision(applicationId, "approve", "test_board@example.com", "Test data generator approval", "Approved for processing");
-    if (!boardInitial || !boardInitial.ok) {
+    if (!boardInitial || !boardInitial.success) {
       Logger.log("ERROR: Board initial decision failed: " + JSON.stringify(boardInitial));
       return boardInitial;
     }
@@ -2868,7 +2868,7 @@ function createTestApplicantForPaymentTesting() {
     // Step 8: Board final decision
     Logger.log("\nStep 8: Board final decision...");
     var boardFinal = boardFinalDecision(applicationId, "approve", "test_board@example.com", "Test data generation", "Approved");
-    if (!boardFinal || !boardFinal.ok) {
+    if (!boardFinal || !boardFinal.success) {
       Logger.log("ERROR: Board final decision failed: " + JSON.stringify(boardFinal));
       return boardFinal;
     }

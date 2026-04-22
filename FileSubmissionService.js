@@ -1020,7 +1020,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     }
 
     var approve    = decision === "approve";
-    var newStatus  = approve ? "gea_pending" : "rso_rejected";
+    var newStatus  = approve ? "verified" : "rso_rejected";
 
     var patchObj = {
       status:                          newStatus,
@@ -1046,15 +1046,8 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     var boardEmail = EMAIL_BOARD;
 
     if (approve) {
-      // RSO approved - notify board that document is ready for their final review
-      if (individual) {
-        sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_BOARD", boardEmail, {
-          APPLICANT_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
-          APPLICATION_ID: found.obj.application_id || submissionId,
-          APPROVAL_DEADLINE: formatDate(new Date(new Date().getTime() + (3 * 24 * 60 * 60 * 1000))),
-          BOARD_ITEM_TYPE: "Document Review: " + docType
-        });
-      }
+      // RSO approved - document verification is final, no further board review needed
+      // Board will be notified when all documents are approved via checkApplicationDocumentReadiness
     } else {
       // RSO rejected - notify board with rejection reason
       var applicantName = individual ? (individual.first_name + " " + individual.last_name) : "Unknown";

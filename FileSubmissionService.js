@@ -372,6 +372,9 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
 
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
+    if (appRow === -1) {
+      return { ok: false, message: "Application row not found in sheet." };
+    }
 
     // Update application status to RSO_APPLICATION_REVIEW (intermediate state)
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);

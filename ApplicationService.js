@@ -578,6 +578,9 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
 
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
+    if (appRow === -1) {
+      return { success: false, message: "Application row not found in sheet." };
+    }
 
     if (decision === "approved") {
       // Board approves — send to RSO
@@ -672,6 +675,9 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
 
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
+    if (appRow === -1) {
+      return { success: false, message: "Application row not found in sheet." };
+    }
 
     if (decision === "approved") {
       // RSO approves — ready for board final review
@@ -760,6 +766,9 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
 
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
+    if (appRow === -1) {
+      return { success: false, message: "Application row not found in sheet." };
+    }
 
     if (decision === "approved") {
       // Board final approval — applicant can now submit payment

@@ -2739,7 +2739,7 @@ function createTestApplicantForPaymentTesting() {
       password: testPassword,
       household_type: "individual",
       country_code_primary: "US",
-      phone_primary: "+1-202-555-0123",
+      phone_primary: "202-555-0123",
       membership_category: "Full"
     };
 

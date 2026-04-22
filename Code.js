@@ -262,6 +262,7 @@ function _routeAction(action, params) {
     case "rso_approve_application":   return _handleRsoApproveApplication(params);
     case "rso_deny_application":      return _handleRsoDenyApplication(params);
     case "rso_application_decision":  return _handleRsoApplicationDecision(params);
+    case "admin_get_application_payment": return _handleAdminGetApplicationPayment(params);
     case "admin_verify_payment":      return _handleAdminVerifyPayment(params);
     case "admin_pending_payments": return _handleAdminPendingPayments(params);
     case "admin_approve_payment": return _handleAdminApprovePayment(params);
@@ -3043,6 +3044,60 @@ function _handleRsoApplicationDecision(p) {
   } catch (e) {
     return errorResponse("Error making RSO decision: " + e.toString(), "SERVER_ERROR");
   }
+}
+
+/**
+ * HANDLER: _handleAdminGetApplicationPayment
+ * PURPOSE: Get payment details for an application in payment_submitted status
+ */
+function _handleAdminGetApplicationPayment(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.ok) return auth.response;
+
+    if (!p.application_id) {
+      return errorResponse("Missing application_id parameter", "INVALID_PARAM");
+    }
+
+    var app = getApplicationById(p.application_id);
+    if (!app) {
+      return errorResponse("Application not found", "NOT_FOUND");
+    }
+
+    if (!app.household_id) {
+      return errorResponse("Application has no household_id", "OPERATION_FAILED");
+    }
+
+    var paymentsSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
+    var allPayments = paymentsSheet.getRange(2, 1, paymentsSheet.getLastRow() - 1, paymentsSheet.getLastColumn()).getValues();
+    var headers = paymentsSheet.getRange(1, 1, 1, paymentsSheet.getLastColumn()).getValues()[0];
+
+    var householdPayments = allPayments.filter(function(row) {
+      var payment = _rowToPaymentObject_(row, headers);
+      return payment.household_id === app.household_id && payment.payment_status === "submitted";
+    });
+
+    if (householdPayments.length === 0) {
+      return errorResponse("No pending payment found for this application", "NOT_FOUND");
+    }
+
+    var mostRecentPayment = householdPayments[householdPayments.length - 1];
+    var payment = _rowToPaymentObject_(mostRecentPayment, headers);
+
+    return successResponse({
+      payment: payment
+    });
+  } catch (e) {
+    return errorResponse("Error fetching payment details: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+function _rowToPaymentObject_(row, headers) {
+  var obj = {};
+  for (var i = 0; i < headers.length; i++) {
+    obj[headers[i]] = row[i];
+  }
+  return obj;
 }
 
 /**

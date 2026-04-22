@@ -6934,9 +6934,51 @@
           finalDenyBtn.onclick = function() { denyApplicationStage(applicationId, 'board_final'); };
           actionsDiv.appendChild(finalDenyBtn);
         } else if (app.status === 'payment_submitted') {
+          // Payment submitted — show payment details before verification
+          var paymentSection = document.createElement('div');
+          paymentSection.style.cssText = 'background:#f0f8ff; border:1px solid #4CAF50; border-radius:6px; padding:16px; margin-bottom:20px;';
+
+          var paymentTitle = document.createElement('h4');
+          paymentTitle.style.cssText = 'margin:0 0 12px 0; font-size:14px; color:#2E7D32; font-weight:600;';
+          paymentTitle.textContent = '✓ Payment Received';
+          paymentSection.appendChild(paymentTitle);
+
+          // Fetch payment details from backend
+          apiCall('admin_get_application_payment', { application_id: applicationId }).then(function(payRes) {
+            if (payRes.success && payRes.data.payment) {
+              var payment = payRes.data.payment;
+
+              var paymentDetails = [
+                { label: 'Amount (USD):', value: '$' + (payment.amount_usd || '0.00') },
+                { label: 'Amount (BWP):', value: '₱' + (payment.amount_bwp || '0.00') },
+                { label: 'Currency:', value: payment.currency || 'USD' },
+                { label: 'Method:', value: payment.payment_method || '—' },
+                { label: 'Submitted:', value: payment.payment_submitted_date ? new Date(payment.payment_submitted_date).toLocaleDateString() : '—' },
+                { label: 'Payment ID:', value: payment.payment_id || '—' }
+              ];
+
+              paymentDetails.forEach(function(detail) {
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #e0e0e0; font-size:13px;';
+                var label = document.createElement('span');
+                label.style.fontWeight = '600';
+                label.style.color = '#333';
+                label.textContent = detail.label;
+                var value = document.createElement('span');
+                value.style.color = '#666';
+                value.textContent = detail.value;
+                row.appendChild(label);
+                row.appendChild(value);
+                paymentSection.appendChild(row);
+              });
+            }
+          });
+
+          content.insertBefore(paymentSection, actionsDiv);
+
           var verifyBtn = document.createElement('button');
           verifyBtn.className = 'btn btn-primary';
-          verifyBtn.textContent = 'Verify Payment & Activate';
+          verifyBtn.textContent = 'Verify Payment & Activate Membership';
           verifyBtn.onclick = function() { verifyPayment(applicationId); };
           actionsDiv.appendChild(verifyBtn);
         }

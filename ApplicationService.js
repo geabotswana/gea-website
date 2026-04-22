@@ -895,6 +895,14 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       return { success: false, message: "System configuration error: membership year not set." };
     }
 
+    // Determine currency from payment method (e.g., "PayPal (USD)" or "Bank Transfer (BWP)")
+    var currency = "BWP";  // Default
+    if (paymentMethod && paymentMethod.indexOf("USD") >= 0) {
+      currency = "USD";
+    } else if (paymentMethod && paymentMethod.indexOf("BWP") >= 0) {
+      currency = "BWP";
+    }
+
     // Create payment using proper field mapping
     var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
     var headers = paymentSheet.getRange(1, 1, 1, paymentSheet.getLastColumn()).getValues()[0];
@@ -905,16 +913,26 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       householdName = "Household " + application.household_id;
     }
 
+    // Calculate amounts based on actual currency
+    var amountUsd, amountBwp;
+    if (currency === "USD") {
+      amountUsd = duesAmount;
+      amountBwp = Math.round(duesAmount * exchangeRate * 100) / 100;
+    } else {
+      amountBwp = duesAmount;
+      amountUsd = Math.round(duesAmount / exchangeRate * 100) / 100;
+    }
+
     var paymentData = {
       payment_id: paymentId,
       household_id: String(application.household_id),
       household_name: String(householdName),
       payment_date: now,
       payment_method: String(paymentMethod || ""),
-      currency: "BWP",
+      currency: currency,
       amount: duesAmount,
-      amount_usd: Math.round(duesAmount / exchangeRate * 100) / 100,
-      amount_bwp: duesAmount,
+      amount_usd: amountUsd,
+      amount_bwp: amountBwp,
       payment_type: "Dues Payment",
       applied_to_period: String(currentYear),
       payment_reference: String(proofFileId || ""),
@@ -926,7 +944,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     };
 
     Logger.log("[DEBUG submitPaymentProof] Payment created for household: " + householdName +
-      " amount: " + duesAmount + " BWP (" + paymentData.amount_usd + " USD)");
+      " amount: " + duesAmount + " " + currency + " (USD: " + amountUsd + ", BWP: " + amountBwp + ")");
 
     // Build row using header mapping and validate all headers are found
     var row = [];

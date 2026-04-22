@@ -78,7 +78,7 @@ function uploadFileSubmission(params) {
       expiration_warning_1m_sent_date: ""
     };
 
-    _expireCurrentSubmission_(payload.individual_id, documentType);
+    _handleOldSubmissionOnReplacement_(payload.individual_id, documentType);
     _appendRowByHeaders_(submissionSheet, payload);
 
     if (documentType === "passport" || documentType === "omang") {
@@ -812,6 +812,38 @@ function _expireCurrentSubmission_(individualId, documentType) {
       var disabledCol = headers.indexOf("disabled_date") + 1;
       if (currCol > 0) sheet.getRange(i + 1, currCol).setValue(false);
       if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(new Date());
+    }
+  }
+}
+
+function _handleOldSubmissionOnReplacement_(individualId, documentType) {
+  var sheet = _getFileSubmissionsSheet_();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+
+  for (var i = data.length - 1; i >= 1; i--) {
+    var obj = rowToObject(headers, data[i]);
+    if (obj.individual_id === individualId &&
+        String(obj.document_type || "").toLowerCase() === documentType &&
+        obj.is_current === true) {
+      var status = String(obj.status || "").toLowerCase();
+
+      if (status === "submitted") {
+        // Unapproved submission - delete it completely
+        var fileId = obj.file_id;
+        sheet.deleteRow(i + 1);
+        if (fileId) {
+          try { DriveApp.getFileById(fileId).setTrashed(true); } catch (fe) { /* file already gone */ }
+        }
+      } else {
+        // Approved submission - deactivate it (preserve audit trail)
+        var currCol = headers.indexOf("is_current") + 1;
+        var disabledCol = headers.indexOf("disabled_date") + 1;
+        if (currCol > 0) sheet.getRange(i + 1, currCol).setValue(false);
+        if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(new Date());
+      }
+
+      return;
     }
   }
 }

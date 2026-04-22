@@ -914,14 +914,10 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     }
 
     // Calculate amounts based on actual currency
-    var amountUsd, amountBwp;
-    if (currency === "USD") {
-      amountUsd = duesAmount;
-      amountBwp = Math.round(duesAmount * exchangeRate * 100) / 100;
-    } else {
-      amountBwp = duesAmount;
-      amountUsd = Math.round(duesAmount / exchangeRate * 100) / 100;
-    }
+    // duesAmount is always in USD from _calculateDuesAmount()
+    var amountUsd = duesAmount;
+    var amountBwp = Math.round(duesAmount * exchangeRate * 100) / 100;
+    var amountPaid = currency === "USD" ? duesAmount : amountBwp;
 
     var paymentData = {
       payment_id: paymentId,
@@ -930,7 +926,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       payment_date: now,
       payment_method: String(paymentMethod || ""),
       currency: currency,
-      amount: duesAmount,
+      amount: amountPaid,
       amount_usd: amountUsd,
       amount_bwp: amountBwp,
       payment_type: "Dues Payment",

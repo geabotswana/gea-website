@@ -870,19 +870,26 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     var paymentId = generateId("PAY");
     var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
 
+    var duesAmount = _calculateDuesAmount(applicationId);
+    var exchangeRate = getExchangeRate();
     var paymentData = {
       payment_id: paymentId,
       household_id: application.household_id,
-      payment_method: paymentMethod,
-      amount_paid: _calculateDuesAmount(applicationId),
+      household_name: application.household_name || "",
       payment_date: new Date(),
-      submission_timestamp: new Date(),
-      proof_file_id: proofFileId,
-      notes: notes || "",
-      status: "submitted",
-      verified_by: "",
-      verification_timestamp: "",
-      created_date: new Date()
+      payment_method: paymentMethod,
+      currency: "BWP",
+      amount: duesAmount,
+      amount_usd: Math.round(duesAmount / exchangeRate * 100) / 100,
+      amount_bwp: duesAmount,
+      payment_type: "Dues Payment",
+      applied_to_period: getConfigValue("CURRENT_MEMBERSHIP_YEAR") || "",
+      payment_reference: "",
+      payment_confirmation_file_id: proofFileId || "",
+      payment_submitted_date: new Date(),
+      payment_verified_date: "",
+      payment_verified_by: "",
+      notes: String(notes || "").substring(0, 500)
     };
 
     paymentSheet.appendRow(_objectToRow(paymentData, TAB_PAYMENTS));
@@ -958,9 +965,8 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
     var paymentRow = _findPaymentRow(application.payment_id);
     if (paymentRow > 0) {
-      paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "status")).setValue("verified");
-      paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "verified_by")).setValue(treasurerEmail);
-      paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "verification_timestamp")).setValue(new Date());
+      paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "payment_verified_date")).setValue(new Date());
+      paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "payment_verified_by")).setValue(treasurerEmail);
     }
 
     // Calculate membership expiration (next July 31)

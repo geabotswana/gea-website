@@ -7435,8 +7435,11 @@ function submitPasswordReset(event) {
         var dates = document.createElement('div');
         dates.style.fontSize = '12px';
         dates.style.color = '#888';
-        dates.textContent = 'From: ' + m.employment_start_date +
-          (m.employment_end_date ? '  To: ' + m.employment_end_date : '');
+        // Extract just the date part (YYYY-MM-DD) from ISO datetime strings
+        var startDateStr = m.employment_start_date.split('T')[0] || m.employment_start_date;
+        var endDateStr = m.employment_end_date ? (m.employment_end_date.split('T')[0] || m.employment_end_date) : '';
+        dates.textContent = 'From: ' + startDateStr +
+          (endDateStr ? '  To: ' + endDateStr : '');
         info.appendChild(dates);
       }
       row.appendChild(info);

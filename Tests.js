@@ -2724,7 +2724,7 @@ function createTestApplicantForPaymentTesting() {
   try {
     // Generate unique test email
     var timestamp = new Date().getTime().toString().slice(-6);
-    var testEmail = "testapplicant." + timestamp + "@example.com";
+    var testEmail = "michael+" + timestamp + "@raneyworld.com";
     var testPassword = "TestPassword2026!";
     var firstName = "TestApplicant";
     var lastName = "User" + timestamp;

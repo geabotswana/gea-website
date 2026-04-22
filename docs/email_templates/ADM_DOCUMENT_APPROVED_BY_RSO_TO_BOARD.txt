@@ -1,0 +1,16 @@
+Dear Board,
+
+RSO has approved a document for {{APPLICANT_NAME}}:
+
+Document Type: {{DOCUMENT_TYPE}}
+Application: {{APPLICATION_ID}}
+Approval Date: {{APPROVAL_DATE}}
+
+The document has been verified and accepted. All documents for this applicant's application will now be available for your final review.
+
+---
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
+This is an automated message from the GEA member management system. Please do not reply to this email. Contact board@geabotswana.org for support.

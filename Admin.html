@@ -6172,11 +6172,14 @@
    * Displays them in a table with confirm/not-found buttons.
    */
   function loadPayments() {
+    console.log("loadPayments() called");
     var tbody = document.getElementById('payTableBody');
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading payments...</td></tr>';
 
     apiCall('admin_pending_payments', {}).then(function(res) {
+      console.log("admin_pending_payments response received:", res);
       if (!res.success) {
+        console.log("Response success is false, error:", res.message);
         showError('Failed to load payments: ' + res.message);
         return;
       }
@@ -6256,6 +6259,9 @@
       });
       
       setupPaymentSearch();
+    }).catch(function(err) {
+      console.error("Error loading payments:", err);
+      showError('Error loading payments: ' + err.message);
     });
   }
   

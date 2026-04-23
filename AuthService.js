@@ -98,14 +98,14 @@ function login(email, password) {
     return { success: false, message: "Invalid email or password." };
   }
 
-  // Check if this is an applicant (in-progress application)
+  // Check membership status and determine portal access
   // IMPORTANT:
   // - Some sheet cells store booleans as strings ("TRUE"/"FALSE"), so normalize first.
-  // - Use Membership Applications status when available, since household.application_status
+  // - Use Membership Applications status when available, since household.membership_status
   //   may be stale/missing during intermediate workflow stages.
   var isHouseholdActive = (household.active === true || String(household.active).toLowerCase() === "true");
-  var householdStatusRaw = String(household.application_status || "").trim();
-  var householdStatus = householdStatusRaw.toLowerCase();
+  var membershipStatusRaw = String(household.membership_status || "").trim();
+  var membershipStatus = membershipStatusRaw.toLowerCase();
 
   // Application status from Membership Applications (if a record exists)
   var applicationStatusRaw = "";
@@ -118,19 +118,21 @@ function login(email, password) {
     }
   }
 
-  // Denied/withdrawn applicants are blocked from login
-  if (householdStatus === "denied" || householdStatus === "withdrawn" ||
-      applicationStatus === "denied" || applicationStatus === "withdrawn") {
-    var deniedStatus = applicationStatusRaw || householdStatusRaw || "Denied";
+  // Block access for Expelled (board action) and Resigned (lapsed too long) members
+  if (membershipStatus === "expelled" || membershipStatus === "resigned" ||
+      applicationStatus === "expelled" || applicationStatus === "resigned") {
+    var blockedStatus = applicationStatusRaw || membershipStatusRaw || "Inactive";
     logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
-                  "Failed login attempt: application " + deniedStatus);
-    return { success: false, message: "Your application was not approved. Please contact board@geabotswana.org for details." };
+                  "Failed login attempt: membership " + blockedStatus);
+    return { success: false, message: "Your membership is not active. Please contact board@geabotswana.org for details." };
   }
 
-  // Treat as applicant when:
-  // 1) household is not active, OR
-  // 2) there is an application record that is not yet activated
-  if (!isHouseholdActive || (applicationStatus && applicationStatus !== "activated")) {
+  // Determine user type and treat as applicant when:
+  // 1) membership_status is "Applicant" OR
+  // 2) household is not active OR
+  // 3) there is an application record that is not yet activated
+  var isLapsedMember = (membershipStatus === "lapsed");
+  if (membershipStatus === "applicant" || !isHouseholdActive || (applicationStatus && applicationStatus !== "activated")) {
     isApplicant = true;
   }
 
@@ -153,7 +155,10 @@ function login(email, password) {
   // Log the successful login
   var logMsg = "Login successful (role: " + role + ")";
   if (isApplicant) {
-    logMsg += " [Applicant - Application Status: " + household.application_status + "]";
+    logMsg += " [Applicant - Status: " + membershipStatusRaw + "]";
+  }
+  if (isLapsedMember) {
+    logMsg += " [Lapsed Member - Renewal Required]";
   }
   logAuditEntry(email, AUDIT_LOGIN, "Individual", member.individual_id, logMsg);
 
@@ -169,12 +174,14 @@ function login(email, password) {
     token:   token,
     role:    role,
     member:  memberData,
-    is_applicant: isApplicant
+    is_applicant: isApplicant,
+    is_lapsed: isLapsedMember,
+    membership_status: membershipStatusRaw
   };
 
-  // Include application status for applicants
+  // Include application status for backward compatibility
   if (isApplicant) {
-    response.application_status = applicationStatusRaw || householdStatusRaw || "in_progress";
+    response.application_status = applicationStatusRaw || membershipStatusRaw || "in_progress";
   }
 
   // Flag if user needs to change their temporary password on first login

@@ -30,7 +30,7 @@
  * STEPS:
  * 1. Validate required form fields
  * 2. Generate application_id (e.g., APP-2026-00001)
- * 3. Auto-create Household record (active=FALSE, application_status="Awaiting Documents")
+ * 3. Auto-create Household record (active=FALSE, membership_status="Applicant")
  * 4. Auto-create primary Individual record (active=FALSE, with temp password)
  * 5. Append application row to Membership Applications sheet
  * 6. Send confirmation emails (applicant + board)
@@ -106,7 +106,7 @@ function createApplicationRecord(formData, createdBy) {
       membership_category: formData.membership_category,
       membership_level_id: _getMembershipLevelId(formData.membership_category, householdType),
       active: false,
-      application_status: "Awaiting Documents",
+      membership_status: MEMBERSHIP_STATUS_APPLICANT,
       application_id: applicationId,
       application_date: todayStr,
       country_code_primary: formData.country_code_primary || "BW",
@@ -647,7 +647,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       // Update household status
       var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
       var hhRow = _findHouseholdRow(application.household_id);
-      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "application_status")).setValue("Denied");
+      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_EXPELLED);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Denied at initial review. Reason: " + (reason || ""));
 
@@ -832,7 +832,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       // Update household
       var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
       var hhRow = _findHouseholdRow(application.household_id);
-      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "application_status")).setValue("Denied");
+      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_EXPELLED);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Final denial. Reason: " + (reason || ""));
 
@@ -1068,7 +1068,7 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_expiration_date")).setValue(expirationDate);
     householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "approved_by")).setValue(treasurerEmail);
     householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "approved_date")).setValue(new Date());
-    householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "application_status")).setValue("Approved");
+    householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_MEMBER);
 
     // Activate all individuals in household
     var individuals = _getIndividualsByHouseholdId(application.household_id);

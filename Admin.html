@@ -6223,14 +6223,30 @@
         var confirmBtn = document.createElement('button');
         confirmBtn.className = 'btn btn-primary btn-small';
         confirmBtn.style.marginRight = '4px';
-        confirmBtn.textContent = 'Confirm';
+        confirmBtn.textContent = 'Approve';
         confirmBtn.onclick = function() { confirmPayment(payment.payment_id); };
-        var notFoundBtn = document.createElement('button');
-        notFoundBtn.className = 'btn btn-secondary btn-small';
-        notFoundBtn.textContent = 'Not Found';
-        notFoundBtn.onclick = function() { markPaymentNotFound(payment.payment_id); };
+        var rejectBtn = document.createElement('button');
+        rejectBtn.className = 'btn btn-secondary btn-small';
+        rejectBtn.style.marginRight = '4px';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.onclick = function() { markPaymentNotFound(payment.payment_id); };
+        var viewProofBtn = document.createElement('button');
+        viewProofBtn.className = 'btn btn-default btn-small';
+        viewProofBtn.textContent = payment.payment_confirmation_file_id ? 'View Proof' : 'No Proof';
+        if (payment.payment_confirmation_file_id) {
+          viewProofBtn.style.cursor = 'pointer';
+          viewProofBtn.onclick = (function(fileId) {
+            return function() {
+              window.open('https://drive.google.com/file/d/' + fileId + '/view', '_blank');
+            };
+          })(payment.payment_confirmation_file_id);
+        } else {
+          viewProofBtn.disabled = true;
+          viewProofBtn.style.opacity = '0.5';
+        }
         actionTd.appendChild(confirmBtn);
-        actionTd.appendChild(notFoundBtn);
+        actionTd.appendChild(rejectBtn);
+        actionTd.appendChild(viewProofBtn);
         row.appendChild(actionTd);
 
         tbody.appendChild(row);

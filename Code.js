@@ -3504,10 +3504,9 @@ function _handleGetApplicantDuesInfo(p) {
     var availableYears = [];
     for (var i = 1; i < pricingData.length; i++) {
       var row = rowToObject(pricingHeaders, pricingData[i]);
-      Logger.log("[DEBUG _handleGetApplicantDuesInfo] Row " + i + ": level=" + row.membership_level +
+      Logger.log("[DEBUG _handleGetApplicantDuesInfo] Row " + i + ": level=" + row.membership_level_id +
         ", year=" + row.membership_year + ", active=" + row.active_for_payment);
-      // NOTE: Membership Pricing sheet column is named "membership_level" (not "membership_level_id")
-      if (row.membership_level === household.membership_level_id &&
+      if (row.membership_level_id === household.membership_level_id &&
           (row.active_for_payment === true || row.active_for_payment === "TRUE")) {
         if (availableYears.indexOf(row.membership_year) === -1) {
           availableYears.push(row.membership_year);

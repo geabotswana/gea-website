@@ -1401,6 +1401,11 @@
         <span class="nav-icon">👥</span>
         <span>Members</span>
       </div>
+      <div class="nav-item" data-page="lapsed-members" onclick="showPage('lapsed-members', event)">
+        <span class="nav-icon">⏸️</span>
+        <span>Membership Status</span>
+        <span id="lapsed-members-badge" class="badge" style="display:none;">0</span>
+      </div>
       <div class="nav-item" data-page="applications" onclick="showPage('applications', event)">
         <span class="nav-icon">📋</span>
         <span>Applications</span>
@@ -1678,7 +1683,86 @@
           </div>
         </div>
       </div>
-      
+
+      <!-- ========================================================== -->
+      <!-- PAGE: LAPSED & RESIGNED MEMBERS                             -->
+      <!-- View and manage inactive membership accounts                 -->
+      <!-- ========================================================== -->
+      <div id="lapsed-members" class="page">
+        <h1 class="page-title">Membership Status Management</h1>
+
+        <div class="info-box">
+          📋 View lapsed members (awaiting renewal) and resigned members (account terminated). Lapsed members have 24 months to renew before auto-termination.
+        </div>
+
+        <!-- Tabs for Lapsed vs Resigned -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd;">
+          <button id="tab-lapsed" class="admin-tab active" onclick="switchMembershipStatusTab('lapsed')" style="padding: 10px 20px; background: none; border: none; cursor: pointer; color: #0A3161; font-weight: 600; border-bottom: 3px solid #0A3161;">Lapsed Members</button>
+          <button id="tab-resigned" class="admin-tab" onclick="switchMembershipStatusTab('resigned')" style="padding: 10px 20px; background: none; border: none; cursor: pointer; color: #999; font-weight: 600;">Resigned Members</button>
+        </div>
+
+        <!-- Lapsed Members Section -->
+        <div id="lapsed-section" style="display: block;">
+          <div class="search-bar">
+            <input type="text" class="search-input" id="lapsedSearchInput" placeholder="Search by household name or email...">
+          </div>
+
+          <div class="card">
+            <div class="table-container">
+              <table id="lapsedTable">
+                <thead>
+                  <tr>
+                    <th>Household Name</th>
+                    <th>Primary Member</th>
+                    <th>Email</th>
+                    <th>Lapsed Date</th>
+                    <th>Expiration Date</th>
+                    <th>Days Until Auto-Terminate</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="lapsedTableBody">
+                </tbody>
+              </table>
+            </div>
+            <div id="lapsedEmpty" class="empty-state" style="display: none;">
+              <div class="empty-state-icon">✓</div>
+              <div class="empty-state-text">No lapsed members</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resigned Members Section -->
+        <div id="resigned-section" style="display: none;">
+          <div class="search-bar">
+            <input type="text" class="search-input" id="resignedSearchInput" placeholder="Search by household name or email...">
+          </div>
+
+          <div class="card">
+            <div class="table-container">
+              <table id="resignedTable">
+                <thead>
+                  <tr>
+                    <th>Household Name</th>
+                    <th>Primary Member</th>
+                    <th>Email</th>
+                    <th>Termination Date</th>
+                    <th>Termination Reason</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="resignedTableBody">
+                </tbody>
+              </table>
+            </div>
+            <div id="resignedEmpty" class="empty-state" style="display: none;">
+              <div class="empty-state-icon">✓</div>
+              <div class="empty-state-text">No resigned members</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ========================================================== -->
       <!-- PAGE: PHOTO REVIEW                                         -->
       <!-- Grid of pending member photos for approval/rejection       -->
@@ -3402,6 +3486,9 @@
         break;
       case 'members':
         loadMembers();
+        break;
+      case 'lapsed-members':
+        loadLapsedMembers();
         break;
       case 'photos':
         loadPhotos();
@@ -5953,14 +6040,210 @@
       var filter = searchInput.value.toLowerCase();
       var tbody = document.getElementById('memTableBody');
       var rows = tbody.getElementsByTagName('tr');
-      
+
       for (var i = 0; i < rows.length; i++) {
         var text = rows[i].textContent.toLowerCase();
         rows[i].style.display = text.includes(filter) ? '' : 'none';
       }
     });
   }
-  
+
+  // ============================================================ //
+  // SECTION: LAPSED & RESIGNED MEMBERS                           //
+  // ============================================================ //
+  // View and manage membership status changes                     //
+  // ============================================================ //
+
+  function loadLapsedMembers() {
+    var tbody = document.getElementById('lapsedTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">Loading lapsed members...</td></tr>';
+
+    apiCall('admin_lapsed_members', {}).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load lapsed members: ' + res.message);
+        return;
+      }
+
+      var members = res.data.households || [];
+
+      if (members.length === 0) {
+        document.getElementById('lapsedTable').style.display = 'none';
+        document.getElementById('lapsedEmpty').style.display = 'block';
+        updateLapsedBadge(0);
+        return;
+      }
+
+      document.getElementById('lapsedTable').style.display = 'table';
+      document.getElementById('lapsedEmpty').style.display = 'none';
+      updateLapsedBadge(members.length);
+
+      tbody.innerHTML = '';
+
+      members.forEach(function(household) {
+        var row = document.createElement('tr');
+
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.household_name || 'Unknown'; return td; })());
+
+        var primaryName = household.primary_first_name && household.primary_last_name
+          ? household.primary_first_name + ' ' + household.primary_last_name
+          : household.email || 'Unknown';
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = primaryName; return td; })());
+
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.email || ''; return td; })());
+
+        var lapsedDate = household.lapsed_date ? new Date(household.lapsed_date).toLocaleDateString() : 'N/A';
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = lapsedDate; return td; })());
+
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.membership_expiration_date || 'N/A'; return td; })());
+
+        // Calculate days until auto-termination (24 months from lapsed_date)
+        var daysRemaining = 'N/A';
+        if (household.lapsed_date) {
+          var lapsed = new Date(household.lapsed_date);
+          var termDate = new Date(lapsed.getFullYear(), lapsed.getMonth() + 24, lapsed.getDate());
+          var today = new Date();
+          var daysLeft = Math.floor((termDate - today) / (1000 * 60 * 60 * 24));
+          daysRemaining = daysLeft > 0 ? daysLeft + ' days' : 'Pending termination';
+        }
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = daysRemaining; return td; })());
+
+        var actionTd = document.createElement('td');
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-small';
+        btn.textContent = 'View';
+        btn.onclick = (function(hhId) {
+          return function() { openMemberDetail(hhId); };
+        })(household.household_id);
+        actionTd.appendChild(btn);
+        row.appendChild(actionTd);
+
+        tbody.appendChild(row);
+      });
+
+      setupLapsedSearch();
+    });
+  }
+
+  function loadResignedMembers() {
+    var tbody = document.getElementById('resignedTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading resigned members...</td></tr>';
+
+    apiCall('admin_resigned_members', {}).then(function(res) {
+      if (!res.success) {
+        showError('Failed to load resigned members: ' + res.message);
+        return;
+      }
+
+      var members = res.data.households || [];
+
+      if (members.length === 0) {
+        document.getElementById('resignedTable').style.display = 'none';
+        document.getElementById('resignedEmpty').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('resignedTable').style.display = 'table';
+      document.getElementById('resignedEmpty').style.display = 'none';
+
+      tbody.innerHTML = '';
+
+      members.forEach(function(household) {
+        var row = document.createElement('tr');
+
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.household_name || 'Unknown'; return td; })());
+
+        var primaryName = household.primary_first_name && household.primary_last_name
+          ? household.primary_first_name + ' ' + household.primary_last_name
+          : household.email || 'Unknown';
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = primaryName; return td; })());
+
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.email || ''; return td; })());
+
+        var termDate = household.termination_date ? new Date(household.termination_date).toLocaleDateString() : 'N/A';
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = termDate; return td; })());
+
+        row.appendChild((() => { var td = document.createElement('td'); td.textContent = household.termination_reason || ''; return td; })());
+
+        var actionTd = document.createElement('td');
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-small';
+        btn.textContent = 'View';
+        btn.onclick = (function(hhId) {
+          return function() { openMemberDetail(hhId); };
+        })(household.household_id);
+        actionTd.appendChild(btn);
+        row.appendChild(actionTd);
+
+        tbody.appendChild(row);
+      });
+
+      setupResignedSearch();
+    });
+  }
+
+  function switchMembershipStatusTab(tab) {
+    var lapsedSection = document.getElementById('lapsed-section');
+    var resignedSection = document.getElementById('resigned-section');
+    var tabLapsed = document.getElementById('tab-lapsed');
+    var tabResigned = document.getElementById('tab-resigned');
+
+    if (tab === 'lapsed') {
+      lapsedSection.style.display = 'block';
+      resignedSection.style.display = 'none';
+      tabLapsed.style.color = '#0A3161';
+      tabLapsed.style.borderBottom = '3px solid #0A3161';
+      tabResigned.style.color = '#999';
+      tabResigned.style.borderBottom = 'none';
+      loadLapsedMembers();
+    } else {
+      lapsedSection.style.display = 'none';
+      resignedSection.style.display = 'block';
+      tabResigned.style.color = '#0A3161';
+      tabResigned.style.borderBottom = '3px solid #0A3161';
+      tabLapsed.style.color = '#999';
+      tabLapsed.style.borderBottom = 'none';
+      loadResignedMembers();
+    }
+  }
+
+  function setupLapsedSearch() {
+    var searchInput = document.getElementById('lapsedSearchInput');
+    searchInput.addEventListener('keyup', function() {
+      var filter = searchInput.value.toLowerCase();
+      var tbody = document.getElementById('lapsedTableBody');
+      var rows = tbody.getElementsByTagName('tr');
+
+      for (var i = 0; i < rows.length; i++) {
+        var text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(filter) ? '' : 'none';
+      }
+    });
+  }
+
+  function setupResignedSearch() {
+    var searchInput = document.getElementById('resignedSearchInput');
+    searchInput.addEventListener('keyup', function() {
+      var filter = searchInput.value.toLowerCase();
+      var tbody = document.getElementById('resignedTableBody');
+      var rows = tbody.getElementsByTagName('tr');
+
+      for (var i = 0; i < rows.length; i++) {
+        var text = rows[i].textContent.toLowerCase();
+        rows[i].style.display = text.includes(filter) ? '' : 'none';
+      }
+    });
+  }
+
+  function updateLapsedBadge(count) {
+    var badge = document.getElementById('lapsed-members-badge');
+    if (count > 0) {
+      badge.style.display = 'inline-block';
+      badge.textContent = count;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
   // ============================================================ //
   // SECTION: PHOTOS                                              //
   // ============================================================ //

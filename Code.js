@@ -254,6 +254,8 @@ function _routeAction(action, params) {
     case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
     case "admin_calendar":                 return _handleAdminCalendar(params);
     case "admin_members": return _handleAdminMembers(params);
+    case "admin_lapsed_members": return _handleAdminLapsedMembers(params);
+    case "admin_resigned_members": return _handleAdminResignedMembers(params);
     case "admin_photo":   return _handleAdminPhoto(params);
     case "admin_pending_photos": return _handleAdminPendingPhotos(params);
     case "admin_applications":       return _handleAdminApplications(params);
@@ -1483,6 +1485,99 @@ function _handleAdminMembers(p) {
   }
 }
 
+/**
+ * ============================================================
+ * HANDLER: _handleAdminLapsedMembers
+ * ============================================================
+ * PURPOSE:
+ * Retrieve all households with membership_status = "Lapsed"
+ * for board review and management.
+ *
+ * AUTHENTICATION:
+ * Requires board role.
+ *
+ * RESPONSE:
+ * { "success": true, "data": { "households": [...] } }
+ * ============================================================
+ */
+function _handleAdminLapsedMembers(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var households = [];
+
+    for (var i = 1; i < data.length; i++) {
+      var hh = rowToObject(headers, data[i]);
+      if (!hh.household_id) continue;
+      if (hh.membership_status === MEMBERSHIP_STATUS_LAPSED) {
+        // Add primary member name and email for display
+        hh.primary_first_name = _getPrimaryFirstName(hh.household_id);
+        var primaryEmail = _getPrimaryEmail(hh.household_id);
+        hh.email = primaryEmail || hh.email || '';
+        households.push(_safePublicHousehold(hh));
+      }
+    }
+
+    return successResponse({
+      households: households,
+      count: households.length
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminLapsedMembers: " + e);
+    return errorResponse("Could not load lapsed members.", "READ_FAILED");
+  }
+}
+
+/**
+ * ============================================================
+ * HANDLER: _handleAdminResignedMembers
+ * ============================================================
+ * PURPOSE:
+ * Retrieve all households with membership_status = "Resigned"
+ * for board review and record-keeping.
+ *
+ * AUTHENTICATION:
+ * Requires board role.
+ *
+ * RESPONSE:
+ * { "success": true, "data": { "households": [...] } }
+ * ============================================================
+ */
+function _handleAdminResignedMembers(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var households = [];
+
+    for (var i = 1; i < data.length; i++) {
+      var hh = rowToObject(headers, data[i]);
+      if (!hh.household_id) continue;
+      if (hh.membership_status === MEMBERSHIP_STATUS_RESIGNED) {
+        // Add primary member name and email for display
+        hh.primary_first_name = _getPrimaryFirstName(hh.household_id);
+        var primaryEmail = _getPrimaryEmail(hh.household_id);
+        hh.email = primaryEmail || hh.email || '';
+        households.push(_safePublicHousehold(hh));
+      }
+    }
+
+    return successResponse({
+      households: households,
+      count: households.length
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminResignedMembers: " + e);
+    return errorResponse("Could not load resigned members.", "READ_FAILED");
+  }
+}
 
 /**
  * ============================================================

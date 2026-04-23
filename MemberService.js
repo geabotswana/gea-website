@@ -217,10 +217,10 @@ function isActiveMember(email) {
   var hh = getHouseholdById(member.household_id);
   if (!hh)     return { isActive: false, status: "not_found", message: ERR_NOT_MEMBER };
 
-  if (hh.application_status === "Pending") {
+  if (hh.membership_status === MEMBERSHIP_STATUS_APPLICANT) {
     return { isActive: false, status: "pending", message: ERR_MEMBERSHIP_PENDING };
   }
-  if (hh.application_status === "Denied" || !hh.active) {
+  if (hh.membership_status === MEMBERSHIP_STATUS_EXPELLED || hh.membership_status === MEMBERSHIP_STATUS_RESIGNED || !hh.active) {
     return { isActive: false, status: "denied", message: ERR_NOT_AUTHORIZED };
   }
   if (hh.membership_expiration_date) {
@@ -699,16 +699,23 @@ function checkExpiringMemberships() {
         sendEmailFromTemplate("MEM_RENEWAL_REMINDER_7_DAYS_TO_MEMBER", primaryEmail, renewalVars);
         Logger.log("7-day renewal reminder: " + primaryEmail);
       }
-      if (expDate.getTime() === today.getTime()) {
-        sendEmailFromTemplate("MEM_MEMBERSHIP_EXPIRED_TO_MEMBER", primaryEmail, {
+
+      // Grace period: Check if grace period has ended (expiration + RENEWAL_GRACE_PERIOD_DAYS)
+      var graceEndDate = addDays(expDate, RENEWAL_GRACE_PERIOD_DAYS);
+      if (today.getTime() === graceEndDate.getTime()) {
+        // Grace period ended - lapse the membership
+        sendEmailFromTemplate("MEM_MEMBERSHIP_LAPSED_TO_MEMBER", primaryEmail, {
           FIRST_NAME:           vars.FIRST_NAME,
           EXPIRED_DATE:         formatDate(expDate),
-          REACTIVATION_AMOUNT:  vars.DUES_USD ? "USD " + vars.DUES_USD : "",
-          PORTAL_URL:           URL_MEMBER_PORTAL
+          GRACE_END_DATE:       formatDate(graceEndDate),
+          RENEWAL_PORTAL_URL:   URL_MEMBER_PORTAL,
+          DUES_USD:             vars.DUES_USD,
+          DUES_BWP:             vars.DUES_BWP
         });
         updateHouseholdField(hh.household_id, "active", false, "system");
-        updateHouseholdField(hh.household_id, "application_status", "Lapsed", "system");
-        Logger.log("Expired + deactivated: " + hh.household_id);
+        updateHouseholdField(hh.household_id, "membership_status", MEMBERSHIP_STATUS_LAPSED, "system");
+        updateHouseholdField(hh.household_id, "lapsed_date", today, "system");
+        Logger.log("Grace period ended, member lapsed: " + hh.household_id);
       }
     }
   } catch (e) { Logger.log("ERROR checkExpiringMemberships: " + e); }

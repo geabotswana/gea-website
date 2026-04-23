@@ -1774,7 +1774,12 @@
       <!-- Payment verification and confirmation                      -->
       <!-- ========================================================== -->
       <div id="payments" class="page">
-        <h1 class="page-title">Payment Management</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h1 class="page-title" style="margin-bottom: 0;">Payment Management</h1>
+          <button class="btn btn-secondary" onclick="openCreateGratisPaymentModal();" title="Create $0 payment for late joiners">
+            <i class="fas fa-plus"></i> Create Gratis Payment
+          </button>
+        </div>
 
         <!-- View Tabs -->
         <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
@@ -1786,6 +1791,7 @@
         <div id="paymentPendingView">
           <div class="search-bar">
             <input type="text" class="search-input" id="paySearchInput" placeholder="Search by household or method...">
+            <button class="btn btn-secondary" onclick="loadPayments();" style="margin-left: 8px;">↻ Refresh</button>
           </div>
         
         <div class="card">
@@ -1795,9 +1801,10 @@
                 <tr>
                   <th>Household</th>
                   <th>Method</th>
-                  <th>Amount (USD)</th>
+                  <th>Amount</th>
                   <th>Submitted</th>
                   <th>Currency</th>
+                  <th>Membership Year</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -2546,6 +2553,139 @@
       <button type="submit" class="btn btn-primary">Reset Password</button>
     </div>
     </form>
+  </div>
+</div>
+
+<div id="paymentVerificationModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:550px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Verify Payment</h2>
+      <button class="modal-close" onclick="closeModal('paymentVerificationModal');">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #ddd;">
+        <p style="margin: 6px 0;"><strong>Household:</strong> <span id="pvHouseholdName"></span></p>
+        <p style="margin: 6px 0;"><strong>Method:</strong> <span id="pvMethod"></span></p>
+        <p style="margin: 6px 0;"><strong>Amount Submitted:</strong> <span id="pvAmountSubmitted"></span></p>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label class="form-label">Actual Amount Received</label>
+        <input type="number" id="pvActualAmount" step="0.01" min="0" placeholder="0.00" class="form-input">
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label class="form-label">Payment Status</label>
+        <div style="display: flex; gap: 20px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="radio" name="pvPaymentStatus" value="paid_in_full" checked>
+            <span>Paid in Full</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="radio" name="pvPaymentStatus" value="balance_due">
+            <span>Balance Due</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="pvBalanceDueSection" style="margin-bottom: 15px; display: none;">
+        <label class="form-label">Balance Due Amount</label>
+        <input type="number" id="pvBalanceDueAmount" step="0.01" min="0" placeholder="0.00" class="form-input">
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label class="form-label">Verification Notes</label>
+        <textarea id="pvVerificationNotes" placeholder="e.g., Exchange rate difference of 2%, acceptable"
+          class="form-input" style="resize: vertical; height: 80px;"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('paymentVerificationModal');">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="submitPaymentVerification();">Verify Payment</button>
+    </div>
+  </div>
+</div>
+
+<div id="boardFinalApprovalModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:550px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Board Final Approval</h2>
+      <button class="modal-close" onclick="closeModal('boardFinalApprovalModal');">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom: 20px;">
+        <label class="form-label">Internal Notes (optional)</label>
+        <textarea id="bfaNotes" placeholder="Internal notes — not visible to applicant"
+          class="form-input" style="resize: vertical; height: 80px;"></textarea>
+      </div>
+
+      <div style="margin-bottom: 20px; padding: 12px; background: #f5f5f5; border-radius: 4px;">
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+          <input type="checkbox" id="bfaGrantGratis" style="margin-top: 4px;">
+          <span>
+            <strong>Grant gratis access for:</strong>
+            <div style="margin-top: 8px; display: none; padding-left: 20px;" id="bfaYearSection">
+              <select id="bfaGratisYear" class="form-input" style="max-width: 200px; margin-bottom: 8px;">
+                <option value="">Select year...</option>
+                <option value="2025-2026">2025-2026</option>
+                <option value="2026-2027">2026-2027</option>
+              </select>
+              <div style="font-size: 12px; color: #666; margin-top: 4px;">For late joiners (e.g., joining near end of year)</div>
+            </div>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('boardFinalApprovalModal');">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="submitBoardFinalApproval();">Approve</button>
+    </div>
+  </div>
+</div>
+
+<div id="createGratisPaymentModal" class="modal-overlay" style="display:none;">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Create Gratis Payment</h2>
+      <button class="modal-close" onclick="closeModal('createGratisPaymentModal');">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom: 15px; padding: 12px; background: #e3f2fd; border-radius: 4px; border-left: 4px solid #1976d2;">
+        <p style="margin: 0; font-size: 13px; color: #0d47a1;">Creates a $0 payment record marked as paid-in-full for late joiners receiving gratis access to a membership year.</p>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label class="form-label">Household *</label>
+        <input type="text" id="cgpHouseholdSearch" placeholder="Search household by name or ID..." class="form-input"
+          style="margin-bottom: 8px;">
+        <select id="cgpHouseholdId" class="form-input" style="display: none;">
+          <option value="">Select from matches...</option>
+        </select>
+        <div id="cgpSearchResults" style="margin-top: 8px; max-height: 200px; overflow-y: auto;"></div>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label class="form-label">Membership Year *</label>
+        <select id="cgpMembershipYear" class="form-input">
+          <option value="">Select year...</option>
+          <option value="2025-2026">2025-2026</option>
+          <option value="2026-2027">2026-2027</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label class="form-label">Reason (optional)</label>
+        <textarea id="cgpReason" placeholder="e.g., Late joiner - July start" class="form-input"
+          style="resize: vertical; height: 60px;"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeModal('createGratisPaymentModal');">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="submitCreateGratisPayment();">Create Payment</button>
+    </div>
   </div>
 </div>
 
@@ -6172,16 +6312,22 @@
    * Displays them in a table with confirm/not-found buttons.
    */
   function loadPayments() {
+    console.log("loadPayments() called");
     var tbody = document.getElementById('payTableBody');
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">Loading payments...</td></tr>';
 
     apiCall('admin_pending_payments', {}).then(function(res) {
+      console.log("admin_pending_payments response received:", res);
       if (!res.success) {
+        console.log("Response success is false, error:", res.message);
         showError('Failed to load payments: ' + res.message);
         return;
       }
 
       var payments = res.data.verifications || [];
+
+      console.log("Pending payments response:", res);
+      console.log("First payment object:", payments[0]);
       
       if (payments.length === 0) {
         document.getElementById('payTable').style.display = 'none';
@@ -6202,13 +6348,18 @@
         });
 
         var row = document.createElement('tr');
+        row.setAttribute('data-payment-id', payment.payment_id);
 
         // Build row safely using DOM methods to prevent XSS
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.household_name || 'Unknown'; return td; })());
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.payment_method || ''; return td; })());
 
         var amountTd = document.createElement('td');
-        amountTd.textContent = '$' + (payment.amount_usd || '0.00');
+        if (payment.currency === 'BWP') {
+          amountTd.textContent = payment.amount_usd ? ('$' + payment.amount_usd + ' / P' + payment.amount_bwp) : '—';
+        } else {
+          amountTd.textContent = '$' + (payment.amount_usd || '0.00');
+        }
         row.appendChild(amountTd);
 
         var submittedTd = document.createElement('td');
@@ -6219,46 +6370,283 @@
         currencyTd.textContent = payment.currency || 'USD';
         row.appendChild(currencyTd);
 
+        var yearTd = document.createElement('td');
+        yearTd.textContent = payment.applied_to_period || 'N/A';
+        row.appendChild(yearTd);
+
         var actionTd = document.createElement('td');
         var confirmBtn = document.createElement('button');
         confirmBtn.className = 'btn btn-primary btn-small';
         confirmBtn.style.marginRight = '4px';
-        confirmBtn.textContent = 'Confirm';
+        confirmBtn.textContent = 'Approve';
         confirmBtn.onclick = function() { confirmPayment(payment.payment_id); };
-        var notFoundBtn = document.createElement('button');
-        notFoundBtn.className = 'btn btn-secondary btn-small';
-        notFoundBtn.textContent = 'Not Found';
-        notFoundBtn.onclick = function() { markPaymentNotFound(payment.payment_id); };
+        var rejectBtn = document.createElement('button');
+        rejectBtn.className = 'btn btn-secondary btn-small';
+        rejectBtn.style.marginRight = '4px';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.onclick = function() { markPaymentNotFound(payment.payment_id); };
+        var viewProofBtn = document.createElement('button');
+        viewProofBtn.className = 'btn btn-default btn-small';
+        viewProofBtn.textContent = payment.payment_confirmation_file_id ? 'View Proof' : 'No Proof';
+        if (payment.payment_confirmation_file_id) {
+          viewProofBtn.style.cursor = 'pointer';
+          viewProofBtn.onclick = (function(fileId) {
+            return function() {
+              window.open('https://drive.google.com/file/d/' + fileId + '/view', '_blank');
+            };
+          })(payment.payment_confirmation_file_id);
+        } else {
+          viewProofBtn.disabled = true;
+          viewProofBtn.style.opacity = '0.5';
+        }
         actionTd.appendChild(confirmBtn);
-        actionTd.appendChild(notFoundBtn);
+        actionTd.appendChild(rejectBtn);
+        actionTd.appendChild(viewProofBtn);
         row.appendChild(actionTd);
 
         tbody.appendChild(row);
       });
       
       setupPaymentSearch();
+    }).catch(function(err) {
+      console.error("Error loading payments:", err);
+      showError('Error loading payments: ' + err.message);
     });
   }
   
   /**
-   * Confirms a payment submission as verified.
+   * Opens detailed payment verification modal.
    */
   function confirmPayment(paymentId) {
-    showConfirmDialog({
-      title: 'Confirm Payment',
-      message: 'Confirm this payment submission?',
-      confirmText: 'Confirm',
-      onConfirm: function() {
-        apiCall('admin_approve_payment', {
-          payment_id: paymentId,
-          notes: ''
-        }).then(function(res) {
-          if (!res.success) {
-            showError('Failed to confirm payment: ' + res.message);
-            return;
-          }
-          loadPayments();
+    // Find the payment in the table to get details
+    var tbody = document.getElementById('payTableBody');
+    var rows = tbody.getElementsByTagName('tr');
+
+    for (var i = 0; i < rows.length; i++) {
+      var storedPaymentId = rows[i].getAttribute('data-payment-id');
+      if (storedPaymentId === paymentId) {
+        var cells = rows[i].getElementsByTagName('td');
+        document.getElementById('pvHouseholdName').textContent = cells[0].textContent;
+        document.getElementById('pvMethod').textContent = cells[1].textContent;
+        document.getElementById('pvAmountSubmitted').textContent = cells[2].textContent;
+
+        // Reset form fields
+        document.getElementById('pvActualAmount').value = '';
+        document.getElementById('pvBalanceDueAmount').value = '';
+        document.getElementById('pvVerificationNotes').value = '';
+        document.querySelector('input[name="pvPaymentStatus"][value="paid_in_full"]').checked = true;
+        document.getElementById('pvBalanceDueSection').style.display = 'none';
+
+        // Store payment ID for use in submitPaymentVerification
+        window._currentPaymentId = paymentId;
+
+        // Show modal
+        document.getElementById('paymentVerificationModal').style.display = 'flex';
+        document.getElementById('pvActualAmount').focus();
+        break;
+      }
+    }
+  }
+
+  /**
+   * Submits the payment verification form.
+   */
+  function submitPaymentVerification() {
+    var paymentId = window._currentPaymentId;
+    var actualAmount = Number(document.getElementById('pvActualAmount').value) || 0;
+    var status = document.querySelector('input[name="pvPaymentStatus"]:checked').value;
+    var balanceDueAmount = status === 'balance_due' ? Number(document.getElementById('pvBalanceDueAmount').value) || 0 : 0;
+    var notes = document.getElementById('pvVerificationNotes').value;
+
+    if (actualAmount === 0) {
+      showError('Please enter actual amount received');
+      return;
+    }
+
+    apiCall('admin_approve_payment', {
+      payment_id: paymentId,
+      actual_amount_received: actualAmount,
+      payment_status: status,
+      balance_due_amount: balanceDueAmount,
+      verification_notes: notes
+    }).then(function(res) {
+      if (!res.success) {
+        showError('Failed to verify payment: ' + res.message);
+        return;
+      }
+      closeModal('paymentVerificationModal');
+      showSuccess('Payment verified successfully');
+      loadPayments();
+    });
+  }
+
+  /**
+   * Initialize payment verification modal event handlers.
+   */
+  (function initPaymentVerificationModal() {
+    var radios = document.querySelectorAll('input[name="pvPaymentStatus"]');
+    var balanceDueSection = document.getElementById('pvBalanceDueSection');
+
+    radios.forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        balanceDueSection.style.display = this.value === 'balance_due' ? 'block' : 'none';
+      });
+    });
+  })();
+
+  /**
+   * Initialize board final approval modal event handlers.
+   */
+  (function initBoardFinalApprovalModal() {
+    var checkbox = document.getElementById('bfaGrantGratis');
+    var yearSection = document.getElementById('bfaYearSection');
+
+    if (checkbox) {
+      checkbox.addEventListener('change', function() {
+        yearSection.style.display = this.checked ? 'block' : 'none';
+      });
+    }
+  })();
+
+  /**
+   * Initialize household search for gratis payment modal.
+   */
+  (function initGratisPaymentSearch() {
+    var searchInput = document.getElementById('cgpHouseholdSearch');
+    var resultsDiv = document.getElementById('cgpSearchResults');
+    var householdSelect = document.getElementById('cgpHouseholdId');
+
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+      var query = this.value.trim().toLowerCase();
+      if (query.length < 2) {
+        resultsDiv.innerHTML = '';
+        return;
+      }
+
+      // Search through loaded members/households
+      apiCall('admin_members', { search: query }).then(function(res) {
+        if (!res.success || !res.data || !res.data.households) {
+          resultsDiv.innerHTML = '<p style="color: #666; font-size: 13px;">No households found</p>';
+          return;
+        }
+
+        var matches = res.data.households.slice(0, 10);
+        resultsDiv.innerHTML = '';
+
+        matches.forEach(function(household) {
+          var div = document.createElement('div');
+          div.style.cssText = 'padding: 8px 12px; margin-bottom: 4px; background: #f5f5f5; border-radius: 4px; cursor: pointer; border-left: 3px solid #1976d2;';
+          div.textContent = household.household_name + ' (' + household.household_id + ')';
+          div.onclick = function() {
+            document.getElementById('cgpHouseholdSearch').value = household.household_name;
+            householdSelect.value = household.household_id;
+            resultsDiv.innerHTML = '';
+          };
+          resultsDiv.appendChild(div);
         });
+      });
+    });
+  })();
+
+  /**
+   * Submits board final approval with optional gratis payment creation.
+   */
+  function submitBoardFinalApproval() {
+    var applicationId = window._currentBoardFinalApplicationId;
+    var notes = document.getElementById('bfaNotes').value;
+    var grantGratis = document.getElementById('bfaGrantGratis').checked;
+    var gratisYear = document.getElementById('bfaGratisYear').value;
+
+    if (grantGratis && !gratisYear) {
+      showError('Please select a membership year for gratis access');
+      return;
+    }
+
+    // First, complete the application approval
+    apiCall('admin_approve_application', {
+      application_id: applicationId,
+      stage: 'board_final',
+      notes: notes || ''
+    }).then(function(res) {
+      if (!res.success) {
+        showError(res.message || 'Error approving application');
+        return;
+      }
+
+      // If gratis payment requested, create it
+      if (grantGratis && gratisYear && res.data && res.data.household_id) {
+        apiCall('admin_create_gratis_payment', {
+          household_id: res.data.household_id,
+          membership_year: gratisYear,
+          reason: 'Late joiner - board approval'
+        }).then(function(payRes) {
+          if (!payRes.success) {
+            showError('Note: Gratis payment creation failed: ' + payRes.message);
+          }
+          closeModal('boardFinalApprovalModal');
+          loadApplications(currentApplicationStatusFilter);
+          showNotification('Application approved!' + (payRes && payRes.success ? ' Gratis payment created.' : ''));
+        });
+      } else {
+        closeModal('boardFinalApprovalModal');
+        loadApplications(currentApplicationStatusFilter);
+        showNotification('Application approved!');
+      }
+    }).catch(function(err) {
+      showError('Error: ' + err.message);
+    });
+  }
+
+  /**
+   * Opens the create gratis payment modal.
+   */
+  function openCreateGratisPaymentModal() {
+    // Reset form
+    document.getElementById('cgpHouseholdSearch').value = '';
+    document.getElementById('cgpHouseholdId').value = '';
+    document.getElementById('cgpMembershipYear').value = '';
+    document.getElementById('cgpReason').value = '';
+    document.getElementById('cgpSearchResults').innerHTML = '';
+    document.getElementById('cgpHouseholdId').style.display = 'none';
+
+    // Show modal
+    document.getElementById('createGratisPaymentModal').style.display = 'flex';
+    document.getElementById('cgpHouseholdSearch').focus();
+  }
+
+  /**
+   * Submits the create gratis payment form.
+   */
+  function submitCreateGratisPayment() {
+    var householdId = document.getElementById('cgpHouseholdId').value;
+    var membershipYear = document.getElementById('cgpMembershipYear').value;
+    var reason = document.getElementById('cgpReason').value;
+
+    if (!householdId) {
+      showError('Please select a household');
+      return;
+    }
+    if (!membershipYear) {
+      showError('Please select a membership year');
+      return;
+    }
+
+    apiCall('admin_create_gratis_payment', {
+      household_id: householdId,
+      membership_year: membershipYear,
+      reason: reason || 'Board grant'
+    }).then(function(res) {
+      if (!res.success) {
+        showError('Failed to create gratis payment: ' + res.message);
+        return;
+      }
+      closeModal('createGratisPaymentModal');
+      showSuccess('Gratis payment created successfully');
+      // If on payments page, reload it
+      if (document.getElementById('payments').style.display !== 'none') {
+        showPaymentView('pending');
       }
     });
   }
@@ -6308,15 +6696,18 @@
    * Switch between pending payments and report views.
    */
   function showPaymentView(viewName) {
+    console.log("showPaymentView called with:", viewName);
     var pendingView = document.getElementById('paymentPendingView');
     var reportView = document.getElementById('paymentReportView');
     var buttons = document.querySelectorAll('#payments .filter-btn');
 
     if (viewName === 'pending') {
+      console.log("Switching to pending view");
       pendingView.style.display = 'block';
       reportView.style.display = 'none';
       buttons[0].classList.add('active');
       buttons[1].classList.remove('active');
+      console.log("About to call loadPayments");
       loadPayments();
     } else if (viewName === 'report') {
       pendingView.style.display = 'none';
@@ -6349,6 +6740,9 @@
 
       var payments = res.data.payments || [];
       var summary = res.data.summary || {};
+
+      console.log("Report payments response:", res);
+      console.log("First payment object:", payments[0]);
 
       if (payments.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No payments match filter criteria</td></tr>';
@@ -7090,6 +7484,23 @@
   }
 
   function _showNormalApprovalDialog(applicationId, stage) {
+    // For board_final stage, show custom modal with gratis payment option
+    if (stage === 'board_final') {
+      window._currentBoardFinalApplicationId = applicationId;
+
+      // Reset form
+      document.getElementById('bfaNotes').value = '';
+      document.getElementById('bfaGrantGratis').checked = false;
+      document.getElementById('bfaYearSection').style.display = 'none';
+      document.getElementById('bfaGratisYear').value = '';
+
+      // Show modal
+      document.getElementById('boardFinalApprovalModal').style.display = 'flex';
+      document.getElementById('bfaNotes').focus();
+      return;
+    }
+
+    // For other stages, use standard dialog
     showConfirmDialog({
       title: 'Approve Application',
       message: 'Optionally add an internal note before approving.',
@@ -7337,44 +7748,6 @@
   /**
    * Load pending payment verifications for treasurer review.
    */
-  function loadPayments() {
-    apiCall('admin_pending_payments', {}).then(function(res) {
-      if (!res.success) {
-        showError('Failed to load payments: ' + res.message);
-        return;
-      }
-
-      var tbody = document.getElementById('payTableBody');
-      var emptyState = document.getElementById('payEmpty');
-      var verifications = res.data.verifications || [];
-
-      tbody.innerHTML = '';
-
-      if (verifications.length === 0) {
-        emptyState.style.display = 'block';
-        return;
-      }
-
-      emptyState.style.display = 'none';
-
-      verifications.forEach(function(v) {
-        var tr = document.createElement('tr');
-        tr.innerHTML = '<td>' + (v.household_name || '') + '</td>' +
-          '<td>' + v.member_email + '</td>' +
-          '<td>' + v.amount_paid + ' ' + v.currency + '</td>' +
-          '<td>' + formatDate(new Date(v.submitted_date), false) + '</td>' +
-          '<td><code style="font-size: 11px; background: #f5f5f5; padding: 2px 4px;">' + v.household_name + ' - ' + v.membership_year + '</code></td>' +
-          '<td>' +
-            '<button onclick="approvePayment(\'' + v.verification_id + '\')" style="padding: 4px 8px; font-size: 12px; background: var(--color-success); color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 4px;">Approve</button>' +
-            '<button onclick="rejectPaymentPrompt(\'' + v.verification_id + '\')" style="padding: 4px 8px; font-size: 12px; background: var(--color-danger); color: white; border: none; border-radius: 3px; cursor: pointer;">Reject</button>' +
-          '</td>';
-        tbody.appendChild(tr);
-      });
-    }).catch(function(err) {
-      showError('Error loading payments: ' + err.message);
-    });
-  }
-
   /**
    * Approve a payment verification.
    */

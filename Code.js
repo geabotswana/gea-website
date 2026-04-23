@@ -270,6 +270,7 @@ function _routeAction(action, params) {
     case "admin_reject_payment": return _handleAdminRejectPayment(params);
     case "admin_clarify_payment": return _handleAdminClarifyPayment(params);
     case "admin_payment_report": return _handleAdminPaymentReport(params);
+    case "admin_create_gratis_payment": return _handleAdminCreateGratisPayment(params);
     case "admin_dashboard_stats": return _handleAdminDashboardStats(params);
     case "admin_reservations_report": return _handleAdminReservationsReport(params);
     case "admin_resend_email":        return _handleAdminResendEmail(params);
@@ -3421,7 +3422,7 @@ function _handleGetDuesInfo(p) {
     if (!hh) return errorResponse("Household not found", "NOT_FOUND");
 
     // Fetch annual dues and available years from Membership Pricing sheet
-    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+    var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID)
       .getSheetByName(TAB_MEMBERSHIP_PRICING);
     var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
     var pricingHeaders = pricingData.length ? pricingData[0] : [];
@@ -3494,7 +3495,7 @@ function _handleGetApplicantDuesInfo(p) {
     Logger.log("[DEBUG _handleGetApplicantDuesInfo] Household membership_level_id: " + household.membership_level_id);
 
     // Fetch available years from Membership Pricing sheet
-    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+    var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID)
       .getSheetByName(TAB_MEMBERSHIP_PRICING);
     var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
     var pricingHeaders = pricingData.length ? pricingData[0] : [];
@@ -3567,7 +3568,12 @@ function _handleAdminApprovePayment(p) {
     var result = approvePaymentVerification(
       p.payment_id,
       auth.session.email,
-      p.notes || ""
+      {
+        actual_amount_received: p.actual_amount_received || 0,
+        payment_status: p.payment_status || "paid_in_full",
+        balance_due_amount: p.balance_due_amount || 0,
+        verification_notes: p.verification_notes || ""
+      }
     );
 
     if (!result.ok) return errorResponse(result.error || "Approval failed", "FAILED");
@@ -3643,6 +3649,35 @@ function _handleAdminPaymentReport(p) {
     return successResponse(result);
   } catch (e) {
     return errorResponse("Error generating report: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleAdminCreateGratisPayment
+ * PURPOSE: Board creates $0 payment for late joiners (gratis access)
+ */
+function _handleAdminCreateGratisPayment(p) {
+  try {
+    var auth = requireAuth(p.token, "board");
+    if (!auth.ok) return auth.response;
+
+    if (!p.household_id || !p.membership_year) {
+      return errorResponse("household_id and membership_year are required", "INVALID_PARAM");
+    }
+
+    var result = createGratisPayment(
+      {
+        household_id: p.household_id,
+        membership_year: p.membership_year,
+        reason: p.reason || ""
+      },
+      auth.session.email
+    );
+
+    if (!result.ok) return errorResponse(result.error || "Failed to create gratis payment", "FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error creating gratis payment: " + e.toString(), "SERVER_ERROR");
   }
 }
 

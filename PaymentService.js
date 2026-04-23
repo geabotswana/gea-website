@@ -223,26 +223,61 @@ function listPendingPaymentVerifications() {
 
 /**
  * FUNCTION: approvePaymentVerification
- * PURPOSE: Treasurer verifies and approves payment
+ * PURPOSE: Treasurer verifies and approves payment with actual amount received
  * @param {string} paymentId - Payment ID to approve
  * @param {string} treasurerEmail - Treasurer's email
- * @param {string} treasurerNotes - Optional notes
+ * @param {Object} params - Verification details {actual_amount_received, payment_status, balance_due_amount, verification_notes}
  * @returns {Object} - Result
  */
-function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
+function approvePaymentVerification(paymentId, treasurerEmail, params) {
   try {
     var found = _findPaymentById_(paymentId);
     if (!found) {
       return { ok: false, error: "Payment not found", code: "NOT_FOUND" };
     }
 
+    // Handle backward compatibility: if params is a string, treat as notes
+    if (typeof params === 'string') {
+      params = { verification_notes: params };
+    }
+    params = params || {};
+
+    var actualAmount = Number(params.actual_amount_received || 0);
+    var paymentStatus = String(params.payment_status || "paid_in_full").toLowerCase();
+    var exchangeRate = getExchangeRate();
+    var originalCurrency = found.obj.currency || "USD";
+
+    // Validate payment status
+    if (paymentStatus !== "paid_in_full" && paymentStatus !== "balance_due") {
+      return { ok: false, error: "Invalid payment_status. Must be 'paid_in_full' or 'balance_due'", code: "INVALID_PARAM" };
+    }
+
     var now = new Date();
-    // Update payment record
-    _setPaymentFields_(found, {
+
+    // Calculate actual amounts in both currencies
+    var updatePayload = {
       payment_verified_date: now,
       payment_verified_by: treasurerEmail,
-      notes: String(treasurerNotes || "").substring(0, 500)
-    });
+      actual_amount_received: actualAmount,
+      payment_status: paymentStatus,
+      verification_notes: String(params.verification_notes || "").substring(0, 500)
+    };
+
+    // Calculate actual_amount_usd and actual_amount_bwp based on currency
+    if (originalCurrency === "USD") {
+      updatePayload.actual_amount_usd = actualAmount;
+      updatePayload.actual_amount_bwp = Math.round(actualAmount * exchangeRate * 100) / 100;
+    } else if (originalCurrency === "BWP") {
+      updatePayload.actual_amount_bwp = actualAmount;
+      updatePayload.actual_amount_usd = Math.round(actualAmount / exchangeRate * 100) / 100;
+    }
+
+    // If balance_due, store the amount
+    if (paymentStatus === "balance_due" && params.balance_due_amount) {
+      updatePayload.balance_due_amount = Number(params.balance_due_amount);
+    }
+
+    _setPaymentFields_(found, updatePayload);
 
     // Send verification email to member
     try {
@@ -251,13 +286,15 @@ function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
       var memberEmail = primaryMember ? primaryMember.email : "";
 
       if (memberEmail) {
-        sendEmailFromTemplate("PAY_PAYMENT_VERIFIED_TO_MEMBER", memberEmail, {
+        var templateName = paymentStatus === "balance_due" ? "PAY_PAYMENT_PARTIAL_TO_MEMBER" : "PAY_PAYMENT_VERIFIED_TO_MEMBER";
+        sendEmailFromTemplate(templateName, memberEmail, {
           FIRST_NAME: primaryMember ? primaryMember.first_name : "",
           PAYMENT_ID: paymentId,
-          AMOUNT: found.obj.amount,
+          AMOUNT: actualAmount,
           CURRENCY: found.obj.currency,
           VERIFICATION_DATE: formatDate(now, true),
-          MEMBERSHIP_ACTIVATED: "Active"
+          BALANCE_DUE: params.balance_due_amount || 0,
+          MEMBERSHIP_ACTIVATED: paymentStatus === "paid_in_full" ? "Active" : "Pending"
         });
       }
     } catch (e) {
@@ -266,9 +303,9 @@ function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
 
     // Audit log
     logAuditEntry(treasurerEmail, AUDIT_PAYMENT_VERIFIED, "Payment", paymentId,
-      "Payment approved - " + found.obj.amount + " " + found.obj.currency);
+      "Payment verified: " + actualAmount + " " + found.obj.currency + " (" + paymentStatus + ")");
 
-    return { ok: true, payment_id: paymentId, status: "verified" };
+    return { ok: true, payment_id: paymentId, status: paymentStatus };
   } catch (e) {
     Logger.log("ERROR approvePaymentVerification: " + e);
     return { ok: false, error: String(e), code: "SERVER_ERROR" };
@@ -416,7 +453,7 @@ function calculateProratedDues(annualDuesUsd) {
  */
 function _getAcceptablePaymentYears_(membershipLevelId) {
   try {
-    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_PRICING);
+    var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_MEMBERSHIP_PRICING);
     var data = pricingSheet.getDataRange().getValues();
     var headers = data[0];
     var years = {};
@@ -863,5 +900,67 @@ function getPaymentReport(filters) {
   } catch (e) {
     Logger.log("ERROR getPaymentReport: " + e);
     return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * FUNCTION: createGratisPayment
+ * PURPOSE: Board creates $0 payment record for late joiners (gratis access)
+ * @param {Object} params - { household_id, membership_year, reason }
+ * @param {string} adminEmail - Admin/board member email creating the payment
+ * @returns {Object} - Result with payment_id or error
+ */
+function createGratisPayment(params, adminEmail) {
+  try {
+    if (!params || !params.household_id || !params.membership_year) {
+      return { ok: false, error: "household_id and membership_year are required", code: "INVALID_PARAM" };
+    }
+
+    // Get household info
+    var household = getHouseholdById(params.household_id);
+    if (!household) {
+      return { ok: false, error: "Household not found", code: "NOT_FOUND" };
+    }
+
+    // Create payment record with $0 amount
+    var paymentId = generateId("PAY");
+    var paymentsSheet = _getPaymentsSheet_();
+    var now = new Date();
+
+    var payload = {
+      payment_id: paymentId,
+      household_id: params.household_id,
+      household_name: household.household_name || "",
+      payment_date: now,
+      payment_method: "Gratis (Board Grant)",
+      currency: "USD",
+      amount: 0,
+      amount_usd: 0,
+      amount_bwp: 0,
+      payment_type: "Dues Payment",
+      applied_to_period: params.membership_year,
+      payment_reference: params.reason || "Late joiner - gratis access",
+      payment_confirmation_file_id: "",
+      payment_submitted_date: now,
+      payment_verified_date: now,  // Auto-verified
+      payment_verified_by: adminEmail,
+      actual_amount_received: 0,
+      actual_amount_usd: 0,
+      actual_amount_bwp: 0,
+      payment_status: "paid_in_full",
+      balance_due_amount: 0,
+      verification_notes: "Gratis access granted by board - " + (params.reason || "late joiner")
+    };
+
+    _appendRowByHeaders_(paymentsSheet, payload);
+
+    // Audit log
+    logAuditEntry(adminEmail, AUDIT_PAYMENT_VERIFIED, "Payment", paymentId,
+      "Gratis payment created for late joiner: " + params.membership_year);
+
+    return { ok: true, payment_id: paymentId, message: "Gratis payment created successfully" };
+  } catch (e) {
+    Logger.log("ERROR createGratisPayment: " + e);
+    return { ok: false, error: String(e), code: "SERVER_ERROR" };
   }
 }

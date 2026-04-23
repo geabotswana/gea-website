@@ -8250,6 +8250,8 @@ function submitPasswordReset(event) {
     var dateInput = document.getElementById('applicantPaymentDate');
     var notesInput = document.getElementById('applicantPaymentNotes');
     var fileInput = document.getElementById('applicantPaymentProofFile');
+    var submitBtn = document.querySelector('#applicantPaymentForm button[type="submit"]') ||
+                   document.querySelector('form button.btn-primary');
 
     if (!method || !method.value) {
       showError('Please select a payment method.');
@@ -8258,6 +8260,12 @@ function submitPasswordReset(event) {
     if (!dateInput || !dateInput.value) {
       showError('Please select the transaction date.');
       return;
+    }
+
+    // Show loading state on button
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
     }
 
     var payload = {
@@ -8270,6 +8278,10 @@ function submitPasswordReset(event) {
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         showError('Proof file must be 5 MB or smaller.');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Payment Verification';
+        }
         return;
       }
       showToast('Upload starting...', 'info');
@@ -8278,29 +8290,40 @@ function submitPasswordReset(event) {
         payload.file_data_base64 = String(evt.target.result).split(',')[1];
         payload.file_name = file.name;
         payload.file_content_type = file.type || 'application/octet-stream';
-        submitApplicantPaymentPayload(payload);
+        submitApplicantPaymentPayload(payload, submitBtn);
       };
       reader.readAsDataURL(file);
       return;
     }
 
-    submitApplicantPaymentPayload(payload);
+    submitApplicantPaymentPayload(payload, submitBtn);
   }
 
   /**
    * Sends payment proof payload to backend and refreshes applicant view.
    * @param {Object} payload Payment proof payload for submit_payment_proof action.
+   * @param {HTMLElement} submitBtn Optional button to restore after submission.
    */
-  function submitApplicantPaymentPayload(payload) {
+  function submitApplicantPaymentPayload(payload, submitBtn) {
     apiCall('submit_payment_proof', payload).then(function(res) {
       if (res.success) {
         showError('Payment submitted! Awaiting Treasurer verification.', 'success');
         loadApplicantPortal();
       } else {
         showError('Error: ' + res.message);
+        // Restore button on error
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Payment Verification';
+        }
       }
     }).catch(function(err) {
       showError('Error: ' + err.message);
+      // Restore button on error
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Payment Verification';
+      }
     });
   }
 

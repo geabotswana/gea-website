@@ -889,7 +889,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     }
 
     var now = new Date();
-    var currentYear = getConfigValue("CURRENT_MEMBERSHIP_YEAR");
+    var currentYear = getConfigValue("CURRENT_MEMBERSHIP_YEAR") || CURRENT_MEMBERSHIP_YEAR;
     if (!currentYear) {
       Logger.log("[ERROR submitPaymentProof] CURRENT_MEMBERSHIP_YEAR not configured");
       return { success: false, message: "System configuration error: membership year not set." };

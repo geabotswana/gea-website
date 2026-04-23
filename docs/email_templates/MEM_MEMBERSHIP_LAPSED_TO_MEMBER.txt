@@ -5,7 +5,6 @@ MEMBERSHIP RENEWAL NOTICE - GRACE PERIOD EXPIRED
 Your GEA membership grace period has ended, and your membership is now lapsed.
 
 LAPSED MEMBERSHIP DETAILS:
-Membership Level: {{MEMBERSHIP_LEVEL}}
 Expiration Date: {{EXPIRED_DATE}}
 Grace Period Ended: {{GRACE_END_DATE}}
 Status: LAPSED

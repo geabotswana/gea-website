@@ -223,26 +223,61 @@ function listPendingPaymentVerifications() {
 
 /**
  * FUNCTION: approvePaymentVerification
- * PURPOSE: Treasurer verifies and approves payment
+ * PURPOSE: Treasurer verifies and approves payment with actual amount received
  * @param {string} paymentId - Payment ID to approve
  * @param {string} treasurerEmail - Treasurer's email
- * @param {string} treasurerNotes - Optional notes
+ * @param {Object} params - Verification details {actual_amount_received, payment_status, balance_due_amount, verification_notes}
  * @returns {Object} - Result
  */
-function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
+function approvePaymentVerification(paymentId, treasurerEmail, params) {
   try {
     var found = _findPaymentById_(paymentId);
     if (!found) {
       return { ok: false, error: "Payment not found", code: "NOT_FOUND" };
     }
 
+    // Handle backward compatibility: if params is a string, treat as notes
+    if (typeof params === 'string') {
+      params = { verification_notes: params };
+    }
+    params = params || {};
+
+    var actualAmount = Number(params.actual_amount_received || 0);
+    var paymentStatus = String(params.payment_status || "paid_in_full").toLowerCase();
+    var exchangeRate = getExchangeRate();
+    var originalCurrency = found.obj.currency || "USD";
+
+    // Validate payment status
+    if (paymentStatus !== "paid_in_full" && paymentStatus !== "balance_due") {
+      return { ok: false, error: "Invalid payment_status. Must be 'paid_in_full' or 'balance_due'", code: "INVALID_PARAM" };
+    }
+
     var now = new Date();
-    // Update payment record
-    _setPaymentFields_(found, {
+
+    // Calculate actual amounts in both currencies
+    var updatePayload = {
       payment_verified_date: now,
       payment_verified_by: treasurerEmail,
-      notes: String(treasurerNotes || "").substring(0, 500)
-    });
+      actual_amount_received: actualAmount,
+      payment_status: paymentStatus,
+      verification_notes: String(params.verification_notes || "").substring(0, 500)
+    };
+
+    // Calculate actual_amount_usd and actual_amount_bwp based on currency
+    if (originalCurrency === "USD") {
+      updatePayload.actual_amount_usd = actualAmount;
+      updatePayload.actual_amount_bwp = Math.round(actualAmount * exchangeRate * 100) / 100;
+    } else if (originalCurrency === "BWP") {
+      updatePayload.actual_amount_bwp = actualAmount;
+      updatePayload.actual_amount_usd = Math.round(actualAmount / exchangeRate * 100) / 100;
+    }
+
+    // If balance_due, store the amount
+    if (paymentStatus === "balance_due" && params.balance_due_amount) {
+      updatePayload.balance_due_amount = Number(params.balance_due_amount);
+    }
+
+    _setPaymentFields_(found, updatePayload);
 
     // Send verification email to member
     try {
@@ -251,13 +286,15 @@ function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
       var memberEmail = primaryMember ? primaryMember.email : "";
 
       if (memberEmail) {
-        sendEmailFromTemplate("PAY_PAYMENT_VERIFIED_TO_MEMBER", memberEmail, {
+        var templateName = paymentStatus === "balance_due" ? "PAY_PAYMENT_PARTIAL_TO_MEMBER" : "PAY_PAYMENT_VERIFIED_TO_MEMBER";
+        sendEmailFromTemplate(templateName, memberEmail, {
           FIRST_NAME: primaryMember ? primaryMember.first_name : "",
           PAYMENT_ID: paymentId,
-          AMOUNT: found.obj.amount,
+          AMOUNT: actualAmount,
           CURRENCY: found.obj.currency,
           VERIFICATION_DATE: formatDate(now, true),
-          MEMBERSHIP_ACTIVATED: "Active"
+          BALANCE_DUE: params.balance_due_amount || 0,
+          MEMBERSHIP_ACTIVATED: paymentStatus === "paid_in_full" ? "Active" : "Pending"
         });
       }
     } catch (e) {
@@ -266,9 +303,9 @@ function approvePaymentVerification(paymentId, treasurerEmail, treasurerNotes) {
 
     // Audit log
     logAuditEntry(treasurerEmail, AUDIT_PAYMENT_VERIFIED, "Payment", paymentId,
-      "Payment approved - " + found.obj.amount + " " + found.obj.currency);
+      "Payment verified: " + actualAmount + " " + found.obj.currency + " (" + paymentStatus + ")");
 
-    return { ok: true, payment_id: paymentId, status: "verified" };
+    return { ok: true, payment_id: paymentId, status: paymentStatus };
   } catch (e) {
     Logger.log("ERROR approvePaymentVerification: " + e);
     return { ok: false, error: String(e), code: "SERVER_ERROR" };

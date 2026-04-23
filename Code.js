@@ -3567,7 +3567,12 @@ function _handleAdminApprovePayment(p) {
     var result = approvePaymentVerification(
       p.payment_id,
       auth.session.email,
-      p.notes || ""
+      {
+        actual_amount_received: p.actual_amount_received || 0,
+        payment_status: p.payment_status || "paid_in_full",
+        balance_due_amount: p.balance_due_amount || 0,
+        verification_notes: p.verification_notes || ""
+      }
     );
 
     if (!result.ok) return errorResponse(result.error || "Approval failed", "FAILED");

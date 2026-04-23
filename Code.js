@@ -3421,7 +3421,7 @@ function _handleGetDuesInfo(p) {
     if (!hh) return errorResponse("Household not found", "NOT_FOUND");
 
     // Fetch annual dues and available years from Membership Pricing sheet
-    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+    var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID)
       .getSheetByName(TAB_MEMBERSHIP_PRICING);
     var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
     var pricingHeaders = pricingData.length ? pricingData[0] : [];
@@ -3494,7 +3494,7 @@ function _handleGetApplicantDuesInfo(p) {
     Logger.log("[DEBUG _handleGetApplicantDuesInfo] Household membership_level_id: " + household.membership_level_id);
 
     // Fetch available years from Membership Pricing sheet
-    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+    var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID)
       .getSheetByName(TAB_MEMBERSHIP_PRICING);
     var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
     var pricingHeaders = pricingData.length ? pricingData[0] : [];

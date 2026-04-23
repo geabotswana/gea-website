@@ -416,7 +416,7 @@ function calculateProratedDues(annualDuesUsd) {
  */
 function _getAcceptablePaymentYears_(membershipLevelId) {
   try {
-    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_PRICING);
+    var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_MEMBERSHIP_PRICING);
     var data = pricingSheet.getDataRange().getValues();
     var headers = data[0];
     var years = {};

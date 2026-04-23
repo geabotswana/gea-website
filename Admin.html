@@ -6182,6 +6182,9 @@
       }
 
       var payments = res.data.verifications || [];
+
+      console.log("Pending payments response:", res);
+      console.log("First payment object:", payments[0]);
       
       if (payments.length === 0) {
         document.getElementById('payTable').style.display = 'none';
@@ -6365,6 +6368,9 @@
 
       var payments = res.data.payments || [];
       var summary = res.data.summary || {};
+
+      console.log("Report payments response:", res);
+      console.log("First payment object:", payments[0]);
 
       if (payments.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No payments match filter criteria</td></tr>';

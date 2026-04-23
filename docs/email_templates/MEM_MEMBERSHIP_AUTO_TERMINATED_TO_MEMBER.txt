@@ -1,0 +1,34 @@
+Hi {{FIRST_NAME}},
+
+MEMBERSHIP ACCOUNT TERMINATED
+
+Your GEA membership account has been automatically terminated due to non-renewal.
+
+TERMINATION DETAILS:
+Membership Status: TERMINATED
+Lapsed Since: {{LAPSED_DATE}}
+Termination Date: {{TERMINATION_DATE}}
+Reason: {{TERMINATION_REASON}}
+
+WHAT THIS MEANS:
+Your membership account is no longer active, and you no longer have access to any GEA facilities or benefits. This is a permanent status change.
+
+REACTIVATION OPTIONS:
+If you wish to remain a member of GEA, you may reapply for membership at any time. The new application will follow our standard approval process.
+
+HOW TO REAPPLY:
+1. Visit the GEA website: https://geabotswana.org
+2. Select "Join as a New Member"
+3. Complete the membership application form
+4. Submit required documents
+5. Board approval (3 business days)
+6. Submit membership dues
+7. Account reactivation
+
+SUPPORT:
+For questions about reapplication or membership status, please contact the GEA Board at board@geabotswana.org
+
+We hope to welcome you back to the GEA community soon!
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

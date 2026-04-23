@@ -1,0 +1,44 @@
+Hi {{FIRST_NAME}},
+
+MEMBERSHIP RENEWAL NOTICE - GRACE PERIOD EXPIRED
+
+Your GEA membership grace period has ended, and your membership is now lapsed.
+
+LAPSED MEMBERSHIP DETAILS:
+Membership Level: {{MEMBERSHIP_LEVEL}}
+Expiration Date: {{EXPIRED_DATE}}
+Grace Period Ended: {{GRACE_END_DATE}}
+Status: LAPSED
+
+WHAT THIS MEANS:
+Your access to all GEA facilities and benefits has been suspended. This includes:
+- Tennis court bookings
+- Leobo reservations
+- Gym access
+- Member events and discounts
+- Full portal features
+
+RENEW YOUR MEMBERSHIP:
+You can still renew your membership at any time by submitting payment through the Renewal Portal.
+
+HOW TO RENEW:
+1. Log into your account at {{RENEWAL_PORTAL_URL}}
+2. You'll see a Membership Renewal section
+3. Submit payment proof using one of these methods:
+   - PayPal
+   - SDFCU (Botswana)
+   - Zelle (USA)
+   - Absa (Botswana)
+4. Once verified by the treasurer, your membership is reactivated
+
+RENEWAL COST:
+Annual Dues: {{DUES_USD}} USD / {{DUES_BWP}} BWP
+
+TIME LIMIT:
+You have 24 months from today to renew before your account is permanently terminated. After termination, you may need to reapply for membership.
+
+NEED HELP?
+Questions about renewal or payment methods? Contact board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

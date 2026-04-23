@@ -1,0 +1,42 @@
+Hi {{FIRST_NAME}},
+
+🎉 MEMBERSHIP RENEWED!
+
+Congratulations! Your renewal payment has been verified and your membership is now active again!
+
+MEMBERSHIP REACTIVATION DETAILS:
+Membership Level: {{MEMBERSHIP_LEVEL}}
+Renewal Date: {{RENEWAL_DATE}}
+New Expiration: {{NEW_EXPIRATION_DATE}}
+Status: ACTIVE
+
+WELCOME BACK!
+Your access to all GEA facilities and benefits has been restored. You can now:
+- Book tennis courts (3 hours/week limit)
+- Reserve Leobo (1/month limit)
+- Access the gym
+- Attend member events
+- Use the full portal with all features
+
+NEXT STEPS:
+1. Log into your member portal: {{PORTAL_URL}}
+2. View your dashboard to access all facilities
+3. Update your profile information if needed
+4. Start booking facilities!
+
+YOUR MEMBERSHIP INCLUDES:
+- Access to all GEA facilities
+- Tennis court bookings
+- Leobo reservations
+- Gym access and fitness programs
+- Member events and social activities
+- Member discounts and special offers
+- Digital membership card
+
+QUESTIONS?
+If you need help accessing the portal or booking facilities, contact board@geabotswana.org
+
+Thank you for being part of the GEA community!
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

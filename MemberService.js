@@ -722,6 +722,49 @@ function checkExpiringMemberships() {
 }
 
 
+function checkLapsedMembersForAutoTermination() {
+  Logger.log("Lapsed member auto-termination check starting...");
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+                  .getSheetByName(TAB_HOUSEHOLDS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    for (var i = 1; i < data.length; i++) {
+      var hh = rowToObject(headers, data[i]);
+      if (hh.membership_status !== MEMBERSHIP_STATUS_LAPSED || !hh.lapsed_date) continue;
+
+      var lapsedDate = new Date(hh.lapsed_date);
+      lapsedDate.setHours(0, 0, 0, 0);
+
+      // Calculate termination date (lapsed_date + LAPSED_TERMINATION_MONTHS)
+      var termDate = new Date(lapsedDate);
+      termDate.setMonth(termDate.getMonth() + LAPSED_TERMINATION_MONTHS);
+      termDate.setHours(0, 0, 0, 0);
+
+      if (today.getTime() >= termDate.getTime()) {
+        // Auto-terminate lapsed membership
+        var primaryEmail = _getPrimaryEmail(hh.household_id);
+        if (primaryEmail) {
+          sendEmailFromTemplate("MEM_MEMBERSHIP_AUTO_TERMINATED_TO_MEMBER", primaryEmail, {
+            FIRST_NAME:        _getPrimaryFirstName(hh.household_id),
+            LAPSED_DATE:       formatDate(lapsedDate),
+            TERMINATION_DATE:  formatDate(today),
+            TERMINATION_REASON: "No renewal received after " + LAPSED_TERMINATION_MONTHS + " months of lapsed status"
+          });
+        }
+        updateHouseholdField(hh.household_id, "membership_status", MEMBERSHIP_STATUS_RESIGNED, "system");
+        updateHouseholdField(hh.household_id, "termination_date", today, "system");
+        updateHouseholdField(hh.household_id, "termination_reason", "Auto-terminated after grace period expiration", "system");
+        Logger.log("Lapsed member auto-terminated: " + hh.household_id);
+      }
+    }
+  } catch (e) { Logger.log("ERROR checkLapsedMembersForAutoTermination: " + e); }
+}
+
+
 // ============================================================
 // INTERNAL HELPERS
 // ============================================================

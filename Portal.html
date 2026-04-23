@@ -2678,6 +2678,12 @@
         </div>
       </div>
 
+      <div id="renewal" class="page">
+        <div id="renewalContent">
+          <p style="text-align: center; color: #999; padding: 20px;">Loading renewal information...</p>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -3259,7 +3265,9 @@ function submitLogin(event) {
       login_timestamp: new Date().toISOString(),
       login_email: email,
       login_is_applicant_flag: !!res.data.is_applicant,
+      login_is_lapsed_flag: !!res.data.is_lapsed,
       login_application_status: res.data.application_status || '',
+      login_membership_status: res.data.membership_status || '',
       require_password_change: !!res.data.require_password_change
     });
 
@@ -3270,6 +3278,22 @@ function submitLogin(event) {
       document.getElementById('passwordChangeModal').style.display = 'flex';
       document.getElementById('passwordChangeUsername').value = email;
       document.getElementById('currentPassword').focus();
+      return;
+    }
+
+    // Check if user is lapsed (membership not renewed)
+    var isLapsed = !!res.data.is_lapsed;
+    sessionStorage.setItem('gea_is_lapsed', isLapsed ? '1' : '0');
+    currentUser.is_lapsed = isLapsed;
+
+    if (isLapsed) {
+      // Lapsed member — show renewal portal
+      document.getElementById('loginScreen').classList.remove('show');
+      showAuthenticatedUI();
+      loadRenewalPortal();
+      updatePortalDebug({
+        resolved_portal_mode: 'renewal'
+      });
       return;
     }
 
@@ -3660,8 +3684,13 @@ function submitPasswordReset(event) {
     document.getElementById('content').style.display = 'flex';
 
     // Set portal title based on user type
-    document.getElementById('headerTitle').textContent =
-      (currentUser && currentUser.is_applicant) ? 'Applicant Portal' : 'Member Portal';
+    var portalTitle = 'Member Portal';
+    if (currentUser && currentUser.is_lapsed) {
+      portalTitle = 'Membership Renewal Portal';
+    } else if (currentUser && currentUser.is_applicant) {
+      portalTitle = 'Applicant Portal';
+    }
+    document.getElementById('headerTitle').textContent = portalTitle;
     updatePortalDebug({});
 
     // Set the member's name and household in the header from the login response data
@@ -5486,6 +5515,12 @@ function submitPasswordReset(event) {
    * Hides all pages except the one specified and loads fresh data.
    */
   function showPage(pageName) {
+    // Check if lapsed member is trying to access member-only pages
+    if (currentUser && currentUser.is_lapsed && ['dashboard', 'reservations', 'profile', 'myHousehold', 'card', 'rules'].includes(pageName)) {
+      // Lapsed members can only renew their membership
+      pageName = 'renewal';
+    }
+
     // Check if applicant is trying to access member-only pages
     if (currentUser && currentUser.is_applicant && ['dashboard', 'reservations', 'profile', 'myHousehold', 'card', 'payment', 'rules'].includes(pageName)) {
       // Applicants can only view their application status
@@ -5530,8 +5565,11 @@ function submitPasswordReset(event) {
       case 'applicant':
         loadApplicantPortal();
         break;
+      case 'renewal':
+        loadRenewalPortal();
+        break;
     }
-    
+
     // Scroll to top
     window.scrollTo(0, 0);
   }
@@ -6269,6 +6307,134 @@ function submitPasswordReset(event) {
       });
       showError('Error loading application: ' + err.message);
     });
+  }
+
+  function loadRenewalPortal() {
+    var container = document.getElementById('renewalContent');
+    if (!container) return;
+
+    // Activate the renewal page
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    var renewalPage = document.getElementById('renewal');
+    if (renewalPage) renewalPage.classList.add('active');
+
+    container.innerHTML = '';
+
+    // Create renewal portal content
+    var wrapper = document.createElement('div');
+    wrapper.style.cssText = 'max-width: 600px; margin: 0 auto; padding: 20px;';
+
+    // Header
+    var header = document.createElement('div');
+    header.style.marginBottom = '30px';
+    var h1 = document.createElement('h1');
+    h1.textContent = 'Membership Renewal';
+    h1.style.color = '#333';
+    h1.style.marginBottom = '10px';
+    header.appendChild(h1);
+
+    var intro = document.createElement('p');
+    intro.style.color = '#666';
+    intro.style.lineHeight = '1.6';
+    intro.textContent = 'Your membership has expired and is currently lapsed. To regain access to member benefits and facilities, please renew your membership by submitting a payment.';
+    header.appendChild(intro);
+
+    wrapper.appendChild(header);
+
+    // Renewal status card
+    var statusCard = document.createElement('div');
+    statusCard.style.cssText = 'background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #ff9800;';
+
+    var statusTitle = document.createElement('h3');
+    statusTitle.textContent = 'Your Membership Status';
+    statusTitle.style.margin = '0 0 15px 0';
+    statusCard.appendChild(statusTitle);
+
+    if (currentUser && currentUser.member) {
+      var member = currentUser.member;
+      var memberName = member.first_name && member.last_name
+        ? member.first_name + ' ' + member.last_name
+        : (member.email || 'Member');
+
+      var items = [
+        { label: 'Membership Level:', value: member.membership_category || 'N/A' },
+        { label: 'Status:', value: 'Lapsed (expired ' + (member.membership_expiration_date ? new Date(member.membership_expiration_date).toLocaleDateString() : 'N/A') + ')' },
+        { label: 'Email:', value: member.email || 'N/A' }
+      ];
+
+      items.forEach(function(item) {
+        var div = document.createElement('div');
+        div.style.marginBottom = '10px';
+        var label = document.createElement('strong');
+        label.textContent = item.label;
+        label.style.display = 'block';
+        label.style.color = '#333';
+        var value = document.createElement('p');
+        value.textContent = item.value;
+        value.style.margin = '5px 0 0 0';
+        value.style.color = '#666';
+        div.appendChild(label);
+        div.appendChild(value);
+        statusCard.appendChild(div);
+      });
+    }
+
+    wrapper.appendChild(statusCard);
+
+    // Payment information
+    var paymentSection = document.createElement('div');
+    paymentSection.style.marginBottom = '25px';
+
+    var paymentTitle = document.createElement('h3');
+    paymentTitle.textContent = 'How to Renew Your Membership';
+    paymentTitle.style.color = '#333';
+    paymentSection.appendChild(paymentTitle);
+
+    var paymentInfo = document.createElement('p');
+    paymentInfo.style.color = '#666';
+    paymentInfo.style.lineHeight = '1.6';
+    paymentInfo.textContent = 'To renew your membership, you must submit payment proof using one of the payment methods below. After your payment is verified by the treasurer, your membership will be reactivated immediately.';
+    paymentSection.appendChild(paymentInfo);
+
+    var paymentMethods = document.createElement('div');
+    paymentMethods.style.cssText = 'background: #fafafa; padding: 15px; border-radius: 4px; margin-top: 15px;';
+
+    var methodTitle = document.createElement('strong');
+    methodTitle.textContent = 'Accepted Payment Methods:';
+    methodTitle.style.display = 'block';
+    methodTitle.style.marginBottom = '10px';
+    paymentMethods.appendChild(methodTitle);
+
+    var methods = ['PayPal', 'SDFCU (US)', 'Zelle', 'Absa (Botswana)'];
+    methods.forEach(function(method) {
+      var item = document.createElement('div');
+      item.style.marginBottom = '8px';
+      item.style.color = '#666';
+      item.textContent = '✓ ' + method;
+      paymentMethods.appendChild(item);
+    });
+
+    paymentSection.appendChild(paymentMethods);
+    wrapper.appendChild(paymentSection);
+
+    // Submit payment button
+    var submitBtn = document.createElement('button');
+    submitBtn.textContent = 'Submit Renewal Payment';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.style.cssText = 'width: 100%; padding: 12px; font-size: 16px; margin-bottom: 10px;';
+    submitBtn.onclick = function(e) {
+      e.preventDefault();
+      showPage('payment');
+    };
+    wrapper.appendChild(submitBtn);
+
+    // Help note
+    var helpNote = document.createElement('p');
+    helpNote.style.cssText = 'color: #999; font-size: 13px; text-align: center; margin-top: 20px;';
+    helpNote.textContent = 'Need help? Contact the board at board@geabotswana.org';
+    wrapper.appendChild(helpNote);
+
+    container.appendChild(wrapper);
   }
 
   /**

@@ -38,6 +38,9 @@ function runNightlyTasks() {
   //    deactivate households that expired today
   checkExpiringMemberships();
 
+  // 1b. Auto-terminate lapsed members after grace period expiration
+  checkLapsedMembersForAutoTermination();
+
   // 2. Document expiration: send 6-month passport/Omang warnings
   checkExpiringDocuments();
 

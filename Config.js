@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.118";
+var SYSTEM_VERSION          = "2.4.119";
 var SYSTEM_BUILD_DATE       = "2026-04-23";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add Refresh button to Pending Verifications page";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-23 10:30:53";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add logging to showPaymentView to debug tab click issue";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-23 10:57:04";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

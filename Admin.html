@@ -5952,7 +5952,7 @@
         { label: 'Expiration:', value: household.membership_expiration_date || 'N/A' }
       ];
 
-    householdDetails.forEach(function(detail) {
+      householdDetails.forEach(function(detail) {
       var row = document.createElement('div');
       row.className = 'detail-row';
 
@@ -5975,84 +5975,85 @@
 
       row.appendChild(valueDiv);
       container.appendChild(row);
+      });
+
+      // Individual Members section
+      var membersHeader = document.createElement('h3');
+      membersHeader.className = 'section-header';
+      membersHeader.textContent = 'Individual Members';
+      container.appendChild(membersHeader);
+
+      var table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.marginBottom = '20px';
+
+      var thead = document.createElement('thead');
+      thead.style.background = '#F5F5F5';
+      var headerRow = document.createElement('tr');
+      var headers = ['Name', 'Relationship', 'Photo'];
+      headers.forEach(function(headerText) {
+        var th = document.createElement('th');
+        th.style.padding = '8px';
+        th.style.borderBottom = '1px solid #DDD';
+        th.textContent = headerText;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      var members = [
+        { name: 'John Smith', relationship: 'Primary', photo: 'Approved', photoClass: 'badge-approved' },
+        { name: 'Jane Smith', relationship: 'Spouse', photo: 'Pending', photoClass: 'badge-pending' }
+      ];
+
+      members.forEach(function(member) {
+        var row = document.createElement('tr');
+
+        var nameTd = document.createElement('td');
+        nameTd.style.padding = '8px';
+        nameTd.style.borderBottom = '1px solid #EEE';
+        nameTd.textContent = member.name;
+        row.appendChild(nameTd);
+
+        var relTd = document.createElement('td');
+        relTd.style.padding = '8px';
+        relTd.style.borderBottom = '1px solid #EEE';
+        relTd.textContent = member.relationship;
+        row.appendChild(relTd);
+
+        var photoTd = document.createElement('td');
+        photoTd.style.padding = '8px';
+        photoTd.style.borderBottom = '1px solid #EEE';
+        var badge = document.createElement('span');
+        badge.className = 'badge ' + member.photoClass;
+        badge.textContent = member.photo;
+        photoTd.appendChild(badge);
+        row.appendChild(photoTd);
+
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+
+      container.appendChild(table);
+
+      // Recent Reservations section
+      var reservationsHeader = document.createElement('h3');
+      reservationsHeader.className = 'section-header';
+      reservationsHeader.textContent = 'Recent Reservations';
+      container.appendChild(reservationsHeader);
+
+      var emptyDiv = document.createElement('div');
+      emptyDiv.style.textAlign = 'center';
+      emptyDiv.style.color = '#999';
+      emptyDiv.style.padding = '20px';
+      var small = document.createElement('small');
+      small.textContent = 'No recent reservations';
+      emptyDiv.appendChild(small);
+      container.appendChild(emptyDiv);
+
+      document.getElementById('memDetailModal').classList.add('show');
     });
-
-    // Individual Members section
-    var membersHeader = document.createElement('h3');
-    membersHeader.className = 'section-header';
-    membersHeader.textContent = 'Individual Members';
-    container.appendChild(membersHeader);
-
-    var table = document.createElement('table');
-    table.style.width = '100%';
-    table.style.marginBottom = '20px';
-
-    var thead = document.createElement('thead');
-    thead.style.background = '#F5F5F5';
-    var headerRow = document.createElement('tr');
-    var headers = ['Name', 'Relationship', 'Photo'];
-    headers.forEach(function(headerText) {
-      var th = document.createElement('th');
-      th.style.padding = '8px';
-      th.style.borderBottom = '1px solid #DDD';
-      th.textContent = headerText;
-      headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    var tbody = document.createElement('tbody');
-    var members = [
-      { name: 'John Smith', relationship: 'Primary', photo: 'Approved', photoClass: 'badge-approved' },
-      { name: 'Jane Smith', relationship: 'Spouse', photo: 'Pending', photoClass: 'badge-pending' }
-    ];
-
-    members.forEach(function(member) {
-      var row = document.createElement('tr');
-
-      var nameTd = document.createElement('td');
-      nameTd.style.padding = '8px';
-      nameTd.style.borderBottom = '1px solid #EEE';
-      nameTd.textContent = member.name;
-      row.appendChild(nameTd);
-
-      var relTd = document.createElement('td');
-      relTd.style.padding = '8px';
-      relTd.style.borderBottom = '1px solid #EEE';
-      relTd.textContent = member.relationship;
-      row.appendChild(relTd);
-
-      var photoTd = document.createElement('td');
-      photoTd.style.padding = '8px';
-      photoTd.style.borderBottom = '1px solid #EEE';
-      var badge = document.createElement('span');
-      badge.className = 'badge ' + member.photoClass;
-      badge.textContent = member.photo;
-      photoTd.appendChild(badge);
-      row.appendChild(photoTd);
-
-      tbody.appendChild(row);
-    });
-    table.appendChild(tbody);
-
-    container.appendChild(table);
-
-    // Recent Reservations section
-    var reservationsHeader = document.createElement('h3');
-    reservationsHeader.className = 'section-header';
-    reservationsHeader.textContent = 'Recent Reservations';
-    container.appendChild(reservationsHeader);
-
-    var emptyDiv = document.createElement('div');
-    emptyDiv.style.textAlign = 'center';
-    emptyDiv.style.color = '#999';
-    emptyDiv.style.padding = '20px';
-    var small = document.createElement('small');
-    small.textContent = 'No recent reservations';
-    emptyDiv.appendChild(small);
-    container.appendChild(emptyDiv);
-
-    document.getElementById('memDetailModal').classList.add('show');
   }
 
   function confirmResignMembership() {

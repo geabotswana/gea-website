@@ -6784,7 +6784,22 @@ function submitPasswordReset(event) {
     card.appendChild(methods);
 
     if (app.status === 'approved_pending_payment') {
-      // Fetch available membership years for this applicant
+      // Create dropdown element first (before async call)
+      var yearLabel = document.createElement('label');
+      yearLabel.className = 'form-label';
+      yearLabel.textContent = 'Membership Year';
+      card.appendChild(yearLabel);
+
+      var yearSelect = document.createElement('select');
+      yearSelect.id = 'applicantPaymentYear';
+      yearSelect.className = 'form-input';
+      yearSelect.style.marginBottom = '12px';
+      var loadingOption = document.createElement('option');
+      loadingOption.textContent = 'Loading available years...';
+      yearSelect.appendChild(loadingOption);
+      card.appendChild(yearSelect);
+
+      // Now fetch available membership years and populate dropdown
       apiCall('get_applicant_dues_info', { application_id: app.application_id }).then(function(res) {
         console.log("[DEBUG] get_applicant_dues_info response:", res);
         if (!res) {
@@ -6826,20 +6841,6 @@ function submitPasswordReset(event) {
         console.log("[ERROR] get_applicant_dues_info threw exception:", err);
         showError("Error loading membership years: " + err.message, "warning");
       });
-
-      var yearLabel = document.createElement('label');
-      yearLabel.className = 'form-label';
-      yearLabel.textContent = 'Membership Year';
-      card.appendChild(yearLabel);
-
-      var yearSelect = document.createElement('select');
-      yearSelect.id = 'applicantPaymentYear';
-      yearSelect.className = 'form-input';
-      yearSelect.style.marginBottom = '12px';
-      var loadingOption = document.createElement('option');
-      loadingOption.textContent = 'Loading available years...';
-      yearSelect.appendChild(loadingOption);
-      card.appendChild(yearSelect);
 
       var methodLabel = document.createElement('label');
       methodLabel.className = 'form-label';

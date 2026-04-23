@@ -279,6 +279,52 @@ function approvePaymentVerification(paymentId, treasurerEmail, params) {
 
     _setPaymentFields_(found, updatePayload);
 
+    // If payment is paid in full, activate the account (for new members/applicants)
+    if (paymentStatus === "paid_in_full") {
+      try {
+        var household = getHouseholdById(found.obj.household_id);
+        if (household) {
+          // Check if this is an applicant and update application status
+          var applicationsSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+          var allApplications = applicationsSheet.getDataRange().getValues();
+          var headers = allApplications[0];
+          var householdIdCol = headers.indexOf('household_id');
+          var statusCol = headers.indexOf('status');
+
+          var isApplicant = false;
+          var applicationRow = -1;
+          for (var i = 1; i < allApplications.length; i++) {
+            if (allApplications[i][householdIdCol] === household.household_id) {
+              isApplicant = true;
+              applicationRow = i + 1; // Row numbers are 1-indexed
+              // Update application status to "activated"
+              applicationsSheet.getRange(applicationRow, statusCol + 1).setValue("activated");
+              break;
+            }
+          }
+
+          // Activate household and individuals
+          if (isApplicant || !household.active) {
+            household.active = true;
+            updateHousehold(household);
+
+            // Activate all individuals in household
+            var individuals = getMembersByHouseholdId(household.household_id);
+            individuals.forEach(function(ind) {
+              if (ind.individual_id) {
+                ind.active = true;
+                updateMember(ind);
+              }
+            });
+
+            Logger.log("Account activated for household: " + household.household_id);
+          }
+        }
+      } catch (e) {
+        Logger.log("WARNING: Could not auto-activate account: " + e);
+      }
+    }
+
     // Send verification email to member
     try {
       var household = getHouseholdById(found.obj.household_id);

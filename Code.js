@@ -3484,14 +3484,23 @@ function _handleGetApplicantDuesInfo(p) {
       return errorResponse("Application not found", "NOT_FOUND");
     }
 
-    // Get household to access membership_level_id
+    // Get household to access membership_category and household_type
     var household = getHouseholdById(app.household_id);
     if (!household) {
       Logger.log("[ERROR _handleGetApplicantDuesInfo] Household not found: " + app.household_id);
       return errorResponse("Household not found", "NOT_FOUND");
     }
 
-    Logger.log("[DEBUG _handleGetApplicantDuesInfo] Household membership_level_id: " + household.membership_level_id);
+    // Membership Pricing sheet uses combined key: category_type (e.g., "full_indiv", "affiliate_family")
+    var category = (household.membership_category || "").toLowerCase();
+    var householdType = (household.household_type || "").toLowerCase();
+
+    // Normalize household type: "individual" → "indiv", "family" → "family"
+    var typeKey = householdType.indexOf("individual") >= 0 ? "indiv" : "family";
+    var membershipLevelKey = category + "_" + typeKey;
+
+    Logger.log("[DEBUG _handleGetApplicantDuesInfo] Category: " + category +
+      ", HouseholdType: " + householdType + ", LevelKey: " + membershipLevelKey);
 
     // Fetch available years from Membership Pricing sheet
     var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
@@ -3504,9 +3513,9 @@ function _handleGetApplicantDuesInfo(p) {
     var availableYears = [];
     for (var i = 1; i < pricingData.length; i++) {
       var row = rowToObject(pricingHeaders, pricingData[i]);
-      Logger.log("[DEBUG _handleGetApplicantDuesInfo] Row " + i + ": level_id=" + row.membership_level_id +
+      Logger.log("[DEBUG _handleGetApplicantDuesInfo] Row " + i + ": level=" + row.membership_level +
         ", year=" + row.membership_year + ", active=" + row.active_for_payment);
-      if (row.membership_level_id === household.membership_level_id &&
+      if (row.membership_level === membershipLevelKey &&
           (row.active_for_payment === true || row.active_for_payment === "TRUE")) {
         if (availableYears.indexOf(row.membership_year) === -1) {
           availableYears.push(row.membership_year);

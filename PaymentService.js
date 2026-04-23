@@ -305,15 +305,13 @@ function approvePaymentVerification(paymentId, treasurerEmail, params) {
 
           // Activate household and individuals if not already active
           if (!household.active) {
-            household.active = true;
-            updateHousehold(household);
+            updateHouseholdField(household.household_id, "active", true, treasurerEmail);
 
             // Activate all individuals in household
-            var individuals = getMembersByHouseholdId(household.household_id);
+            var individuals = getHouseholdMembers(household.household_id);
             individuals.forEach(function(ind) {
               if (ind.individual_id && !ind.active) {
-                ind.active = true;
-                updateMember(ind);
+                updateMemberField(ind.individual_id, "active", true, treasurerEmail);
               }
             });
 

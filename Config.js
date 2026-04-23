@@ -1007,12 +1007,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.125";
+var SYSTEM_VERSION          = "2.4.126";
 var SYSTEM_BUILD_DATE       = "2026-04-23";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Clarify: Update Membership Application status (authoritative), not Household.application_status (summary field)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-23 13:15:47";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Phase 2b: Update ApplicationService.js - rename application_status to membership_status with new constants";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-23 14:42:40";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

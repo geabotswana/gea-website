@@ -6475,7 +6475,7 @@
         return;
       }
       closeModal('paymentVerificationModal');
-      showSuccess('Payment verified successfully');
+      showNotification('Payment verified successfully');
       loadPayments();
     });
   }
@@ -6643,7 +6643,7 @@
         return;
       }
       closeModal('createGratisPaymentModal');
-      showSuccess('Gratis payment created successfully');
+      showNotification('Gratis payment created successfully');
       // If on payments page, reload it
       if (document.getElementById('payments').style.display !== 'none') {
         showPaymentView('pending');

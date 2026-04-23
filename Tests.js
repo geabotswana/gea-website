@@ -1731,7 +1731,7 @@ function testSubmitPayment() {
       return;
     }
 
-    // Use the first available year (format: "2025-26", "2026-27", etc.)
+    // Use the first available year (format: "2025-2026", "2026-2027", etc.)
     var testYear = acceptableYears[0];
     var result = submitPaymentVerification({
       household_id: testHouseholdId,
@@ -1795,7 +1795,7 @@ function testPaymentStatus() {
 
   try {
     var testHouseholdId = "HSH-2026-TEST01";
-    var result = getPaymentVerificationStatus(testHouseholdId, "2026-27");
+    var result = getPaymentVerificationStatus(testHouseholdId, "2026-2027");
 
     _assert("getPaymentVerificationStatus returns object", result && typeof result === 'object');
     _assert("Returns ok flag", result.ok === true);
@@ -2217,7 +2217,7 @@ function testIsLastMondayOfMonth() {
 
 /**
  * Tests _getCurrentMembershipYear_ returns correct format.
- * Membership year is Aug–Jul: Aug 2025–Jul 2026 = "2025-26".
+ * Membership year is Aug–Jul: Aug 2025–Jul 2026 = "2025-2026".
  */
 function testGetCurrentMembershipYear() {
   Logger.log("\n--- TEST: _getCurrentMembershipYear_ ---");
@@ -2226,17 +2226,17 @@ function testGetCurrentMembershipYear() {
   _assert("Returns string", typeof year === "string", typeof year);
   _assert("Format is YYYY-YY", /^\d{4}-\d{2}$/.test(year), year);
 
-  // March 2026 should return "2025-26"
+  // March 2026 should return "2025-2026"
   var march2026 = _getCurrentMembershipYear_(new Date(2026, 2, 1));
-  _assert("March 2026 → '2025-26'", march2026 === "2025-26", march2026);
+  _assert("March 2026 → '2025-2026'", march2026 === "2025-2026", march2026);
 
-  // August 2026 should return "2026-27"
+  // August 2026 should return "2026-2027"
   var aug2026 = _getCurrentMembershipYear_(new Date(2026, 7, 1));
-  _assert("August 2026 → '2026-27'", aug2026 === "2026-27", aug2026);
+  _assert("August 2026 → '2026-2027'", aug2026 === "2026-2027", aug2026);
 
-  // January 2026 should return "2025-26"
+  // January 2026 should return "2025-2026"
   var jan2026 = _getCurrentMembershipYear_(new Date(2026, 0, 1));
-  _assert("January 2026 → '2025-26'", jan2026 === "2025-26", jan2026);
+  _assert("January 2026 → '2025-2026'", jan2026 === "2025-2026", jan2026);
 }
 
 
@@ -2248,7 +2248,7 @@ function testPhotoExpirationCalculation() {
 
   // Test 1: Child photo (under 17) uploaded during regular membership year
   // Born: 2010-01-15 (child, 15 years old on April 21, 2026)
-  // Upload: April 21, 2026 (during 2025-26 membership year)
+  // Upload: April 21, 2026 (during 2025-2026 membership year)
   // Should expire: August 1, 2026 (1 year from membership year start Aug 2025)
   var childDOB = new Date(2010, 0, 15);
   var uploadDate = new Date(2026, 3, 21); // April 21, 2026
@@ -2259,7 +2259,7 @@ function testPhotoExpirationCalculation() {
 
   // Test 2: Adult photo (17+) uploaded during regular membership year
   // Born: 2005-01-15 (adult, 21 years old on April 21, 2026)
-  // Upload: April 21, 2026 (during 2025-26 membership year)
+  // Upload: April 21, 2026 (during 2025-2026 membership year)
   // Should expire: August 1, 2028 (3 years from membership year start Aug 2025)
   var adultDOB = new Date(2005, 0, 15);
   var adultExpiry = calculatePhotoExpirationDate(adultDOB, uploadDate);
@@ -2268,7 +2268,7 @@ function testPhotoExpirationCalculation() {
     adultExpiry ? adultExpiry.toLocaleDateString() : "null");
 
   // Test 3: Child photo uploaded during renewal season (July/expiry month)
-  // Upload: July 10, 2026 (renewal season, applies to next year 2026-27)
+  // Upload: July 10, 2026 (renewal season, applies to next year 2026-2027)
   // Should expire: August 1, 2027 (1 year from next membership year start Aug 2026)
   var julyUploadDate = new Date(2026, 6, 10); // July 10, 2026
   var childJulyExpiry = calculatePhotoExpirationDate(childDOB, julyUploadDate);
@@ -2277,7 +2277,7 @@ function testPhotoExpirationCalculation() {
     childJulyExpiry ? childJulyExpiry.toLocaleDateString() : "null");
 
   // Test 4: Adult photo uploaded during renewal season (July/expiry month)
-  // Upload: July 10, 2026 (renewal season, applies to next year 2026-27)
+  // Upload: July 10, 2026 (renewal season, applies to next year 2026-2027)
   // Should expire: August 1, 2029 (3 years from next membership year start Aug 2026)
   var adultJulyExpiry = calculatePhotoExpirationDate(adultDOB, julyUploadDate);
   _assert("Adult photo during renewal season (July) applies to next year",
@@ -2285,13 +2285,13 @@ function testPhotoExpirationCalculation() {
     adultJulyExpiry ? adultJulyExpiry.toLocaleDateString() : "null");
 
   // Test 5: Membership year start calculation
-  // April 21, 2026 (in 2025-26 year) should give August 1, 2025
+  // April 21, 2026 (in 2025-2026 year) should give August 1, 2025
   var membershipStart = getMembershipYearStartDate(uploadDate);
   _assert("Membership year start for April 2026 is Aug 1, 2025",
     membershipStart && membershipStart.getFullYear() === 2025 && membershipStart.getMonth() === 7 && membershipStart.getDate() === 1,
     membershipStart ? membershipStart.toLocaleDateString() : "null");
 
-  // Test 6: August 15, 2026 should give August 1, 2026 (already in 2026-27 year)
+  // Test 6: August 15, 2026 should give August 1, 2026 (already in 2026-2027 year)
   var aug2026Date = new Date(2026, 7, 15);
   var membershipStart2 = getMembershipYearStartDate(aug2026Date);
   _assert("Membership year start for August 2026 is Aug 1, 2026",

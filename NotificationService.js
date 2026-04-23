@@ -504,15 +504,15 @@ function _isLastMondayOfMonth_(date) {
 
 /**
  * Returns the GEA membership year string for today's date.
- * GEA year runs Aug 1 – Jul 31; e.g., Mar 2026 → "2025-26".
- * @returns {string}
+ * GEA year runs Aug 1 – Jul 31; e.g., Mar 2026 → "2025-2026".
+ * @returns {string} Format: "2025-2026" (YYYY-YYYY)
  */
 function _getCurrentMembershipYear_(refDate) {
   var now = refDate || new Date();
   var y = now.getFullYear();
   return now.getMonth() >= 7
-    ? y + "-" + String(y + 1).slice(2)   // Aug+ → "2026-27"
-    : (y - 1) + "-" + String(y).slice(2); // Jan-Jul → "2025-26"
+    ? y + "-" + (y + 1)           // Aug+ → "2026-2027"
+    : (y - 1) + "-" + y;          // Jan-Jul → "2025-2026"
 }
 
 /**

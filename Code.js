@@ -3477,12 +3477,21 @@ function _handleGetApplicantDuesInfo(p) {
   try {
     if (!p.application_id) return errorResponse("Missing application_id", "INVALID_PARAM");
 
+    Logger.log("[DEBUG _handleGetApplicantDuesInfo] Processing app: " + p.application_id);
     var app = _getApplicationById(p.application_id);
-    if (!app) return errorResponse("Application not found", "NOT_FOUND");
+    if (!app) {
+      Logger.log("[ERROR _handleGetApplicantDuesInfo] Application not found: " + p.application_id);
+      return errorResponse("Application not found", "NOT_FOUND");
+    }
 
     // Get household to access membership_level_id
     var household = getHouseholdById(app.household_id);
-    if (!household) return errorResponse("Household not found", "NOT_FOUND");
+    if (!household) {
+      Logger.log("[ERROR _handleGetApplicantDuesInfo] Household not found: " + app.household_id);
+      return errorResponse("Household not found", "NOT_FOUND");
+    }
+
+    Logger.log("[DEBUG _handleGetApplicantDuesInfo] Household membership_level_id: " + household.membership_level_id);
 
     // Fetch available years from Membership Pricing sheet
     var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
@@ -3490,13 +3499,18 @@ function _handleGetApplicantDuesInfo(p) {
     var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
     var pricingHeaders = pricingData.length ? pricingData[0] : [];
 
+    Logger.log("[DEBUG _handleGetApplicantDuesInfo] Pricing data rows: " + pricingData.length + ", Headers: " + JSON.stringify(pricingHeaders));
+
     var availableYears = [];
     for (var i = 1; i < pricingData.length; i++) {
       var row = rowToObject(pricingHeaders, pricingData[i]);
+      Logger.log("[DEBUG _handleGetApplicantDuesInfo] Row " + i + ": level_id=" + row.membership_level_id +
+        ", year=" + row.membership_year + ", active=" + row.active_for_payment);
       if (row.membership_level_id === household.membership_level_id &&
           (row.active_for_payment === true || row.active_for_payment === "TRUE")) {
         if (availableYears.indexOf(row.membership_year) === -1) {
           availableYears.push(row.membership_year);
+          Logger.log("[DEBUG _handleGetApplicantDuesInfo] Added year: " + row.membership_year);
         }
       }
     }
@@ -3506,6 +3520,8 @@ function _handleGetApplicantDuesInfo(p) {
       return b.localeCompare(a);
     });
 
+    Logger.log("[DEBUG _handleGetApplicantDuesInfo] Available years: " + JSON.stringify(availableYears));
+
     return successResponse({
       application_id: p.application_id,
       available_years: availableYears,
@@ -3513,6 +3529,7 @@ function _handleGetApplicantDuesInfo(p) {
       household_id: household.household_id
     });
   } catch (e) {
+    Logger.log("[ERROR _handleGetApplicantDuesInfo] Exception: " + e.toString() + "\n" + e.stack);
     return errorResponse("Error retrieving applicant dues info: " + e.toString(), "SERVER_ERROR");
   }
 }

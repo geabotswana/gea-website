@@ -6786,24 +6786,45 @@ function submitPasswordReset(event) {
     if (app.status === 'approved_pending_payment') {
       // Fetch available membership years for this applicant
       apiCall('get_applicant_dues_info', { application_id: app.application_id }).then(function(res) {
-        if (res.success && res.available_years && res.available_years.length > 0) {
-          var yearDropdown = document.getElementById('applicantPaymentYear');
-          if (yearDropdown) {
-            yearDropdown.innerHTML = '';
-            res.available_years.forEach(function(year) {
-              var option = document.createElement('option');
-              option.value = year;
-              option.textContent = year;
-              // Set current year as default if available
-              if (year === res.current_year) {
-                option.selected = true;
-              }
-              yearDropdown.appendChild(option);
-            });
-          }
+        console.log("[DEBUG] get_applicant_dues_info response:", res);
+        if (!res) {
+          console.log("[ERROR] get_applicant_dues_info returned null/undefined");
+          showError("Could not load membership years", "warning");
+          return;
         }
+        if (!res.success) {
+          console.log("[ERROR] get_applicant_dues_info failed:", res);
+          showError("Error loading membership years: " + (res.message || res.error || "Unknown error"), "warning");
+          return;
+        }
+        if (!res.available_years || res.available_years.length === 0) {
+          console.log("[WARN] No available years returned:", res);
+          showError("No membership years available for your category", "warning");
+          return;
+        }
+
+        var yearDropdown = document.getElementById('applicantPaymentYear');
+        if (!yearDropdown) {
+          console.log("[ERROR] Year dropdown element not found");
+          return;
+        }
+
+        console.log("[DEBUG] Populating year dropdown with:", res.available_years);
+        yearDropdown.innerHTML = '';
+        res.available_years.forEach(function(year) {
+          var option = document.createElement('option');
+          option.value = year;
+          option.textContent = year;
+          // Set current year as default if available
+          if (year === res.current_year) {
+            option.selected = true;
+          }
+          yearDropdown.appendChild(option);
+        });
+        console.log("[DEBUG] Year dropdown populated successfully");
       }).catch(function(err) {
-        Logger.log("Could not fetch membership years: " + err);
+        console.log("[ERROR] get_applicant_dues_info threw exception:", err);
+        showError("Error loading membership years: " + err.message, "warning");
       });
 
       var yearLabel = document.createElement('label');

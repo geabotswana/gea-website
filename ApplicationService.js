@@ -365,11 +365,11 @@ function getApplicationForApplicant(email) {
     }
 
     // Build dues info for payment display (NMP.4)
+    // Use Membership Pricing sheet for year-specific dues
     var duesInfo = null;
     if (household.membership_level_id) {
-      var level = getMembershipLevel(household.membership_level_id);
-      if (level && level.annual_dues_usd) {
-        var annualDuesUsd = Number(level.annual_dues_usd) || 0;
+      var annualDuesUsd = _getAnnualDuesFromPricing(household.membership_level_id, CURRENT_MEMBERSHIP_YEAR);
+      if (annualDuesUsd > 0) {
         var qInfo = _getCurrentQuarterInfo_();
         var proratedUsd = Math.round(annualDuesUsd * (qInfo.percentage / 100) * 100) / 100;
         var exchangeRate = getExchangeRate();
@@ -1352,6 +1352,31 @@ function _getMembershipLevelId(category, householdType) {
 }
 
 /**
+ * HELPER: Get annual dues from Membership Pricing sheet for a given level and year
+ * @param {string} membershipLevelId - e.g. "full_indiv", "associate_family"
+ * @param {string} membershipYear - e.g. "2025-2026", "2026-2027"
+ * @returns {number} Annual dues in USD, or 0 if not found
+ */
+function _getAnnualDuesFromPricing(membershipLevelId, membershipYear) {
+  try {
+    if (!membershipLevelId || !membershipYear) return 0;
+    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+      .getSheetByName(TAB_MEMBERSHIP_PRICING);
+    var data = pricingSheet.getDataRange().getValues();
+    var headers = data[0];
+    for (var i = 1; i < data.length; i++) {
+      var row = rowToObject(headers, data[i]);
+      if (row.membership_level_id === membershipLevelId && row.membership_year === membershipYear) {
+        return Number(row.annual_dues_usd) || 0;
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _getAnnualDuesFromPricing(" + membershipLevelId + ", " + membershipYear + "): " + e);
+  }
+  return 0;
+}
+
+/**
  * HELPER: Returns the current GEA membership quarter name and percentage.
  * GEA membership year: Aug 1 – Jul 31.
  * Q1 Aug–Oct 100%, Q2 Nov–Jan 75%, Q3 Feb–Apr 50%, Q4 May–Jul 25%.
@@ -1387,15 +1412,10 @@ function _calculateDuesAmount(applicationId) {
       return 0;
     }
 
-    var level = getMembershipLevel(household.membership_level_id);
-    if (!level || !level.annual_dues_usd) {
-      Logger.log("WARNING: Could not find membership level or annual_dues_usd for level: " + household.membership_level_id);
-      return 0;
-    }
-
-    var annualDuesUsd = Number(level.annual_dues_usd) || 0;
+    var annualDuesUsd = _getAnnualDuesFromPricing(household.membership_level_id, CURRENT_MEMBERSHIP_YEAR);
     if (annualDuesUsd === 0) {
-      Logger.log("WARNING: Annual dues is 0 for membership level: " + household.membership_level_id);
+      Logger.log("WARNING: Annual dues is 0 for membership level: " + household.membership_level_id +
+        " in year " + CURRENT_MEMBERSHIP_YEAR);
       return 0;
     }
 

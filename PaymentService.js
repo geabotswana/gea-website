@@ -902,3 +902,65 @@ function getPaymentReport(filters) {
     return { ok: false, error: String(e) };
   }
 }
+
+/**
+ * FUNCTION: createGratisPayment
+ * PURPOSE: Board creates $0 payment record for late joiners (gratis access)
+ * @param {Object} params - { household_id, membership_year, reason }
+ * @param {string} adminEmail - Admin/board member email creating the payment
+ * @returns {Object} - Result with payment_id or error
+ */
+function createGratisPayment(params, adminEmail) {
+  try {
+    if (!params || !params.household_id || !params.membership_year) {
+      return { ok: false, error: "household_id and membership_year are required", code: "INVALID_PARAM" };
+    }
+
+    // Get household info
+    var household = getHouseholdById(params.household_id);
+    if (!household) {
+      return { ok: false, error: "Household not found", code: "NOT_FOUND" };
+    }
+
+    // Create payment record with $0 amount
+    var paymentId = generateId("PAY");
+    var paymentsSheet = _getPaymentsSheet_();
+    var now = new Date();
+
+    var payload = {
+      payment_id: paymentId,
+      household_id: params.household_id,
+      household_name: household.household_name || "",
+      payment_date: now,
+      payment_method: "Gratis (Board Grant)",
+      currency: "USD",
+      amount: 0,
+      amount_usd: 0,
+      amount_bwp: 0,
+      payment_type: "Dues Payment",
+      applied_to_period: params.membership_year,
+      payment_reference: params.reason || "Late joiner - gratis access",
+      payment_confirmation_file_id: "",
+      payment_submitted_date: now,
+      payment_verified_date: now,  // Auto-verified
+      payment_verified_by: adminEmail,
+      actual_amount_received: 0,
+      actual_amount_usd: 0,
+      actual_amount_bwp: 0,
+      payment_status: "paid_in_full",
+      balance_due_amount: 0,
+      verification_notes: "Gratis access granted by board - " + (params.reason || "late joiner")
+    };
+
+    _appendRowByHeaders_(paymentsSheet, payload);
+
+    // Audit log
+    logAuditEntry(adminEmail, AUDIT_PAYMENT_VERIFIED, "Payment", paymentId,
+      "Gratis payment created for late joiner: " + params.membership_year);
+
+    return { ok: true, payment_id: paymentId, message: "Gratis payment created successfully" };
+  } catch (e) {
+    Logger.log("ERROR createGratisPayment: " + e);
+    return { ok: false, error: String(e), code: "SERVER_ERROR" };
+  }
+}

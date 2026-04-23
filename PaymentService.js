@@ -279,6 +279,51 @@ function approvePaymentVerification(paymentId, treasurerEmail, params) {
 
     _setPaymentFields_(found, updatePayload);
 
+    // If payment is paid in full, activate the account (for new members/applicants)
+    if (paymentStatus === "paid_in_full") {
+      try {
+        var household = getHouseholdById(found.obj.household_id);
+        if (household) {
+          // Check if this is an applicant and update application status to "activated"
+          // Membership Application.status is the authoritative source (not Household.application_status)
+          var applicationsSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+          var allApplications = applicationsSheet.getDataRange().getValues();
+          var headers = allApplications[0];
+          var householdIdCol = headers.indexOf('household_id');
+          var statusCol = headers.indexOf('status');
+
+          var isApplicant = false;
+          for (var i = 1; i < allApplications.length; i++) {
+            if (allApplications[i][householdIdCol] === household.household_id) {
+              isApplicant = true;
+              var applicationRow = i + 1; // Row numbers are 1-indexed
+              // Update Membership Application status to "activated" (authoritative source)
+              applicationsSheet.getRange(applicationRow, statusCol + 1).setValue("activated");
+              break;
+            }
+          }
+
+          // Activate household and individuals if not already active
+          if (!household.active) {
+            updateHouseholdField(household.household_id, "active", true, treasurerEmail);
+            updateHouseholdField(household.household_id, "membership_status", MEMBERSHIP_STATUS_MEMBER, treasurerEmail);
+
+            // Activate all individuals in household
+            var individuals = getHouseholdMembers(household.household_id);
+            individuals.forEach(function(ind) {
+              if (ind.individual_id && !ind.active) {
+                updateMemberField(ind.individual_id, "active", true, treasurerEmail);
+              }
+            });
+
+            Logger.log("Account activated for household: " + household.household_id);
+          }
+        }
+      } catch (e) {
+        Logger.log("WARNING: Could not auto-activate account: " + e);
+      }
+    }
+
     // Send verification email to member
     try {
       var household = getHouseholdById(found.obj.household_id);

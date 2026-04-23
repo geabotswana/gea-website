@@ -1,0 +1,24 @@
+Hi {{FIRST_NAME}},
+
+MEMBERSHIP ACCOUNT TERMINATED
+
+Your GEA membership account has been terminated by the board.
+
+TERMINATION DETAILS:
+Termination Date: {{TERMINATION_DATE}}
+Reason: {{TERMINATION_REASON}}
+Status: TERMINATED
+
+WHAT THIS MEANS:
+Your membership account is no longer active. You no longer have access to any GEA facilities or benefits.
+
+REACTIVATION OPTIONS:
+If you believe this termination was made in error, or if your circumstances have changed, please contact the GEA Board at board@geabotswana.org to discuss your situation.
+
+If you wish to rejoin GEA in the future, you may submit a new membership application. New applicants follow the standard approval process.
+
+NEED HELP?
+Questions about your account termination? Please contact the board at board@geabotswana.org
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

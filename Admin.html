@@ -2508,6 +2508,7 @@
       <div id="memDetailContent"></div>
     </div>
     <div class="modal-footer">
+      <button class="btn btn-danger" id="memResignBtn" onclick="confirmResignMembership();" style="display: none; margin-right: auto;">Resign Membership</button>
       <button class="btn btn-secondary" onclick="closeModal('memDetailModal');">Close</button>
     </div>
   </div>
@@ -5907,26 +5908,49 @@
    * Opens the member detail modal for a specific household.
    * Displays household information, individual members, and payment history.
    */
+  var currentDetailHouseholdId = null;
+  var currentDetailHouseholdStatus = null;
+
   function openMemberDetail(householdId) {
     var container = document.getElementById('memDetailContent');
-    container.innerHTML = '';
+    container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Loading household details...</p>';
+
+    currentDetailHouseholdId = householdId;
 
     // Household Information section
     var householdHeader = document.createElement('h3');
     householdHeader.className = 'section-header';
     householdHeader.style.marginTop = '0';
     householdHeader.textContent = 'Household Information';
-    container.appendChild(householdHeader);
 
-    // Household details
-    var householdDetails = [
-      { label: 'Household ID:', value: householdId },
-      { label: 'Name:', value: 'Smith Household' },
-      { label: 'Email:', value: 'john.smith@state.gov' },
-      { label: 'Status:', isBadge: true, badgeClass: 'badge-approved', value: 'Active' },
-      { label: 'Membership Type:', value: 'ACTIVE' },
-      { label: 'Joined:', value: 'Jan 1, 2024' }
-    ];
+    // Fetch household details from server
+    apiCall('admin_member_detail', { household_id: householdId }).then(function(res) {
+      container.innerHTML = '';
+
+      if (!res.success || !res.data) {
+        container.textContent = 'Could not load household details.';
+        return;
+      }
+
+      var household = res.data.household;
+      currentDetailHouseholdStatus = household.membership_status;
+
+      // Show/hide resign button based on status
+      var resignBtn = document.getElementById('memResignBtn');
+      var canResign = household.membership_status !== 'Resigned' && household.membership_status !== 'Expelled';
+      resignBtn.style.display = canResign ? 'block' : 'none';
+
+      container.appendChild(householdHeader);
+
+      // Household details
+      var householdDetails = [
+        { label: 'Household ID:', value: household.household_id || 'N/A' },
+        { label: 'Name:', value: household.household_name || 'Unknown' },
+        { label: 'Email:', value: household.email || 'N/A' },
+        { label: 'Status:', isBadge: true, badgeClass: household.membership_status === 'Resigned' ? 'badge-cancelled' : 'badge-approved', value: household.membership_status || 'Unknown' },
+        { label: 'Category:', value: household.membership_category || 'N/A' },
+        { label: 'Expiration:', value: household.membership_expiration_date || 'N/A' }
+      ];
 
     householdDetails.forEach(function(detail) {
       var row = document.createElement('div');
@@ -6030,7 +6054,63 @@
 
     document.getElementById('memDetailModal').classList.add('show');
   }
-  
+
+  function confirmResignMembership() {
+    if (!currentDetailHouseholdId) {
+      showError('No household selected.');
+      return;
+    }
+
+    var confirmed = confirm(
+      'Are you sure you want to resign this membership?\n\n' +
+      'This will:\n' +
+      '- Set membership status to Resigned\n' +
+      '- Mark the account as terminated\n' +
+      '- Prevent future renewal reminders\n\n' +
+      'This action cannot be undone without manually editing the sheet.'
+    );
+
+    if (confirmed) {
+      resignMembership(currentDetailHouseholdId);
+    }
+  }
+
+  function resignMembership(householdId) {
+    var btn = document.getElementById('memResignBtn');
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.textContent = 'Resigning...';
+
+    apiCall('admin_resign_membership', {
+      household_id: householdId,
+      reason: 'Manual board termination'
+    }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+
+      if (!res.success) {
+        showError('Failed to resign membership: ' + res.message);
+        return;
+      }
+
+      showNotification('Membership resigned successfully.');
+      btn.style.display = 'none';
+      currentDetailHouseholdStatus = 'Resigned';
+
+      // Refresh the lapsed/resigned members lists if visible
+      if (document.getElementById('lapsed-section').style.display !== 'none') {
+        loadLapsedMembers();
+      }
+      if (document.getElementById('resigned-section').style.display !== 'none') {
+        loadResignedMembers();
+      }
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      showError('Error: ' + err.message);
+    });
+  }
+
   /**
    * Sets up search/filter functionality for the members table.
    */

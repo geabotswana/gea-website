@@ -254,8 +254,10 @@ function _routeAction(action, params) {
     case "admin_rso_approved_guest_lists": return _handleAdminRsoApprovedGuestLists(params);
     case "admin_calendar":                 return _handleAdminCalendar(params);
     case "admin_members": return _handleAdminMembers(params);
+    case "admin_member_detail": return _handleAdminMemberDetail(params);
     case "admin_lapsed_members": return _handleAdminLapsedMembers(params);
     case "admin_resigned_members": return _handleAdminResignedMembers(params);
+    case "admin_resign_membership": return _handleAdminResignMembership(params);
     case "admin_photo":   return _handleAdminPhoto(params);
     case "admin_pending_photos": return _handleAdminPendingPhotos(params);
     case "admin_applications":       return _handleAdminApplications(params);
@@ -1576,6 +1578,126 @@ function _handleAdminResignedMembers(p) {
   } catch (e) {
     Logger.log("ERROR _handleAdminResignedMembers: " + e);
     return errorResponse("Could not load resigned members.", "READ_FAILED");
+  }
+}
+
+/**
+ * ============================================================
+ * HANDLER: _handleAdminMemberDetail
+ * ============================================================
+ * PURPOSE:
+ * Retrieve detailed household information for display in the admin modal.
+ *
+ * AUTHENTICATION:
+ * Requires board role.
+ *
+ * PARAMETERS REQUIRED:
+ *   token: session token
+ *   household_id: the household to fetch
+ *
+ * RESPONSE:
+ * { "success": true, "data": { "household": {...} } }
+ * ============================================================
+ */
+function _handleAdminMemberDetail(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  if (!p.household_id) {
+    return errorResponse("household_id is required.", "MISSING_PARAM");
+  }
+
+  try {
+    var household = getHouseholdById(p.household_id);
+    if (!household) {
+      return errorResponse("Household not found.", "NOT_FOUND");
+    }
+
+    // Add primary member info for display
+    household.primary_first_name = _getPrimaryFirstName(p.household_id);
+    var primaryEmail = _getPrimaryEmail(p.household_id);
+    household.email = primaryEmail || household.email || '';
+
+    return successResponse({
+      household: _safePublicHousehold(household)
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleAdminMemberDetail: " + e);
+    return errorResponse("Could not load household details.", "READ_FAILED");
+  }
+}
+
+/**
+ * ============================================================
+ * HANDLER: _handleAdminResignMembership
+ * ============================================================
+ * PURPOSE:
+ * Instantly resign a household membership (mark as Resigned).
+ * Used when a member departs permanently and should not receive renewal emails.
+ *
+ * AUTHENTICATION:
+ * Requires board role.
+ *
+ * PARAMETERS REQUIRED:
+ *   token: session token
+ *   household_id: the household to resign
+ *   reason: termination reason (optional, defaults to "Manual board termination")
+ *
+ * CHANGES:
+ *   - Set membership_status = "Resigned"
+ *   - Set termination_date = today
+ *   - Set termination_reason = provided reason
+ *   - Set active = false
+ *
+ * RESPONSE:
+ * { "success": true, "data": {}, "message": "Membership resigned." }
+ * ============================================================
+ */
+function _handleAdminResignMembership(p) {
+  var auth = requireAuth(p.token, "board");
+  if (!auth.ok) return auth.response;
+
+  if (!p.household_id) {
+    return errorResponse("household_id is required.", "MISSING_PARAM");
+  }
+
+  try {
+    var household = getHouseholdById(p.household_id);
+    if (!household) {
+      return errorResponse("Household not found.", "NOT_FOUND");
+    }
+
+    var today = new Date();
+    var reason = p.reason || "Manual board termination";
+
+    // Update household fields
+    updateHouseholdField(p.household_id, "membership_status", MEMBERSHIP_STATUS_RESIGNED, auth.session.email);
+    updateHouseholdField(p.household_id, "termination_date", today, auth.session.email);
+    updateHouseholdField(p.household_id, "termination_reason", reason, auth.session.email);
+    updateHouseholdField(p.household_id, "active", false, auth.session.email);
+
+    // Send notification to member
+    try {
+      var primaryEmail = _getPrimaryEmail(p.household_id);
+      if (primaryEmail) {
+        sendEmailFromTemplate("MEM_MEMBERSHIP_TERMINATED_BY_BOARD_TO_MEMBER", primaryEmail, {
+          FIRST_NAME: _getPrimaryFirstName(p.household_id),
+          TERMINATION_DATE: formatDate(today),
+          TERMINATION_REASON: reason
+        });
+      }
+    } catch (emailErr) {
+      Logger.log("WARNING: Could not send termination email: " + emailErr);
+    }
+
+    // Log action
+    logAuditEntry(auth.session.email, "MEMBERSHIP_RESIGNED", "Household", p.household_id,
+      "Membership instantly resigned by board. Reason: " + reason);
+
+    return successResponse({}, "Membership resigned successfully.");
+  } catch (e) {
+    Logger.log("ERROR _handleAdminResignMembership: " + e);
+    return errorResponse("Could not resign membership.", "SERVER_ERROR");
   }
 }
 

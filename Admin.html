@@ -6334,15 +6334,18 @@
    * Switch between pending payments and report views.
    */
   function showPaymentView(viewName) {
+    console.log("showPaymentView called with:", viewName);
     var pendingView = document.getElementById('paymentPendingView');
     var reportView = document.getElementById('paymentReportView');
     var buttons = document.querySelectorAll('#payments .filter-btn');
 
     if (viewName === 'pending') {
+      console.log("Switching to pending view");
       pendingView.style.display = 'block';
       reportView.style.display = 'none';
       buttons[0].classList.add('active');
       buttons[1].classList.remove('active');
+      console.log("About to call loadPayments");
       loadPayments();
     } else if (viewName === 'report') {
       pendingView.style.display = 'none';

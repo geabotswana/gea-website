@@ -200,6 +200,7 @@ function _routeAction(action, params) {
     case "submit_payment_verification": return _handleSubmitPaymentVerification(params);
     case "get_payment_status": return _handleGetPaymentStatus(params);
     case "get_dues_info":      return _handleGetDuesInfo(params);
+    case "get_applicant_dues_info": return _handleGetApplicantDuesInfo(params);
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
 
     // Applicant routes (pending membership)
@@ -2257,7 +2258,8 @@ function _handleSubmitPaymentProof(p) {
       auth.session.email,
       p.payment_method,
       proofFileId,
-      p.notes
+      p.notes,
+      p.membership_year
     );
 
     if (result.success) {
@@ -3464,6 +3466,54 @@ function _handleGetDuesInfo(p) {
     });
   } catch (e) {
     return errorResponse("Error retrieving dues info: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleGetApplicantDuesInfo
+ * PURPOSE: Returns dues amount and available years for applicant (for year selection in payment form)
+ */
+function _handleGetApplicantDuesInfo(p) {
+  try {
+    if (!p.application_id) return errorResponse("Missing application_id", "INVALID_PARAM");
+
+    var app = _getApplicationById(p.application_id);
+    if (!app) return errorResponse("Application not found", "NOT_FOUND");
+
+    // Get household to access membership_level_id
+    var household = getHouseholdById(app.household_id);
+    if (!household) return errorResponse("Household not found", "NOT_FOUND");
+
+    // Fetch available years from Membership Pricing sheet
+    var pricingSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+      .getSheetByName(TAB_MEMBERSHIP_PRICING);
+    var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
+    var pricingHeaders = pricingData.length ? pricingData[0] : [];
+
+    var availableYears = [];
+    for (var i = 1; i < pricingData.length; i++) {
+      var row = rowToObject(pricingHeaders, pricingData[i]);
+      if (row.membership_level_id === household.membership_level_id &&
+          (row.active_for_payment === true || row.active_for_payment === "TRUE")) {
+        if (availableYears.indexOf(row.membership_year) === -1) {
+          availableYears.push(row.membership_year);
+        }
+      }
+    }
+
+    // Sort years in reverse order (newest first)
+    availableYears.sort(function(a, b) {
+      return b.localeCompare(a);
+    });
+
+    return successResponse({
+      application_id: p.application_id,
+      available_years: availableYears,
+      current_year: CURRENT_MEMBERSHIP_YEAR,
+      household_id: household.household_id
+    });
+  } catch (e) {
+    return errorResponse("Error retrieving applicant dues info: " + e.toString(), "SERVER_ERROR");
   }
 }
 

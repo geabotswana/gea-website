@@ -6784,6 +6784,42 @@ function submitPasswordReset(event) {
     card.appendChild(methods);
 
     if (app.status === 'approved_pending_payment') {
+      // Fetch available membership years for this applicant
+      apiCall('get_applicant_dues_info', { application_id: app.application_id }).then(function(res) {
+        if (res.success && res.available_years && res.available_years.length > 0) {
+          var yearDropdown = document.getElementById('applicantPaymentYear');
+          if (yearDropdown) {
+            yearDropdown.innerHTML = '';
+            res.available_years.forEach(function(year) {
+              var option = document.createElement('option');
+              option.value = year;
+              option.textContent = year;
+              // Set current year as default if available
+              if (year === res.current_year) {
+                option.selected = true;
+              }
+              yearDropdown.appendChild(option);
+            });
+          }
+        }
+      }).catch(function(err) {
+        Logger.log("Could not fetch membership years: " + err);
+      });
+
+      var yearLabel = document.createElement('label');
+      yearLabel.className = 'form-label';
+      yearLabel.textContent = 'Membership Year';
+      card.appendChild(yearLabel);
+
+      var yearSelect = document.createElement('select');
+      yearSelect.id = 'applicantPaymentYear';
+      yearSelect.className = 'form-input';
+      yearSelect.style.marginBottom = '12px';
+      var loadingOption = document.createElement('option');
+      loadingOption.textContent = 'Loading available years...';
+      yearSelect.appendChild(loadingOption);
+      card.appendChild(yearSelect);
+
       var methodLabel = document.createElement('label');
       methodLabel.className = 'form-label';
       methodLabel.textContent = 'Payment Method';
@@ -8246,6 +8282,7 @@ function submitPasswordReset(event) {
    * @param {string} applicationId Application identifier.
    */
   function submitPaymentProof(applicationId) {
+    var yearSelect = document.getElementById('applicantPaymentYear');
     var method = document.getElementById('applicantPaymentMethod');
     var dateInput = document.getElementById('applicantPaymentDate');
     var notesInput = document.getElementById('applicantPaymentNotes');
@@ -8253,6 +8290,10 @@ function submitPasswordReset(event) {
     var submitBtn = document.querySelector('#applicantPaymentForm button[type="submit"]') ||
                    document.querySelector('form button.btn-primary');
 
+    if (!yearSelect || !yearSelect.value) {
+      showError('Please select a membership year.');
+      return;
+    }
     if (!method || !method.value) {
       showError('Please select a payment method.');
       return;
@@ -8270,6 +8311,7 @@ function submitPasswordReset(event) {
 
     var payload = {
       application_id: applicationId,
+      membership_year: yearSelect.value,
       payment_method: method.value,
       notes: 'Transaction date: ' + dateInput.value + (notesInput && notesInput.value ? (' | ' + notesInput.value.trim()) : '')
     };

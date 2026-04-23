@@ -851,7 +851,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
  * @param {string} notes Optional notes about payment
  * @returns {Object} { success, message }
  */
-function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, notes) {
+function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, notes, membershipYear) {
   try {
     var application = _getApplicationById(applicationId);
     if (!application) {
@@ -889,9 +889,10 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
     }
 
     var now = new Date();
-    var currentYear = getConfigValue("CURRENT_MEMBERSHIP_YEAR") || CURRENT_MEMBERSHIP_YEAR;
-    if (!currentYear) {
-      Logger.log("[ERROR submitPaymentProof] CURRENT_MEMBERSHIP_YEAR not configured");
+    // Use provided membership_year if given, otherwise use current year
+    var appliedYear = membershipYear || (getConfigValue("CURRENT_MEMBERSHIP_YEAR") || CURRENT_MEMBERSHIP_YEAR);
+    if (!appliedYear) {
+      Logger.log("[ERROR submitPaymentProof] No membership year provided and CURRENT_MEMBERSHIP_YEAR not configured");
       return { success: false, message: "System configuration error: membership year not set." };
     }
 
@@ -930,7 +931,7 @@ function submitPaymentProof(applicationId, email, paymentMethod, proofFileId, no
       amount_usd: amountUsd,
       amount_bwp: amountBwp,
       payment_type: "Dues Payment",
-      applied_to_period: String(currentYear),
+      applied_to_period: String(appliedYear),
       payment_reference: String(proofFileId || ""),
       payment_confirmation_file_id: String(proofFileId || ""),
       payment_submitted_date: now,

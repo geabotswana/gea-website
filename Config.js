@@ -260,6 +260,31 @@ var SPONSOR_MUST_BE_ACTIVE    = true;    // Sponsor membership must be active (n
 
 
 // ============================================================
+// SECTION 8B: MEMBERSHIP STATUS & RENEWAL CONFIGURATION
+// ============================================================
+// Membership lifecycle states and renewal/lapse timing.
+// Used to determine portal access and user experience.
+// ============================================================
+
+// Membership status values (enum - stored in Households.membership_status)
+var MEMBERSHIP_STATUS_APPLICANT       = "Applicant";      // Application in progress
+var MEMBERSHIP_STATUS_MEMBER          = "Member";         // Approved & active
+var MEMBERSHIP_STATUS_LAPSED          = "Lapsed";         // Expired, in renewal grace period
+var MEMBERSHIP_STATUS_RESIGNED        = "Resigned";       // Auto-terminated after 24+ months lapsed (didn't renew)
+var MEMBERSHIP_STATUS_EXPELLED        = "Expelled";       // Removed by board (violation/other reason)
+
+// Grace period (in days) after membership expiration before auto-marking as Lapsed
+// Example: 31 days covers August if membership expires July 31
+// On day RENEWAL_GRACE_PERIOD_DAYS + 1 after expiration, membership_status → "Lapsed", active → FALSE
+var RENEWAL_GRACE_PERIOD_DAYS        = 31;
+
+// Auto-termination period (in months) after entering Lapsed status
+// Example: 24 months = if Lapsed on Sep 1, auto-set to Resigned on Sep 1 two years later
+// Must be >= 1
+var LAPSED_TERMINATION_MONTHS         = 24;
+
+
+// ============================================================
 // SECTION 9: AGE THRESHOLDS
 // ============================================================
 // Age-based access rules. Stored as config parameters so

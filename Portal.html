@@ -6812,7 +6812,7 @@ function submitPasswordReset(event) {
           showError("Error loading membership years: " + (res.message || res.error || "Unknown error"), "warning");
           return;
         }
-        if (!res.available_years || res.available_years.length === 0) {
+        if (!res.data.available_years || res.data.available_years.length === 0) {
           console.log("[WARN] No available years returned:", res);
           showError("No membership years available for your category", "warning");
           return;
@@ -6824,14 +6824,14 @@ function submitPasswordReset(event) {
           return;
         }
 
-        console.log("[DEBUG] Populating year dropdown with:", res.available_years);
+        console.log("[DEBUG] Populating year dropdown with:", res.data.available_years);
         yearDropdown.innerHTML = '';
-        res.available_years.forEach(function(year) {
+        res.data.available_years.forEach(function(year) {
           var option = document.createElement('option');
           option.value = year;
           option.textContent = year;
           // Set current year as default if available
-          if (year === res.current_year) {
+          if (year === res.data.current_year) {
             option.selected = true;
           }
           yearDropdown.appendChild(option);

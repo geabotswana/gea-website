@@ -260,31 +260,6 @@ var SPONSOR_MUST_BE_ACTIVE    = true;    // Sponsor membership must be active (n
 
 
 // ============================================================
-// SECTION 8B: MEMBERSHIP STATUS & RENEWAL CONFIGURATION
-// ============================================================
-// Membership lifecycle states and renewal/lapse timing.
-// Used to determine portal access and user experience.
-// ============================================================
-
-// Membership status values (enum - stored in Households.membership_status)
-var MEMBERSHIP_STATUS_APPLICANT       = "Applicant";      // Application in progress
-var MEMBERSHIP_STATUS_MEMBER          = "Member";         // Approved & active
-var MEMBERSHIP_STATUS_LAPSED          = "Lapsed";         // Expired, in renewal grace period
-var MEMBERSHIP_STATUS_RESIGNED        = "Resigned";       // Auto-terminated after 24+ months lapsed (didn't renew)
-var MEMBERSHIP_STATUS_EXPELLED        = "Expelled";       // Removed by board (violation/other reason)
-
-// Grace period (in days) after membership expiration before auto-marking as Lapsed
-// Example: 31 days covers August if membership expires July 31
-// On day RENEWAL_GRACE_PERIOD_DAYS + 1 after expiration, membership_status → "Lapsed", active → FALSE
-var RENEWAL_GRACE_PERIOD_DAYS        = 31;
-
-// Auto-termination period (in months) after entering Lapsed status
-// Example: 24 months = if Lapsed on Sep 1, auto-set to Resigned on Sep 1 two years later
-// Must be >= 1
-var LAPSED_TERMINATION_MONTHS         = 24;
-
-
-// ============================================================
 // SECTION 9: AGE THRESHOLDS
 // ============================================================
 // Age-based access rules. Stored as config parameters so
@@ -1011,8 +986,8 @@ var SYSTEM_VERSION          = "2.4.133";
 var SYSTEM_BUILD_DATE       = "2026-04-23";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: Syntax error in openMemberDetail function";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-23 15:20:24";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: Payment verification now updates membership_status to Member when activated";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-23 15:28:29";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

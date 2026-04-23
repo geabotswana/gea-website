@@ -306,6 +306,7 @@ function approvePaymentVerification(paymentId, treasurerEmail, params) {
           // Activate household and individuals if not already active
           if (!household.active) {
             updateHouseholdField(household.household_id, "active", true, treasurerEmail);
+            updateHouseholdField(household.household_id, "membership_status", MEMBERSHIP_STATUS_MEMBER, treasurerEmail);
 
             // Activate all individuals in household
             var individuals = getHouseholdMembers(household.household_id);
@@ -330,8 +331,8 @@ function approvePaymentVerification(paymentId, treasurerEmail, params) {
       var memberEmail = primaryMember ? primaryMember.email : "";
 
       if (memberEmail) {
-        var templateName;
-        var templateVars = {
+        var templateName = paymentStatus === "balance_due" ? "PAY_PAYMENT_PARTIAL_TO_MEMBER" : "PAY_PAYMENT_VERIFIED_TO_MEMBER";
+        sendEmailFromTemplate(templateName, memberEmail, {
           FIRST_NAME: primaryMember ? primaryMember.first_name : "",
           PAYMENT_ID: paymentId,
           AMOUNT: actualAmount,
@@ -339,20 +340,7 @@ function approvePaymentVerification(paymentId, treasurerEmail, params) {
           VERIFICATION_DATE: formatDate(now, true),
           BALANCE_DUE: params.balance_due_amount || 0,
           MEMBERSHIP_ACTIVATED: paymentStatus === "paid_in_full" ? "Active" : "Pending"
-        };
-
-        // For lapsed members paying for renewal, use renewal template
-        if (paymentStatus === "paid_in_full" && household && household.membership_status === MEMBERSHIP_STATUS_LAPSED) {
-          templateName = "MEM_RENEWAL_PAYMENT_VERIFIED_TO_MEMBER";
-          templateVars.MEMBERSHIP_LEVEL = household.membership_category || "Member";
-          templateVars.NEW_EXPIRATION_DATE = household.membership_expiration_date ? formatDate(new Date(household.membership_expiration_date)) : "One year from today";
-          templateVars.PORTAL_URL = URL_MEMBER_PORTAL;
-          templateVars.RENEWAL_DATE = formatDate(now);
-        } else {
-          templateName = paymentStatus === "balance_due" ? "PAY_PAYMENT_PARTIAL_TO_MEMBER" : "PAY_PAYMENT_VERIFIED_TO_MEMBER";
-        }
-
-        sendEmailFromTemplate(templateName, memberEmail, templateVars);
+        });
       }
     } catch (e) {
       Logger.log("WARNING: Could not send member verification email: " + e);

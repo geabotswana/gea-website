@@ -365,11 +365,26 @@ function getApplicationForApplicant(email) {
     }
 
     // Build dues info for payment display (NMP.4)
+    // Query Membership Pricing sheet for year-specific dues
     var duesInfo = null;
     if (household.membership_level_id) {
-      var level = getMembershipLevel(household.membership_level_id);
-      if (level && level.annual_dues_usd) {
-        var annualDuesUsd = Number(level.annual_dues_usd) || 0;
+      var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID)
+        .getSheetByName(TAB_MEMBERSHIP_PRICING);
+      var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
+      var pricingHeaders = pricingData.length ? pricingData[0] : [];
+
+      var annualDuesUsd = 0;
+      // Find the pricing row for this level and current year
+      for (var i = 1; i < pricingData.length; i++) {
+        var row = rowToObject(pricingHeaders, pricingData[i]);
+        if (row.membership_level_id === household.membership_level_id &&
+            row.membership_year === CURRENT_MEMBERSHIP_YEAR) {
+          annualDuesUsd = Number(row.annual_dues_usd) || 0;
+          break;
+        }
+      }
+
+      if (annualDuesUsd > 0) {
         var qInfo = _getCurrentQuarterInfo_();
         var proratedUsd = Math.round(annualDuesUsd * (qInfo.percentage / 100) * 100) / 100;
         var exchangeRate = getExchangeRate();
@@ -1387,15 +1402,26 @@ function _calculateDuesAmount(applicationId) {
       return 0;
     }
 
-    var level = getMembershipLevel(household.membership_level_id);
-    if (!level || !level.annual_dues_usd) {
-      Logger.log("WARNING: Could not find membership level or annual_dues_usd for level: " + household.membership_level_id);
-      return 0;
+    // Query Membership Pricing sheet for year-specific dues
+    var pricingSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID)
+      .getSheetByName(TAB_MEMBERSHIP_PRICING);
+    var pricingData = pricingSheet ? pricingSheet.getDataRange().getValues() : [];
+    var pricingHeaders = pricingData.length ? pricingData[0] : [];
+
+    var annualDuesUsd = 0;
+    // Find the pricing row for this level and current year
+    for (var i = 1; i < pricingData.length; i++) {
+      var row = rowToObject(pricingHeaders, pricingData[i]);
+      if (row.membership_level_id === household.membership_level_id &&
+          row.membership_year === CURRENT_MEMBERSHIP_YEAR) {
+        annualDuesUsd = Number(row.annual_dues_usd) || 0;
+        break;
+      }
     }
 
-    var annualDuesUsd = Number(level.annual_dues_usd) || 0;
     if (annualDuesUsd === 0) {
-      Logger.log("WARNING: Annual dues is 0 for membership level: " + household.membership_level_id);
+      Logger.log("WARNING: Annual dues is 0 for membership level: " + household.membership_level_id +
+        " in year " + CURRENT_MEMBERSHIP_YEAR);
       return 0;
     }
 

@@ -1796,9 +1796,10 @@
                 <tr>
                   <th>Household</th>
                   <th>Method</th>
-                  <th>Amount (USD)</th>
+                  <th>Amount</th>
                   <th>Submitted</th>
                   <th>Currency</th>
+                  <th>Membership Year</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -6215,7 +6216,11 @@
         row.appendChild((() => { var td = document.createElement('td'); td.textContent = payment.payment_method || ''; return td; })());
 
         var amountTd = document.createElement('td');
-        amountTd.textContent = '$' + (payment.amount_usd || '0.00');
+        if (payment.currency === 'BWP') {
+          amountTd.textContent = payment.amount_usd ? ('$' + payment.amount_usd + ' / P' + payment.amount_bwp) : '—';
+        } else {
+          amountTd.textContent = '$' + (payment.amount_usd || '0.00');
+        }
         row.appendChild(amountTd);
 
         var submittedTd = document.createElement('td');
@@ -6225,6 +6230,10 @@
         var currencyTd = document.createElement('td');
         currencyTd.textContent = payment.currency || 'USD';
         row.appendChild(currencyTd);
+
+        var yearTd = document.createElement('td');
+        yearTd.textContent = payment.applied_to_period || 'N/A';
+        row.appendChild(yearTd);
 
         var actionTd = document.createElement('td');
         var confirmBtn = document.createElement('button');

@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.4.106";
+var SYSTEM_VERSION          = "2.4.107";
 var SYSTEM_BUILD_DATE       = "2026-04-23";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add membership year selection to applicant payment form";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-23 08:15:41";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add debugging to year dropdown loading";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-23 08:29:21";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

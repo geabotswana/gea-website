@@ -1,7 +1,7 @@
 # GEA Management System - Complete Database Schema
 
-**Last Updated:** February 16, 2026  
-**System Version:** Core Backend (v1.0)
+**Last Updated:** April 24, 2026  
+**System Version:** Current Production (with extended fields and new tabs)
 
 ---
 
@@ -10,10 +10,12 @@
 The GEA Management System is built on Google Sheets with a Google Apps Script backend. The system manages member directory, reservations, payments, sessions, and administrative functions for the Gaborone Employee Association.
 
 **Core Spreadsheets:**
-- GEA Member Directory
-- GEA Reservations
-- GEA Payment Tracking
-- GEA System Backend
+- GEA Member Directory (5 tabs)
+- GEA Reservations (4 tabs)
+- GEA System Backend (6 tabs)
+- GEA Payment Tracking (3 tabs)
+
+**Total Sheets:** 18 tabs across 4 spreadsheets
 
 ---
 
@@ -21,118 +23,139 @@ The GEA Management System is built on Google Sheets with a Google Apps Script ba
 
 ### 1.1 Households Sheet
 
-Represents a household unit (could be individual or family). The primary organizational unit for membership, dues, and reservations.
+Represents a household unit (individual or family). The primary organizational unit for membership, dues, and reservations.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `household_id` | Text | Unique ID (format: HSH-2026-XXXXX) |
-| `primary_member_id` | Text | FK to Individuals table |
-| `household_name` | Text | Display name (usually family name) |
-| `membership_type` | Enum | Full, Affiliate, Associate, Diplomatic, Community, Temporary |
-| `membership_category` | Text | Derived from membership_level_id |
-| `membership_level_id` | Text | FK to Membership Levels |
-| `membership_duration_months` | Number | For Temporary memberships |
-| `membership_start_date` | Date | When membership becomes effective |
-| `membership_expiration_date` | Date | When membership expires (auto-renewal needed) |
-| `dues_amount` | Number (USD) | Annual dues in USD |
-| `dues_paid_amount` | Number (USD) | Total paid to date |
-| `dues_last_payment_date` | Date | Last payment received date |
-| `balance_due` | Number (USD) | Calculated: dues_amount - dues_paid_amount |
+**37 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `household_id` | Text | Unique ID (format: HSH-YYYY-XXXXX); primary key |
+| `primary_member_id` | Text | FK to Individuals; household head |
+| `household_name` | Text | Display name (usually family surname) |
+| `household_type` | Enum | Individual \| Family |
+| `membership_category` | Text | Full \| Associate \| Affiliate \| Diplomatic \| Community \| Temporary |
+| `membership_level_id` | Text | FK to Membership Levels (defines dues, voting, office eligibility) |
+| `membership_duration_months` | Number | For Temporary: 1-6 months |
+| `membership_start_date` | Date | When membership begins |
+| `membership_expiration_date` | Date | Auto-renewal needed if exceeded (typically July 31 annually) |
+| `membership_status` | Enum | **Applicant** \| **Member** \| **Lapsed** \| **Resigned** \| **Expelled** (routing flag for Portal.html) |
+| `dues_amount` | Number | Annual dues in USD (from Membership Levels or Membership Pricing) |
+| `dues_paid_amount` | Number | Cumulative paid to date (USD) |
+| `dues_last_payment_date` | Date | Most recent payment received |
+| `balance_due` | Number | Calculated: dues_amount - dues_paid_amount |
 | `address_street` | Text | Street address |
 | `address_city` | Text | City (usually Gaborone) |
 | `address_country` | Text | Country (usually Botswana) |
 | `country_code_primary` | Text | Country code for primary phone (e.g., BW, US) |
-| `phone_primary` | Text | Primary phone number (no country code) |
-| `phone_primary_whatsapp` | Boolean | Whether primary phone has WhatsApp |
-| `active` | Boolean | Membership is current/active |
-| `application_status` | Enum | Pending, Approved, Denied, Withdrawn |
-| `application_date` | Date | When application was submitted |
-| `approved_by` | Email | Board member who approved |
-| `approved_date` | Date | Date of approval |
-| `denial_reason` | Text | If status = Denied |
-| `created_date` | Date | Record creation date |
-| `last_modified_date` | Date | Last update date |
-| `notes` | Text | Internal notes |
-| `sponsor_name` | Text | Non-Full member sponsor name |
-| `sponsor_email` | Email | Non-Full member sponsor email |
+| `phone_primary` | Text | Primary phone (no country code) |
+| `phone_primary_whatsapp` | Boolean | Primary phone supports WhatsApp |
+| `active` | Boolean | Membership is current/active/not expired |
+| `application_date` | Date | When application submitted (if applicant) |
+| `approved_by` | Email | Board member who approved membership |
+| `approved_date` | Date | Approval timestamp |
+| `denial_reason` | Text | If membership was denied |
+| `lapsed_date` | Date | When membership expired and became lapsed (NEW) |
+| `termination_date` | Date | When membership was terminated (resigned/expelled) (NEW) |
+| `termination_reason` | Text | Reason for resignation/expulsion (NEW) |
+| `sponsor_name` | Text | Sponsor name (required for non-Full members) |
+| `sponsor_email` | Email | Sponsor email (for verification) |
 | `sponsor_verified` | Boolean | Sponsor eligibility confirmed |
 | `sponsor_verified_date` | Date | Date sponsor was verified |
-| `sponsor_verified_by` | Email | Board member who verified |
-| `sponsor_notes` | Text | Sponsorship notes |
+| `sponsor_verified_by` | Email | Board member who verified sponsor |
+| `sponsor_notes` | Text | Sponsorship tracking notes |
+| `created_date` | Date | Record creation timestamp |
+| `last_modified_date` | Date | Last update timestamp |
+| `notes` | Text | Internal notes |
 
 **Key Relationships:**
-- 1:N with Individuals (one household has many individuals)
+- 1:N with Individuals (one household has many members)
 - 1:1 with Membership Levels (via membership_level_id)
-- 1:N with Reservations (household can make many reservations)
-- 1:N with Payments (household can make many payments)
+- 1:N with Reservations (household can book multiple times)
+- 1:N with Payments (household submits multiple payments)
+- 1:N with File Submissions (household members upload documents)
+
+**Critical Fields for Application Logic:**
+- `membership_status`: Routes Portal.html display (Applicant → read-only; Member → full access; Lapsed → renewal needed)
+- `membership_expiration_date`: Triggers renewal warnings (30-day, 7-day before July 31)
+- `sponsor_verified`: Required before payment submission for non-Full categories
 
 ---
 
 ### 1.2 Individuals Sheet
 
-Represents a single person (adult or child) within a household.
+Represents a single person within a household. Records authentication details, document status, and role information.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `individual_id` | Text | Unique ID (format: IND-2026-XXXXX) |
+**58 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `individual_id` | Text | Unique ID (format: IND-YYYY-XXXXX); primary key |
 | `household_id` | Text | FK to Households |
-| `first_name` | Text | First name |
-| `last_name` | Text | Last name |
-| `date_of_birth` | Date | DOB for age calculations |
-| `age_category` | Enum | Adult, Youth (16-17), Child (under 16) — Calculated from DOB |
-| `relationship_to_primary` | Enum | Primary, Spouse, Child, Other |
-| `email` | Email | Personal email address |
+| `first_name` | Text | Given name |
+| `last_name` | Text | Family name |
+| `date_of_birth` | Date | Birthdate (YYYY-MM-DD); used for age calculations |
+| `age_category` | Enum | Adult \| Youth (16-17) \| Child (<16); derived from DOB |
+| `relationship_to_primary` | Enum | Primary \| Spouse \| Child \| Staff (relationship to household head) |
+| `email` | Email | Primary email (used for authentication) |
 | `citizenship_country` | Text | Country of citizenship |
-| `us_citizen` | Boolean | Is US citizen or resident alien |
+| `us_citizen` | Boolean | US citizen or resident alien status |
+| **CONTACT INFORMATION** |
 | `country_code_primary` | Text | Country code for primary phone |
 | `phone_primary` | Text | Primary phone (no country code) |
 | `phone_primary_whatsapp` | Boolean | Primary phone has WhatsApp |
 | `country_code_secondary` | Text | Country code for secondary phone |
 | `phone_secondary` | Text | Secondary phone (no country code) |
 | `phone_secondary_whatsapp` | Boolean | Secondary phone has WhatsApp |
-| | | |
-| **CURRENT DOCUMENT REFERENCES** | | |
-| `current_passport_submission_id` | Text | FK to File Submissions (current approved passport) |
-| `current_omang_submission_id` | Text | FK to File Submissions (current approved Omang) |
-| `current_photo_submission_id` | Text | FK to File Submissions (current approved photo) |
-| | | |
-| **DOCUMENT STATUS (Derived)** | | |
-| `passport_status` | Enum | none, submitted, rso_approved, rso_rejected, gea_pending, gea_rejected, verified |
-| `passport_expiration_date` | Date | From current submission (if verified) |
-| `omang_status` | Enum | none, submitted, rso_approved, rso_rejected, gea_pending, gea_rejected, verified |
-| `omang_expiration_date` | Date | From current submission (if verified) |
-| `photo_status` | Enum | none, submitted, approved, rejected |
-| | | |
-| **DOCUMENT EXPIRATION WARNINGS** | | |
-| `passport_expiration_warning_sent` | Boolean | Expiration warning email sent |
-| `passport_expiration_warning_date` | Date | When warning was sent |
-| `omang_expiration_warning_sent` | Boolean | Expiration warning email sent |
-| `omang_expiration_warning_date` | Date | When warning was sent |
-| | | |
-| **OTHER FIELDS** | | |
-| `can_access_unaccompanied` | Boolean | Access to recreational facilities without adult |
-| `voting_eligible` | Boolean | Can vote in association elections |
-| `employment_office` | Text | USG office where employed (e.g., "Embassy Gaborone") |
-| `employment_verification_file_id` | Text | File ID for employment verification |
-| `emergency_contact_name` | Text | Emergency contact name |
+| `email_primary` | Email | Primary email (same as email field) (NEW) |
+| `email_secondary` | Email | Secondary email address (NEW) |
+| **EMERGENCY CONTACT** |
+| `emergency_contact_name` | Text | Emergency contact person name |
 | `country_code_emergency` | Text | Country code for emergency phone |
 | `phone_emergency` | Text | Emergency contact phone |
 | `phone_emergency_whatsapp` | Boolean | Emergency contact has WhatsApp |
 | `emergency_contact_relationship` | Text | Relationship to member |
 | `emergency_contact_email` | Email | Emergency contact email |
-| `date_of_birth` | Date | Person's birthdate (YYYY-MM-DD, required for children only; extracted from ID documents for adults) |
-| `arrival_date` | Date | When person arrived in Botswana |
-| `departure_date` | Date | Expected or actual departure from Botswana |
-| `active` | Boolean | Record is current/active |
-| `created_date` | Date | Record creation date |
-| `last_modified_date` | Date | Last update date |
-| `staff_rso_cleared` | Boolean | RSO cleared for staff employment |
-| `staff_rso_clearance_date` | Date | Date of RSO clearance |
-| `fitness_center_eligible` | Boolean | Can use fitness center (based on age) |
+| **DOCUMENT REFERENCES** |
+| `current_passport_submission_id` | Text | FK to File Submissions (current approved passport) |
+| `current_omang_submission_id` | Text | FK to File Submissions (current approved Omang/ID) |
+| `current_photo_submission_id` | Text | FK to File Submissions (current approved photo) |
+| **DOCUMENT STATUS** |
+| `passport_status` | Enum | none \| submitted \| rso_approved \| rso_rejected \| gea_pending \| gea_rejected \| verified |
+| `passport_expiration_date` | Date | Expiration date from current submission |
+| `passport_expiration_warning_sent` | Boolean | 6-month warning sent |
+| `passport_expiration_warning_date` | Date | When warning was sent |
+| `omang_status` | Enum | none \| submitted \| rso_approved \| rso_rejected \| gea_pending \| gea_rejected \| verified |
+| `omang_expiration_date` | Date | Expiration date from current submission |
+| `omang_expiration_warning_sent` | Boolean | 6-month warning sent |
+| `omang_expiration_warning_date` | Date | When warning was sent |
+| `photo_status` | Enum | none \| submitted \| approved \| rejected |
+| `photo_approved_by` | Email | GEA admin who approved photo (NEW) |
+| `photo_approved_date` | Date | Photo approval timestamp (NEW) |
+| **EMPLOYMENT** |
+| `employment_office` | Text | USG office (e.g., "Embassy Gaborone") |
+| `employment_job_title` | Text | Job title |
+| `employment_start_date` | Date | Employment start date (NEW) |
+| `employment_end_date` | Date | Expected/actual departure date (NEW) |
+| `employment_verification_file_id` | Text | Google Drive file ID for employment letter |
+| **LOCATION & ACCESS** |
+| `arrival_date` | Date | Arrival in Botswana |
+| `departure_date` | Date | Expected/actual departure |
+| `can_access_unaccompanied` | Boolean | Access recreational facilities without guardian (age-based) |
+| **ELIGIBILITY & PERMISSIONS** |
+| `voting_eligible` | Boolean | Can vote in association elections (age 16+) |
+| `fitness_center_eligible` | Boolean | Can use fitness center (derived from age) |
 | `office_eligible` | Boolean | Can hold board office (age 16+) |
-| `first_login_date` | Date | Timestamp of first portal login (triggers welcome email) |
-| `last_login_date` | Date | Timestamp of most recent portal login |
-| `password_hash` | Text | SHA256 hash of password for login |
+| `staff_rso_cleared` | Boolean | RSO clearance for staff employment |
+| `staff_rso_clearance_date` | Date | RSO clearance date |
+| **ACCOUNT & SECURITY** |
+| `password_hash` | Text | SHA256 hash of password (never stored plain-text) |
+| `password_changed_on_date` | Date | Last password change (NEW) |
+| `first_login_date` | Date | First portal login (triggers welcome email) |
+| `last_login_date` | Date | Most recent login |
+| **AUDIT** |
+| `active` | Boolean | Record is current/active |
+| `created_date` | Date | Record creation timestamp |
+| `last_modified_date` | Date | Last update timestamp |
 
 **Key Relationships:**
 - N:1 with Households (many individuals per household)
@@ -147,28 +170,46 @@ Represents a single person (adult or child) within a household.
 
 ---
 
-### 1.2.1 File Submissions Sheet
+### 1.3 File Submissions Sheet
 
-Tracks all member-submitted files (documents and photos) with complete approval workflow history.
+Tracks all document and photo uploads with complete approval workflow history. Supports 2-tier approval (RSO → GEA) for documents, 1-tier (GEA admin) for photos.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `submission_id` | Text | Unique ID (format: FSB-2026-XXXXX) |
+**26 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `submission_id` | Text | Unique ID (format: FSB-YYYY-XXXXX); primary key |
 | `individual_id` | Text | FK to Individuals |
-| `document_type` | Enum | passport, omang, photo |
-| `file_id` | Text | Google Drive file ID (initial submission location) |
-| `submitted_by_email` | Email | Member's email address |
-| `submitted_date` | DateTime | When member uploaded file to Google Drive |
-| `status` | Enum | submitted, rso_approved, rso_rejected, gea_pending, gea_rejected, approved, verified |
+| `application_id` | Text | FK to Membership Applications (if applicant submission) (NEW) |
+| `document_type` | Enum | passport \| omang \| photo \| employment |
+| `submission_type` | Enum | (NEW) Tracks submission context (document, photo, employment) |
+| `file_id` | Text | Google Drive file ID (original upload) |
+| `file_display_name` | Text | Display name/filename (NEW) |
+| `file_size_bytes` | Number | File size in bytes (NEW) |
+| `upload_device_type` | Text | Device used for upload (mobile, desktop, etc.) (NEW) |
+| `submitted_by_email` | Email | Member's email (uploader) |
+| `submitted_date` | DateTime | Upload timestamp |
+| **APPROVAL WORKFLOW** |
+| `status` | Enum | submitted \| rso_approved \| rso_rejected \| gea_pending \| gea_rejected \| verified \| approved \| rejected |
 | `rso_reviewed_by` | Email | RSO email who reviewed (documents only) |
-| `rso_review_date` | DateTime | When RSO reviewed (documents only) |
+| `rso_review_date` | DateTime | RSO review timestamp |
 | `gea_reviewed_by` | Email | GEA admin email who reviewed |
-| `gea_review_date` | DateTime | When GEA admin reviewed/approved |
-| `rejection_reason` | Text | Reason for rejection (any stage) |
-| `is_current` | Boolean | TRUE if this is the active/approved submission for this type |
-| `disabled_date` | DateTime | When this submission was superseded by a newer approved one |
-| `cloud_storage_path` | Text | Path in gea-member-data bucket (photos only, populated upon approval) |
-| `notes` | Text | Internal review notes |
+| `gea_review_date` | DateTime | GEA admin review timestamp |
+| **REJECTIONS & FEEDBACK** |
+| `rejection_reason` | Text | Internal reason for rejection (any stage) |
+| `member_facing_rejection_reason` | Text | User-friendly rejection message (NEW) |
+| `allow_resubmit` | Boolean | Member can resubmit after rejection (NEW) |
+| **DOCUMENT EXPIRATION** |
+| `document_expiration_date` | Date | Passport/Omang expiration (NEW) |
+| `expiration_warning_6m_sent_date` | Date | When 6-month warning sent (NEW) |
+| `expiration_warning_1m_sent_date` | Date | When 1-month warning sent (NEW) |
+| **CURRENT & ARCHIVE** |
+| `is_current` | Boolean | TRUE = active/approved submission for this type; only one per individual/document_type |
+| `disabled_date` | DateTime | When superseded by newer approval |
+| **CLOUD STORAGE (photos only)** |
+| `cloud_storage_path` | Text | gs://gea-member-data/{household_id}/{individual_id}/photo_{submission_id}.jpg |
+| **AUDIT** |
+| `notes` | Text | Internal review/audit notes |
 
 **Key Relationships:**
 - N:1 with Individuals (many submissions per individual)
@@ -303,36 +344,64 @@ Main reservations table for facilities (tennis court, Leobo, etc.).
 
 ### 2.2 Guest Lists Sheet
 
-Guest list submissions for reservations (RSO security requirement).
+Attendees for each reservation. RSO reviews for event coordination before approval.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `guest_id` | Text | Unique ID (auto-generated) |
+**15 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `guest_list_id` | Text | Unique ID; primary key |
 | `reservation_id` | Text | FK to Reservations |
-| `guest_category` | Enum | Family Member, Colleague, Friend, Local, Other |
-| `guest_name` | Text | Full name of guest |
-| `age_category` | Enum | Adult, Youth, Child |
-| `vendor` | Boolean | Is this person a vendor/contractor? |
-| `vendor_company` | Text | If vendor, their company |
-| `submission_timestamp` | DateTime | When guest was added to list |
+| `household_id` | Text | FK to Households |
+| `household_name` | Text | Household display name |
+| `primary_email` | Email | Household primary email |
+| `facility` | Enum | Tennis, Leobo, etc. |
+| `event_date` | Date | Event date |
+| `guests_json` | JSON | Guest details (name, relationship, age) |
+| `guest_count` | Number | Total non-member guests |
+| `submitted_date` | DateTime | Submission timestamp |
+| `submission_status` | Enum | submitted \| rso_approved \| rso_rejected \| finalized |
+| `rso_reviewed_by` | Email | RSO reviewer |
+| `rso_review_date` | DateTime | Review timestamp |
+| `rso_draft_json` | JSON | RSO draft/notes on guests |
+| `last_modified_date` | DateTime | Last update |
 
 ---
 
-### 2.3 Usage Tracking Sheet
+### 2.3 Guest Profiles Sheet
 
-Tracks weekly/monthly usage limits to enforce reservation policies.
+Reusable guest registry. Enables quick guest list creation without re-entering details. (NEW - was missing from docs)
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `household_id` | Text | FK to Households |
-| `household_name` | Text | Display name |
-| `week_start_date` | Date | Monday of the week |
-| `tennis_hours_this_week` | Number | Cumulative tennis hours this week |
-| `month_start_date` | Date | First day of month |
-| `leobo_reservations_this_month` | Number | Count of Leobo reservations this month |
-| `last_calculated` | DateTime | When usage was last recalculated |
+**8 Columns:**
 
-**Calculated nightly at midnight GMT+2 to reset weekly/monthly counters.**
+| Field | Type | Purpose |
+|-------|------|---------|
+| `guest_profile_id` | Text | Unique ID; primary key |
+| `household_id` | Text | FK to Households (household that created profile) |
+| `first_name` | Text | Guest first name |
+| `last_name` | Text | Guest last name |
+| `id_number` | Text | Guest ID number (passport, Omang, etc.) |
+| `age_group` | Enum | Child \| Youth \| Adult |
+| `created_date` | DateTime | Profile creation timestamp |
+| `last_used_date` | DateTime | Most recent use in guest list |
+
+---
+
+### 2.4 Usage Tracking Sheet
+
+Weekly/monthly usage limits for each household. Reset nightly via `NotificationService.runNightlyTasks()`.
+
+**7 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `household_id` | Text | FK to Households; primary key |
+| `household_name` | Text | Household display name |
+| `week_start_date` | Date | Monday of current tracking week |
+| `tennis_hours_this_week` | Number | Hours booked this week (resets Monday) |
+| `month_start_date` | Date | 1st of current tracking month |
+| `leobo_reservations_this_month` | Number | Count of Leobo bookings this month (resets 1st) |
+| `last_calculated` | DateTime | Last nightly reset timestamp |
 
 ---
 
@@ -340,38 +409,85 @@ Tracks weekly/monthly usage limits to enforce reservation policies.
 
 ### 3.1 Payments Sheet
 
-Records all payment transactions for membership dues.
+Member dues payments with verification workflow. Treasurer reviews, approves/rejects/requests clarification.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `payment_id` | Text | Unique ID (auto-generated) |
+**25 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `payment_id` | Text | Unique ID (format: PAY-YYYY-XXXXX); primary key |
 | `household_id` | Text | FK to Households |
-| `household_name` | Text | Display name |
-| `payment_date` | Date | Date payment was received |
-| `payment_method` | Enum | Bank Transfer, Cash, Check, Credit Card |
-| `currency` | Enum | USD, BWP |
-| `amount` | Number | Amount in specified currency |
-| `amount_usd` | Number | Normalized to USD |
-| `amount_bwp` | Number | Normalized to BWP |
-| `payment_type` | Enum | Dues Payment, Late Fee, Donation |
-| `applied_to_period` | Text | Which membership period (e.g., "2026-01") |
-| `payment_reference` | Text | Bank reference number or check number |
-| `payment_confirmation_file_id` | Text | Google Drive file ID for receipt/proof |
-| `payment_submitted_date` | Date | When member submitted payment |
-| `payment_verified_date` | Date | When board verified receipt |
-| `payment_verified_by` | Email | Board member who verified |
-| `notes` | Text | Payment notes |
+| `household_name` | Text | Household display name |
+| **SUBMISSION** |
+| `payment_submitted_date` | DateTime | When member submitted proof |
+| `payment_date` | Date | Date of actual payment (from receipt) |
+| `payment_method` | Enum | PayPal \| SDFCU_Member_to_Member \| Zelle \| Absa \| Other |
+| **AMOUNTS** |
+| `currency` | Enum | USD \| BWP |
+| `amount` | Number | Amount submitted (in original currency) |
+| `amount_usd` | Number | Converted to USD (if submitted in BWP) |
+| `amount_bwp` | Number | Converted to BWP (if submitted in USD) |
+| `actual_amount_received` | Number | Confirmed received amount |
+| `actual_amount_usd` | Number | Converted actual amount (USD) |
+| `actual_amount_bwp` | Number | Converted actual amount (BWP) |
+| **TRACKING** |
+| `payment_type` | Enum | regular_dues \| late_payment \| partial_payment \| pro_rated |
+| `applied_to_period` | Text | Membership year applied to (e.g., "2025-26") |
+| `balance_due_amount` | Number | Remaining balance after this payment |
+| **VERIFICATION** |
+| `payment_status` | Enum | submitted \| verified \| rejected \| clarification_requested |
+| `payment_verified_date` | DateTime | When treasurer verified |
+| `payment_verified_by` | Email | Treasurer email |
+| `verification_notes` | Text | Verification or rejection notes |
+| **REFERENCES** |
+| `payment_reference` | Text | Reference number (receipt #, transaction ID) |
+| `payment_confirmation_file_id` | Text | Google Drive file ID (receipt/screenshot) |
+| `journal_entry_id` | Text | Accounting system reference |
+| **AUDIT** |
+| `recorded_by` | Email | Person who entered payment |
+| `notes` | Text | Internal notes |
 
-**Legacy/Optional Columns (may exist in older sheets):**
-- `recorded_by` (superseded by `payment_verified_by` + audit log)
-- `journal_entry_id` (reserved for future accounting integration)
+**Verification Workflow:**
+1. Member submits proof → `status=submitted`
+2. Treasurer approves → `status=verified`, payment credited
+3. Treasurer rejects → `status=rejected`, member notified
+4. Treasurer requests clarification → `status=clarification_requested`
 
-**Key Relationships:**
-- N:1 with Households
+---
 
-**Auto-Calculations:**
-- `balance_due` in Households = dues_amount - dues_paid_amount (updated when payment recorded)
-- `active` status in Households = balance_due <= 0 (payment required for active status)
+### 3.2 Membership Pricing Sheet
+
+Membership year dues setup. One row per level per year. Referenced for pro-ration calculations.
+
+**5 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `membership_year` | Text | Year (e.g., "2025-26"); with membership_level_id forms composite key |
+| `membership_level_id` | Text | FK to Membership Levels |
+| `annual_dues_usd` | Number | Annual dues in USD for this year/level |
+| `active_for_payment` | Boolean | This level available for new payments |
+| `notes` | Text | Notes (e.g., "Updated Jan 2026") |
+
+**Purpose:** Separates static membership level definitions from dynamic annual pricing. Allows dues to change year-to-year without modifying Membership Levels table.
+
+---
+
+### 3.3 Rates Sheet
+
+Exchange rate history (USD ↔ BWP). Updated nightly via `NotificationService.runNightlyTasks()` from open.er-api.com.
+
+**5 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `rate_date` | Date | Date of rate; primary key (unique per day) |
+| `usd_to_bwp` | Number | Exchange rate (1 USD = X BWP) |
+| `is_sunday_rate` | Boolean | Special weekend rate (if applicable) |
+| `timestamp` | DateTime | When rate was fetched |
+| `source` | Text | API source (open.er-api.com) |
+
+**Usage:** Payment submission uses most recent rate for USD ↔ BWP conversion.
 
 ---
 
@@ -417,107 +533,125 @@ System-wide settings and business rule thresholds.
 
 ---
 
-### 4.2 Sessions Sheet
+### 4.3 Sessions Sheet
 
-Active user sessions for login management.
+Active user sessions. Token-based authentication with 24-hour timeout (sliding window). Purged nightly via `NotificationService.runNightlyTasks()`.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `session_id` | Text | Unique ID (format: SES-2026-XXXXX) |
-| `token` | Text | Secure session token (SHA256 hash) |
-| `email` | Email | User's email address |
-| `role` | Enum | member, board, admin |
-| `created_at` | DateTime | When session started |
-| `expires_at` | DateTime | When session expires (48 hours default) |
-| `active` | Boolean | Session is still valid |
+**8 Columns:**
 
-**Session Management:**
-- Sessions expire after 48 hours
-- Token is secure hash (SHA256)
-- One session per user at a time (new login invalidates previous)
-- Manual logout clears session
+| Field | Type | Purpose |
+|-------|------|---------|
+| `session_id` | Text | Unique ID; primary key |
+| `token` | Text | Plain-text session token (used by frontend; NEVER returned in responses after creation) |
+| `token_hash` | Text | SHA256 hash of token (used for lookup & validation) |
+| `email` | Email | User email (member or admin) |
+| `role` | Enum | member \| board \| mgt \| rso_approve \| rso_notify \| applicant |
+| `created_at` | DateTime | Session creation timestamp |
+| `expires_at` | DateTime | Token expiration (24 hours from creation) |
+| `active` | Boolean | Session is valid (FALSE after logout or expiration) |
 
----
-
-### 4.3 Audit Log Sheet
-
-Complete audit trail of all system changes for compliance and debugging.
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `log_id` | Text | Unique ID (format: LOG-2026-XXXXX) |
-| `timestamp` | DateTime | When action occurred |
-| `user_email` | Email | Who performed the action |
-| `action_type` | Enum | LOGIN, LOGIN_FAILED, LOGOUT, MEMBER_UPDATED, PASSWORD_SET, RESERVATION_CREATED, PAYMENT_RECORDED, etc. |
-| `target_type` | Enum | Individual, Household, Reservation, Payment, etc. |
-| `target_id` | Text | ID of the affected record |
-| `details` | Text | Detailed description of what changed |
-| `ip_address` | Text | IP address of request (for security) |
-
-**Example Log Entries:**
-- "LOGIN successful (role: member)"
-- "Updated phone_primary → 71825225"
-- "Password set by board member"
-- "Reservation created for Tennis Court"
-- "FILE_SUBMISSION_CREATED FSB-2026-00123 (passport) by IND-2026-12345"
-- "FILE_SUBMISSION_RSO_APPROVED FSB-2026-00123 by rso@embassy.gov"
-- "FILE_SUBMISSION_RSO_REJECTED FSB-2026-00123 by rso@embassy.gov - Expiration date already passed"
-- "FILE_SUBMISSION_GEA_APPROVED FSB-2026-00123 by board@geabotswana.org"
-- "FILE_SUBMISSION_GEA_REJECTED FSB-2026-00123 by board@geabotswana.org - Document illegible"
-- "FILE_SUBMISSION_VERIFIED FSB-2026-00123 (both RSO and GEA approved)"
-- "FILE_SUBMISSION_CURRENT_SET IND-2026-12345 passport → FSB-2026-00123 (previous FSB-2026-00120 disabled)"
-- "FILE_SUBMISSION_CREATED FSB-2026-00124 (photo) by IND-2026-12345"
-- "FILE_SUBMISSION_APPROVED FSB-2026-00124 by board@geabotswana.org (transferred to Cloud Storage)"
-- "FILE_SUBMISSION_REJECTED FSB-2026-00124 by board@geabotswana.org - Face not clearly visible"
+**Security Notes:**
+- Token generated with entropy (Utilities.getUuid() + timestamp + entropy)
+- Token hashed immediately, plain-text never persisted
+- Lookup always uses token_hash
+- Token comparison uses constant-time comparison (prevents timing attacks)
 
 ---
 
-### 4.4 Holiday Calendar Sheet
+### 4.4 Administrators Sheet
 
-US Federal and Botswana public holidays for business day calculations.
+Admin and RSO accounts. Managed by board members only. Roles determine portal access.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `holiday_id` | Text | Unique ID (e.g., US-2026-01, BW-2026-02) |
+**12 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `admin_id` | Text | Unique ID; primary key |
+| `email` | Email | Login email (unique); primary lookup key |
+| `first_name` | Text | First name |
+| `last_name` | Text | Last name |
+| `role` | Enum | board \| mgt \| rso_approve \| rso_notify |
+| `password_hash` | Text | SHA256 hash of password |
+| `active` | Boolean | Account is active |
+| `created_by` | Email | Board member who created account |
+| `created_date` | DateTime | Account creation timestamp |
+| `deactivated_by` | Email | Board member who deactivated (if applicable) |
+| `deactivated_date` | DateTime | Deactivation timestamp |
+| `first_login_date` | DateTime | First portal login |
+
+**Roles:**
+- `board` — Full admin: approvals, payments, membership, users
+- `mgt` — Management Officer: Leobo approvals only
+- `rso_approve` — Documents & guest list reviewer
+- `rso_notify` — Read-only event coordinator
+
+---
+
+### 4.5 Audit Log Sheet
+
+Compliance trail. Every significant action logged. 1000+ rows, indexed by timestamp/action_type/user.
+
+**8 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `log_id` | Text | Unique ID; primary key |
+| `timestamp` | DateTime | Action timestamp |
+| `user_email` | Email | User who performed action |
+| `action_type` | Enum | login \| approve_application \| submit_payment \| upload_document \| etc. |
+| `target_type` | Enum | membership \| payment \| document \| reservation \| etc. |
+| `target_id` | Text | ID of object affected (household_id, payment_id, etc.) |
+| `details` | Text | Action summary (e.g., "Approved by John Doe, reason: complete documents") |
+| `ip_address` | Text | User's IP address (for security tracking) |
+
+---
+
+### 4.6 Holiday Calendar Sheet
+
+US Federal and Botswana public holidays; used for business day calculations (bumping deadlines, nightly task timing).
+
+**9 Columns:**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `holiday_id` | Text | Unique ID; primary key |
 | `holiday_date` | Date | Date of holiday |
-| `holiday_name` | Text | Name (e.g., "New Year's Day") |
-| `holiday_type` | Enum | US Federal, Botswana Public |
-| `holiday_year` | Number | Year |
-| `notes` | Text | Observance rules (e.g., "Sat→Fri observed") |
+| `holiday_name` | Text | Holiday name (e.g., "Independence Day", "Botswana Day") |
+| `holiday_type` | Enum | US_Federal \| Botswana_Public \| Association_Special |
+| `holiday_year` | Number | Year (YYYY) |
+| `notes` | Text | Notes (observed date if different, etc.) |
 | `active` | Boolean | Holiday is recognized in system |
-| `created_by` | Email | Who added this holiday |
-| `created_date` | Date | Date added |
-
-**2026 Holidays (Sample):**
-- 01/01 - New Year's Day (US)
-- 01/02 - New Year's Public Holiday (BW)
-- 01/19 - MLK Day (US)
-- 04/03 - Good Friday (BW)
-- 05/25 - Memorial Day (US)
-- 07/01 - Sir Seretse Khama Day (BW)
-- 09/07 - Labor Day (US)
-- 11/26 - Thanksgiving (US)
-
-**Used for:**
-- Calculating 4 business day deadline for guest lists
-- Determining when facilities are closed
-- Computing membership expiration dates
+| `created_by` | Email | Board member who created entry |
+| `created_date` | DateTime | Entry creation timestamp |
 
 ---
 
-### 4.5 Email Templates Sheet
+### 4.2 Email Templates Sheet
 
-Templates for all automated system emails.
+114 notification templates across 6 categories. Metadata stored here; body text in Google Drive files.
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `semantic_name` | Text | Unique semantic ID (e.g., MEM_APPLICATION_RECEIVED_TO_APPLICANT) |
-| `display_name` | Text | Human-readable name |
-| `subject` | Text | Email subject line (with `{{VARIABLE}}` placeholders) |
-| `body` | Text | Email body (with `{{VARIABLE}}` placeholders) |
-| `active` | Boolean | Template is in use |
+**8 Columns:**
 
-**Current Templates:** 69 templates across 6 categories. See [EMAIL_TEMPLATES_REFERENCE.md](EMAIL_TEMPLATES_REFERENCE.md) for the full list.
+| Field | Type | Purpose |
+|-------|------|---------|
+| `semantic_name` | Text | Template ID (e.g., MEM_APPLICATION_RECEIVED_TO_APPLICANT); primary key |
+| `display_name` | Text | Human-readable name (e.g., "Application Received - Applicant Notification") |
+| `subject` | Text | Email subject line |
+| `drive_file_id` | Text | Google Drive file ID containing body text |
+| `placeholders` | Text | Comma-separated template variables (e.g., {{APPLICANT_NAME}}, {{DUES_AMOUNT}}) |
+| `active` | Boolean | Template is enabled |
+| `notes` | Text | Internal notes on usage, conditions, etc. |
+| `` | (empty) | Trailing column |
+
+**Template Categories (114 total):**
+- ADM (6) — Admin workflow templates
+- DOC (18) — Document submission templates
+- MEM (26) — Membership templates
+- PAY (14) — Payment templates
+- RES (25) — Reservation templates
+- SYS (25) — System templates
+
+See [EMAIL_TEMPLATES_REFERENCE.md](EMAIL_TEMPLATES_REFERENCE.md) for the full list.
 
 **Template Variables:**
 - `{{FIRST_NAME}}` - First name

@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.2";
+var SYSTEM_VERSION          = "2.5.3";
 var SYSTEM_BUILD_DATE       = "2026-04-24";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Remove deployment test line from Code.js";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-24 15:28:01";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Test GAS deployment automation with script.deployments scope";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-24 15:52:41";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

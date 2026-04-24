@@ -402,45 +402,92 @@ container.appendChild(div);
 ### Authenticated Interface Files
 
 #### Portal.html (Member Interface)
-- **Single-page app** with 4 main sections: Dashboard, Reservations, Profile, Membership Card
+- **Single-page app** with 8 main sections
 - Login screen: Email + password (no sign-up; created by board)
 - Client-side API: `google.script.run.handlePortalApi(action, params)` (avoids CORS)
 - Session storage: Token stored in `sessionStorage` (cleared on browser close)
-- Key sections:
-  - **Dashboard:** Household members, membership status, upcoming reservations
-  - **Reservations:** Book facility (with limit checking), list current, cancel
-  - **Profile:** View/edit contact info, upload documents & photos, view verification status
-  - **Card:** Digital membership card (shows approval status, transfers to Cloud Storage on approval)
+- Responsive design with mobile navigation
+
+**Page Structure:**
+- **dashboard** — Household overview, member list, membership status, upcoming reservations
+- **reservations** — Book facility (with real-time limit checking), view current bookings, cancel reservation
+- **profile** — View/edit personal info, contact details, emergency contact, upload documents & photos, view verification status
+- **card** — Digital membership card (status badge, household info, QR code, transferred to Cloud Storage when approved)
+- **payment** — Payment Details page with method instructions (PayPal, SDFCU, Zelle, Absa), submit payment proof, track status
+- **rules** — Display GEA rules & regulations, full name signature field, acceptance checkbox for membership agreement
+- **myHousehold** — Manage household members, add/remove family, edit relationships, view household staff
+- **applicant** — (Restricted view during application workflow) Application status tracking through 11-step process
+- **renewal** — (For lapsed members) Membership renewal workflow
 
 **Critical client functions:**
-- `submitLogin(event)` → Calls handlePortalApi("login", {email, password})
-- `loadDashboard()` → Initial page load with member data
-- `showPage(pageName)` → Navigation between sections
-- `loadProfile()` → Fetches member data & displays in Personal Information section
-- `savePhoneNumbers()` → Updates phone fields (Individuals sheet)
+- `submitLogin(event)` → handlePortalApi("login", {email, password})
+- `loadDashboard()` → Household data, member list, upcoming reservations
+- `showPage(pageName)` → Single-page navigation with page-specific data loading
+- `loadProfile()` → Member data display in Personal Information section
+- `savePhoneNumbers()` → Updates phone fields via handlePortalApi("updatePhoneNumbers", {…})
+- `loadReservations()` → Fetch household reservations with status
+- `bookReservation()` → Submit new booking with facility, date, time, guest count
+- `cancelReservation(id)` → Cancel existing reservation with refund
+- `submitPaymentProof()` → File upload + payment details → handlePortalApi("submit_payment_verification", {…})
+- `loadPaymentStatus()` → Track submitted payment verification status
 
 #### Admin.html (Board Interface)
 - **3-column layout:** Sidebar navigation + main content + optional details pane
-- Same login, but requires role="board"
-- Key admin functions:
-  - **Dashboard:** Stats (pending reservations, pending photos, unverified payments, today's reservations)
-  - **Reservations:** Approve/deny excess bookings, view event calendar
-  - **Members:** Search member directory, view household details
-  - **Photos:** Review photo submissions (approve/reject with reason, transfers approved to Cloud Storage)
-  - **Payments:** Two sub-views:
-    - **Pending Verification:** List unverified payments with approve/reject buttons
-    - **Payment Report:** Filterable report with membership year and status filters, summary totals, CSV export
+- Role-based access: board, mgt (Leobo only), rso_approve (documents/guests), rso_notify (read-only)
+- Responsive design with mobile navigation
+- Comprehensive member and facility management
+
+**19 Page Sections:**
+
+**Core Operations:**
+- **dashboard** — KPIs: pending reservations, pending photos, unverified payments, today's reservations, membership stats
+- **reservations** — Pending booking approvals, approval routing (auto-approved, board review, mgt review), denial with reason
+- **waitlist** — Tentative reservations awaiting bumping window expiration (Leobo 5 business days, Tennis 1 day)
+- **res-calendar** — Month view of all approved reservations by facility, quick details panel
+- **guest-lists** — Submissions requiring RSO review, finalization status, guest name/relationship validation
+- **reports** — (No auto-load) Board selects month for payment report, membership year/status filters, CSV export
+
+**Member Management:**
+- **members** — Search/filter directory, household profile detail pane, contact info, membership dates, dues status
+- **lapsed-members** — Members past expiration date, renewal status, outreach tracking
+- **applications** — Membership applications pipeline, 11-step workflow status, board initial/final decisions, RSO document reviews, payment tracking
+- **application-rejections** — Archive of rejected applications with decision reasons, response templates to applicants
+- **photos** — Photo submissions pending approval, preview, approve (→ Cloud Storage transfer), reject with reason
+- **member-doc-rejections** — Document rejection history, reason, member response tracking
+
+**Payment Management:**
+- **payments** — Two sub-sections:
+  - Pending Verification: Unverified payment submissions with approve/reject/clarify buttons
+  - Payment Report: Filterable by membership year & status, summary totals (verified count, USD/BWP collected), CSV export
+- **rules** — Display/edit GEA eligibility rules, categories (Full/Associate/Affiliate/Diplomatic/Community/Temporary), conditions, save/delete
+
+**Admin Account Management:**
+- **administrators** — CRUD for board, mgt, rso_approve, rso_notify accounts, active/deactivated toggle, password reset
+
+**RSO Portal (for rso_approve & rso_notify roles):**
+- **rso-documents** — Documents pending RSO review (passports, omangs only; NOT photos), approve/reject with reason
+- **rso-applications** — Applications ready for RSO document review after board initial approval
+- **rso-member-documents** — RSO-specific document review queue from members (vs applicants)
+- **rso-calendar** — Month view of approved events (read-only for rso_notify, admin controls for rso_approve)
+- **rso-approved-guests** — Final guest lists after RSO approval, household contact info, guest details, event coordination
 
 **Critical admin functions:**
-- `showPage('reservations')` → _handleAdminPending() (list pending bookings)
-- `approveReservation(id)` → _handleAdminApprove() (update status, send email)
-- `denyReservation(id)` → _handleAdminDeny() (record reason, send email)
-- `approvePhoto(individualId)` → _handleAdminPhoto(decision="approved") (transfers to Cloud Storage)
-- `rejectPhoto(individualId, reason)` → _handleAdminPhoto(decision="rejected")
-- `loadPayments()` → admin_pending_payments (list unverified)
-- `confirmPayment(id)` → admin_approve_payment (approve and verify)
-- `markPaymentNotFound(id)` → admin_reject_payment with reason
-- `loadPaymentReport()` → admin_payment_report (with filters)
+- `loadDashboard()` → KPI stats: pending counts, today's reservations, membership data
+- `loadReservations()` → Pending approvals, board_approval_required filter
+- `approveReservation(id)` → handlePortalApi("admin_approve", {reservation_id})
+- `denyReservation(id, reason)` → handlePortalApi("admin_deny", {reservation_id, denial_reason})
+- `loadWaitlist()` → Tentative reservations with bump_window_deadline
+- `loadPhotos()` → Photo submissions with status, individual preview
+- `approvePhoto(submissionId)` → handlePortalApi("admin_photo", {submission_id, decision: "approved"}) → Cloud Storage transfer
+- `rejectPhoto(submissionId, reason)` → handlePortalApi("admin_photo", {submission_id, decision: "rejected", reason})
+- `loadPayments()` → admin_pending_payments or admin_payment_report based on view
+- `confirmPayment(id)` → handlePortalApi("admin_approve_payment", {payment_id})
+- `rejectPayment(id, reason)` → handlePortalApi("admin_reject_payment", {payment_id, reason})
+- `clarifyPayment(id)` → handlePortalApi("admin_clarify_payment", {payment_id, message})
+- `loadApplications()` → Membership application list with status filters, board decision buttons
+- `loadGuestLists()` → Pending RSO reviews with household/guest details
+- `loadRsoDocuments()` → (rso_approve only) Document review queue with approve/reject
+- `loadRsoCalendar()` → (rso_approve) Event calendar by month with household/guest info
 
 ---
 

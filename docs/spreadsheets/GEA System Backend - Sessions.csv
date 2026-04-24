@@ -1,0 +1,4 @@
+session_id,token,token_hash,email,role,created_at,expires_at,active
+SES-2026-00001,,,michael+test4389@raneyworld.com,member,,,TRUE
+SES-2026-00173,,d6e2fd9e286aaf52a3e28a0c036ffb12ec5d9a3bca5ebb28b1d1ad8762a6ef82,michael+012916@raneyworld.com,member,2026-04-23 9:43:04,2026-04-24 9:43:59,TRUE
+SES-2026-00183,,b8b35665ee1b0466c34fe8ec9fd439b4524cf3014ad65df86d6f26b21cd8a8b0,treasurer@geabotswana.org,board,2026-04-23 15:23:30,2026-04-24 15:24:15,TRUE

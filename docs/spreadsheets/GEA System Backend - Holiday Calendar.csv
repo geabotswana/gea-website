@@ -1,0 +1,22 @@
+holiday_id,holiday_date,holiday_name,holiday_type,holiday_year,notes,active,created_by,created_date
+US-2026-01,2026-01-01,New Year's Day (observed),US Federal,2026,"Jan 1. Sun→Mon observed, Sat→Fri observed.",TRUE,system,2026-02-12
+BW-2026-02,2026-01-02,New Year's Public Holiday,Botswana Public,2026,Jan 2 if weekday. Blank if weekend — no observed day in BW.,TRUE,system,2026-02-12
+US-2026-02,2026-01-19,Martin Luther King Jr. Day,US Federal,2026,3rd Monday of January.,TRUE,system,2026-02-12
+US-2026-03,2026-02-16,George Washington's Birthday,US Federal,2026,3rd Monday of February (Presidents' Day).,TRUE,system,2026-02-12
+BW-2026-03,2026-04-03,Good Friday,Botswana Public,2026,2 days before Easter Sunday.,TRUE,system,2026-02-12
+BW-2026-04,2026-04-06,Easter Monday,Botswana Public,2026,Day after Easter Sunday.,TRUE,system,2026-02-12
+BW-2026-05,2026-05-01,Workers' Day,Botswana Public,2026,May 1 if weekday. Blank if weekend.,TRUE,system,2026-02-12
+US-2026-04,2026-05-25,Memorial Day,US Federal,2026,Last Monday of May.,TRUE,system,2026-02-12
+US-2026-05,2026-06-19,Juneteenth (observed),US Federal,2026,"Jun 19. Sun→Mon observed, Sat→Fri observed.",TRUE,system,2026-02-12
+BW-2026-07,2026-07-01,Sir Seretse Khama Day,Botswana Public,2026,July 1 if weekday. Blank if weekend.,TRUE,system,2026-02-12
+US-2026-06,2026-07-03,Independence Day (observed),US Federal,2026,"Jul 4. Sun→Mon observed, Sat→Fri observed.",TRUE,system,2026-02-12
+BW-2026-08,2026-07-20,President's Day,Botswana Public,2026,3rd Monday of July. Verify against Embassy list each year.,TRUE,system,2026-02-12
+BW-2026-09,2026-07-21,President's Day Holiday,Botswana Public,2026,Tuesday following President's Day. Verify against Embassy list.,TRUE,system,2026-02-12
+US-2026-07,2026-09-07,Labor Day,US Federal,2026,1st Monday of September.,TRUE,system,2026-02-12
+BW-2026-10,2026-09-30,Botswana Day,Botswana Public,2026,Sep 30 if weekday. Blank if weekend.,TRUE,system,2026-02-12
+BW-2026-11,2026-10-01,Botswana Day Holiday,Botswana Public,2026,Oct 1 when Sep 30 is a weekday. Blank if Sep 30 is weekend. Verify Embassy list.,TRUE,system,2026-02-12
+US-2026-08,2026-10-12,Columbus Day,US Federal,2026,2nd Monday of October.,TRUE,system,2026-02-12
+US-2026-09,2026-11-11,Veterans Day (observed),US Federal,2026,"Nov 11. Sun→Mon observed, Sat→Fri observed.",TRUE,system,2026-02-12
+US-2026-10,2026-11-26,Thanksgiving Day,US Federal,2026,4th Thursday of November.,TRUE,system,2026-02-12
+US-2026-11,2026-12-25,Christmas Day (observed),US Federal,2026,"Dec 25. Sun→Mon observed, Sat→Fri observed.",TRUE,system,2026-02-12
+BW-2026-13,2026-12-28,Boxing Day,Botswana Public,2026,Dec 26 if weekday. Blank if weekend.,TRUE,system,2026-02-12

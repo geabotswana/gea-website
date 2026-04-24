@@ -1,0 +1,5 @@
+admin_id,email,first_name,last_name,role,active,password_hash,created_by,created_date,deactivated_by,deactivated_date,first_login_date
+ADM-2026-00001,chair@geabotswana.org,GEA,Chair,board,TRUE,9a4aabf0e5cf71cae2cea646613ce7e2a5919fa758e56819704be25a3a2c1f0b,bootstrap,2026-03-21 16:05:10,,,
+ADM-2026-00002,treasurer@geabotswana.org,GEA,Treasurer,board,TRUE,9a4aabf0e5cf71cae2cea646613ce7e2a5919fa758e56819704be25a3a2c1f0b,bootstrap,2026-03-21 16:05:12,,,4/6/2026
+ADM-2026-00003,michael+rso@raneyworld.com,RSO,Michael,rso_approve,TRUE,9a4aabf0e5cf71cae2cea646613ce7e2a5919fa758e56819704be25a3a2c1f0b,bootstrap,2026-03-21 16:05:14,,,4/7/2026
+ADM-2026-00004,secretary@geabotswana.org,GEA,Secretary,board,TRUE,9a4aabf0e5cf71cae2cea646613ce7e2a5919fa758e56819704be25a3a2c1f0b,bootstrap,2026-03-21 16:05:16,,,

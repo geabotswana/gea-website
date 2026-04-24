@@ -1,0 +1,53 @@
+config_key,config_value,description,last_modified,category
+age_document_required,16,Minimum age requiring passport/ID upload,,Age & Eligibility
+age_fitness_center,15,Minimum age for fitness center use,,Age & Eligibility
+age_office_eligible,16,Minimum age to hold a board position,,Age & Eligibility
+age_unaccompanied_access,15,Minimum age for unaccompanied recreation center access,,Age & Eligibility
+age_voting,16,Minimum age to vote in elections,,Age & Eligibility
+board_approval_hours,24,Expected turnaround for board approvals (hours),,Deadlines & Timings
+guest_list_deadline_business_days,4,Business days before event for RSO guest list submission,,Deadlines & Timings
+waitlist_hold_hours,24,Hours a waitlisted slot is held before moving to next member,,Deadlines & Timings
+document_types_botswana,"Omang,Passport",Accepted document types for Botswana citizens,,Documents & Files
+file_upload_accepted_formats_document,"pdf,jpg,jpeg,png",Accepted file formats for document uploads,,Documents & Files
+file_upload_max_document_mb,10,Max size for ID documents and employment verification (MB),,Documents & Files
+passport_warning_months,6,Months before expiration to send warning,,Documents & Files
+photo_max_size_mb,5,Max file size for member photos (MB),,Documents & Files
+youth_document_required,FALSE,Document upload required for under-16,,Documents & Files
+employment_verification_optional_at_application,TRUE,Employment verification not required at application time,,Employment Verification
+employment_verification_requestable_by_admin,TRUE,Admin can request employment verification post-activation,,Employment Verification
+exchange_rate_last_updated,4/24/2026 1:51:33,Timestamp of last exchange rate API update,,Exchange Rate
+exchange_rate_usd_to_bwp,13.663013,Current USD to BWP conversion rate (updated nightly),,Exchange Rate
+leobo_bump_window_days,5,Business days for bumping tentative reservations,,Facility Reservations
+leobo_max_hours,6,Max hours per leobo reservation,,Facility Reservations
+leobo_monthly_limit,1,Max leobo reservations per household/month,,Facility Reservations
+tennis_bump_window_days,1,Calendar days for bumping tentative reservations,,Facility Reservations
+tennis_session_max_hours,2,Max hours per single session,,Facility Reservations
+tennis_walkin_available,TRUE,Allow walk-up use when not reserved,,Facility Reservations
+tennis_weekly_limit,3,Max tennis court sessions per household/week,,Facility Reservations
+tennis_weekly_limit_hours,3,Max hours per household/week,,Facility Reservations
+show_devprod_box,FALSE,Show DEV/PROD indicator box on member.html,,Feature Flags
+max_temporary_months,6,Maximum Temporary membership duration (months),,Membership & Renewal
+photo_reminder_days_after,7,Days after activation to send photo upload reminder,,Membership & Renewal
+renewal_reminder_days_1,30,First renewal reminder (days before expiration),,Membership & Renewal
+renewal_reminder_days_2,7,Second renewal reminder (days before expiration),,Membership & Renewal
+birthday_check_hour,7,Hour to send birthday greeting emails (7 = 7:00 AM GMT+2),,Notifications & Scheduling
+holiday_calendars,"US,BW","Holiday calendars observed (US = US Federal, BW = Botswana)",,Notifications & Scheduling
+holiday_reminder_day,1,Day of month for holiday calendar reminder,,Notifications & Scheduling
+holiday_reminder_month,11,Month for holiday calendar reminder (11 = November),,Notifications & Scheduling
+rso_summary_hour,6,Hour to send RSO daily summary email (6 = 6:00 AM GMT+2),,Notifications & Scheduling
+staff_email_required,FALSE,Email address required for staff members,,Staff Policies
+staff_guest_children,FALSE,Staff may bring non-member children,,Staff Policies
+staff_leobo_access,FALSE,Staff may access leobo independently,,Staff Policies
+staff_max_children,99,Max children staff can escort (99 = unlimited),,Staff Policies
+staff_reservation_allowed,FALSE,Staff may make facility reservations independently,,Staff Policies
+ADM_COUNTER,4,Administrator ID sequence counter (do not edit manually),,System Counters
+APP_COUNTER,17,Application ID sequence counter (do not edit manually),,System Counters
+HSH_COUNTER,17,Household ID sequence counter (do not edit manually),,System Counters
+IND_COUNTER,24,Individual ID sequence counter (do not edit manually),,System Counters
+PAY_COUNTER,5,Payment ID sequence counter (do not edit manually),,System Counters
+RST_COUNTER,4,Reset/test counter (do not edit manually),,System Counters
+SES_COUNTER,183,Session ID sequence counter (do not edit manually),,System Counters
+SUB_COUNTER,18,File submission ID sequence counter (do not edit manually),,System Counters
+MEMBERSHIP_HANDBOOK_FILE_ID,,Drive file ID for the membership handbook,,Membership & Renewal
+FSB_COUNTER,24,,,
+RES_COUNTER,1,,,

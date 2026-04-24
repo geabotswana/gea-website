@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - **Hybrid:** member.html (portal wrapper with iframe, domain masking)
 - **Public Website:** Deployed to GitHub Pages at geabotswana.org
 - **Database:** 4 Google Sheets spreadsheets (members, reservations, payments, system backend)
-- **Deployment:** Clasp with @HEAD live deployment for Portal.html, Admin.html; GitHub Pages for public site
+- **Deployment:** GAS versioned deployment for Portal.html, Admin.html, and supporting JS files (@HEAD does not function reliably under iframe wrapper); GitHub Pages for index.html and member.html
 - **Timezone:** Africa/Johannesburg (GMT+2)
 
 ---
@@ -23,37 +23,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Development Tasks
 
 ### Deploy Code Changes
-```bash
-clasp push                    # Push all code changes to @HEAD
-```
 
-**Important:** HTML files (Portal.html, Admin.html) deploy as @HEAD and take effect immediately. JavaScript changes require `clasp push`.
+Code deployment is automated via GitHub Actions:
+- **Workflow:** `.github/workflows/deploy.yml` pushes Portal.html, Admin.html, and JavaScript files to GAS versioned deployment
+- **Trigger:** Runs automatically after metadata update workflow completes on commits to main or merged PRs
+- **Manual deployment:** Not recommended; use GitHub Actions instead
 
 ### Pre-commit Steps
-Before committing code changes, follow these steps to update deployment metadata:
 
+Version and deployment metadata updates are automated via GitHub Actions:
+- **Workflow:** `.github/workflows/update-deployment-metadata.yml` updates version info and timestamps automatically
+- **Trigger:** Runs first when committing to main or merging PR to main
+- **Next step:** After metadata update completes, `.github/workflows/deploy.yml` automatically triggers to push to GAS
+- **Manual process:** Not needed; GitHub Actions handles both version and deployment
+
+Just commit your changes normally:
 ```bash
-# Step 1: Update deployment timestamp
-node scripts/update-deploy-timestamp.js
-
-# Step 2: Update Config.js with version info
-# Edit Config.js and update:
-#   - SYSTEM_VERSION: Increment version (e.g., 2.0.4 → 2.0.5)
-#   - SYSTEM_BUILD_DATE: Set to today's date (YYYY-MM-DD format)
-#   - SYSTEM_LAST_FEATURE: Describe the feature/change in one line
-#
-# Example:
-#   var SYSTEM_VERSION      = "2.1.3";
-#   var SYSTEM_BUILD_DATE   = "2026-03-30";
-#   var SYSTEM_LAST_FEATURE = "Added membership application test data loader with 11 test identities";
-
-# Step 3: Commit and push
 git add .
 git commit -m "Your message"
 git push -u origin <branch-name>
 ```
-
-**Note:** The deployment timestamp is automatically calculated from current time. Increment the minor version (x.y.Z) for bug fixes and styling updates, or major/minor (x.Y.z) for new features.
 
 ### Initial Setup: Install Regression Prevention Hooks
 After cloning this repository, install the git hooks for XSS regression prevention:
@@ -65,21 +54,19 @@ node scripts/install-hooks.js
 This sets up the pre-commit hook that runs `scripts/check-xss-patterns.js` before each commit. The hook prevents commits containing XSS-prone patterns (innerHTML/insertAdjacentHTML with string concatenation). See **XSS Prevention** section below for details.
 
 ### Run Tests & Diagnostics
-```
-# In Google Apps Script editor:
-1. Functions tab → Select function name → Run
-2. View results in Logs or Stack Trace
 
-Key test functions:
-- testGetMembers() → List all members from Individuals sheet
-- runDiagnostics() → Check spreadsheet connections and API endpoints
-- Tests.js has 10+ utility test functions
-```
+In Google Apps Script editor:
+1. Select the file containing the function (e.g., Tests.js, AuthService.js)
+2. Functions dropdown → Select function name → Click Run (▶)
+3. View results in Execution log or Logs viewer
+
+**Note:** When requesting test execution, specify the filename first (e.g., "Run testGetMembers() in Tests.js")
 
 ### Check Logs
-```bash
-clasp logs  # View console.log() output from recent executions
-```
+
+- **Execution Logs (GAS):** Generally not useful unless execution fails entirely
+- **Cloud Logs:** More detailed and informative for debugging; preferred method
+- **Audit Log (Sheet):** Every action logged to Audit Log tab with timestamp, user, action type, and details
 
 ---
 
@@ -123,26 +110,47 @@ Response JSON → Browser → Update UI
   - JavaScript implementation (not hardware-accelerated crypto)
 
 **Role-Based Access Control (RBAC):**
-```javascript
-// Three roles defined in Sessions tab:
-member      // Regular users
-board       // Administrators (members + approval powers)
-mgt         // Management Officer (leobo approvals only)
 
+Five roles defined in Administrators sheet (for board/mgt/rso) and Sessions tab (for members):
+- `member` — Regular members (portal access)
+- `board` — Administrators with approval powers
+- `mgt` — Management Officer (leobo approvals only)
+- `rso_approve` — Document and guest list reviewer
+- `rso_notify` — Read-only event coordinator
+
+**Membership Substates:** `Households.membership_status` determines portal features for member role:
+- `Applicant` — Application in progress (read-only access)
+- `Member` — Active member (full portal access)
+- `Lapsed` — Expired membership (limited access)
+- `Resigned` — Withdrawn from membership (no access)
+- `Expelled` — Removed from membership (no access)
+
+**Note:** Membership status routing in Portal.html needs verification—implementation status unknown.
+
+```javascript
 // Authorization check at handler entry:
 var auth = requireAuth(p.token, "board");  // Validates token & role
 ```
 
 **Configuration System:**
-- All business rules in **Config.js** (~650 lines)
-- No hardcoded constants in service modules
-- Easy to modify: Edit Config.js → `clasp push` → Changes live
+- **Config.js** (~865 lines) — Static configuration (spreadsheet IDs, folder IDs, constants, business rules)
+- **Configuration tab** (System Backend spreadsheet) — Dynamic configuration (runtime values, feature flags)
+- No duplicate keys between sources; each serves distinct purpose
+- No hardcoded constants in service modules; always reference Config.js or Configuration tab
+- Changes to Config.js require deployment; Configuration tab changes take effect immediately at runtime
 
 **Email Templates:**
-- Stored in **Email Templates** tab (System Backend spreadsheet)
-- Template semantic name format: `PREFIX_DESCRIPTION_TO_RECIPIENT` (e.g. `MEM_APPLICATION_RECEIVED_TO_APPLICANT`)
-- Supports placeholders: `{{FIRST_NAME}}`, `{{FACILITY}}`, `{{RESERVATION_DATE}}`
-- 69 templates across 6 categories (ADM, DOC, MEM, PAY, RES, SYS) — see [EMAIL_TEMPLATES_REFERENCE.md](docs/reference/EMAIL_TEMPLATES_REFERENCE.md)
+- **Email Templates tab** (System Backend spreadsheet): Metadata (semantic_name, display_name, subject, drive_file_id, placeholders, active, notes)
+- **Google Drive files**: Body text stored as individual Drive files (linked via drive_file_id in tab)
+- **Repository mirror**: CSV in `docs/email_templates/Email_Templates_Sheet.csv` + TXT files in `docs/email_templates/`
+- **Deployment workflow**: 
+  - New templates: Create TXT files + CSV rows (blank drive_file_id) → Commit to main
+  - `.github/workflows/deploy-email-templates.yml`: Sends TXT to Drive, populates IDs
+  - `.github/workflows/export-email-templates-csv.yml`: Exports updated tab back to CSV
+- **Template format**: Semantic name `PREFIX_DESCRIPTION_TO_RECIPIENT` (e.g., `MEM_APPLICATION_RECEIVED_TO_APPLICANT`)
+- **Placeholders**: `{{FIELD}}` format, supports conditional blocks `{{IF_FAMILY}}...{{END_IF}}`
+- **Currently 114 templates** across 6 categories (ADM, DOC, MEM, PAY, RES, SYS)
+- **Sending**: Uses DWD to send as board@geabotswana.org so officers receive at office-specific emails (treasurer@, chair@, secretary@geabotswana.org)
 
 **Audit Logging:**
 - Every action logged to **Audit Log** tab
@@ -540,7 +548,7 @@ GEA Admin reviews & approves
 
 ## RSO Portal Access
 
-**What is RSO?** Regional Security Officer (RSO) is a team member who reviews documents (passports, omangs, photos) and guest lists before events. RSO accounts are created by the board with two role types:
+**What is RSO?** Regional Security Officer (RSO) is a team member who reviews documents (passports, omangs) and guest lists before events. **RSO does NOT review photos.** RSO accounts are created by the board with two role types:
 
 **RSO Roles:**
 - **rso_approve** (full approval authority): Can review and approve/reject documents and guest lists
@@ -557,10 +565,11 @@ GEA Admin reviews & approves
 
 **Document Review Workflow (rso_approve):**
 - Admin Portal → Document Reviews page
-- List of all documents pending RSO review (passports, omangs, photos)
+- List of all documents pending RSO review (passports, omangs only; NOT photos)
 - RSO clicks document to preview, then [Approve] or [Reject with reason]
 - Approval: Updates status to `rso_approved`, emails member via ADM_DOCUMENT_APPROVED_BY_RSO_TO_MEMBER template
 - Rejection: Updates status to `rso_rejected`, emails board via ADM_RSO_DOCUMENT_ISSUE_TO_BOARD template (board relays to member diplomatically)
+- **Photos are reviewed by GEA Admin only, not RSO**
 
 **Guest List Review Workflow (rso_approve):**
 - Admin Portal → Guest List Reviews page (for pending guest lists only)
@@ -732,4 +741,4 @@ Points to production versioned deployment: `AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3
 - **Production Portal:** https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec
 - **Public Website:** https://geabotswana.org
 - **GitHub Repository:** https://github.com/geabotswana/gea-website
-- **Last Updated:** v2.1.2 - March 30, 2026
+- **Last Updated:** April 24, 2026 (GitHub Actions deployment, config sources, email templates, RBAC roles clarified)

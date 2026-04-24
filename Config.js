@@ -982,12 +982,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.0";
-var SYSTEM_BUILD_DATE       = "2026-04-23";
+var SYSTEM_VERSION          = "2.5.1";
+var SYSTEM_BUILD_DATE       = "2026-04-24";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Release 2.5.0: Membership lifecycle system with grace periods, auto-termination, renewal portal, and Firestore migration planning";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-23 15:33:18";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Test automated GAS deployment versioning (#156)";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-24 15:25:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

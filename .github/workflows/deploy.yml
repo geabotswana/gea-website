@@ -42,7 +42,8 @@ jobs:
           creds = service_account.Credentials.from_service_account_info(
               info, scopes=[
                   'https://www.googleapis.com/auth/script.projects',
-                  'https://www.googleapis.com/auth/drive'
+                  'https://www.googleapis.com/auth/drive',
+                  'https://www.googleapis.com/auth/script.deployments'
               ]
           ).with_subject(os.environ['ADMIN_EMAIL'])
           service = build('script', 'v1', credentials=creds)

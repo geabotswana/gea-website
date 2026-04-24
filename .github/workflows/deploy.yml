@@ -40,7 +40,10 @@ jobs:
           # 1. Authenticate with impersonation
           info = json.loads(os.environ['SERVICE_ACCOUNT_JSON'])
           creds = service_account.Credentials.from_service_account_info(
-              info, scopes=['https://www.googleapis.com/auth/script.projects']
+              info, scopes=[
+                  'https://www.googleapis.com/auth/script.projects',
+                  'https://www.googleapis.com/auth/drive'
+              ]
           ).with_subject(os.environ['ADMIN_EMAIL'])
           service = build('script', 'v1', credentials=creds)
           script_id = os.environ['SCRIPT_ID']

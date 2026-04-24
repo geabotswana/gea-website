@@ -81,10 +81,41 @@ google.script.run.handlePortalApi(action, params)
 Code.js :: handlePortalApi()
   ↓
 _routeAction(action, params)
-  ├─→ Public routes: login, logout
-  ├─→ Member routes: dashboard, profile, reservations, book, cancel, card, submit_payment_verification, get_payment_status, upload_file, get_file_status, request_employment
-  ├─→ Applicant routes: application_status, confirm_documents, upload_document, submit_payment_proof
-  └─→ Board routes: admin_pending, admin_approve, admin_deny, admin_members, admin_photo, admin_pending_payments, admin_approve_payment, admin_reject_payment, admin_clarify_payment, admin_payment_report, admin_applications, admin_approve_file, admin_reject_file
+  ├─→ PUBLIC (no auth required): login, admin_login, admin_session, check_sessions_schema,
+  │   migrate_submission_type, logout, password_reset_request, password_reset_complete,
+  │   password_reset_confirm, change_password, deployment_info, get_config_value, get_rules,
+  │   submit_application
+  │
+  ├─→ MEMBER & APPLICANT (member token required): dashboard, profile, reservations, book,
+  │   cancel, card, submit_payment_verification, get_payment_status, get_dues_info,
+  │   get_applicant_dues_info, updatePhoneNumbers, application_status, withdraw_application,
+  │   confirm_documents, upload_document, remove_document, submit_payment_proof, upload_file,
+  │   get_file_status, approve_file, reject_file, request_employment, get_submission_history,
+  │   rso_approve, send_contact_message, get_household_members, add_household_member,
+  │   remove_household_member, edit_household_member, update_household_type, submit_guest_list,
+  │   get_guest_list, get_guest_profiles, get_member_photo
+  │
+  ├─→ BOARD/ADMIN (board/rso/mgt token required): admin_pending, admin_approve, admin_deny,
+  │   admin_waitlist, admin_approve_bump, admin_waitlist_list, admin_guest_lists,
+  │   admin_save_guest_list_draft, admin_finalize_guest_list, admin_guest_histories,
+  │   admin_rso_pending_documents, admin_rso_document_dashboard_stats,
+  │   admin_rso_approve_document, admin_rso_pending_member_documents,
+  │   approve_rso_member_document, reject_rso_member_document,
+  │   admin_member_document_rejections, admin_send_document_rejection_response,
+  │   admin_application_rejections, admin_send_application_rejection_response,
+  │   admin_rso_applications_ready, admin_rso_approved_calendar, admin_rso_approved_guest_lists,
+  │   admin_calendar, admin_members, admin_member_detail, admin_lapsed_members,
+  │   admin_resigned_members, admin_resign_membership, admin_photo, admin_pending_photos,
+  │   admin_applications, admin_application_detail, admin_approve_application,
+  │   admin_deny_application, rso_approve_application, rso_deny_application,
+  │   rso_application_decision, admin_get_application_payment, admin_verify_payment,
+  │   admin_pending_payments, admin_approve_payment, admin_reject_payment,
+  │   admin_clarify_payment, admin_payment_report, admin_create_gratis_payment,
+  │   admin_dashboard_stats, admin_reservations_report, admin_resend_email, admin_get_rules,
+  │   admin_save_rule, admin_delete_rule, admin_list_admins, admin_create_admin,
+  │   admin_deactivate_admin, admin_reactivate_admin, admin_reset_admin_password
+  │
+  └─→ DIAGNOSTICS & FILE DATA: image_diagnostic, get_file_data
   ↓
 Service modules (AuthService, MemberService, ReservationService, PaymentService, FileSubmissionService, EmailService, NotificationService, ApplicationService, RulesService, Utilities, Tests)
   ↓

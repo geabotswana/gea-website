@@ -25,10 +25,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Upload to Apps Script & Create Version
+      - name: Upload to Apps Script & Update Production Deployment
         env:
           SERVICE_ACCOUNT_JSON: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}
           SCRIPT_ID: "1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv"
+          DEPLOYMENT_ID: "AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ"
           ADMIN_EMAIL: "treasurer@geabotswana.org"
           COMMIT_MESSAGE: ${{ steps.commit_msg.outputs.message }}
         run: |
@@ -48,6 +49,7 @@ jobs:
           ).with_subject(os.environ['ADMIN_EMAIL'])
           service = build('script', 'v1', credentials=creds)
           script_id = os.environ['SCRIPT_ID']
+          deployment_id = os.environ['DEPLOYMENT_ID']
           commit_msg = os.environ['COMMIT_MESSAGE']
 
           # 2. Collect files
@@ -99,18 +101,17 @@ jobs:
           version_number = version_response['versionNumber']
           print(f"✓ Created version: {version_number}")
 
-          # 5. Create a new deployment with descriptive name
+          # 5. Update production deployment to use new version
           deployment_name = f"v{version_number}: {commit_msg[:60]}"
-          deployment_response = service.projects().deployments().create(
+          update_response = service.projects().deployments().update(
               scriptId=script_id,
+              deploymentId=deployment_id,
               body={
                   'versionNumber': str(version_number),
-                  'manifestFileName': 'appsscript',
                   'description': deployment_name
               }
           ).execute()
-          deployment_id = deployment_response['deploymentId']
-          print(f"✓ Created deployment: {deployment_id}")
+          print(f"✓ Updated deployment: {deployment_id}")
           print(f"  Name: {deployment_name}")
-          print("✓ GEA Botswana system is now live!")
+          print("✓ GEA Botswana production system is now live!")
           EOF

@@ -38,6 +38,7 @@
  * ============================================================
  */
 
+// Deployment test: Automated versioning and deployment via GitHub Actions
 
 /**
  * Web app entry point. Every HTTP request arrives here.

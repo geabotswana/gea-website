@@ -107,8 +107,12 @@ jobs:
               scriptId=script_id,
               deploymentId=deployment_id,
               body={
-                  'versionNumber': str(version_number),
-                  'description': deployment_name
+                  'deploymentConfig': {
+                      'scriptId': script_id,
+                      'versionNumber': version_number,
+                      'manifestFileName': 'appsscript',
+                      'description': deployment_name
+                  }
               }
           ).execute()
           print(f"✓ Updated deployment: {deployment_id}")

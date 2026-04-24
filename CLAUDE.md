@@ -231,141 +231,145 @@ container.appendChild(div);
 ### Member Directory (MEMBER_DIRECTORY_ID)
 | Tab | Purpose | Key Lookup |
 |-----|---------|-----------|
-| Households | Membership units (individual or family) | `household_id` or `primary_member_id` |
-| Individuals | People (adults & children) | `individual_id` or `email` for auth |
-| File Submissions | Document & photo uploads w/ workflow | `submission_id`, filtered by `individual_id` + `document_type` |
-| Membership Applications | New member application workflow | `application_id`, status progression |
-| Membership Levels | Reference table (12 types) | `level_id` (key joins to Households) |
+| Households | Membership units (individual or family); tracks status (Member/Applicant/Lapsed/Resigned/Expelled), sponsorship, payments | `household_id` or `primary_member_id` |
+| Individuals | People (adults, children, staff); auth via email; membership eligibility derived from household | `individual_id` or `email` for auth |
+| File Submissions | Document, photo, and employment verification uploads with two-tier approval (RSO → GEA); tracks expiration dates | `submission_id`, filtered by `individual_id` + `document_type` |
+| Membership Applications | New member application workflow; 11-step lifecycle from submission through activation | `application_id`, status progression |
+| Membership Levels | Reference table for membership categories (Full, Associate, Affiliate, Diplomatic, Community, Temporary) | `level_id` (key joins to Households) |
+
+**Extended schemas:** Column-by-column reference available in docs/reference/GEA_System_Schema.md
 
 ### Reservations (RESERVATIONS_ID)
 | Tab | Purpose | Key Lookup |
 |-----|---------|-----------|
-| Reservations | Facility bookings (tennis, leobo, whole) | `reservation_id` or `household_id` |
-| Guest Lists | Attendees for each reservation | `reservation_id` |
-| Usage Tracking | Weekly/monthly limits (Tennis 3hrs/week, Leobo 1/month) | `household_id`, reset nightly |
+| Reservations | Facility bookings (tennis, leobo); tracks limits, approval status, guest list submission, bumping state | `reservation_id` or `household_id` |
+| Guest Lists | Attendees for each reservation; RSO reviews for event coordination; final count/profiles submitted | `reservation_id` |
+| Guest Profiles | Reusable guest registry (name, ID, age group); enables quick guest list creation across reservations | `guest_profile_id` or `household_id` |
+| Usage Tracking | Weekly/monthly usage limits (Tennis 3hrs/week, Leobo 1/month); reset nightly, tracks household consumption | `household_id`, reset nightly |
 
 ### System Backend (SYSTEM_BACKEND_ID)
 | Tab | Purpose | Key Lookup |
 |-----|---------|-----------|
-| Configuration | All business rules & thresholds | `config_key` (cached at runtime) |
-| Email Templates | 69 notification templates | `semantic_name` (e.g. ADM_*, DOC_*, MEM_*, PAY_*, RES_*, SYS_*) |
-| Sessions | Active user sessions | `token` (lookup on every request) |
-| Administrators | Admin accounts (board, rso_approve, rso_notify, mgt roles) | `email` for auth |
-| Audit Log | Compliance trail (1000s of rows) | timestamp, user_email, action_type |
-| Holiday Calendar | US Federal & Botswana public holidays | For business day calculations |
+| Configuration | Runtime business rules & thresholds; updated by operators without code deployment | `config_key` (cached at runtime) |
+| Email Templates | 114 notification templates across 6 categories (ADM, DOC, MEM, PAY, RES, SYS); metadata + Drive file body | `semantic_name` (e.g. MEM_APPLICATION_RECEIVED_TO_APPLICANT) |
+| Sessions | Active user sessions; tracks creation, expiration, role; token hash for security; purged nightly | `token_hash` (lookup on every request) |
+| Administrators | Admin and RSO accounts; roles: board, mgt, rso_approve, rso_notify; managed by board | `email` for auth |
+| Audit Log | Compliance trail; timestamp, user_email, action_type, target_id, details, IP address; 1000+ rows | indexed by timestamp, action_type, user_email |
+| Holiday Calendar | US Federal & Botswana public holidays; used for business day calculations (bumping deadlines, nightly tasks) | `holiday_date` |
 
 ### Payment Tracking (PAYMENT_TRACKING_ID)
 | Tab | Purpose | Key Lookup |
 |-----|---------|-----------|
-| Payments | Dues payments submitted by members with verification status | `payment_id` or `household_id` |
+| Payments | Dues payments submitted by members; tracks method, amount USD/BWP, verification status, treasurer approval | `payment_id` or `household_id` |
+| Membership Pricing | Membership year dues setup; one row per level per year; referenced for payment pro-ration | `membership_level_id` + `membership_year` |
+| Rates | Exchange rate history (USD ↔ BWP); updated nightly via API; timestamped for historical rate lookups | `rate_date` |
 
 ---
 
 ## Service Modules & Responsibilities
 
-**Code.js** (3,629 lines)
-- Entry point: doGet(e), handlePortalApi(action, params)
-- Router: _routeAction() dispatches to 78 specific handlers for members, applicants, and board
-- Image proxy: _handleImageProxy() serves Drive files as binary
+**Code.js** (4,903 lines)
+- Entry point: doGet(e), handlePortalApi(action, params), handleContentService(e)
+- Router: _routeAction() dispatches to 60+ handlers across public, member, applicant, household, and board categories
+- Image proxy: _handleImageProxy() serves Drive files as binary; _handleGetFileData() for authenticated file access
 - Request flow: Validates session → authorizes role → executes handler → returns JSON response
+- Comprehensive error handling with standardized error responses
 
-**AuthService.js** (1,893 lines)
-- login(email, password) → session creation & token generation
-- logout(token) → session termination
-- requireAuth(token, role?) → permission check (used by all protected routes)
-- validateSession(token) → lookup & verify token still valid
-- Password validation: SHA256 hash comparison with constant-time comparison
-- Admin account authentication (board, mgt, rso_approve, rso_notify roles)
+**AuthService.js** (2,110 lines)
+- Authentication: login(email, password) → session creation & token generation; logout(token) → session termination
+- Authorization: requireAuth(token, role?) → permission check; validateSession(token) → lookup & verify validity
+- Session management: Token generation with entropy; SHA256 hashing; constant-time comparison for security
+- Admin & member roles: board, mgt, rso_approve, rso_notify (admins); member (members); applicant (pending approval)
+- Password handling: SHA256 hash comparison, constant-time comparison, password reset workflows
 
-**MemberService.js** (690 lines)
+**MemberService.js** (796 lines)
 - Member CRUD: getMemberByEmail(), getMemberById(), updateMember(), createMember()
-- Household CRUD: getHouseholdById(), getHouseholdByMemberId(), updateHousehold()
-- Derived fields: Recalculate voting_eligible, fitness_center_eligible, office_eligible
-- Safe views: _safePublicMember(), _safePublicHousehold() (exclude password_hash, etc.)
+- Household CRUD: getHouseholdById(), getHouseholdByMemberId(), updateHousehold(), calculateHouseholdStats()
+- Derived fields: Recalculate voting_eligible, fitness_center_eligible, office_eligible based on category/status
+- Safe views: _safePublicMember(), _safePublicHousehold() (exclude password_hash, tokens, sensitive data)
+- Membership status routing: Returns appropriate fields based on member/applicant/lapsed/resigned/expelled state
 
 **ReservationService.js** (2,089 lines)
-- Booking logic: createReservation() checks limits (Tennis 3hrs/week, Leobo 1/month)
-- Bumping logic: Tennis 1-day window, Leobo 5 business days
-- Cancellation: cancelReservation(), refund logic, calendar event cleanup
-- Usage tracking: getWeeklyUsage(), getMonthlyUsage(), calculateNextWeekStart()
-- Limit enforcement: Excess bookings flag as pending for board approval
-- Guest list management: submitGuestList(), getGuestList(), approveGuestList()
+- Booking logic: createReservation() enforces facility limits (Tennis 3hrs/week, Leobo 1/month, no limits for gym/playground)
+- Approval routing: Regular bookings auto-approved; excess → board approval; Leobo requires two-stage (mgt → board)
+- Bumping logic: Tennis 1-day window, Leobo 5 business days; auto-promotion if blocking reservation cancelled
+- Cancellation: cancelReservation() with refund, calendar event cleanup, bump promotion check
+- Usage tracking: getWeeklyUsage(), getMonthlyUsage(), calculateNextWeekStart(); reset nightly via NotificationService
+- Guest list management: submitGuestList(), getGuestList(), finalizeGuestList(); RSO reviews before event
 
-**PaymentService.js** (851 lines)
-- Payment submission, verification workflow, treasurer approval/rejection/clarification
-  - submitPaymentVerification() — Member submits payment proof with file upload
-  - listPendingPaymentVerifications() — List all unverified payments
-  - approvePaymentVerification(), rejectPaymentVerification(), requestPaymentClarification()
-  - calculateProratedDues() — Calculate quarterly dues
-- Exchange rate management: fetchAndUpdateExchangeRate() (via API nightly), getExchangeRate()
-- Payment reporting: getPaymentReport(filters) — Generate payment history with filters
+**PaymentService.js** (1,011 lines)
+- Payment submission: submitPaymentVerification() → Member submits proof with file upload (screenshot, receipt, etc.)
+- Verification workflow: Treasurer review → approve/reject/request clarification
+- Currency support: USD, BWP with automatic conversion; exchange rates updated nightly
+- Pro-ration: calculateProratedDues() for quarterly calculations (Q1: 100%, Q2: 75%, Q3: 50%, Q4: 25%)
+- Exchange rate management: fetchAndUpdateExchangeRate() (nightly via open.er-api.com API), stored in Rates tab
+- Payment reporting: getPaymentReport(filters) with membership year and status filters; CSV export support
 
-**FileSubmissionService.js** (598 lines)
-- File submission workflow: Documents (passport/omang), photos, employment verification
-- Two-tier document approval: RSO review → GEA admin review
-- One-tier photo approval: GEA admin only → Cloud Storage transfer
-- Functions: submitFile(), getSubmissionHistory(), approveSubmission(), rejectSubmission()
-- RSO approval workflow: RSO logs in to Admin Portal with rso_approve role
-- Cloud Storage integration: Transfer approved photos to gs://gea-member-data/
-- Audit trail: Track all uploads, reviews, approvals, rejections with timestamps
+**FileSubmissionService.js** (1,413 lines)
+- File submission workflow: Documents (passport/omang), photos, employment verification with status tracking
+- Two-tier document approval: RSO review → GEA admin review; RSO can approve/reject, GEA admin finalizes
+- One-tier photo approval: GEA admin only; approved photos transferred to Cloud Storage gs://gea-member-data/
+- Expiration tracking: Monitors document expiration dates; sends 6-month and 1-month warning emails
+- Functions: submitFile(), getSubmissionHistory(), approveSubmission(), rejectSubmission(), requestResubmit()
+- Audit trail: Track all uploads, reviews, approvals, rejections with user, timestamp, and decision reason
 
-**EmailService.js** (926 lines)
-- sendEmail(templateId, recipient, variables) → Core email dispatcher
-- Fetches template from sheet, replaces placeholders ({{FIELD}} format), wraps in HTML
-- From: "Gaborone Employee Association", Reply-to: board@geabotswana.org
-- 69 email templates across 6 categories (ADM, DOC, MEM, PAY, RES, SYS)
-- Supports conditional blocks: {{IF_FAMILY}}...{{END_IF}}, {{IF_TEMPORARY}}...{{END_IF}}
+**EmailService.js** (1,071 lines)
+- Core dispatcher: sendEmail(semantic_name, recipient, variables) fetches template and sends via Gmail
+- Template system: 114 templates stored as metadata in Email Templates tab + body text in Google Drive files
+- Placeholders: {{FIELD}} format with support for conditional blocks {{IF_FAMILY}}...{{END_IF}}, {{IF_TEMPORARY}}...{{END_IF}}
+- From address: "Gaborone Employee Association"; Reply-to: board@geabotswana.org (enables office email forwarding via DWD)
+- Categories: ADM (6), DOC (18), MEM (26), PAY (14), RES (25), SYS (25) templates
+- HTML wrapping: Embeds template body in branded HTML wrapper with logo, footer, unsubscribe info
 
-**NotificationService.js** (746 lines)
-- runNightlyTasks() → Daily at 2:00 AM GMT+2
-  - Membership renewals (30-day, 7-day warnings before July 31)
-  - Document expiration alerts (6-month passport warnings)
-  - Guest list deadline reminders
-  - Session purge (delete expired sessions)
-  - Bump window expiration (promote tentative to confirmed)
-  - Exchange rate update via API (USD to BWP)
-- triggerRsoDailySummary() → Daily at 6:00 AM (RSO gets daily event list)
-- sendHolidayCalReminder() → Yearly on Nov 1 (board reminder)
+**NotificationService.js** (774 lines)
+- Nightly tasks (2:00 AM GMT+2): runNightlyTasks()
+  - Membership renewals: 30-day and 7-day warnings before July 31 expiration
+  - Document expiration alerts: 6-month passport/omang warnings
+  - Guest list reminders: Final calls for pending guest lists 2 days before event
+  - Session purge: Delete expired sessions from Sessions tab
+  - Bump window expiration: Auto-promote tentative to confirmed if deadline passed
+  - Exchange rate update: Fetch USD↔BWP rate from API, store in Rates tab
+- Daily tasks (6:00 AM GMT+2): triggerRsoDailySummary() sends RSO event list for day
+- Annual tasks (Nov 1): sendHolidayCalReminder() board reminder to populate Holiday Calendar
 
-**ApplicationService.js** (1,276 lines)
-- Membership application workflow: 11-step lifecycle from submission through activation
-- submitApplication() → Create new household + individuals with temp password
-- getApplicationStatus() → Track applicant through approval workflow
-- Document submission: confirmDocumentsUploaded(), uploadDocument()
-- Payment submission: submitPaymentProof(), getPaymentStatus()
-- Board & RSO workflows: Application moves through 11 steps with role-based approvals
-- Category assignment: Automatic routing based on eligibility questionnaire responses
-- Sponsorship verification: Validate sponsor relationships for Community members
+**ApplicationService.js** (1,531 lines)
+- Membership application lifecycle: 11-step workflow from submission → activation
+- Steps: Submit → Documents → Board Initial Review → RSO Documents Review → Board Final → Payment → Activation
+- Eligibility questionnaire: Q1-Q5 responses auto-determine membership category (Full/Associate/Affiliate/Diplomatic/Community/Temporary)
+- Document submission: confirmDocumentsUploaded(), uploadDocument() with validation; RSO reviews before board final approval
+- Payment workflow: applicants submit proof after board approval; treasurer verifies; activation unlocks full portal
+- Sponsorship: Community/Affiliate/Diplomatic require sponsor verification; Full members can only sponsor
+- Account creation: New household + individual records created with temporary password; applicant logs in during app
 
-**RulesService.js** (403 lines)
-- Eligibility rules engine: Membership category determination from questionnaire
-- 6 category rules: Full, Associate, Affiliate, Diplomatic, Temporary, Community
-- Rule logic: Embassy employment, USG funding (51% minimum for Associate), visa type, posting dates
-- Sponsor validation: Verify sponsor exists and has active Full membership
-- Fallback rules: <51% USG funding routes to Community, not Associate
-- Questionnaire integration: Q1-Q5 responses determine eligibility path
+**RulesService.js** (420 lines)
+- Eligibility rules engine: determineCategory() auto-routes based on questionnaire responses
+- 6 categories with business logic: Full (embassy employee), Associate (51%+ USG funding), Affiliate (33%+ USG), Diplomatic (visa), Community (sponsor-based), Temporary (contractor)
+- Rule logic: Embassy employment, USG funding threshold (51% for Associate, 33% for Affiliate), visa type, posting dates
+- Sponsor validation: Verify sponsor exists, has active Full membership, not already sponsoring max members
+- Fallback rules: <51% USG routes to Community (not Associate); missing questionnaire responses handled gracefully
 
-**Utilities.js** (586 lines)
-- Date math: addDaysExcludingWeekends(), isBusinessDay(), getDayOfWeek()
-- Hashing: hashPassword() (SHA256), validatePassword()
-- Validation: isValidEmail(), isValidPhone(), validateLength()
-- Audit logging: logAuditEntry()
-- Safe guards: sanitizeInput() (no injection attacks)
-- Lookups: getConfigValue(), getCellValue(), findRowByColumn()
-- Constants-time comparison: Used for all security-sensitive equality checks
+**Utilities.js** (657 lines)
+- Date math: addDaysExcludingWeekends(), isBusinessDay(), getDayOfWeek(), getAgeCategory()
+- Hashing: hashPassword() (SHA256), validatePassword(), constantTimeCompare() for security
+- Validation: isValidEmail(), isValidPhone(), validateLength(), sanitizeInput() for XSS prevention
+- Lookups: getConfigValue() (cached), getCellValue(), findRowByColumn(), findAllRowsByColumn()
+- Audit logging: logAuditEntry() records all significant actions with user, action type, target, details, IP
+- Error handling: standardized errorResponse() format for API consistency
 
-**Config.js** (865 lines)
-- Section 1: Spreadsheet IDs (4 main spreadsheets + folders)
-- Section 2: Tab names (exact sheet names)
-- Section 3: Folder IDs (Google Drive folders for documents, photos, cloud storage)
-- Section 4-17: Logo URLs, brand colors, email addresses, business rules, facility limits, age thresholds, payment methods, notification config, membership categories
-- Updated: March 28, 2026
+**Config.js** (998 lines)
+- Spreadsheet IDs: MEMBER_DIRECTORY_ID, RESERVATIONS_ID, SYSTEM_BACKEND_ID, PAYMENT_TRACKING_ID (Section 1)
+- Tab names: Exact sheet names for all 18 tabs across 4 spreadsheets (Section 2)
+- Folder IDs: Google Drive folders for documents, photos, employment verification, cloud storage (Section 3)
+- Constants: URLs, colors, contact emails, facility names, membership categories, age thresholds, payment methods (Sections 4-17)
+- Last updated: April 24, 2026
 
-**Tests.js** (2,494 lines)
+**Tests.js** (3,071 lines)
 - Test utilities: testGetMembers(), testCreateReservation(), testEmailSending(), testMembershipApplication()
+- Integration tests: Full workflow tests for application, payment, reservation, document submission
 - Diagnostics: runDiagnostics(), checkAllSheets(), validateSchemaIntegrity(), checkMembershipApplications()
-- 40+ test functions for QA and development
-- Used for debugging spreadsheet connections and data integrity
+- Debugging helpers: logAllIndividuals(), logAllHouseholds(), logApplicationStatus(), etc.
+- 50+ test functions for QA, development, and troubleshooting
+- Execution: Run via Apps Script editor → Functions dropdown → Select test → Run; view results in Logs
 
 ---
 

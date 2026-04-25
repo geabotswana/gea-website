@@ -6712,7 +6712,7 @@ function submitPasswordReset(event) {
     var wrapper = document.createElement('div');
     wrapper.style.marginBottom = '20px';
     var h = document.createElement('h1');
-    h.textContent = 'Non-Member Portal';
+    h.textContent = 'Applicant Portal';
     wrapper.appendChild(h);
     var p = document.createElement('p');
     p.style.color = '#666';
@@ -6769,7 +6769,7 @@ function submitPasswordReset(event) {
       { id: 'dashboard', label: 'Dashboard',            visible: true },
       { id: 'household', label: 'My Household',         visible: true },
       { id: 'status',    label: 'Application Status',   visible: appStatusVisible },
-      { id: 'documents', label: 'Documents',            visible: docsVisible },
+      { id: 'documents', label: 'Document Upload',      visible: docsVisible },
       { id: 'payment',   label: 'Payment Verification', visible: paymentVisible },
       { id: 'help',      label: 'Help & Contact',       visible: true }
     ];
@@ -6912,6 +6912,47 @@ function submitPasswordReset(event) {
     return card;
   }
 
+  // Helper: Get category-specific display label for a document type
+  function getDocumentDisplayLabel(docType, category, isRequired) {
+    var labelMap = {
+      // Full Member
+      'Full': {
+        'Passport': 'DIPLOMATIC or OFFICIAL PASSPORT'
+      },
+      // Associate Member
+      'Associate': {
+        'Passport': 'PASSPORT',
+        'Funding Verification': 'FUNDING VERIFICATION LETTER'
+      },
+      // Community Member
+      'Community': {
+        'Passport': 'PASSPORT or OMANG'
+      },
+      // Temporary Member
+      'Temporary': {
+        'Passport': 'DIPLOMATIC or OFFICIAL PASSPORT'
+      },
+      // Affiliate Member
+      'Affiliate': {
+        'Passport': 'PASSPORT or OMANG'
+      },
+      // Diplomatic Member
+      'Diplomatic': {
+        'Passport': 'DIPLOMATIC or OFFICIAL PASSPORT',
+        'Diplomatic Accreditation': 'ACCREDITATION VERIFICATION LETTER'
+      },
+      // Family & Household Staff defaults
+      'Family': {
+        'Passport': 'PASSPORT or OMANG'
+      }
+    };
+
+    var categoryMap = labelMap[category] || labelMap['Family'];
+    var label = categoryMap[docType] || docType.toUpperCase();
+    var suffix = isRequired ? ': Required' : ': Optional';
+    return label + suffix;
+  }
+
   function buildApplicantDocumentsSection(app) {
     var wrapper = document.createElement('div');
     var card = document.createElement('div');
@@ -6919,7 +6960,7 @@ function submitPasswordReset(event) {
     card.style.padding = '16px';
     var title = document.createElement('h3');
     title.className = 'card-title';
-    title.textContent = 'Documents';
+    title.textContent = 'Document Upload';
     card.appendChild(title);
 
     (app.individuals || []).forEach(function(ind) {
@@ -6964,9 +7005,38 @@ function submitPasswordReset(event) {
         // Determine what to show in label and which buttons to display
         var showPassport = allowedIdTypes.indexOf('Passport') !== -1;
         var showOmang = allowedIdTypes.indexOf('Omang') !== -1;
-        var idType = passportSubs.length > 0 ? 'PASSPORT' : omangSubs.length > 0 ? 'OMANG' : (showPassport && showOmang ? 'PASSPORT or OMANG' : showPassport ? 'PASSPORT' : 'OMANG');
-        label.textContent = idType + ': ' + (hasId ? '✅ Uploaded' : '⏳ Required');
+
+        // Build label with category-specific text and Font Awesome icons
         label.style.fontWeight = '600';
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '8px';
+
+        // Create icon
+        var icon = document.createElement('i');
+        icon.className = hasId ? 'fas fa-thumbs-up' : 'fas fa-hand';
+        icon.style.color = hasId ? '#2E7D32' : '#E65100';
+        icon.style.width = '20px';
+        label.appendChild(icon);
+
+        // Create text span
+        var labelText = document.createElement('span');
+        var idDisplayType;
+        if (passportSubs.length > 0) {
+          idDisplayType = showPassport && showOmang ? 'PASSPORT or OMANG' : 'PASSPORT';
+        } else if (omangSubs.length > 0) {
+          idDisplayType = showPassport && showOmang ? 'PASSPORT or OMANG' : 'OMANG';
+        } else {
+          idDisplayType = showPassport && showOmang ? 'PASSPORT or OMANG' : showPassport ? 'PASSPORT' : 'OMANG';
+        }
+
+        // Use category-aware label if applicant
+        if (isApplicant && app.membership_category) {
+          idDisplayType = getDocumentDisplayLabel('Passport', app.membership_category, true).replace(': Required', '');
+        }
+
+        labelText.textContent = idDisplayType + (hasId ? ': Uploaded' : ': Required');
+        label.appendChild(labelText);
         row.appendChild(label);
         var uploadDiv = document.createElement('div');
         uploadDiv.style.display = 'flex';
@@ -6976,7 +7046,7 @@ function submitPasswordReset(event) {
         if (showPassport) {
           var uploadPass = document.createElement('button');
           uploadPass.className = 'btn btn-small';
-          uploadPass.textContent = passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport';
+          uploadPass.innerHTML = '<i class="fas fa-passport" style="margin-right: 6px;"></i>' + (passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport');
           uploadPass.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'passport', b); }; })(ind.individual_id, uploadPass);
           uploadDiv.appendChild(uploadPass);
           if (passportSubs.some(function(s) { return s.status === 'submitted'; })) {
@@ -6991,7 +7061,7 @@ function submitPasswordReset(event) {
         if (showOmang) {
           var uploadOmang = document.createElement('button');
           uploadOmang.className = 'btn btn-small';
-          uploadOmang.textContent = omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang';
+          uploadOmang.innerHTML = '<i class="fas fa-id-card" style="margin-right: 6px;"></i>' + (omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang');
           uploadOmang.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'omang', b); }; })(ind.individual_id, uploadOmang);
           uploadDiv.appendChild(uploadOmang);
           if (omangSubs.some(function(s) { return s.status === 'submitted'; })) {
@@ -7014,15 +7084,30 @@ function submitPasswordReset(event) {
         photoRow.style.marginTop = '8px';
         var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
         var photoLabel = document.createElement('span');
-        photoLabel.textContent = 'PHOTO: ' + (photoSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
         photoLabel.style.fontWeight = '600';
+        photoLabel.style.display = 'flex';
+        photoLabel.style.alignItems = 'center';
+        photoLabel.style.gap = '8px';
+
+        // Create photo icon
+        var photoIcon = document.createElement('i');
+        photoIcon.className = photoSubs.length > 0 ? 'fas fa-thumbs-up' : 'fas fa-hand';
+        photoIcon.style.color = photoSubs.length > 0 ? '#2E7D32' : '#E65100';
+        photoIcon.style.width = '20px';
+        photoLabel.appendChild(photoIcon);
+
+        // Create text span
+        var photoLabelText = document.createElement('span');
+        photoLabelText.textContent = 'PHOTO' + (photoSubs.length > 0 ? ': Uploaded' : ': Required');
+        photoLabel.appendChild(photoLabelText);
+
         photoRow.appendChild(photoLabel);
         var photoUploadDiv = document.createElement('div');
         photoUploadDiv.style.display = 'flex';
         photoUploadDiv.style.gap = '6px';
         var photoUpload = document.createElement('button');
         photoUpload.className = 'btn btn-small';
-        photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
+        photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace' : 'Upload');
         photoUpload.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, photoUpload);
         photoUploadDiv.appendChild(photoUpload);
         if (photoSubs.some(function(s) { return s.status === 'submitted'; })) {
@@ -7051,15 +7136,31 @@ function submitPasswordReset(event) {
             docRow.style.marginTop = '8px';
             var docSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
             var docLabel = document.createElement('span');
-            docLabel.textContent = docType.toUpperCase() + ': ' + (docSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
             docLabel.style.fontWeight = '600';
+            docLabel.style.display = 'flex';
+            docLabel.style.alignItems = 'center';
+            docLabel.style.gap = '8px';
+
+            // Create icon
+            var docIcon = document.createElement('i');
+            docIcon.className = docSubs.length > 0 ? 'fas fa-thumbs-up' : 'fas fa-hand';
+            docIcon.style.color = docSubs.length > 0 ? '#2E7D32' : '#E65100';
+            docIcon.style.width = '20px';
+            docLabel.appendChild(docIcon);
+
+            // Create text span with category-aware label
+            var docLabelText = document.createElement('span');
+            var displayLabel = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
+            docLabelText.textContent = displayLabel + (docSubs.length > 0 ? ': Uploaded' : ': Required');
+            docLabel.appendChild(docLabelText);
+
             docRow.appendChild(docLabel);
             var docUploadDiv = document.createElement('div');
             docUploadDiv.style.display = 'flex';
             docUploadDiv.style.gap = '6px';
             var docUpload = document.createElement('button');
             docUpload.className = 'btn btn-small';
-            docUpload.textContent = docSubs.length > 0 ? 'Replace' : 'Upload';
+            docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace' : 'Upload');
             docUpload.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, docUpload);
             docUploadDiv.appendChild(docUpload);
             if (docSubs.some(function(s) { return s.status === 'submitted'; })) {
@@ -7082,15 +7183,30 @@ function submitPasswordReset(event) {
         photoRow.style.marginTop = '8px';
         var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
         var photoLabel = document.createElement('span');
-        photoLabel.textContent = 'PHOTO: ' + (photoSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
         photoLabel.style.fontWeight = '600';
+        photoLabel.style.display = 'flex';
+        photoLabel.style.alignItems = 'center';
+        photoLabel.style.gap = '8px';
+
+        // Create photo icon
+        var minorPhotoIcon = document.createElement('i');
+        minorPhotoIcon.className = photoSubs.length > 0 ? 'fas fa-thumbs-up' : 'fas fa-hand';
+        minorPhotoIcon.style.color = photoSubs.length > 0 ? '#2E7D32' : '#E65100';
+        minorPhotoIcon.style.width = '20px';
+        photoLabel.appendChild(minorPhotoIcon);
+
+        // Create text span
+        var minorPhotoLabelText = document.createElement('span');
+        minorPhotoLabelText.textContent = 'PHOTO' + (photoSubs.length > 0 ? ': Uploaded' : ': Required');
+        photoLabel.appendChild(minorPhotoLabelText);
+
         photoRow.appendChild(photoLabel);
         var photoUploadDiv = document.createElement('div');
         photoUploadDiv.style.display = 'flex';
         photoUploadDiv.style.gap = '6px';
         var photoUpload = document.createElement('button');
         photoUpload.className = 'btn btn-small';
-        photoUpload.textContent = photoSubs.length > 0 ? 'Replace' : 'Upload';
+        photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace' : 'Upload');
         photoUpload.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, photoUpload);
         photoUploadDiv.appendChild(photoUpload);
         if (photoSubs.some(function(s) { return s.status === 'submitted'; })) {
@@ -7112,14 +7228,31 @@ function submitPasswordReset(event) {
           row.style.marginTop = '8px';
           var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
           var label = document.createElement('span');
-          label.textContent = docType.toUpperCase() + ': ' + (submissions.length > 0 ? '✅ Uploaded' : '⏳ Optional');
+          label.style.fontWeight = '600';
+          label.style.display = 'flex';
+          label.style.alignItems = 'center';
+          label.style.gap = '8px';
+
+          // Create icon
+          var idIcon = document.createElement('i');
+          idIcon.className = submissions.length > 0 ? 'fas fa-thumbs-up' : 'fas fa-hand';
+          idIcon.style.color = submissions.length > 0 ? '#2E7D32' : '#E65100';
+          idIcon.style.width = '20px';
+          label.appendChild(idIcon);
+
+          // Create text span
+          var labelText = document.createElement('span');
+          labelText.textContent = docType.toUpperCase() + (submissions.length > 0 ? ': Uploaded' : ': Optional');
+          label.appendChild(labelText);
+
           row.appendChild(label);
           var btnDiv = document.createElement('div');
           btnDiv.style.display = 'flex';
           btnDiv.style.gap = '6px';
           var upload = document.createElement('button');
           upload.className = 'btn btn-small';
-          upload.textContent = submissions.length > 0 ? 'Replace' : 'Upload';
+          var iconClass = docType === 'passport' ? 'fa-passport' : 'fa-id-card';
+          upload.innerHTML = '<i class="fas ' + iconClass + '" style="margin-right: 6px;"></i>' + (submissions.length > 0 ? 'Replace' : 'Upload');
           upload.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, upload);
           btnDiv.appendChild(upload);
           if (submissions.some(function(s) { return s.status === 'submitted'; })) {

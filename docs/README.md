@@ -1,14 +1,26 @@
 # GEA Documentation Master Index
 
-**Last Updated:** March 24, 2026
+**Last Updated:** April 25, 2026
 **Maintained by:** GEA Treasurer & Development Team
+
+---
+
+## Operational Guides
+
+**How-to guides for users of the GEA system**
+
+| Document | Audience | Purpose | Status |
+|----------|----------|---------|--------|
+| [**BOARD_OPERATIONS_GUIDE.md**](guides/BOARD_OPERATIONS_GUIDE.md) | Board members | Daily operations: dashboard, reservations, applications, payments, members, rules, admin accounts | ✅ Complete |
+| [**RSO_PORTAL_GUIDE.md**](guides/RSO_PORTAL_GUIDE.md) | RSO admins (rso_approve, rso_notify) | Document review, member documents, guest lists, event calendar, approved guests | ✅ Complete |
+| [**MEMBER_PORTAL_GUIDE.md**](guides/MEMBER_PORTAL_GUIDE.md) | Members, applicants | All 8 portal pages: dashboard, reservations, profile, card, payment, rules, household, applicant/renewal | ✅ Complete |
 
 ---
 
 ## Quick Navigation
 
 ### For Board Members & GEA Leadership
-Start here for policies, decision documents, and board-facing information.
+Start here for policies and decision documents. For daily operations, see [BOARD_OPERATIONS_GUIDE.md](guides/BOARD_OPERATIONS_GUIDE.md) in Operational Guides.
 
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
@@ -30,10 +42,14 @@ Start here for policies, decision documents, and board-facing information.
 | [**GEA Development Standards**](development/DEVELOPMENT_STANDARDS.md) | Code quality, documentation, testing expectations, file organization, naming conventions, logging standards, code review checklist | Board (informational), developers | ✅ Complete (v1.0) |
 
 ### For Developers & Claude Code
-Implementation guides, workflows, and technical references.
+Technical references, implementation guides, and system architecture.
 
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
+| [**CLAUDE.md**](../CLAUDE.md) | Quick reference: system overview, critical design patterns, common tasks, architecture | Developers | ✅ Complete (Apr 25) |
+| [**SERVICE_MODULES.md**](SERVICE_MODULES.md) | Complete service module reference: Code.js, AuthService, MemberService, ReservationService, PaymentService, FileSubmissionService, EmailService, NotificationService, ApplicationService, RulesService, Utilities | Developers | ✅ Complete (Apr 25) |
+| [**frontend/PORTAL_INTERFACE.md**](frontend/PORTAL_INTERFACE.md) | Member portal interface (8 pages): dashboard, reservations, profile, card, payment, rules, myHousehold, applicant, renewal | Developers | ✅ Complete (Apr 25) |
+| [**frontend/ADMIN_INTERFACE.md**](frontend/ADMIN_INTERFACE.md) | Admin interface (19 pages): Core Operations (6), Member Management (6), Payments (2), Admin Accounts (1), RSO (4) | Developers | ✅ Complete (Apr 25) |
 | [**CLAUDE_Membership_Implementation.md**](implementation/CLAUDE_Membership_Implementation.md) | Coding guide for membership app & approval workflow | Developers | ✅ Complete (Phase 1) |
 | [**CLAUDE_Reservations_Implementation.md**](implementation/CLAUDE_Reservations_Implementation.md) | Coding guide for booking system, limits, waitlisting | Developers | ✅ Complete (Phase 1) |
 | [**CLAUDE_Payments_Implementation.md**](implementation/CLAUDE_Payments_Implementation.md) | Coding guide for payment tracking & verification | Developers | 📋 60% Ready (Phase 3) |
@@ -46,16 +62,16 @@ Implementation guides, workflows, and technical references.
 | [**GEA_System_Architecture.md**](implementation/GEA_System_Architecture.md) | Design patterns, request/response flow, modules | Developers | ✅ Complete (Phase 2) |
 | [**development/REPO_ORGANIZATION.md**](development/REPO_ORGANIZATION.md) | Repository folder structure, naming conventions, where to place new docs, files, and scripts | Developers | ✅ Current |
 
-### For New Members & Applicants
+### For Members & Applicants
 Public-facing information about joining, reserving facilities, and using the portal.
 
 | Document | Purpose | Audience | Status |
 |----------|---------|----------|--------|
-| [**Membership Application Guide**](guides/MEMBERSHIP_APPLICATION_GUIDE.md) | How to apply, eligibility, required documents by member type, payment instructions, FAQ | Applicants | ✅ Complete |
+| [**MEMBER_PORTAL_GUIDE.md**](guides/MEMBER_PORTAL_GUIDE.md) | Complete guide to all 8 portal pages: getting started, dashboard, reservations (booking & managing), profile, card, payment (dues & proof submission), rules, household management, applicant tracking, renewal | Members, applicants | ✅ Complete (Apr 25) |
+| [**MEMBERSHIP_APPLICATION_GUIDE.md**](guides/MEMBERSHIP_APPLICATION_GUIDE.md) | How to apply, eligibility, required documents by member type, payment instructions, FAQ | Applicants | ✅ Complete |
 | **Membership Categories FAQ** | Quick reference for member types & benefits | Members, applicants | 📋 Planned |
-| **Facility Reservation Guide** | How to book, rules, limits, cancellation | Members | 📋 Planned |
+| **Facility Reservation Guide** | Extracted from MEMBER_PORTAL_GUIDE (Reservations page) | Members | ✅ See MEMBER_PORTAL_GUIDE |
 | **Guest List Requirements** | Why required, deadlines, RSO process | Members | 📋 Planned |
-| **Member Portal Quick Start** | Login, features, photo upload, contact info | Members | 📋 Planned |
 
 ---
 
@@ -158,23 +174,27 @@ GEA Audit & Compliance Policy (BOARD)
 ## How to Use This Index
 
 ### If you're a Board Member:
-1. Read the relevant **GEA Policy** document for your area (Membership, Reservations, etc.)
-2. Reference the related quick-card or matrix documents as needed
-3. Consult **GEA Audit & Compliance Policy** and **GEA Data Management Policy** for federal compliance and data governance context
-4. Contact the GEA Treasurer or Development Lead for implementation details
+1. Start with **[BOARD_OPERATIONS_GUIDE.md](guides/BOARD_OPERATIONS_GUIDE.md)** for daily tasks and workflows
+2. Read relevant **GEA Policy** documents for policy context
+3. Reference **MEMBERSHIP_CATEGORIES_MATRIX**, **FACILITY_RULES_QUICK_CARD**, and **ROLES_PERMISSIONS_MATRIX** as needed
+4. Consult **GEA Audit & Compliance Policy** and **GEA Data Management Policy** for federal compliance and data governance
+
+### If you're an RSO Admin:
+1. Start with **[RSO_PORTAL_GUIDE.md](guides/RSO_PORTAL_GUIDE.md)** for document review, guest lists, and event coordination
+2. Reference **GEA Document Submission Policy** and **GEA Guest List Policy** for policy context
+3. Check **ROLES_PERMISSIONS_MATRIX** to understand rso_approve vs rso_notify permissions
+
+### If you're a Member:
+1. Start with **[MEMBER_PORTAL_GUIDE.md](guides/MEMBER_PORTAL_GUIDE.md)** for complete guide to all portal pages
+2. If applying: Read **MEMBERSHIP_APPLICATION_GUIDE.md** for application process
+3. For reservations: See **Reservations section** in MEMBER_PORTAL_GUIDE or **FACILITY_RULES_QUICK_CARD**
 
 ### If you're a Developer:
-1. Read the relevant **Policy** document to understand requirements
-2. Consult **GEA_System_Schema** for database structure
-3. Follow the **CLAUDE_Implementation** guide for your feature
-4. Reference supporting docs (Architecture, Security, Deployment) as needed
-5. Check **ROLES_PERMISSIONS_MATRIX** to understand access control
-
-### If you're a New Member:
-1. Start with the **Membership Application Guide**
-2. Review **Membership Categories FAQ** for your category benefits
-3. Check **Facility Reservation Guide** before booking
-4. Use **Member Portal Quick Start** for technical help
+1. Read **CLAUDE.md** for quick reference and critical design patterns
+2. Read **SERVICE_MODULES.md**, **PORTAL_INTERFACE.md**, and **ADMIN_INTERFACE.md** for system overview
+3. Consult **GEA_System_Schema.md** for database structure
+4. Follow **CLAUDE_Implementation** guides for your feature
+5. Reference **ROLES_PERMISSIONS_MATRIX** to understand access control
 
 ---
 
@@ -208,8 +228,9 @@ GEA Audit & Compliance Policy (BOARD)
 
 ## Document Maintenance
 
-**Last Reviewed:** March 24, 2026
-**Next Review:** June 24, 2026 (quarterly)
+**Last Reviewed:** April 25, 2026
+**Next Review:** July 25, 2026 (quarterly)
+**Recent Updates:** Added BOARD_OPERATIONS_GUIDE, RSO_PORTAL_GUIDE, MEMBER_PORTAL_GUIDE, SERVICE_MODULES, PORTAL_INTERFACE, ADMIN_INTERFACE
 
 ### Adding New Documents
 1. Add entry to appropriate section above

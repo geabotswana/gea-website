@@ -4661,11 +4661,41 @@ function submitPasswordReset(event) {
   }
 
   function cancelApplication() {
-    // Use native confirm for reliability during application
-    if (confirm('Cancel membership application? Any data you have entered will be lost.')) {
+    // Replace Cancel button with inline Yes/No confirmation (works in iframe)
+    var cancelBtn = document.querySelector('#eligibilityButtonContainer button:nth-child(2)');
+    if (!cancelBtn) return;
+
+    cancelBtn.style.display = 'none';
+    var confirmSpan = document.createElement('span');
+    confirmSpan.style.display = 'inline-flex';
+    confirmSpan.style.gap = '6px';
+    confirmSpan.style.alignItems = 'center';
+
+    var yesBtn = document.createElement('button');
+    yesBtn.type = 'button';
+    yesBtn.className = 'btn btn-danger';
+    yesBtn.textContent = 'Yes, Cancel Application';
+    yesBtn.style.flex = '1';
+
+    var noBtn = document.createElement('button');
+    noBtn.type = 'button';
+    noBtn.className = 'btn btn-secondary';
+    noBtn.textContent = 'No, Keep Applying';
+    noBtn.style.flex = '1';
+
+    noBtn.onclick = function() {
+      confirmSpan.remove();
+      cancelBtn.style.display = '';
+    };
+
+    yesBtn.onclick = function() {
       // Redirect to member.html (closes the application form)
       window.location.href = 'https://geabotswana.org/member.html';
-    }
+    };
+
+    confirmSpan.appendChild(yesBtn);
+    confirmSpan.appendChild(noBtn);
+    cancelBtn.parentNode.insertBefore(confirmSpan, cancelBtn.nextSibling);
   }
 
   function updateApplicationStep() {

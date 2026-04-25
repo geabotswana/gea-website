@@ -1024,6 +1024,21 @@
 
     #applicationFormScreen {
       display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-blue) 100%);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    #applicationFormScreen.show {
+      display: flex;
     }
 
     .step-item {
@@ -1468,8 +1483,8 @@
 <!-- Multi-step membership application form                        -->
 <!-- ============================================================ -->
 
-<div id="applicationFormScreen" style="display: none; padding: 40px 20px; min-height: 100vh; background: #F5F5F5;">
-  <div class="login-card" style="max-width: 600px;">
+<div id="applicationFormScreen">
+  <div class="login-card" style="max-width: 600px; width: 100%;">
     <div class="login-logo">
       <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
     </div>
@@ -4402,7 +4417,7 @@ function submitPasswordReset(event) {
     // Go to step 1 and show form
     currentApplicationStep = 1;
     document.getElementById('loginScreen').classList.remove('show');
-    document.getElementById('applicationFormScreen').style.display = 'block';
+    document.getElementById('applicationFormScreen').classList.add('show');
 
     // Populate country dropdowns
     populateCountryDropdown('appCountryCode');
@@ -4614,7 +4629,7 @@ function submitPasswordReset(event) {
 
   function showApplicationForm() {
     document.getElementById('loginScreen').classList.remove('show');
-    document.getElementById('applicationFormScreen').style.display = 'block';
+    document.getElementById('applicationFormScreen').classList.add('show');
     // Populate country dropdowns
     populateCountryDropdown('appCountryCode');
     populateCountryDropdown('appCitizenship');
@@ -4624,7 +4639,7 @@ function submitPasswordReset(event) {
   }
 
   function showLoginScreen() {
-    document.getElementById('applicationFormScreen').style.display = 'none';
+    document.getElementById('applicationFormScreen').classList.remove('show');
     document.getElementById('loginScreen').classList.add('show');
   }
 

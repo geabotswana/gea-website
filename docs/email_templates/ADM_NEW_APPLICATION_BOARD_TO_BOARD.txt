@@ -10,26 +10,12 @@ Application ID: {{APPLICATION_ID}}
 Submission Date: {{APPLICATION_DATE}}
 Board Review Deadline: {{BOARD_REVIEW_DEADLINE}}
 
-BOARD REVIEW PROCESS:
-1. Review applicant information and qualifications
-2. Assess against GEA membership policies
-3. Approve or deny the application
-4. Document your decision for audit purposes
-5. Communicate decision to applicant via email
+NEXT STEPS:
+The applicant has been notified and will now upload required documents
+to their portal. Once documents are submitted and verified, the board
+will receive a notification for formal review and approval.
 
-APPROVAL OPTIONS:
-- APPROVE: Applicant meets all requirements
-- DENY: Applicant does not meet requirements (specify reason)
-- REQUEST INFORMATION: Need clarification from applicant
-
-QUICK ACCESS:
-Log into the Board Admin Portal to review the application: www.geabotswana.org/admin
-
-TIMELINE:
-Please complete your review by {{BOARD_REVIEW_DEADLINE}}.
-
-NEXT STEPS AFTER BOARD APPROVAL:
-If approved, the application advances to RSO document review phase.
+This email is for your information. No action is required at this time.
 
 QUESTIONS?
 Contact board@geabotswana.org if you need assistance.

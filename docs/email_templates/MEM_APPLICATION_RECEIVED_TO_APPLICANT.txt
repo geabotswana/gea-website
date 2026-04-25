@@ -10,16 +10,18 @@ Submitted: {{SUBMITTED_DATE}}
 Status: Under Review
 
 WHAT HAPPENS NEXT:
-- Board review of your application
-- You'll receive a decision within 7-10 business days
-- Check your portal anytime for status updates: {{PORTAL_URL}}
-- You'll get email notifications at each stage
+Your application will go through a number of approval steps from
+submission to final membership activation.
 
-APPLICATION STAGES:
-1. Board Review (current stage)
-2. RSO Document Review
-3. Payment Verification
-4. Membership Activation
+The action in the FIRST stage is YOURS: Please log into the Applicant
+Portal and upload the required documents for your category and household
+type.
+
+Your next action after this is payment—we will send you a specific email
+when we reach that stage.
+
+Thank you again for your interest in the GEA. We look forward to welcoming
+you to our community!
 
 CHECK YOUR STATUS:
 Log into your member portal: {{PORTAL_URL}}

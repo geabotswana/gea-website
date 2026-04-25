@@ -141,6 +141,16 @@ function getDeploymentInfo() {
 }
 
 /**
+ * Helper: Check if a membership category requires a sponsor.
+ * Called from Portal.html to conditionally show sponsor fields.
+ * @param {string} category - Membership category name
+ * @returns {boolean} true if category requires sponsor
+ */
+function categoryRequiresSponsor(category) {
+  return CATEGORIES_REQUIRING_SPONSOR.indexOf(category) !== -1;
+}
+
+/**
  * Called from Portal.html via google.script.run to avoid CORS issues.
  * @param {string} action - The API action
  * @param {Object} params - Request parameters

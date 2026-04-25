@@ -4805,6 +4805,13 @@ function submitPasswordReset(event) {
     document.getElementById('departureDateContainer').style.display = 'none';
     document.getElementById('sponsorInStep2Container').style.display = 'none';
 
+    // Check if this category requires sponsor (read from Config.js server-side)
+    google.script.run.withSuccessHandler(function(requiresSponsor) {
+      if (requiresSponsor && document.getElementById('sponsorInStep2Container')) {
+        document.getElementById('sponsorInStep2Container').style.display = 'block';
+      }
+    }).categoryRequiresSponsor(category);
+
     // Show fields based on category
     switch(category) {
       case 'Full':
@@ -4847,9 +4854,9 @@ function submitPasswordReset(event) {
 
       case 'Community':
         // Community: Custom employer, job title, and sponsor info (in Step 2)
+        // Note: Sponsor display is now controlled by Config.js via categoryRequiresSponsor()
         document.getElementById('employerFieldContainer').style.display = 'block';
         document.getElementById('jobTitleContainer').style.display = 'block';
-        document.getElementById('sponsorInStep2Container').style.display = 'block';
         break;
     }
   }
@@ -4993,12 +5000,24 @@ function submitPasswordReset(event) {
             break;
 
           case 'Community':
-            // Community needs custom employer, job title, and sponsor name
+            // Community needs custom employer, job title, and sponsor name (if sponsor required per Config)
             var employer = document.getElementById('appEmploymentOffice').value.trim();
             var jobTitle = document.getElementById('appJobTitle').value.trim();
-            var sponsorName = document.getElementById('appCommunitySponsornName').value.trim();
-            if (!employer || !jobTitle || !sponsorName) {
-              errorDiv.textContent = 'Please fill in all required fields (Employer, Job Title, and Sponsor Name are required).';
+            var sponsorContainer = document.getElementById('sponsorInStep2Container');
+            var sponsorName = '';
+
+            if (sponsorContainer && sponsorContainer.style.display !== 'none') {
+              sponsorName = document.getElementById('appCommunitySponsornName').value.trim();
+            }
+
+            if (!employer || !jobTitle) {
+              errorDiv.textContent = 'Please fill in all required fields (Employer and Job Title are required).';
+              errorDiv.style.display = 'block';
+              return false;
+            }
+
+            if (sponsorContainer && sponsorContainer.style.display !== 'none' && !sponsorName) {
+              errorDiv.textContent = 'Please fill in Sponsor Name (required for this membership category).';
               errorDiv.style.display = 'block';
               return false;
             }
@@ -5115,9 +5134,11 @@ function submitPasswordReset(event) {
         }
         break;
       case 3:
-        // Only collect sponsor info here if not Community (Community collects in Step 2)
-        if (applicationFormData.membership_category !== 'Community') {
-          applicationFormData.sponsor_name = capitalizeName(document.getElementById('appSponsorName').value);
+        // Collect sponsor info only if category requires sponsor and field is not from Step 2
+        // Note: Step 3 is currently skipped for all categories, so this may not execute
+        var sponsorField = document.getElementById('appSponsorName');
+        if (sponsorField && sponsorField.style.display !== 'none') {
+          applicationFormData.sponsor_name = capitalizeName(sponsorField.value);
           applicationFormData.sponsor_email = document.getElementById('appSponsorEmail').value;
         }
         break;

@@ -68,6 +68,16 @@ function createApplicationRecord(formData, createdBy) {
       return { success: false, message: "An account with this email already exists." };
     }
 
+    // Validate sponsor if required by category
+    if (CATEGORIES_REQUIRING_SPONSOR.indexOf(formData.membership_category) !== -1) {
+      if (!formData.sponsor_name || !formData.sponsor_email) {
+        return { success: false, message: "Sponsor name and email are required for " + formData.membership_category + " members." };
+      }
+      if (!isValidEmail(formData.sponsor_email)) {
+        return { success: false, message: "Invalid sponsor email address." };
+      }
+    }
+
     // Generate application_id
     var applicationId = generateId("APP");
 

@@ -241,12 +241,10 @@ var RELATIONSHIP_CHILD    = "Child";
 var RELATIONSHIP_STAFF    = "Staff";
 
 // Membership categories that require a sponsor
+// Only Community members require a sponsor (Full, Associate, Affiliate,
+// Diplomatic, and Temporary members do NOT)
 // Sponsors must be PAID Full members (full_indiv or full_family)
-// Temporary members do NOT require a sponsor
 var CATEGORIES_REQUIRING_SPONSOR = [
-  CATEGORY_AFFILIATE,
-  CATEGORY_ASSOCIATE,
-  CATEGORY_DIPLOMATIC,
   CATEGORY_COMMUNITY
 ];
 

@@ -1,5 +1,7 @@
 # GEA Payment Implementation & Verification Guide
 
+**Last Updated:** March 2026
+
 Payment processing, verification, tracking, member portal, and membership activation workflow for the GEA system.
 
 ---

@@ -1,5 +1,6 @@
 # **GEA SECURITY & PRIVACY POLICY**
 Gaborone Employee Association
+**Last Updated:** March 3, 2026
 Effective: March 3, 2026
 ## 1. Purpose
 This policy establishes GEA's security and privacy standards to protect member data, system integrity, and operational continuity. The policy covers data protection, access control, password requirements, incident response, and member privacy rights.

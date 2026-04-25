@@ -1,68 +1,126 @@
 # Deployment & Release Management Implementation Guide
 
-Development workflow, testing procedures, deployment strategies, and troubleshooting for the GEA system.
+**Last Updated:** April 25, 2026
+
+Automated deployment workflow via GitHub Actions, testing procedures, and production management for the GEA system.
 
 ---
 
-## Common Development Tasks
+## Automated Deployment Workflow (GitHub Actions)
 
-### Deploy Code Changes
+### Overview
 
+All code pushes to `main` trigger an **automated two-stage deployment**:
+
+1. **Stage 1: Metadata Update** (`.github/workflows/update-deployment-metadata.yml`)
+   - Triggered: When you push to main
+   - Updates: Version number, timestamp, deployment metadata
+   - Duration: ~2-5 minutes
+   - Output: Creates new Git commit with metadata updates
+
+2. **Stage 2: GAS Deployment** (`.github/workflows/deploy.yml`)
+   - Triggered: Automatically after Stage 1 completes
+   - Pushes: All .js, .html files to Google Apps Script
+   - Updates: Versioned production deployment (not @HEAD)
+   - Duration: ~1-2 minutes
+   - Result: New version available immediately; production URL unchanged
+
+**Key Benefit:** No manual deployment commands needed. Just commit and push.
+
+### Common Development Tasks
+
+**Deploy Code Changes:**
 ```bash
-clasp push                    # Push all code changes to @HEAD
+git add .
+git commit -m "Description of changes"
+git push -u origin main
+# GitHub Actions runs automatically → Metadata update → GAS deployment
 ```
 
-**Important:** HTML files (Portal.html, Admin.html) deploy as @HEAD and take effect immediately. JavaScript changes require `clasp push`.
-
-### Run Tests & Diagnostics
-
+**Run Tests & Diagnostics:**
 ```
 # In Google Apps Script editor:
 1. Functions tab → Select function name → Run
-2. View results in Logs or Stack Trace
+2. View results in Logs or Cloud Logs
 
 Key test functions:
 - testGetMembers() → List all members from Individuals sheet
 - runDiagnostics() → Check spreadsheet connections and API endpoints
-- Tests.js has 10+ utility test functions
+- Tests.js has 50+ utility test functions
 ```
 
-### Check Logs
+**Check Logs:**
+```
+# Option 1: Google Apps Script editor (slower)
+- Editor → Execution Log → View recent runs
 
-```bash
-clasp logs  # View console.log() output from recent executions
+# Option 2: Cloud Logs (faster, more detailed)
+- Cloud Console → Cloud Logging → Logs Explorer
+- Filter: resource.type="app_script" AND resource.labels.script_id="[SCRIPT_ID]"
 ```
 
 ---
 
 ## Development & Testing Workflow
 
-### Push to @HEAD (Testing)
-
-```bash
-clasp push                    # Updates Code.js, services, Config.js, HTML files to @HEAD
-```
-
-**Behavior:**
-- @HEAD deployment updates immediately with all changes
-- Used for development, testing, and QA
-- Portal/Admin accessible via @HEAD URL for testing
-- Changes visible within 30-60 seconds
-
-**Testing Process:**
-1. Make local code changes
-2. Run `clasp push`
-3. Test via @HEAD URL: `https://script.google.com/a/macros/geabotswana.org/s/{@HEAD_DEPLOYMENT_ID}/exec`
-4. Review Google Apps Script editor logs: `clasp logs`
-5. Fix any issues and repeat
-
-### Versioned Deployment (Production)
+### Local Development → Testing
 
 ```
-Created manually when code is ready for production
-Website uses a specific versioned deployment ID (not @HEAD)
-Manual deployment via Google Apps Script editor or `clasp deployments`
-Version info recorded in Config.js header for tracking
+1. Create feature branch from main:
+   git checkout -b feature/your-feature-name
+
+2. Make code changes locally
+   - Edit .js or .html files in your editor
+   - Test logic locally if possible
+
+3. Commit changes:
+   git add .
+   git commit -m "Feature: description of what changed"
+   git push -u origin feature/your-feature-name
+
+4. Test on @HEAD deployment (optional, for manual testing):
+   - Code NOT yet in @HEAD (only on your branch)
+   - Can manually push if needed: git checkout main && git pull
+```
+
+### From Feature Branch → Production
+
+```
+1. Create Pull Request on GitHub
+   - Base: main
+   - Compare: your feature branch
+   - Add description of changes
+
+2. Code Review (if required by board)
+   - Reviewers approve/request changes
+   - Address feedback and push new commits
+
+3. Merge to main
+   - GitHub automatically triggers Stage 1 (metadata update)
+   - After Stage 1 completes, Stage 2 (GAS deployment) starts
+   - New version deployed within 5-10 minutes
+
+4. Verify production
+   - Test at: https://geabotswana.org/member.html
+   - Check error logs in Cloud Logging
+```
+
+### Version Numbering
+
+```
+Format: Major.Minor.Patch (e.g., v1.0.0, v1.1.0, v2.5.3)
+
+- Major: Breaking changes (API changes, schema migrations, significant refactors)
+- Minor: New features, enhancements (without breaking existing functionality)
+- Patch: Bug fixes, minor updates, documentation
+
+Examples:
+- v1.0.0 → Initial production release
+- v1.1.0 → Added membership application workflow
+- v1.1.1 → Fixed reservation approval email bug
+- v2.0.0 → Major refactor of authentication system (breaking changes)
+
+Auto-Incremented By: `update-deployment-metadata.yml` workflow (default: patch version)
 ```
 
 ---
@@ -73,19 +131,21 @@ Version info recorded in Config.js header for tracking
 
 **Script ID:** `1mkzpnNfUm-ZTW-G6wEdGg4Jt1KiChOXrV5qjBNkm3eqx43Yn-7Z-2Ffv`
 
-### Deployments
+**Project Name:** GEA Management System
 
-**@HEAD (Testing):**
-- ID: `AKfycbxMFqbzFg-X-GDOpvllmnXNOY0Zw-WzHnn05PKDR4pYe0ULZ_qX8deWKIbO45AZBz6-`
-- Used for development & testing
-- Updates immediately with each `clasp push`
-- Accessible at: `https://script.google.com/a/macros/geabotswana.org/s/{@HEAD_DEPLOYMENT_ID}/exec`
+### Active Deployments
 
-**Versioned Deployment (Production):**
+**Production (Versioned):**
 - ID: `AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ`
-- Used on geabotswana.org website
-- Does NOT update automatically; updates only on manual deployment
-- Update frequency: Create new versioned deployment when Phase 1/2/3 features are production-ready
+- Used on geabotswana.org (both Portal and Admin)
+- Updates automatically via GitHub Actions deployment
+- Current version: Check `.claspignore` or GitHub Actions workflow logs
+- Accessible at: `https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec`
+
+**@HEAD Deployment:**
+- ID: Auto-managed by Google Apps Script
+- Used for development/testing if needed
+- No longer primary deployment path (GitHub Actions handles versioned deployment)
 
 ---
 
@@ -117,54 +177,59 @@ Admin:  Same URL with ?action=serve_admin
 
 ---
 
-## Deployment Process
+## Automated Deployment Process
 
-### When Ready for Production
+### When Ready for Production (Automated)
 
 ```
-1. Test all changes thoroughly on @HEAD
+1. Ensure all changes are tested locally and in feature branch
    ├─ Run full test suite: Tests.js → runDiagnostics()
    ├─ Test critical flows: login, reservation, application
-   ├─ Verify nightly tasks run successfully
-   ├─ Check error logs: clasp logs | grep ERROR
-   └─ Get board approval for major changes
+   ├─ Verify no console errors in Cloud Logs
 
-2. Create new versioned deployment via Google Apps Script editor:
-   ├─ Editor → Deploy → New deployment
-   ├─ Select type "Web app"
-   ├─ Record deployment ID
-   └─ Update Config.js with new deployment ID
+2. Create Pull Request to main
+   ├─ Push your feature branch to GitHub
+   ├─ Open PR with description of changes
+   ├─ Request review if required
 
-3. Update website (geabotswana.org) with new deployment URL
-   ├─ Edit member.html iframe src=...
-   ├─ Test member portal link from website
-   ├─ Verify login works via geabotswana.org/member.html
+3. Merge to main (manual or auto-merge when approved)
+   ├─ GitHub actions automatically trigger:
+   │  ├─ update-deployment-metadata.yml (update version, timestamp)
+   │  └─ deploy.yml (push to GAS, create/update versioned deployment)
+   └─ Both complete within 5-10 minutes
 
-4. Update Config.js with version number & deployment ID
-   ├─ Version format: v1.0.0, v1.1.0 (Major.Minor.Patch)
-   ├─ Add deployment date comment
-   └─ Example: // v1.1.0 - March 4, 2026 - [DEPLOYMENT_ID]
+4. Verify production deployment
+   ├─ Check Cloud Logs for deployment errors
+   ├─ Test Portal at https://geabotswana.org/member.html
+   ├─ Test Admin at https://geabotswana.org/member.html?action=serve_admin
+   └─ Verify login and critical flows work
 
-5. Commit to GitHub with deployment notes
-   ├─ Message: "Deploy v1.1.0 to production - [DEPLOYMENT_ID]"
-   ├─ Include changes summary
-   └─ Tag release: git tag v1.1.0 && git push --tags
+5. Monitor after deployment
+   ├─ Watch Cloud Logs for errors
+   ├─ Check nightly tasks run successfully (2:00 AM GMT+2)
+   ├─ Monitor email delivery (notifications, approvals)
+   └─ Resolve any issues found
 ```
 
-### Version Numbering
+### Version Numbering (Auto-Managed)
 
 ```
-Format: Major.Minor.Patch (e.g., v1.0.0, v1.1.0)
+Format: Major.Minor.Patch (e.g., v2.5.3)
 
-- Major: Breaking changes (API changes, schema migrations)
-- Minor: New features, enhancements (without breaking existing)
-- Patch: Bug fixes, minor updates
+- Major: Breaking changes (API changes, schema migrations, significant refactors)
+- Minor: New features, enhancements (without breaking existing functionality)
+- Patch: Bug fixes, minor updates, documentation
+
+Version Increment Logic (update-deployment-metadata.yml):
+- Default: Increment patch version (v1.0.0 → v1.0.1)
+- To change increment: Include [minor] or [major] in commit message
+  Example: "feat: add new RSO feature [minor]" → v1.1.0
 
 Examples:
 - v1.0.0 → Initial production release
-- v1.1.0 → Added membership application workflow
-- v1.1.1 → Fixed reservation approval email bug
 - v2.0.0 → Major refactor of authentication system
+- v2.1.0 → Added membership application workflow
+- v2.1.1 → Fixed reservation approval email bug
 ```
 
 ---

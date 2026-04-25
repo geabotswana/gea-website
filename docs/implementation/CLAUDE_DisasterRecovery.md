@@ -1,5 +1,7 @@
 # Disaster Recovery Implementation Guide
 
+**Last Updated:** March 2026
+
 Backup procedures, recovery testing, incident response, and restoration playbooks for the GEA system.
 
 ---

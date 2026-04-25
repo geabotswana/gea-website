@@ -1,5 +1,6 @@
 # **GEA DATA MANAGEMENT POLICY**
 Gaborone Employee Association
+**Last Updated:** March 3, 2026
 Effective: March 3, 2026
 ## 1. Purpose
 This policy establishes what data GEA collects, how it is organized, who can access it, how it is protected, and how long it is retained. The policy ensures member privacy, data security, and compliance with applicable privacy regulations and federal guidelines (6 FAM 500-546).

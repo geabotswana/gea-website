@@ -1,5 +1,7 @@
 # Membership Application Workflow Implementation Guide
 
+**Last Updated:** March 2026
+
 Complete implementation guide for the membership application system, including 11-step lifecycle, category eligibility, approval workflows, and payment verification.
 
 ---

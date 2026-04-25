@@ -1,5 +1,6 @@
 # **GEA GUEST LIST POLICY**
 Gaborone Employee Association
+**Last Updated:** March 3, 2026
 Effective: March 3, 2026
 ## 1. Purpose
 This policy establishes requirements for GEA members hosting non-member guests at GEA facilities. Guest lists are required for Embassy security screening and RSO coordination. Clear identification standards ensure that guests can be properly acknowledged and that Embassy security protocols are met.

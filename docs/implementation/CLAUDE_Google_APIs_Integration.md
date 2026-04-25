@@ -1,5 +1,7 @@
 # Google APIs Integration Implementation Guide
 
+**Last Updated:** March 2026
+
 Comprehensive guide for integrating Google Sheets, Drive, Calendar, and Cloud Storage APIs in Apps Script.
 
 ---

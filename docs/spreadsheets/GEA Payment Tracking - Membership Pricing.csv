@@ -1,0 +1,23 @@
+membership_year,membership_level_id,annual_dues_usd,active_for_payment,notes
+2025-2026,full_indiv,50,TRUE,Reduced from higher amounts to restart the association
+2025-2026,full_family,100,TRUE,Reduced from higher amounts to restart the association
+2025-2026,affiliate_indiv,50,TRUE,Reduced from higher amounts to restart the association
+2025-2026,affiliate_family,100,TRUE,Reduced from higher amounts to restart the association
+2025-2026,associate_indiv,50,TRUE,Reduced from higher amounts to restart the association
+2025-2026,associate_family,100,TRUE,Reduced from higher amounts to restart the association
+2025-2026,diplomatic_indiv,75,TRUE,Reduced from higher amounts to restart the association
+2025-2026,diplomatic_family,150,TRUE,Reduced from higher amounts to restart the association
+2025-2026,community_indiv,75,TRUE,Reduced from higher amounts to restart the association
+2025-2026,community_family,150,TRUE,Reduced from higher amounts to restart the association
+2025-2026,temporary,20,TRUE,Reduced from higher amounts to restart the association
+2026-2027,full_indiv,50,FALSE,
+2026-2027,full_family,100,FALSE,
+2026-2027,affiliate_indiv,50,FALSE,
+2026-2027,affiliate_family,100,FALSE,
+2026-2027,associate_indiv,50,FALSE,
+2026-2027,associate_family,100,FALSE,
+2026-2027,diplomatic_indiv,75,FALSE,
+2026-2027,diplomatic_family,150,FALSE,
+2026-2027,community_indiv,75,FALSE,
+2026-2027,community_family,150,FALSE,
+2026-2027,temporary,20,FALSE,

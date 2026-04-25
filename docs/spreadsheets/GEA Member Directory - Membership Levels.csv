@@ -1,0 +1,12 @@
+level_id,level_name,membership_category,household_type,annual_dues_usd,voting_rights,office_eligible,max_duration_months,eligibility_criteria,active,annual_dues_bwp,monthly_dues_usd,monthly_dues_bwp
+full_indiv,Full Membership - Individual,Full,Individual,0,TRUE,TRUE,,US citizens & resident aliens who are USG employees assigned to Gaborone,TRUE,700,,
+full_family,Full Membership - Family,Full,Family,0,TRUE,TRUE,,US citizens & resident aliens who are USG employees + eligible family (spouse and children) assigned to Gaborone,TRUE,1400,,
+affiliate_indiv,Affiliate Membership - Individual,Affiliate,Individual,0,FALSE,FALSE,,Host country national embassy employees & third country nationals recruited locally by USG agencies,TRUE,700,,
+affiliate_family,Affiliate Membership - Family,Affiliate,Family,0,FALSE,FALSE,,Host country national embassy employees & third country nationals recruited locally by USG agencies,TRUE,1400,,
+associate_indiv,Associate Membership - Individual,Associate,Individual,0,FALSE,FALSE,,US citizens/resident aliens employed by US-funded contractors; Third country nationals recruited from outside Botswana for USG employment; US citizens implementing US federally funded programs,TRUE,700,,
+associate_family,Associate Membership - Family,Associate,Family,0,FALSE,FALSE,,US citizens/resident aliens employed by US-funded contractors; Third country nationals recruited from outside Botswana for USG employment; US citizens implementing US federally funded programs,TRUE,1400,,
+diplomatic_indiv,Diplomatic Membership - Individual,Diplomatic,Individual,0,FALSE,FALSE,,"Members of other diplomatic communities & international organizations in Botswana, must have diplomatic passport",TRUE,1000,,
+diplomatic_family,Diplomatic Membership - Family,Diplomatic,Family,0,FALSE,FALSE,,"Members of other diplomatic communities & international organizations in Botswana, must have diplomatic passport",TRUE,2100,,
+community_indiv,Community (Guest) Membership - Individual,Community,Individual,0,FALSE,FALSE,,"Local nationals, third country nationals, other non-USG personnel, and infrequent visitors",TRUE,1000,,
+community_family,Community (Guest) Membership - Family,Community,Family,0,FALSE,FALSE,,"Local nationals, third country nationals, other non-USG personnel, and infrequent visitors",TRUE,2100,,
+temporary,Temporary Membership,Temporary,Individual,0,FALSE,FALSE,6,US citizens who are USG employees on temporary duty or official visitors - Limited to 6 months maximum,TRUE,175,,

@@ -1054,12 +1054,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.15";
+var SYSTEM_VERSION          = "2.5.16";
 var SYSTEM_BUILD_DATE       = "2026-04-25";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "feat: Add question-aware Back button navigation to eligibility Q# pages";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-25 14:01:27";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "fix: Remove Next button from Q# pages and simplify Cancel dialog";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-25 14:09:44";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -25,7 +25,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-<<<<<<< HEAD
       - name: Upload to Apps Script & Update Production Deployment
         env:
           SERVICE_ACCOUNT_JSON: ${{ secrets.GAS_SERVICE_ACCOUNT_KEY }}

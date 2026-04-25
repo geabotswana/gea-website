@@ -65,7 +65,7 @@ function uploadFileSubmission(params) {
       file_name: params.file_name,
       file_size_bytes: sizeBytes,
       file_content_type: contentType,
-      submitted_date: new Date(),
+      submitted_date: formatDate(new Date(), true),
       upload_device_type: params.upload_device_type || "unknown",
       user_email: params.user_email || "",
       is_current: true,
@@ -180,7 +180,7 @@ function generateRsoApprovalLink(submission_id) {
     _setSubmissionFields_(found, {
       rso_approval_link_token: token,
       rso_approval_link_expires_at: expiresAt,
-      rso_approval_link_sent_date: new Date()
+      rso_approval_link_sent_date: formatDate(new Date(), true)
     });
 
     var baseUrl = ScriptApp.getService().getUrl();
@@ -278,7 +278,7 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
         document_type: "employment",
         status: "requested",
         requested_by_admin: true,
-        request_date: new Date(),
+        request_date: formatDate(new Date(), true),
         request_reason: request_reason || "Employment verification requested",
         household_id: household_id,
         is_current: true
@@ -488,7 +488,7 @@ function checkDocumentExpirationWarnings() {
         // Mark as sent
         var found = _findSubmissionById_(s.submission_id);
         if (found) {
-          _setSubmissionFields_(found, { expiration_warning_6m_sent_date: new Date() });
+          _setSubmissionFields_(found, { expiration_warning_6m_sent_date: formatDate(new Date(), true) });
         }
         warningsSent++;
       }
@@ -508,7 +508,7 @@ function checkDocumentExpirationWarnings() {
         // Mark as sent
         var found2 = _findSubmissionById_(s.submission_id);
         if (found2) {
-          _setSubmissionFields_(found2, { expiration_warning_1m_sent_date: new Date() });
+          _setSubmissionFields_(found2, { expiration_warning_1m_sent_date: formatDate(new Date(), true) });
         }
         warningsSent++;
       }
@@ -555,10 +555,10 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
     var patchObj = {
       status: newStatus,
       gea_reviewed_by: userEmail,
-      gea_review_date: new Date(),
+      gea_review_date: formatDate(new Date(), true),
       member_facing_rejection_reason: approved ? "" : rejectionReason,
       is_current: approved ? true : false,
-      disabled_date: approved ? "" : new Date()
+      disabled_date: approved ? "" : formatDate(new Date(), true)
     };
 
     // When document is approved, blank out expiration warning dates so new document is tracked
@@ -1164,7 +1164,7 @@ function approveRsoMemberDocument(submission_id, rso_email) {
     var patchObj = {
       status: "verified",
       rso_reviewed_by: rso_email,
-      rso_review_date: new Date(),
+      rso_review_date: formatDate(new Date(), true),
       is_current: true,
       expiration_warning_6m_sent_date: "",
       expiration_warning_1m_sent_date: ""
@@ -1220,10 +1220,10 @@ function rejectRsoMemberDocument(submission_id, rso_rejection_reason, rso_email)
     var patchObj = {
       status: "rso_rejected",
       rso_reviewed_by: rso_email,
-      rso_review_date: new Date(),
+      rso_review_date: formatDate(new Date(), true),
       member_facing_rejection_reason: rso_rejection_reason,
       is_current: false,
-      disabled_date: new Date()
+      disabled_date: formatDate(new Date(), true)
     };
 
     _setSubmissionFields_(found, patchObj);
@@ -1276,7 +1276,7 @@ function sendBoardDocumentRejectionResponse(submission_id, board_rejection_messa
       status: "board_rejected_member_notified",
       board_rejection_message: board_rejection_message,
       board_notified_by: board_email,
-      board_notification_date: new Date()
+      board_notification_date: formatDate(new Date(), true)
     };
 
     _setSubmissionFields_(found, patchObj);

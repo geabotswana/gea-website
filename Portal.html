@@ -1592,6 +1592,7 @@
       </div>
 
       <div style="margin-top: 24px; display: flex; gap: 10px;" id="eligibilityButtonContainer">
+        <button type="button" class="btn btn-secondary" id="questionBackBtn" onclick="navigateToPreviousQuestion();" style="flex: 1; display: none;">Back</button>
         <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
         <button type="button" class="btn btn-primary" id="appStep1NextBtn" onclick="nextApplicationStep();" style="flex: 1; display: none;">Next</button>
       </div>
@@ -4647,7 +4648,12 @@ function submitPasswordReset(event) {
     populateCountryDropdown('appCitizenship');
     populateCountryDropdown('appStaffCitizenship');
     currentApplicationStep = 1;
+    // Reset question navigation state
+    lastAnsweredQuestion = null;
+    questionAnswerHistory = { 'Q1': null, 'Q1b': null, 'Q2': null, 'Q3': null, 'Q4': null };
     updateApplicationStep();
+    // Set initial button state for Q1
+    updateQuestionButtonVisibility('Q1');
   }
 
   function showLoginScreen() {
@@ -4698,11 +4704,20 @@ function submitPasswordReset(event) {
         document.getElementById('eligibilityButtonContainer').style.display = 'none';
         document.getElementById('householdTypeButtonContainer').style.display = 'flex';
       } else {
-        // Show eligibility questions
+        // Show eligibility questions (Q1 first)
         document.getElementById('categoryDisplayContainer').style.display = 'none';
         document.getElementById('householdTypeContainer').style.display = 'none';
+        // Hide all questions first
+        document.getElementById('questionQ1Container').style.display = 'none';
+        document.getElementById('questionQ1bContainer').style.display = 'none';
+        document.getElementById('questionQ2Container').style.display = 'none';
+        document.getElementById('questionQ3Container').style.display = 'none';
+        document.getElementById('questionQ4Container').style.display = 'none';
+        // Show Q1
+        document.getElementById('questionQ1Container').style.display = 'block';
         document.getElementById('eligibilityButtonContainer').style.display = 'flex';
         document.getElementById('householdTypeButtonContainer').style.display = 'none';
+        updateQuestionButtonVisibility('Q1');
       }
     }
 
@@ -4785,14 +4800,17 @@ function submitPasswordReset(event) {
 
   function handleQ1Answer(isYes) {
     lastAnsweredQuestion = 'Q1';
+    questionAnswerHistory['Q1'] = isYes;
     if (isYes) {
       // Q1=YES: Show Q1b (temporary duty question)
       document.getElementById('questionQ1Container').style.display = 'none';
       document.getElementById('questionQ1bContainer').style.display = 'block';
+      updateQuestionButtonVisibility('Q1b');
     } else {
       // Q1=NO: Show Q2 (embassy staff from outside / USG contractor)
       document.getElementById('questionQ1Container').style.display = 'none';
       document.getElementById('questionQ2Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q2');
     }
   }
 
@@ -4807,8 +4825,18 @@ function submitPasswordReset(event) {
     }
   }
 
+  // Store the previous answer for each question to allow backward navigation
+  var questionAnswerHistory = {
+    'Q1': null,  // true = went to Q1b, false = went to Q2
+    'Q1b': null,
+    'Q2': null,  // true = went to Q3, false = went to category assignment
+    'Q3': null,  // true = went to Q4, false = went to category assignment
+    'Q4': null
+  };
+
   function handleQ2Answer(isYes) {
     lastAnsweredQuestion = 'Q2';
+    questionAnswerHistory['Q2'] = isYes;
     if (isYes) {
       // Q2=YES: ASSOCIATE MEMBERSHIP
       assignMembershipCategory('Associate');
@@ -4816,11 +4844,13 @@ function submitPasswordReset(event) {
       // Q2=NO: Show Q3 (embassy local hire)
       document.getElementById('questionQ2Container').style.display = 'none';
       document.getElementById('questionQ3Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q3');
     }
   }
 
   function handleQ3Answer(isYes) {
     lastAnsweredQuestion = 'Q3';
+    questionAnswerHistory['Q3'] = isYes;
     if (isYes) {
       // Q3=YES: AFFILIATE MEMBERSHIP
       assignMembershipCategory('Affiliate');
@@ -4828,17 +4858,71 @@ function submitPasswordReset(event) {
       // Q3=NO: Show Q4 (diplomat)
       document.getElementById('questionQ3Container').style.display = 'none';
       document.getElementById('questionQ4Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q4');
     }
   }
 
   function handleQ4Answer(isYes) {
     lastAnsweredQuestion = 'Q4';
+    questionAnswerHistory['Q4'] = isYes;
     if (isYes) {
       // Q4=YES: DIPLOMATIC MEMBERSHIP
       assignMembershipCategory('Diplomatic');
     } else {
       // Q4=NO: COMMUNITY MEMBERSHIP
       assignMembershipCategory('Community');
+    }
+  }
+
+  /**
+   * Update button visibility based on which question is being displayed
+   * Q1: Show Cancel + Next (no Back button)
+   * Q1b, Q2, Q3, Q4: Show Back + Cancel + Next
+   */
+  function updateQuestionButtonVisibility(currentQuestion) {
+    var backBtn = document.getElementById('questionBackBtn');
+    var nextBtn = document.getElementById('appStep1NextBtn');
+
+    // Q1 has no back button since there's nowhere to go back to
+    if (currentQuestion === 'Q1') {
+      backBtn.style.display = 'none';
+      nextBtn.style.display = 'flex';
+    } else {
+      // Q1b, Q2, Q3, Q4 all have back buttons
+      backBtn.style.display = 'flex';
+      nextBtn.style.display = 'flex';
+    }
+  }
+
+  /**
+   * Navigate to the previous question based on answer history
+   */
+  function navigateToPreviousQuestion() {
+    // Determine which question is currently showing and go back
+    if (document.getElementById('questionQ4Container').style.display === 'block') {
+      // On Q4, go back to Q3
+      document.getElementById('questionQ4Container').style.display = 'none';
+      document.getElementById('questionQ3Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q3');
+      lastAnsweredQuestion = 'Q3';
+    } else if (document.getElementById('questionQ3Container').style.display === 'block') {
+      // On Q3, go back to Q2
+      document.getElementById('questionQ3Container').style.display = 'none';
+      document.getElementById('questionQ2Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q2');
+      lastAnsweredQuestion = 'Q2';
+    } else if (document.getElementById('questionQ2Container').style.display === 'block') {
+      // On Q2, go back to Q1 (always, because Q1=NO led to Q2)
+      document.getElementById('questionQ2Container').style.display = 'none';
+      document.getElementById('questionQ1Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q1');
+      lastAnsweredQuestion = 'Q1';
+    } else if (document.getElementById('questionQ1bContainer').style.display === 'block') {
+      // On Q1b, go back to Q1 (always, because Q1=YES led to Q1b)
+      document.getElementById('questionQ1bContainer').style.display = 'none';
+      document.getElementById('questionQ1Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q1');
+      lastAnsweredQuestion = 'Q1';
     }
   }
 
@@ -4854,18 +4938,23 @@ function submitPasswordReset(event) {
     applicationFormData.membership_category = null;
     applicationFormData.household_type = null;
 
-    // Show the last answered question
+    // Show the last answered question and set button visibility
     if (lastAnsweredQuestion === 'Q1b') {
       document.getElementById('questionQ1bContainer').style.display = 'block';
+      updateQuestionButtonVisibility('Q1b');
     } else if (lastAnsweredQuestion === 'Q2') {
       document.getElementById('questionQ2Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q2');
     } else if (lastAnsweredQuestion === 'Q3') {
       document.getElementById('questionQ3Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q3');
     } else if (lastAnsweredQuestion === 'Q4') {
       document.getElementById('questionQ4Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q4');
     } else {
       // Default to Q1
       document.getElementById('questionQ1Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q1');
     }
   }
 

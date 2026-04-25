@@ -2796,6 +2796,13 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
+    // Fetch document upload configuration from Config.js at page load
+    // Single source of truth: APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES
+    google.script.run.withSuccessHandler(function(config) {
+      APPLICANT_UPLOAD_TYPES = config.applicant || {};
+      FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
+    }).getApplicantUploadConfiguration();
+
     // Check for password reset token in URL.
     // When loaded via member.html wrapper, GAS requires action=serve to serve this
     // page, so the wrapper passes reset params as portal_action + token instead.
@@ -4065,19 +4072,11 @@ function submitPasswordReset(event) {
     };
   }
 
-  // Document upload types by membership category (mirrors Config.js)
-  // Applicant-specific: what documents the applicant can/must upload
-  var APPLICANT_UPLOAD_TYPES = {
-    'Full': ['Passport'],
-    'Associate': ['Passport', 'Funding Verification'],
-    'Affiliate': ['Passport', 'Omang'],
-    'Diplomatic': ['Passport', 'Diplomatic Accreditation'],
-    'Community': ['Passport', 'Omang'],
-    'Temporary': ['Passport']
-  };
-
-  // Family members and household staff can always upload either ID type
-  var FAMILY_STAFF_UPLOAD_TYPES = ['Passport', 'Omang'];
+  // Document upload types by membership category
+  // Populated at page load from Config.js via getApplicantUploadConfiguration()
+  // Single source of truth: Config.js (APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES)
+  var APPLICANT_UPLOAD_TYPES = {};      // Applicant-specific document restrictions by category
+  var FAMILY_STAFF_UPLOAD_TYPES = [];   // Documents available for family members and staff
 
   var applicationFormData = {
     membership_category: '',

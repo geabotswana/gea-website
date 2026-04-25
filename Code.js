@@ -178,6 +178,19 @@ function getApplicantDocumentRequirements(category) {
 }
 
 /**
+ * Helper: Get applicant upload configuration for all categories.
+ * Called from Portal.html at page load to populate upload type restrictions.
+ * Single source of truth from Config.js.
+ * @returns {Object} {applicant: {...}, family: [...]} upload type mappings
+ */
+function getApplicantUploadConfiguration() {
+  return {
+    applicant: APPLICANT_UPLOAD_TYPES,
+    family: FAMILY_STAFF_UPLOAD_TYPES
+  };
+}
+
+/**
  * Called from Portal.html via google.script.run to avoid CORS issues.
  * @param {string} action - The API action
  * @param {Object} params - Request parameters

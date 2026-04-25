@@ -1046,12 +1046,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.9";
+var SYSTEM_VERSION          = "2.5.10";
 var SYSTEM_BUILD_DATE       = "2026-04-25";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "refactor: fetch upload config at page load instead of embedding";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-25 11:52:05";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "refactor: Move document requirements section before questions in eligibility screening";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-25 12:09:43";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

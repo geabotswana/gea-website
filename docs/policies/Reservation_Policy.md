@@ -1,5 +1,6 @@
 # **GEA FACILITY RESERVATION POLICY**
 Gaborone Employee Association
+**Last Updated:** March 3, 2026
 Effective: March 3, 2026
 ## 1. Purpose
 This policy establishes how GEA members reserve and use shared facilities, including booking procedures, approval workflows, household booking limits, and guest management. The policy ensures fair access to facilities while maintaining Embassy security and operational efficiency.

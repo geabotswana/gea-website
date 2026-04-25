@@ -1,5 +1,6 @@
 # **GEA AUDIT & COMPLIANCE POLICY**
 Gaborone Employee Association
+**Last Updated:** March 3, 2026
 Effective: March 3, 2026
 ## 1. Purpose
 This policy establishes audit and compliance requirements for GEA operations. The policy covers logging of activities, audit trail maintenance, compliance with federal regulations (6 FAM 500-546), and Board oversight of compliance.

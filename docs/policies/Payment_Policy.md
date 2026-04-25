@@ -1,5 +1,6 @@
 # **GEA PAYMENT POLICY**
 Gaborone Employee Association
+**Last Updated:** March 3, 2026
 Approved: March 3, 2026
 ## 1. Purpose
 This policy establishes accepted payment methods for GEA membership dues, verification procedures, and treasurer responsibilities. Payment verification is required before membership applications are finalized and member accounts are activated.

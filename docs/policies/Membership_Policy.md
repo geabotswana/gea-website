@@ -1,5 +1,6 @@
 # **GEA MEMBERSHIP POLICY**
 *Gaborone Employee Association*
+**Last Updated:** March 3, 2026
 Approved: March 3, 2026 (Revised)
 
 ## 1. Purpose

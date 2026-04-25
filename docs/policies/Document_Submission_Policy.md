@@ -1,5 +1,6 @@
 # **GEA DOCUMENT SUBMISSION POLICY**
 Gaborone Employee Association
+**Last Updated:** March 3, 2026
 Effective: March 3, 2026
 ## 1. Purpose
 This policy establishes which documents are required for each GEA membership category, how documents are verified, how long they are retained, and member privacy protections. A two-tier verification process (RSO review → GEA treasurer verification) ensures accuracy and security.

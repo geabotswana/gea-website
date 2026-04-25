@@ -98,22 +98,21 @@
   - First Name *
   - Last Name *
   - Email Address *
-  - Phone Number (with country code) *
+  - Phone Number * (3 parts: Country Code dropdown, Phone digits, WhatsApp checkbox)
   - Country of Citizenship *
-  - Optional: Employment fields (depending on category)
-
-### For Full Member - Expected Fields:
-- Job Title *
-- Employment Posting Date *
-- Employment Departure Date *
+  - Employment fields (for Full Member):
+    - Job Title *
+    - Posting Date *
+    - Departure Date (optional)
 
 ### Test Actions:
 1. Fill in all required fields:
    - First Name: James (or any name)
    - Last Name: Morrison (or any name)
    - Email: michael+a1_test@raneyworld.com (must use raneyworld.com to receive emails)
-   - Country Code: BW or US
-   - Phone: +267 71234501 (or any valid number)
+   - Country Code: BW (or US)
+   - Phone Number: 71234501 (just the digits, no country code prefix)
+   - WhatsApp: ☑ (checked)
    - Citizenship: US (or other)
    - Job Title: Economic Officer (or similar US embassy role)
    - Posting Date: 2023-08-20 (or any past date)
@@ -164,20 +163,20 @@ If shown:
 ### What you should see:
 - Step indicator showing step 6 active
 - **Rules & Regulations** heading
-- Rules text displayed (scrollable section)
-- Blue info box with two checkboxes:
-  - [ ] I and my household members agree to uphold the rules and regulations of the Gaborone Employee Association.
+- Rules text displayed (scrollable section with title "RULES & REGULATIONS" and subsections)
+- Text box: **Full Name (in lieu of signature) *** - Pre-filled with applicant name
+- One checkbox:
   - [ ] I have read and understood the Rules & Regulations and agree that I and my household members will comply with them.
-- **Full Name** field showing: [Your Name]
 - Two buttons at bottom: **Back** | **I Agree & Continue**
 
 ### Test Actions:
-1. Read through the rules (scrollable)
-2. Check both certification checkboxes
-3. Click **I Agree & Continue** button
+1. Read through the rules (or scroll to review them)
+2. Verify full name is correct in the text box
+3. Check the rules agreement checkbox
+4. Click **I Agree & Continue** button
 
 **Expected Result:**
-- Both checkboxes must be checked to proceed
+- Checkbox must be checked to proceed
 - Form advances to Step 7 (Review & Submit)
 
 ---
@@ -186,29 +185,29 @@ If shown:
 
 ### What you should see:
 - Step indicator showing step 7 active (final step)
-- **Application Review** heading
-- Summary of:
+- **Review & Submit** heading
+- **Application Information** section showing:
   - Membership Category: Full Member
-  - Household Type: Individual
-  - Applicant Name
-  - Email
-  - Phone
-  - Citizenship
-  - Employed at: U.S. Embassy
-  - Job Title
-  - Employment Dates
-  - Household members (if any)
-- Rules agreement checkbox
-- **Certification** checkbox: "I certify that all information provided is accurate"
-- Two buttons:
-  - **Cancel Application**
+  - Name: [Applicant Name]
+  - Email: [Email]
+  - Phone: [Phone with country code]
+  - Citizenship: [Country]
+- **Employment Information** section showing:
+  - Employer/Organization: U.S. Embassy
+  - Job Title: [Job Title]
+  - Posting Date: [Date]
+  - Anticipated Departure: [Date]
+- Certification checkbox:
+  - [ ] I certify that all information provided is accurate and complete.
+- Two buttons at bottom:
+  - **← Back (Edit Information)**
   - **Submit Application** (green)
 
 ### Test Actions:
 1. Review all applicant information displayed
 2. Review employment information (job title, posting date, departure date)
 3. Check the certification checkbox: "I certify that all information provided is accurate and complete"
-4. Click **Submit Application** button (green)
+4. Click **Submit Application** button (green, bottom right)
 
 **Expected Result:**
 - Button shows spinner while processing

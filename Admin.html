@@ -1984,8 +1984,9 @@
         <div style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto;">
           <button class="filter-btn active" onclick="filterApplications('');">All</button>
           <button class="filter-btn" onclick="filterApplications('awaiting_docs');">Awaiting Docs</button>
-          <button class="filter-btn" onclick="filterApplications('docs_confirmed');">Board Review</button>
-          <button class="filter-btn" onclick="filterApplications('rso_review');">RSO Review</button>
+          <button class="filter-btn" onclick="filterApplications('board_initial_review');">Board Review</button>
+          <button class="filter-btn" onclick="filterApplications('rso_docs_review');">RSO Document Review</button>
+          <button class="filter-btn" onclick="filterApplications('rso_application_review');">RSO Application Review</button>
           <button class="filter-btn" onclick="filterApplications('board_final_review');">Final Review</button>
           <button class="filter-btn" onclick="filterApplications('approved_pending_payment');">Awaiting Payment</button>
           <button class="filter-btn" onclick="filterApplications('payment_submitted');">Payment Submitted</button>
@@ -7660,12 +7661,18 @@
           denyBtn.textContent = 'Deny Application';
           denyBtn.onclick = function() { denyApplicationStage(applicationId, 'board_initial'); };
           actionsDiv.appendChild(denyBtn);
-        } else if (app.status === 'rso_review') {
+        } else if (app.status === 'rso_docs_review' || app.status === 'rso_application_review' || app.status === 'rso_review') {
           var p = document.createElement('p');
           p.style.color = '#666';
           p.style.fontSize = '13px';
           p.style.margin = '0';
-          p.textContent = 'Documents sent to RSO for review. Awaiting RSO decision.';
+          if (app.status === 'rso_docs_review') {
+            p.textContent = 'Documents sent to RSO for review. Awaiting RSO document approval.';
+          } else if (app.status === 'rso_application_review') {
+            p.textContent = 'Application sent to RSO for eligibility review. Awaiting RSO application decision.';
+          } else {
+            p.textContent = 'Application in RSO review. Awaiting RSO decision.';
+          }
           actionsDiv.appendChild(p);
         } else if (app.status === 'board_final_review') {
           // If RSO has denied, show danger button and explain the situation
@@ -7955,7 +7962,9 @@
       case 'awaiting_docs': return '#FFA500';
       case 'docs_confirmed': return '#2196F3';
       case 'board_initial_review': return '#2196F3';
-      case 'rso_review': return '#9C27B0';
+      case 'rso_docs_review': return '#9C27B0';
+      case 'rso_application_review': return '#9C27B0';
+      case 'rso_review': return '#9C27B0';  // Legacy support
       case 'board_final_review': return '#2196F3';
       case 'approved_pending_payment': return '#4CAF50';
       case 'payment_submitted': return '#FF9800';
@@ -7970,7 +7979,9 @@
       'awaiting_docs': 'Awaiting Docs',
       'docs_confirmed': 'Board Review',
       'board_initial_review': 'Board Review',
-      'rso_review': 'RSO Review',
+      'rso_docs_review': 'RSO Document Review',
+      'rso_application_review': 'RSO Application Review',
+      'rso_review': 'RSO Review',  // Legacy support
       'board_final_review': 'Final Review',
       'approved_pending_payment': 'Awaiting Payment',
       'payment_submitted': 'Payment Submitted',

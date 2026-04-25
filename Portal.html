@@ -1594,7 +1594,6 @@
       <div style="margin-top: 24px; display: flex; gap: 10px;" id="eligibilityButtonContainer">
         <button type="button" class="btn btn-secondary" id="questionBackBtn" onclick="navigateToPreviousQuestion();" style="flex: 1; display: none;">Back</button>
         <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
-        <button type="button" class="btn btn-primary" id="appStep1NextBtn" onclick="nextApplicationStep();" style="flex: 1; display: none;">Next</button>
       </div>
 
       <div style="margin-top: 24px; display: none; gap: 10px;" id="householdTypeButtonContainer">
@@ -4662,17 +4661,11 @@ function submitPasswordReset(event) {
   }
 
   function cancelApplication() {
-    showPortalConfirm({
-      title: 'Cancel Application',
-      message: 'Cancel membership application? Any data you have entered will be lost.',
-      confirmText: 'Yes, Cancel',
-      confirmClass: 'btn-danger',
-      headerColor: '#B71C1C',
-      onConfirm: function() {
-        // Redirect to member.html (closes the application form)
-        window.location.href = 'https://geabotswana.org/member.html';
-      }
-    });
+    // Use native confirm for reliability during application
+    if (confirm('Cancel membership application? Any data you have entered will be lost.')) {
+      // Redirect to member.html (closes the application form)
+      window.location.href = 'https://geabotswana.org/member.html';
+    }
   }
 
   function updateApplicationStep() {
@@ -4876,21 +4869,18 @@ function submitPasswordReset(event) {
 
   /**
    * Update button visibility based on which question is being displayed
-   * Q1: Show Cancel + Next (no Back button)
-   * Q1b, Q2, Q3, Q4: Show Back + Cancel + Next
+   * Q1: Show Cancel only (no Back button, answer Yes/No to advance)
+   * Q1b, Q2, Q3, Q4: Show Back + Cancel (answer Yes/No to advance or go back)
    */
   function updateQuestionButtonVisibility(currentQuestion) {
     var backBtn = document.getElementById('questionBackBtn');
-    var nextBtn = document.getElementById('appStep1NextBtn');
 
     // Q1 has no back button since there's nowhere to go back to
     if (currentQuestion === 'Q1') {
       backBtn.style.display = 'none';
-      nextBtn.style.display = 'flex';
     } else {
       // Q1b, Q2, Q3, Q4 all have back buttons
       backBtn.style.display = 'flex';
-      nextBtn.style.display = 'flex';
     }
   }
 

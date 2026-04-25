@@ -1,6 +1,13 @@
 # Happy Path A1 - Printable Test Checklist
 **Full Member (Embassy Employee) - Complete Workflow**
 
+**⚠️ IMPORTANT:** All test email addresses MUST use `@raneyworld.com` domain to receive automated system emails. Do NOT use @example.com or other domains.
+
+**Email Format:** `michael+a1_[test_name]@raneyworld.com`  
+**Example:** `michael+a1_morrison_20260425@raneyworld.com`
+
+---
+
 **Test Date:** ___________  
 **Tester Name:** ___________  
 **Start Time:** ___________  
@@ -11,7 +18,7 @@
 ## Phase 1: Test Applicant Setup
 
 ### Create Test Email & Password
-- [ ] Email: `a1_test_[DATE]@example.com` _______________
+- [ ] Email: `michael+a1_[DATE]@raneyworld.com` _______________
 - [ ] Name: Test A1 Embassy Employee
 - [ ] Password: (strong, saved securely) _______________
 - [ ] Country: BW (Botswana)
@@ -24,7 +31,7 @@
 ### Step 2.1: Basic Information ✓ PASS / ✗ FAIL
 ```
 Primary Applicant Name: Test A1 Embassy Employee
-Email: a1_test_[DATE]@example.com
+Email: michael+a1_[DATE]@raneyworld.com
 Phone: +267 71234501
 Country: BW
 Household Type: Individual
@@ -265,7 +272,7 @@ Decision: APPROVE (not reject)
 
 ### Step 5.1: Login as RSO Reviewer ✓ PASS / ✗ FAIL
 - [ ] Admin Portal accessible
-- [ ] Login with RSO email: test_rso@example.com (or configured RSO)
+- [ ] Login with RSO email: test_rso@raneyworld.com (or configured RSO)
 - [ ] Navigate to: Documents → RSO Review Queue
 - [ ] Application/documents found
 
@@ -404,7 +411,7 @@ Decision: APPROVE for final
 
 ### Step 7.1: Login as Applicant ✓ PASS / ✗ FAIL
 - [ ] Portal accessible
-- [ ] Login with applicant email: a1_test_[DATE]@example.com
+- [ ] Login with applicant email: michael+a1_[DATE]@raneyworld.com
 - [ ] Status page shows: "Payment Required"
 - [ ] Payment submission button visible
 
@@ -519,7 +526,7 @@ Decision: APPROVE (not reject)
 
 ### Step 9.1: Login as New Member ✓ PASS / ✗ FAIL
 - [ ] Portal accessible
-- [ ] Login with applicant email: a1_test_[DATE]@example.com
+- [ ] Login with applicant email: michael+a1_[DATE]@raneyworld.com
 - [ ] Dashboard loads (NOT applicant portal)
 - [ ] Membership status shows: **Member**
 

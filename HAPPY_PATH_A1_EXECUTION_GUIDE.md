@@ -3,7 +3,8 @@
 
 **Updated:** April 25, 2026  
 **Test Scenario:** A1 from MEMBERSHIP_APPLICATION_TESTING_PLAN.md  
-**Testing resumes from:** Step 1, Household Type Selection
+**Status:** ✅ COMPLETED - Full workflow tested and verified working  
+**Tested By:** Michael Raney (April 25, 2026)
 
 ---
 
@@ -68,7 +69,11 @@
 - Two selection buttons: **Individual** | **Family**
 - Two action buttons at bottom: **Back** | **Cancel**
 
-**Note:** The Back button returns to the previous answered question (Q1b in this case). The Cancel button returns to member.html.
+**Button Behavior:**
+- **Back button:** Returns to the previous question (Q1b, Q2, Q3, or Q4 depending on flow)
+- **Cancel button:** Shows inline confirmation "Yes, Cancel Application" / "No, Keep Applying"
+  - If you click Cancel, it will ask you to confirm
+  - This prevents accidental loss of data
 
 ### Test Actions:
 
@@ -104,15 +109,15 @@
 
 ### Test Actions:
 1. Fill in all required fields:
-   - First Name: (any name)
-   - Last Name: (any name)
-   - Email: (unique test email, e.g., a1_test_applicant@example.com)
+   - First Name: James (or any name)
+   - Last Name: Morrison (or any name)
+   - Email: michael+a1_test@raneyworld.com (must use raneyworld.com to receive emails)
    - Country Code: BW or US
-   - Phone: (any valid number)
-   - Citizenship: US or other
-   - Job Title: Consular Officer (or similar US embassy role)
-   - Posting Date: (date in past, e.g., 2025-06-15)
-   - Departure Date: (date in future, e.g., 2028-06-15)
+   - Phone: +267 71234501 (or any valid number)
+   - Citizenship: US (or other)
+   - Job Title: Economic Officer (or similar US embassy role)
+   - Posting Date: 2023-08-20 (or any past date)
+   - Departure Date: 2027-08-31 (or any future date)
 
 2. Click **Next** button
 
@@ -158,20 +163,22 @@ If shown:
 
 ### What you should see:
 - Step indicator showing step 6 active
-- **Facility Rules & Regulations** section (HTML-rendered rules from system)
-- Three checkboxes:
-  - [ ] I have read and understand the GEA Facility Rules
-  - [ ] I understand I may be subject to membership suspension or expulsion
-  - [ ] I certify my name is [Firstname Lastname]
+- **Rules & Regulations** heading
+- Rules text displayed (scrollable section)
+- Blue info box with two checkboxes:
+  - [ ] I and my household members agree to uphold the rules and regulations of the Gaborone Employee Association.
+  - [ ] I have read and understood the Rules & Regulations and agree that I and my household members will comply with them.
+- **Full Name** field showing: [Your Name]
+- Two buttons at bottom: **Back** | **I Agree & Continue**
 
 ### Test Actions:
-1. Read the rules (or just acknowledge)
-2. Check all three certification boxes
-3. Click **Next** button
+1. Read through the rules (scrollable)
+2. Check both certification checkboxes
+3. Click **I Agree & Continue** button
 
 **Expected Result:**
-- All checkboxes must be checked
-- Form advances to Step 7 (Review)
+- Both checkboxes must be checked to proceed
+- Form advances to Step 7 (Review & Submit)
 
 ---
 
@@ -198,21 +205,32 @@ If shown:
   - **Submit Application** (green)
 
 ### Test Actions:
-1. Review all information
-2. Check the certification checkbox
-3. Click **Submit Application** button
+1. Review all applicant information displayed
+2. Review employment information (job title, posting date, departure date)
+3. Check the certification checkbox: "I certify that all information provided is accurate and complete"
+4. Click **Submit Application** button (green)
 
 **Expected Result:**
 - Button shows spinner while processing
-- Success message appears:
+- Page transitions to success screen showing:
   ```
-  ✅ Success!
-  Application ID: APP-2026-XXXXX
-  Your application has been received.
-  Next steps: Upload required documents.
+  ✅ Application Submitted!
+  We've received your membership application.
+  Check your email for login credentials.
+  
+  Next Steps:
+  1. Log in to the member portal
+  2. Upload required documents (photo required, passport + omang based on age)
+  3. Wait for board and RSO review (5-7 business days)
+  4. Submit payment once approved
+  5. Receive confirmation of active membership
   ```
-- Form transitions to document upload screen
+- GEA logo displayed with checkmark
+- "Go to Login" button available
 - Application status changes to: `awaiting_docs`
+- Emails sent:
+  - ✅ Board receives: "New Application: [Name] - Review by [Date]"
+  - ✅ Applicant receives: "GEA Application Received - Next Steps Inside" + "Your GEA Member Portal Login Details"
 
 ---
 
@@ -312,26 +330,32 @@ If shown:
 ## Test Data Reference
 
 ### Test Applicant (A1 - Full Member)
-- **Email:** a1_test_applicant@example.com
-- **Name:** Test A1 Embassy Employee  
+- **Email:** michael+a1_test@raneyworld.com ⚠️ **MUST use raneyworld.com to receive emails**
+- **Name:** James Morrison (or your test name)
 - **Country:** BW (Botswana)
 - **Phone:** +267 71234501
-- **Employment:** US Embassy, Consular Officer
-- **Dates:** 2025-06-15 to 2028-06-15
+- **Employment:** U.S. Embassy, Economic Officer (or similar)
+- **Posting Date:** 2023-08-20
+- **Departure Date:** 2027-08-31
 - **Household Type:** Individual
-- **Category Assigned:** Full Member (automatic)
+- **Category Assigned:** Full Member (automatic from Q1=Yes, Q1b=No)
+- **Membership Dues:** $250 USD/year
+- **Required Docs:** Passport + Omang (+ optional photo)
 
 ### Board Member (for approval)
 - **Email:** board@geabotswana.org
 - **Role:** Board (all approvals)
+- **Access:** Admin Portal at https://script.google.com/a/macros/geabotswana.org/s/[deployment_id]/exec?action=serve_admin
 
 ### RSO Reviewer
 - **Email:** test_rso@example.com  
 - **Role:** RSO (document review/approval)
+- **Access:** Admin Portal (Document Review queue)
 
 ### Treasurer
 - **Email:** treasurer@geabotswana.org
 - **Role:** Treasurer (payment verification)
+- **Access:** Admin Portal (Payment Review queue)
 
 ---
 

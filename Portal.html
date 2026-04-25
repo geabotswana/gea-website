@@ -4065,6 +4065,20 @@ function submitPasswordReset(event) {
     };
   }
 
+  // Document upload types by membership category (mirrors Config.js)
+  // Applicant-specific: what documents the applicant can/must upload
+  var APPLICANT_UPLOAD_TYPES = {
+    'Full': ['Passport'],
+    'Associate': ['Passport', 'Funding Verification'],
+    'Affiliate': ['Passport', 'Omang'],
+    'Diplomatic': ['Passport', 'Diplomatic Accreditation'],
+    'Community': ['Passport', 'Omang'],
+    'Temporary': ['Passport']
+  };
+
+  // Family members and household staff can always upload either ID type
+  var FAMILY_STAFF_UPLOAD_TYPES = ['Passport', 'Omang'];
+
   var applicationFormData = {
     membership_category: '',
     first_name: '',
@@ -6719,6 +6733,7 @@ function submitPasswordReset(event) {
     (app.individuals || []).forEach(function(ind) {
       var age = _calculateAge(ind.date_of_birth);
       var isAdult = age === null || age >= 18;
+      var isApplicant = ind.individual_id === app.primary_individual_id;
 
       var member = document.createElement('div');
       member.style.padding = '12px 0';
@@ -6728,14 +6743,22 @@ function submitPasswordReset(event) {
       if (age !== null) {
         memberName.textContent += ' (Age ' + age + ')';
       }
+      if (isApplicant) {
+        memberName.textContent += ' (Applicant)';
+      }
       member.appendChild(memberName);
+
+      // Determine allowed document types based on applicant status and category
+      var allowedIdTypes = isApplicant && app.membership_category
+        ? APPLICANT_UPLOAD_TYPES[app.membership_category] || FAMILY_STAFF_UPLOAD_TYPES
+        : FAMILY_STAFF_UPLOAD_TYPES;
 
       var documentTypes = isAdult
         ? ['passport_omang', 'photo'] // Group for adults: ID (passport or omang) + photo
         : ['photo', 'passport', 'omang']; // For minors: photo (required), then optional ID docs
 
       if (isAdult) {
-        // ADULTS: Show passport/omang as a group (one or the other required)
+        // ADULTS: Show ID options based on what's allowed for applicant or family
         var row = document.createElement('div');
         row.style.display = 'flex';
         row.style.justifyContent = 'space-between';
@@ -6745,37 +6768,49 @@ function submitPasswordReset(event) {
         var omangSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'omang'; });
         var hasId = passportSubs.length > 0 || omangSubs.length > 0;
         var label = document.createElement('span');
-        var idType = passportSubs.length > 0 ? 'PASSPORT' : omangSubs.length > 0 ? 'OMANG' : 'PASSPORT or OMANG';
+
+        // Determine what to show in label and which buttons to display
+        var showPassport = allowedIdTypes.indexOf('Passport') !== -1;
+        var showOmang = allowedIdTypes.indexOf('Omang') !== -1;
+        var idType = passportSubs.length > 0 ? 'PASSPORT' : omangSubs.length > 0 ? 'OMANG' : (showPassport && showOmang ? 'PASSPORT or OMANG' : showPassport ? 'PASSPORT' : 'OMANG');
         label.textContent = idType + ': ' + (hasId ? '✅ Uploaded' : '⏳ Required');
         label.style.fontWeight = '600';
         row.appendChild(label);
         var uploadDiv = document.createElement('div');
         uploadDiv.style.display = 'flex';
         uploadDiv.style.gap = '6px';
-        var uploadPass = document.createElement('button');
-        uploadPass.className = 'btn btn-small';
-        uploadPass.textContent = passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport';
-        uploadPass.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'passport', b); }; })(ind.individual_id, uploadPass);
-        uploadDiv.appendChild(uploadPass);
-        if (passportSubs.some(function(s) { return s.status === 'submitted'; })) {
-          var removePass = document.createElement('button');
-          removePass.className = 'btn btn-small btn-danger';
-          removePass.textContent = 'Remove Passport';
-          removePass.onclick = (function(id, btn) { return function() { removeDocument(id, 'passport', btn); }; })(ind.individual_id, removePass);
-          uploadDiv.appendChild(removePass);
+
+        // Only show buttons for allowed document types
+        if (showPassport) {
+          var uploadPass = document.createElement('button');
+          uploadPass.className = 'btn btn-small';
+          uploadPass.textContent = passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport';
+          uploadPass.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'passport', b); }; })(ind.individual_id, uploadPass);
+          uploadDiv.appendChild(uploadPass);
+          if (passportSubs.some(function(s) { return s.status === 'submitted'; })) {
+            var removePass = document.createElement('button');
+            removePass.className = 'btn btn-small btn-danger';
+            removePass.textContent = 'Remove Passport';
+            removePass.onclick = (function(id, btn) { return function() { removeDocument(id, 'passport', btn); }; })(ind.individual_id, removePass);
+            uploadDiv.appendChild(removePass);
+          }
         }
-        var uploadOmang = document.createElement('button');
-        uploadOmang.className = 'btn btn-small';
-        uploadOmang.textContent = omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang';
-        uploadOmang.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'omang', b); }; })(ind.individual_id, uploadOmang);
-        uploadDiv.appendChild(uploadOmang);
-        if (omangSubs.some(function(s) { return s.status === 'submitted'; })) {
-          var removeOmang = document.createElement('button');
-          removeOmang.className = 'btn btn-small btn-danger';
-          removeOmang.textContent = 'Remove Omang';
-          removeOmang.onclick = (function(id, btn) { return function() { removeDocument(id, 'omang', btn); }; })(ind.individual_id, removeOmang);
-          uploadDiv.appendChild(removeOmang);
+
+        if (showOmang) {
+          var uploadOmang = document.createElement('button');
+          uploadOmang.className = 'btn btn-small';
+          uploadOmang.textContent = omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang';
+          uploadOmang.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'omang', b); }; })(ind.individual_id, uploadOmang);
+          uploadDiv.appendChild(uploadOmang);
+          if (omangSubs.some(function(s) { return s.status === 'submitted'; })) {
+            var removeOmang = document.createElement('button');
+            removeOmang.className = 'btn btn-small btn-danger';
+            removeOmang.textContent = 'Remove Omang';
+            removeOmang.onclick = (function(id, btn) { return function() { removeDocument(id, 'omang', btn); }; })(ind.individual_id, removeOmang);
+            uploadDiv.appendChild(removeOmang);
+          }
         }
+
         row.appendChild(uploadDiv);
         member.appendChild(row);
 
@@ -6807,6 +6842,45 @@ function submitPasswordReset(event) {
         }
         photoRow.appendChild(photoUploadDiv);
         member.appendChild(photoRow);
+
+        // Category-specific documents (for applicants only)
+        if (isApplicant && app.membership_category) {
+          var categoryDocs = APPLICANT_UPLOAD_TYPES[app.membership_category] || [];
+          // Filter to only non-ID, non-photo documents
+          var specialDocs = categoryDocs.filter(function(doc) {
+            return doc !== 'Passport' && doc !== 'Omang' && doc !== 'Photo';
+          });
+
+          specialDocs.forEach(function(docType) {
+            var docRow = document.createElement('div');
+            docRow.style.display = 'flex';
+            docRow.style.justifyContent = 'space-between';
+            docRow.style.alignItems = 'center';
+            docRow.style.marginTop = '8px';
+            var docSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+            var docLabel = document.createElement('span');
+            docLabel.textContent = docType.toUpperCase() + ': ' + (docSubs.length > 0 ? '✅ Uploaded' : '⏳ Required');
+            docLabel.style.fontWeight = '600';
+            docRow.appendChild(docLabel);
+            var docUploadDiv = document.createElement('div');
+            docUploadDiv.style.display = 'flex';
+            docUploadDiv.style.gap = '6px';
+            var docUpload = document.createElement('button');
+            docUpload.className = 'btn btn-small';
+            docUpload.textContent = docSubs.length > 0 ? 'Replace' : 'Upload';
+            docUpload.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, docUpload);
+            docUploadDiv.appendChild(docUpload);
+            if (docSubs.some(function(s) { return s.status === 'submitted'; })) {
+              var removeDoc = document.createElement('button');
+              removeDoc.className = 'btn btn-small btn-danger';
+              removeDoc.textContent = 'Remove';
+              removeDoc.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, docType, removeDoc);
+              docUploadDiv.appendChild(removeDoc);
+            }
+            docRow.appendChild(docUploadDiv);
+            member.appendChild(docRow);
+          });
+        }
       } else {
         // MINORS: Photo is required, ID documents are optional
         var photoRow = document.createElement('div');

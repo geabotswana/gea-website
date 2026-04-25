@@ -758,6 +758,14 @@ var APP_STATUS_ACTIVATED                = "activated";
 var APP_STATUS_DENIED                   = "denied";
 var APP_STATUS_WITHDRAWN                = "withdrawn";
 
+// Membership status constants (for Households.membership_status field)
+// Determines which portal features are accessible to the user
+var MEMBERSHIP_STATUS_APPLICANT  = "Applicant";    // Application submitted, awaiting review
+var MEMBERSHIP_STATUS_MEMBER     = "Member";       // Active member, full portal access
+var MEMBERSHIP_STATUS_LAPSED     = "Lapsed";       // Membership expired, renewal prompt shown
+var MEMBERSHIP_STATUS_RESIGNED   = "Resigned";     // Member resigned, no portal access
+var MEMBERSHIP_STATUS_EXPELLED   = "Expelled";     // Member expelled, no portal access
+
 // Payment reference format for membership dues
 // Format: {LAST_NAME}_{MEMBERSHIP_YEAR}
 // Example: RANEY_25-26 for 2025-2026 membership year

@@ -12,21 +12,63 @@
 1. Navigate to: **https://geabotswana.org/member.html**
 2. Click "Apply for Membership →"
 3. Answer eligibility questions (you can use "Load Test Data (Dev)" button to auto-fill)
-4. Continue from the Household Type selection screen below
+4. Continue through Q1, Q2, household type selection, and remaining steps
 
 ---
 
-## Step 1: Eligibility Screening → Household Type Selection
+## Step 1: Eligibility Screening
+
+### Screen 1: Q1 - Direct USG Employee
+
+**Question:** "Are you a U.S. Direct-Hire employee of the United States Government?"
+
+**Options:**
+- Yes - Includes Department of State and other USG departments and agencies
+- No - Proceed to next question
+
+**For Happy Path A1:**
+- Click **Yes** (Full Member is a direct US Government employee)
+
+**After answering:**
+- If Yes: Advances to Q1b (Temporary Duty question)
+- If No: Advances to Q2 (Embassy Staff from Outside)
+
+---
+
+### Screen 2: Q1b - Temporary Duty Status
+
+(Only shown if Q1 = Yes)
+
+**Question:** "Are you in Botswana on temporary duty or as an official visitor?"
+
+**Details:** Temporary duty = short-term assignment (typically 6 months or less). Permanent assignment = assigned to the Botswana mission as your duty station.
+
+**Options:**
+- Yes (Temporary Duty) - Results in Temporary Member (max 6 months)
+- No (Permanent) - Results in Full Member
+
+**For Happy Path A1:**
+- Click **No (Permanent)** (Full Member has permanent assignment)
+
+**After answering:**
+- System auto-assigns category: **Full Member**
+- Advances to Household Type selection screen
+
+---
+
+### Screen 3: Household Type Selection
 
 ### What you should see:
 - GEA logo and "Apply for Membership" title
 - Step indicator showing step 1 active
 - **Eligibility Screening** heading
-- **Your membership category:** [Full/Associate/Community/etc.] (displayed)
-- **Documents You'll Need to Provide** section (listing required documents)
-- **Will this be an individual or family membership?** question
-- Two buttons: **Individual** | **Family**
+- Blue info box showing: **Your membership category: Full**
+- **Documents You'll Need to Provide** section (showing required documents)
+- **Will this be an individual or family membership?** heading
+- Two selection buttons: **Individual** | **Family**
 - Two action buttons at bottom: **Back** | **Cancel**
+
+**Note:** The Back button returns to the previous answered question (Q1b in this case). The Cancel button returns to member.html.
 
 ### Test Actions:
 

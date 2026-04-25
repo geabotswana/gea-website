@@ -1054,12 +1054,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.19";
+var SYSTEM_VERSION          = "2.5.20";
 var SYSTEM_BUILD_DATE       = "2026-04-25";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix: Detect and set correct MIME type for uploaded documents";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-26 00:01:12";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix: Store all file submission dates in yyyy-mm-dd format instead of datetime";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-26 00:11:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

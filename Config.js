@@ -1054,12 +1054,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.17";
+var SYSTEM_VERSION          = "2.5.18";
 var SYSTEM_BUILD_DATE       = "2026-04-25";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "fix: Replace native confirm() with inline buttons for Cancel application";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-25 14:15:42";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "UI/UX improvements: Update Applicant Portal interface with category-specific document requirements and Font Awesome icons";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-25 23:45:59";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

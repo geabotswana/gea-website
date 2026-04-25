@@ -1,5 +1,7 @@
 # Security Implementation Guide
 
+**Last Updated:** March 2026
+
 Secure coding practices, authentication, input validation, encryption, and data protection for the GEA system.
 
 ---

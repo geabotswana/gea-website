@@ -1,37 +1,39 @@
 # RSO Portal Implementation Guide
 
-Complete implementation for RSO (Regional Security Officer) portal access, replacing one-time approval links with authenticated portal login.
+**Last Updated:** April 25, 2026
+
+Complete implementation for RSO (Regional Security Officer) authenticated portal access with role-based permissions.
 
 ---
 
 ## Overview
 
-### Current State
-- RSO approval currently handled via **one-time email links** (handleRsoApprovalLink)
-- One-time links are consumed on first use (problematic for group email rso-notify@geabotswana.org)
-- Identity captured from email address in link token, not from authenticated session
-- Audit trail shows "EMAIL_RSO_APPROVE" as generic placeholder, not individual RSO member
+### Current Implementation (Active)
 
-### Target State
-- Two RSO roles in Admin Portal (both in Administrators table):
-  1. **rso_approve** — Document & guest list approval authority
-  2. **rso_notify** — Read-only calendar coordination (no approval powers)
-- Clear identity capture: rso_reviewed_by = logged-in RSO member's email
+**RSO Authenticated Portal** with two roles in Admin Portal (Administrators table):
+1. **rso_approve** — Document & guest list approval authority
+2. **rso_notify** — Read-only calendar coordination (no approval powers)
+
+**Features:**
 - Two approval workflows:
   1. **Document Review** (rso_approve only) — Membership application documents (2-tier: RSO → GEA Admin)
   2. **Guest List Review** (rso_approve only) — Reservation guest lists (RSO security check before event)
 - One coordination workflow:
   3. **Calendar & Approved Guest Lists** (rso_notify read-only) — View approved reservations and finalized guest lists
-- Proactive notifications: rso_notify members receive email alerts about upcoming events (no portal checking required)
+- Clear identity capture: All approvals logged with individual RSO member's email (from authenticated session)
+- Audit trail: Complete action history with user, action, timestamp
+- Proactive notifications: rso_notify members receive email alerts about upcoming events (read-only portal, no action needed)
+
+**Replaced:** One-time email links (no longer used; old tokens ignored)
 
 ### Benefits
 ✅ Role-based separation: rso_approve makes decisions, rso_notify coordinates
-✅ Clear audit trail (individual RSO member identity)
+✅ Clear audit trail (individual RSO member identity, not generic placeholder)
 ✅ No link expiration/consumption issues
-✅ Consistent with system auth framework
+✅ Consistent with system authentication framework
 ✅ Supports multiple RSO members with shared responsibilities
 ✅ rso_notify doesn't need to monitor portal (email notifications only)
-✅ No custom UX for one-time links (reuses Admin Portal infrastructure)
+✅ Reuses Admin Portal infrastructure (no custom UX for special tokens)
 
 ---
 

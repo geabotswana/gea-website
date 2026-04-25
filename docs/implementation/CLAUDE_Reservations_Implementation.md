@@ -1,5 +1,7 @@
 # Reservation System Implementation Guide
 
+**Last Updated:** March 2026
+
 Complete implementation guide for the GEA facility booking system, including rules, approval workflows, guest list management, and bumping logic.
 
 ---

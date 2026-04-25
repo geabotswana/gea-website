@@ -1,5 +1,7 @@
 # Authentication & Role-Based Access Control (RBAC) Implementation Guide
 
+**Last Updated:** March 2026
+
 Session management, authentication flow, and role-based authorization for the GEA system.
 
 ---

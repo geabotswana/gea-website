@@ -2469,7 +2469,21 @@ function _handleUploadDocument(p) {
     var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
     var meaningfulName = p.individual_id + '_' + p.document_type + '_' + dateStr + '.' + ext;
     var decodedBytes = Utilities.base64Decode(p.file_data_base64);
-    var blob = Utilities.newBlob(decodedBytes, "application/octet-stream", meaningfulName);
+
+    // Determine MIME type based on file extension
+    var mimeType = "application/octet-stream";  // Default
+    var mimeTypes = {
+      "jpg": "image/jpeg",
+      "jpeg": "image/jpeg",
+      "png": "image/png",
+      "gif": "image/gif",
+      "pdf": "application/pdf"
+    };
+    if (mimeTypes[ext]) {
+      mimeType = mimeTypes[ext];
+    }
+
+    var blob = Utilities.newBlob(decodedBytes, mimeType, meaningfulName);
 
     // Use FileSubmissionService to handle upload
     var uploadParams = {

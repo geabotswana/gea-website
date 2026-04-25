@@ -26,7 +26,7 @@ The membership application system has multiple test paths:
 **Scenario A1: Full Member (Embassy Employee)**
 - [ ] Submit application (Q1: Yes - embassy employee)
 - [ ] System auto-assigns: Full category
-- [ ] Required documents: Passport, employment verification
+- [ ] Required documents: Passport AND Omang (or one valid ID)
 - [ ] Submit documents
 - [ ] Board initial review: APPROVE
 - [ ] RSO reviews documents: APPROVE all
@@ -39,33 +39,50 @@ The membership application system has multiple test paths:
 **Scenario A2: Associate Member (51%+ USG Funding)**
 - [ ] Submit application (Q1: No, Q2: Yes - 51%+ funding)
 - [ ] System auto-assigns: Associate category
-- [ ] Required documents: Passport, employment letter
-- [ ] Document flow: Same as A1
-- [ ] Payment: Same as A1
+- [ ] Required documents: Passport AND Omang (or one valid ID) AND Funding Verification (proof of 51%+ USG funding)
+- [ ] Note: Employment letter/verification NOT required (can be requested, but not mandatory)
+- [ ] Submit documents
+- [ ] Board initial review: APPROVE
+- [ ] RSO reviews documents: APPROVE all
+- [ ] Board final review: APPROVE
+- [ ] Submit payment: ${{ANNUAL_DUES_USD}} USD
+- [ ] Treasurer verifies payment
 - [ ] Expected outcome: Activated
 
 **Scenario A3: Community Member (Sponsored)**
 - [ ] Submit application (Q1-4: No, Q5: Yes - has sponsor)
 - [ ] System auto-assigns: Community category
-- [ ] Required: Passport, sponsor verification
-- [ ] System validates sponsor: Must be Full member, not maxed out
-- [ ] Document flow: Same as A1
+- [ ] Required documents: Passport AND Omang (or one valid ID)
+- [ ] Required: Sponsor name and email (captured in application)
+- [ ] System validates sponsor: Must be Full member, not maxed out (max 3 sponsors)
+- [ ] Document flow: RSO reviews → Board final review
 - [ ] Expected outcome: Activated
 
 **Scenario A4: Temporary Member (Contractor, 6-month max)**
 - [ ] Submit application (Q4: Yes - TDY/temporary)
 - [ ] System auto-assigns: Temporary category
 - [ ] Duration: Auto-set to 6 months from approval
-- [ ] Required documents: Passport, TDY orders
-- [ ] Document flow: Same as A1
+- [ ] Required documents: Passport AND Omang (or one valid ID)
+- [ ] Note: TDY orders NOT required (no documentation upload)
+- [ ] Document flow: RSO reviews → Board final review
 - [ ] Expected outcome: Activated with 6-month expiration
 
 **Scenario A5: Diplomatic Member**
 - [ ] Submit application (Q3: Yes - diplomatic visa)
 - [ ] System auto-assigns: Diplomatic category
-- [ ] Required: Passport, diplomatic accreditation
-- [ ] Document flow: Same as A1
+- [ ] Required documents: Passport AND Omang (or one valid ID)
+- [ ] Diplomatic accreditation: MAY request (discretionary, not required)
+- [ ] Document flow: RSO reviews → Board final review
 - [ ] Expected outcome: Activated
+
+**Scenario A6: Affiliate Member**
+- [ ] Submit application (category assigned as fallback or explicit selection)
+- [ ] System auto-assigns: Affiliate category
+- [ ] Required documents: Passport AND Omang (or one valid ID)
+- [ ] Note: Employment verification NOT required
+- [ ] Document flow: RSO reviews → Board final review
+- [ ] Expected outcome: Activated
+- [ ] **Buttons tested:** Submit app, Upload docs, Confirm docs, Approve (board), Approve (RSO), Submit payment, Verify payment
 
 ---
 

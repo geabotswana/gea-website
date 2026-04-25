@@ -255,6 +255,28 @@ var MAX_TEMPORARY_MONTHS  = 6;
 var SPONSOR_MUST_BE_FULL      = true;    // Sponsor must be Full member
 var SPONSOR_MUST_BE_PAID      = true;    // Sponsor membership dues must be paid
 var SPONSOR_MUST_BE_ACTIVE    = true;    // Sponsor membership must be active (not expired)
+var MAX_SPONSOR_REFERRALS      = 3;      // Max number of people one person can sponsor
+
+// Membership document requirements by category
+// Each category lists the document types that must be submitted during application
+var DOCUMENT_REQUIREMENTS = {
+  "Full": ["Passport", "Omang"],                          // Need at least one valid ID
+  "Associate": ["Passport", "Omang", "Funding Verification"],  // ID + proof of 51%+ USG funding
+  "Affiliate": ["Passport", "Omang"],                     // Need at least one valid ID
+  "Diplomatic": ["Passport", "Omang"],                    // Need at least one valid ID (Diplomatic accreditation optional)
+  "Community": ["Passport", "Omang"],                     // Need at least one valid ID (Sponsor info in application)
+  "Temporary": ["Passport", "Omang"]                      // Need at least one valid ID (TDY orders not required)
+};
+
+// Document types that may be requested but are not required
+var OPTIONAL_DOCUMENTS = {
+  "Full": [],
+  "Associate": ["Employment Letter"],  // Can request, not mandatory
+  "Affiliate": [],
+  "Diplomatic": ["Diplomatic Accreditation"],  // May request at board's discretion
+  "Community": [],
+  "Temporary": []
+};
 
 
 // ============================================================
@@ -408,6 +430,11 @@ var DOC_TYPE_PASSPORT   = "Passport";
 var DOC_TYPE_OMANG      = "Omang";
 var DOC_TYPE_NATIONAL   = "National ID";
 var DOC_TYPE_NONE       = "None";
+
+// Category-specific document types (for membership application verification)
+var DOC_TYPE_FUNDING_VERIFICATION = "Funding Verification";        // 51%+ USG funding proof (Associate)
+var DOC_TYPE_EMPLOYMENT_LETTER    = "Employment Letter";           // Employment verification (optional for Associate)
+var DOC_TYPE_DIPLOMATIC_ACCRED    = "Diplomatic Accreditation";    // Diplomatic status (optional for Diplomatic)
 
 // Passport expiration warning (months before expiry to notify member)
 var PASSPORT_WARNING_MONTHS     = 6;

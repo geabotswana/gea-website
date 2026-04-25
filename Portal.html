@@ -1554,6 +1554,12 @@
       <!-- Hidden field to store assigned category -->
       <input type="hidden" id="assignedMembershipCategory">
 
+      <!-- Document Requirements for Applicant (shown after category is determined) -->
+      <div id="documentRequirementsContainer" style="display: none; margin-bottom: 24px; background: #f9f9f9; border-left: 4px solid #0A3161; padding: 16px; border-radius: 4px;">
+        <p style="font-weight: 600; margin-bottom: 12px; color: #0A3161;">Documents You'll Need to Provide</p>
+        <p id="documentRequirementsText" style="margin: 0; font-size: 14px; color: #333; line-height: 1.6;"></p>
+      </div>
+
       <!-- Household Type Selection (shown after category is determined) -->
       <div id="householdTypeContainer" style="display: none; margin-bottom: 24px;">
         <p style="font-weight: 600; margin-bottom: 12px;">Will this be an individual or family membership?</p>
@@ -4785,6 +4791,15 @@ function submitPasswordReset(event) {
 
     // Update Step 2 field visibility based on category
     updateStep2FieldsForCategory(category);
+
+    // Show document requirements (Config.js driven)
+    google.script.run.withSuccessHandler(function(requirementsText) {
+      var reqDiv = document.getElementById('documentRequirementsContainer');
+      if (reqDiv) {
+        document.getElementById('documentRequirementsText').innerHTML = requirementsText;
+        reqDiv.style.display = 'block';
+      }
+    }).getApplicantDocumentRequirements(category);
 
     // For Temporary membership, only individual is allowed
     if (category === 'Temporary') {

@@ -151,6 +151,33 @@ function categoryRequiresSponsor(category) {
 }
 
 /**
+ * Helper: Get document requirements text for applicant based on category.
+ * Called from Portal.html to display requirements before household type selection.
+ * @param {string} category - Membership category name
+ * @returns {string} HTML-formatted document requirements for the applicant
+ */
+function getApplicantDocumentRequirements(category) {
+  if (!DOCUMENT_REQUIREMENTS[category]) {
+    return "Category not found.";
+  }
+
+  var req = DOCUMENT_REQUIREMENTS[category];
+  var html = req.applicant_note || "";
+
+  // Add note about annual renewal for Associate funding verification
+  if (category === "Associate") {
+    html += "<br><br><strong>Note:</strong> Funding verification must be provided annually.";
+  }
+
+  // Add note about family members for all categories
+  if (category !== "Temporary") {
+    html += "<br><br><strong>For family members:</strong> Either passport or omang is acceptable.";
+  }
+
+  return html;
+}
+
+/**
  * Called from Portal.html via google.script.run to avoid CORS issues.
  * @param {string} action - The API action
  * @param {Object} params - Request parameters

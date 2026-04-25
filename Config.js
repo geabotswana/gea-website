@@ -258,22 +258,61 @@ var SPONSOR_MUST_BE_ACTIVE    = true;    // Sponsor membership must be active (n
 var MAX_SPONSOR_REFERRALS      = 3;      // Max number of people one person can sponsor
 
 // Membership document requirements by category
-// Each category lists the document types that must be submitted during application
+// APPLICANT requirements: specific documents needed for the primary applicant to qualify
+// FAMILY/STAFF requirements: documents available for family members and household staff
 var DOCUMENT_REQUIREMENTS = {
-  "Full": ["Passport", "Omang"],                          // Need at least one valid ID
-  "Associate": ["Passport", "Omang", "Funding Verification"],  // ID + proof of 51%+ USG funding
-  "Affiliate": ["Passport", "Omang"],                     // Need at least one valid ID
-  "Diplomatic": ["Passport", "Omang"],                    // Need at least one valid ID (Diplomatic accreditation optional)
-  "Community": ["Passport", "Omang"],                     // Need at least one valid ID (Sponsor info in application)
-  "Temporary": ["Passport", "Omang"]                      // Need at least one valid ID (TDY orders not required)
+  "Full": {
+    "applicant_docs": ["Passport"],  // Diplomatic or official passport only (Omang very rare for Full)
+    "applicant_note": "Scan of diplomatic or official passport",
+    "family_docs": ["Passport", "Omang"]  // Family can provide either
+  },
+  "Associate": {
+    "applicant_docs": ["Passport", "Funding Verification"],  // Passport + annual funding letter
+    "applicant_note": "Scan of any passport AND scan of funding verification letter (annual proof of 51%+ USG funding)",
+    "family_docs": ["Passport", "Omang"]  // Family can provide either
+  },
+  "Affiliate": {
+    "applicant_docs": ["Passport", "Omang"],  // Either one acceptable for applicant
+    "applicant_note": "Scan of omang or any passport",
+    "family_docs": ["Passport", "Omang"]  // Family can provide either
+  },
+  "Diplomatic": {
+    "applicant_docs": ["Passport", "Diplomatic Accreditation"],  // Passport + accreditation letter (REQUIRED, not optional)
+    "applicant_note": "Scan of diplomatic or official passport AND scan of letter from mission attesting accreditation to Botswana with expected tour dates",
+    "family_docs": ["Passport", "Omang"]  // Family can provide either
+  },
+  "Community": {
+    "applicant_docs": ["Passport", "Omang"],  // Either one acceptable for applicant
+    "applicant_note": "Scan of any passport or omang",
+    "family_docs": ["Passport", "Omang"]  // Family can provide either
+  },
+  "Temporary": {
+    "applicant_docs": ["Passport"],  // Passport only (TDY orders not required)
+    "applicant_note": "Scan of diplomatic or official passport",
+    "family_docs": ["Passport", "Omang"]  // Family can provide either
+  }
 };
 
-// Document types that may be requested but are not required
+// Mapping of categories to document types applicants can upload
+// For the file submission UI - determines which upload buttons appear
+var APPLICANT_UPLOAD_TYPES = {
+  "Full": ["Passport"],  // Full applicants only upload Passport
+  "Associate": ["Passport", "Funding Verification"],  // Passport + funding letter
+  "Affiliate": ["Passport", "Omang"],  // Affiliate can upload either (choice)
+  "Diplomatic": ["Passport", "Diplomatic Accreditation"],  // Passport + accreditation
+  "Community": ["Passport", "Omang"],  // Community can upload either (choice)
+  "Temporary": ["Passport"]  // Temporary applicants only upload Passport
+};
+
+// Document types available for family members and household staff (same for all)
+var FAMILY_STAFF_UPLOAD_TYPES = ["Passport", "Omang"];
+
+// Optional documents that may be requested but are not required
 var OPTIONAL_DOCUMENTS = {
   "Full": [],
   "Associate": ["Employment Letter"],  // Can request, not mandatory
   "Affiliate": [],
-  "Diplomatic": ["Diplomatic Accreditation"],  // May request at board's discretion
+  "Diplomatic": [],
   "Community": [],
   "Temporary": []
 };

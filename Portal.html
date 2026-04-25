@@ -1498,6 +1498,13 @@
     <!-- Step 1: Eligibility Questionnaire -->
     <div id="appStep1" class="app-step active">
       <h3 style="margin-bottom: 20px;">Eligibility Screening</h3>
+
+      <!-- Document Requirements for Applicant (shown after category is determined) -->
+      <div id="documentRequirementsContainer" style="display: none; margin-bottom: 24px; background: #f9f9f9; border-left: 4px solid #0A3161; padding: 16px; border-radius: 4px;">
+        <p style="font-weight: 600; margin-bottom: 12px; color: #0A3161;">Documents You'll Need to Provide</p>
+        <p id="documentRequirementsText" style="margin: 0; font-size: 14px; color: #333; line-height: 1.6;"></p>
+      </div>
+
       <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Please answer the following questions to determine your membership category.</p>
 
       <!-- Q1: USG Direct-Hire -->
@@ -1553,12 +1560,6 @@
 
       <!-- Hidden field to store assigned category -->
       <input type="hidden" id="assignedMembershipCategory">
-
-      <!-- Document Requirements for Applicant (shown after category is determined) -->
-      <div id="documentRequirementsContainer" style="display: none; margin-bottom: 24px; background: #f9f9f9; border-left: 4px solid #0A3161; padding: 16px; border-radius: 4px;">
-        <p style="font-weight: 600; margin-bottom: 12px; color: #0A3161;">Documents You'll Need to Provide</p>
-        <p id="documentRequirementsText" style="margin: 0; font-size: 14px; color: #333; line-height: 1.6;"></p>
-      </div>
 
       <!-- Household Type Selection (shown after category is determined) -->
       <div id="householdTypeContainer" style="display: none; margin-bottom: 24px;">

@@ -1597,7 +1597,7 @@
       </div>
 
       <div style="margin-top: 24px; display: none; gap: 10px;" id="householdTypeButtonContainer">
-        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-secondary" onclick="backToLastQuestion();" style="flex: 1;">Back</button>
         <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
       </div>
     </div>
@@ -4131,6 +4131,7 @@ function submitPasswordReset(event) {
   };
 
   var currentApplicationStep = 1;
+  var lastAnsweredQuestion = null;  // Track which question was last answered
 
   /**
    * Generate comprehensive test data for all 11 category-type combinations.
@@ -4662,8 +4663,8 @@ function submitPasswordReset(event) {
       confirmClass: 'btn-danger',
       headerColor: '#B71C1C',
       onConfirm: function() {
-        showLoginScreen();
-        applicationFormData = {};
+        // Redirect to member.html (closes the application form)
+        window.location.href = 'https://geabotswana.org/member.html';
       }
     });
   }
@@ -4783,6 +4784,7 @@ function submitPasswordReset(event) {
    */
 
   function handleQ1Answer(isYes) {
+    lastAnsweredQuestion = 'Q1';
     if (isYes) {
       // Q1=YES: Show Q1b (temporary duty question)
       document.getElementById('questionQ1Container').style.display = 'none';
@@ -4795,6 +4797,7 @@ function submitPasswordReset(event) {
   }
 
   function handleQ1bAnswer(isYes) {
+    lastAnsweredQuestion = 'Q1b';
     if (isYes) {
       // Q1=YES, Q1b=YES: TEMPORARY MEMBERSHIP
       assignMembershipCategory('Temporary');
@@ -4805,6 +4808,7 @@ function submitPasswordReset(event) {
   }
 
   function handleQ2Answer(isYes) {
+    lastAnsweredQuestion = 'Q2';
     if (isYes) {
       // Q2=YES: ASSOCIATE MEMBERSHIP
       assignMembershipCategory('Associate');
@@ -4816,6 +4820,7 @@ function submitPasswordReset(event) {
   }
 
   function handleQ3Answer(isYes) {
+    lastAnsweredQuestion = 'Q3';
     if (isYes) {
       // Q3=YES: AFFILIATE MEMBERSHIP
       assignMembershipCategory('Affiliate');
@@ -4827,12 +4832,40 @@ function submitPasswordReset(event) {
   }
 
   function handleQ4Answer(isYes) {
+    lastAnsweredQuestion = 'Q4';
     if (isYes) {
       // Q4=YES: DIPLOMATIC MEMBERSHIP
       assignMembershipCategory('Diplomatic');
     } else {
       // Q4=NO: COMMUNITY MEMBERSHIP
       assignMembershipCategory('Community');
+    }
+  }
+
+  function backToLastQuestion() {
+    // Hide household type selection and category display
+    document.getElementById('householdTypeContainer').style.display = 'none';
+    document.getElementById('categoryDisplayContainer').style.display = 'none';
+    document.getElementById('documentRequirementsContainer').style.display = 'none';
+    document.getElementById('householdTypeButtonContainer').style.display = 'none';
+    document.getElementById('eligibilityButtonContainer').style.display = 'flex';
+
+    // Clear stored values to allow re-answering
+    applicationFormData.membership_category = null;
+    applicationFormData.household_type = null;
+
+    // Show the last answered question
+    if (lastAnsweredQuestion === 'Q1b') {
+      document.getElementById('questionQ1bContainer').style.display = 'block';
+    } else if (lastAnsweredQuestion === 'Q2') {
+      document.getElementById('questionQ2Container').style.display = 'block';
+    } else if (lastAnsweredQuestion === 'Q3') {
+      document.getElementById('questionQ3Container').style.display = 'block';
+    } else if (lastAnsweredQuestion === 'Q4') {
+      document.getElementById('questionQ4Container').style.display = 'block';
+    } else {
+      // Default to Q1
+      document.getElementById('questionQ1Container').style.display = 'block';
     }
   }
 

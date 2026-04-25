@@ -1514,6 +1514,12 @@
     <div id="appStep1" class="app-step active">
       <h3 style="margin-bottom: 20px;">Eligibility Screening</h3>
 
+      <!-- Membership Category Display (shown after category is determined) -->
+      <div id="categoryDisplayContainer" style="display: none; margin-bottom: 20px; background: #e3f2fd; border-left: 4px solid #0A3161; padding: 16px; border-radius: 4px;">
+        <p style="margin: 0; font-size: 12px; color: #666;">Your membership category:</p>
+        <p style="margin: 8px 0 0 0; font-size: 16px; font-weight: 600; color: #0A3161;" id="categoryDisplayText">—</p>
+      </div>
+
       <!-- Document Requirements for Applicant (shown after category is determined) -->
       <div id="documentRequirementsContainer" style="display: none; margin-bottom: 24px; background: #f9f9f9; border-left: 4px solid #0A3161; padding: 16px; border-radius: 4px;">
         <p style="font-weight: 600; margin-bottom: 12px; color: #0A3161;">Documents You'll Need to Provide</p>
@@ -1580,14 +1586,19 @@
       <div id="householdTypeContainer" style="display: none; margin-bottom: 24px;">
         <p style="font-weight: 600; margin-bottom: 12px;">Will this be an individual or family membership?</p>
         <div style="display: flex; gap: 10px;">
-          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('individual');" style="flex: 1; background: #f5f5f5; color: #333;">Individual</button>
-          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('family');" style="flex: 1; background: #f5f5f5; color: #333;">Family</button>
+          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('Individual');" style="flex: 1; background: #f5f5f5; color: #333;">Individual</button>
+          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('Family');" style="flex: 1; background: #f5f5f5; color: #333;">Family</button>
         </div>
       </div>
 
-      <div style="margin-top: 24px; display: flex; gap: 10px;">
+      <div style="margin-top: 24px; display: flex; gap: 10px;" id="eligibilityButtonContainer">
         <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
         <button type="button" class="btn btn-primary" id="appStep1NextBtn" onclick="nextApplicationStep();" style="flex: 1; display: none;">Next</button>
+      </div>
+
+      <div style="margin-top: 24px; display: none; gap: 10px;" id="householdTypeButtonContainer">
+        <button type="button" class="btn btn-secondary" onclick="prevApplicationStep();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
       </div>
     </div>
 
@@ -4675,6 +4686,25 @@ function submitPasswordReset(event) {
     var activeStepItem = document.querySelector('[data-step="' + currentApplicationStep + '"]');
     if (activeStepItem) activeStepItem.classList.add('active');
 
+    // Handle Step 1: Eligibility Screening with household type selection
+    if (currentApplicationStep === 1) {
+      var hasCategory = !!applicationFormData.membership_category;
+      if (hasCategory) {
+        // Show category display and household type selection
+        document.getElementById('categoryDisplayContainer').style.display = 'block';
+        document.getElementById('categoryDisplayText').textContent = applicationFormData.membership_category;
+        document.getElementById('householdTypeContainer').style.display = 'block';
+        document.getElementById('eligibilityButtonContainer').style.display = 'none';
+        document.getElementById('householdTypeButtonContainer').style.display = 'flex';
+      } else {
+        // Show eligibility questions
+        document.getElementById('categoryDisplayContainer').style.display = 'none';
+        document.getElementById('householdTypeContainer').style.display = 'none';
+        document.getElementById('eligibilityButtonContainer').style.display = 'flex';
+        document.getElementById('householdTypeButtonContainer').style.display = 'none';
+      }
+    }
+
     // Display assigned category in step 2
     if (currentApplicationStep === 2) {
       var categoryDisplay = applicationFormData.membership_category || '—';
@@ -4830,6 +4860,10 @@ function submitPasswordReset(event) {
       }
     }).getApplicantDocumentRequirements(category);
 
+    // Display the determined category
+    document.getElementById('categoryDisplayContainer').style.display = 'block';
+    document.getElementById('categoryDisplayText').textContent = category;
+
     // For Temporary membership, only individual is allowed
     if (category === 'Temporary') {
       applicationFormData.household_type = 'Individual';
@@ -4837,7 +4871,8 @@ function submitPasswordReset(event) {
     } else {
       // For other categories, show household type selection
       document.getElementById('householdTypeContainer').style.display = 'block';
-      document.getElementById('appStep1NextBtn').style.display = 'block';
+      document.getElementById('eligibilityButtonContainer').style.display = 'none';
+      document.getElementById('householdTypeButtonContainer').style.display = 'flex';
     }
   }
 
@@ -4906,7 +4941,7 @@ function submitPasswordReset(event) {
   }
 
   function selectHouseholdType(householdType) {
-    applicationFormData.household_type = householdType === 'family' ? 'Family' : 'Individual';
+    applicationFormData.household_type = householdType;
     nextApplicationStep();
   }
 

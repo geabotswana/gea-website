@@ -243,8 +243,9 @@ If shown:
   - [ ] Photo - Not uploaded
 
 ### Documents Needed (Full Member):
-- **Passport** (required) - Scan of diplomatic or official passport
-- **Omang** (required) - National ID (or one valid ID acceptable)
+- **One Valid ID** (required - choose one):
+  - Passport (scanned copy)
+  - Omang/National ID (scanned copy)
 - **Photo** (optional) - Profile photo for membership card
 
 ### To Upload Documents:
@@ -339,7 +340,7 @@ If shown:
 - **Household Type:** Individual
 - **Category Assigned:** Full Member (automatic from Q1=Yes, Q1b=No)
 - **Membership Dues:** $250 USD/year
-- **Required Docs:** Passport + Omang (+ optional photo)
+- **Required Docs:** One valid ID (Passport OR Omang) + optional photo
 
 ### Board Member (for approval)
 - **Email:** board@geabotswana.org

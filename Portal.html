@@ -1024,6 +1024,21 @@
 
     #applicationFormScreen {
       display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-blue) 100%);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    #applicationFormScreen.show {
+      display: flex;
     }
 
     .step-item {
@@ -1468,8 +1483,8 @@
 <!-- Multi-step membership application form                        -->
 <!-- ============================================================ -->
 
-<div id="applicationFormScreen" style="display: none; padding: 40px 20px; min-height: 100vh; background: #F5F5F5;">
-  <div class="login-card" style="max-width: 600px;">
+<div id="applicationFormScreen">
+  <div class="login-card" style="max-width: 600px; width: 100%;">
     <div class="login-logo">
       <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
     </div>
@@ -1498,6 +1513,19 @@
     <!-- Step 1: Eligibility Questionnaire -->
     <div id="appStep1" class="app-step active">
       <h3 style="margin-bottom: 20px;">Eligibility Screening</h3>
+
+      <!-- Membership Category Display (shown after category is determined) -->
+      <div id="categoryDisplayContainer" style="display: none; margin-bottom: 20px; background: #e3f2fd; border-left: 4px solid #0A3161; padding: 16px; border-radius: 4px;">
+        <p style="margin: 0; font-size: 12px; color: #666;">Your membership category:</p>
+        <p style="margin: 8px 0 0 0; font-size: 16px; font-weight: 600; color: #0A3161;" id="categoryDisplayText">—</p>
+      </div>
+
+      <!-- Document Requirements for Applicant (shown after category is determined) -->
+      <div id="documentRequirementsContainer" style="display: none; margin-bottom: 24px; background: #f9f9f9; border-left: 4px solid #0A3161; padding: 16px; border-radius: 4px;">
+        <p style="font-weight: 600; margin-bottom: 12px; color: #0A3161;">Documents You'll Need to Provide</p>
+        <p id="documentRequirementsText" style="margin: 0; font-size: 14px; color: #333; line-height: 1.6;"></p>
+      </div>
+
       <p style="margin-bottom: 20px; color: #666; font-size: 14px;">Please answer the following questions to determine your membership category.</p>
 
       <!-- Q1: USG Direct-Hire -->
@@ -1558,14 +1586,19 @@
       <div id="householdTypeContainer" style="display: none; margin-bottom: 24px;">
         <p style="font-weight: 600; margin-bottom: 12px;">Will this be an individual or family membership?</p>
         <div style="display: flex; gap: 10px;">
-          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('individual');" style="flex: 1; background: #f5f5f5; color: #333;">Individual</button>
-          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('family');" style="flex: 1; background: #f5f5f5; color: #333;">Family</button>
+          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('Individual');" style="flex: 1; background: #f5f5f5; color: #333;">Individual</button>
+          <button type="button" class="btn btn-secondary" onclick="selectHouseholdType('Family');" style="flex: 1; background: #f5f5f5; color: #333;">Family</button>
         </div>
       </div>
 
-      <div style="margin-top: 24px; display: flex; gap: 10px;">
+      <div style="margin-top: 24px; display: flex; gap: 10px;" id="eligibilityButtonContainer">
+        <button type="button" class="btn btn-secondary" id="questionBackBtn" onclick="navigateToPreviousQuestion();" style="flex: 1; display: none;">Back</button>
         <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
-        <button type="button" class="btn btn-primary" id="appStep1NextBtn" onclick="nextApplicationStep();" style="flex: 1; display: none;">Next</button>
+      </div>
+
+      <div style="margin-top: 24px; display: none; gap: 10px;" id="householdTypeButtonContainer">
+        <button type="button" class="btn btn-secondary" onclick="backToLastQuestion();" style="flex: 1;">Back</button>
+        <button type="button" class="btn btn-secondary" onclick="cancelApplication();" style="flex: 1;">Cancel</button>
       </div>
     </div>
 
@@ -2790,6 +2823,13 @@
    * Check for existing session token; show login or dashboard accordingly.
    */
   window.addEventListener('load', function() {
+    // Fetch document upload configuration from Config.js at page load
+    // Single source of truth: APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES
+    google.script.run.withSuccessHandler(function(config) {
+      APPLICANT_UPLOAD_TYPES = config.applicant || {};
+      FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
+    }).getApplicantUploadConfiguration();
+
     // Check for password reset token in URL.
     // When loaded via member.html wrapper, GAS requires action=serve to serve this
     // page, so the wrapper passes reset params as portal_action + token instead.
@@ -4059,6 +4099,12 @@ function submitPasswordReset(event) {
     };
   }
 
+  // Document upload types by membership category
+  // Populated at page load from Config.js via getApplicantUploadConfiguration()
+  // Single source of truth: Config.js (APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES)
+  var APPLICANT_UPLOAD_TYPES = {};      // Applicant-specific document restrictions by category
+  var FAMILY_STAFF_UPLOAD_TYPES = [];   // Documents available for family members and staff
+
   var applicationFormData = {
     membership_category: '',
     first_name: '',
@@ -4085,6 +4131,7 @@ function submitPasswordReset(event) {
   };
 
   var currentApplicationStep = 1;
+  var lastAnsweredQuestion = null;  // Track which question was last answered
 
   /**
    * Generate comprehensive test data for all 11 category-type combinations.
@@ -4347,7 +4394,7 @@ function submitPasswordReset(event) {
     // Show modal overlay
     var overlay = document.createElement('div');
     overlay.id = 'testDataSelectorOverlay';
-    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+    overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
     overlay.innerHTML = html;
     document.body.appendChild(overlay);
   }
@@ -4382,7 +4429,7 @@ function submitPasswordReset(event) {
     // Go to step 1 and show form
     currentApplicationStep = 1;
     document.getElementById('loginScreen').classList.remove('show');
-    document.getElementById('applicationFormScreen').style.display = 'block';
+    document.getElementById('applicationFormScreen').classList.add('show');
 
     // Populate country dropdowns
     populateCountryDropdown('appCountryCode');
@@ -4594,32 +4641,61 @@ function submitPasswordReset(event) {
 
   function showApplicationForm() {
     document.getElementById('loginScreen').classList.remove('show');
-    document.getElementById('applicationFormScreen').style.display = 'block';
+    document.getElementById('applicationFormScreen').classList.add('show');
     // Populate country dropdowns
     populateCountryDropdown('appCountryCode');
     populateCountryDropdown('appCitizenship');
     populateCountryDropdown('appStaffCitizenship');
     currentApplicationStep = 1;
+    // Reset question navigation state
+    lastAnsweredQuestion = null;
+    questionAnswerHistory = { 'Q1': null, 'Q1b': null, 'Q2': null, 'Q3': null, 'Q4': null };
     updateApplicationStep();
+    // Set initial button state for Q1
+    updateQuestionButtonVisibility('Q1');
   }
 
   function showLoginScreen() {
-    document.getElementById('applicationFormScreen').style.display = 'none';
+    document.getElementById('applicationFormScreen').classList.remove('show');
     document.getElementById('loginScreen').classList.add('show');
   }
 
   function cancelApplication() {
-    showPortalConfirm({
-      title: 'Cancel Application',
-      message: 'Cancel membership application? Any data you have entered will be lost.',
-      confirmText: 'Yes, Cancel',
-      confirmClass: 'btn-danger',
-      headerColor: '#B71C1C',
-      onConfirm: function() {
-        showLoginScreen();
-        applicationFormData = {};
-      }
-    });
+    // Replace Cancel button with inline Yes/No confirmation (works in iframe)
+    var cancelBtn = document.querySelector('#eligibilityButtonContainer button:nth-child(2)');
+    if (!cancelBtn) return;
+
+    cancelBtn.style.display = 'none';
+    var confirmSpan = document.createElement('span');
+    confirmSpan.style.display = 'inline-flex';
+    confirmSpan.style.gap = '6px';
+    confirmSpan.style.alignItems = 'center';
+
+    var yesBtn = document.createElement('button');
+    yesBtn.type = 'button';
+    yesBtn.className = 'btn btn-danger';
+    yesBtn.textContent = 'Yes, Cancel Application';
+    yesBtn.style.flex = '1';
+
+    var noBtn = document.createElement('button');
+    noBtn.type = 'button';
+    noBtn.className = 'btn btn-secondary';
+    noBtn.textContent = 'No, Keep Applying';
+    noBtn.style.flex = '1';
+
+    noBtn.onclick = function() {
+      confirmSpan.remove();
+      cancelBtn.style.display = '';
+    };
+
+    yesBtn.onclick = function() {
+      // Redirect to member.html (closes the application form)
+      window.location.href = 'https://geabotswana.org/member.html';
+    };
+
+    confirmSpan.appendChild(yesBtn);
+    confirmSpan.appendChild(noBtn);
+    cancelBtn.parentNode.insertBefore(confirmSpan, cancelBtn.nextSibling);
   }
 
   function updateApplicationStep() {
@@ -4639,6 +4715,34 @@ function submitPasswordReset(event) {
     });
     var activeStepItem = document.querySelector('[data-step="' + currentApplicationStep + '"]');
     if (activeStepItem) activeStepItem.classList.add('active');
+
+    // Handle Step 1: Eligibility Screening with household type selection
+    if (currentApplicationStep === 1) {
+      var hasCategory = !!applicationFormData.membership_category;
+      if (hasCategory) {
+        // Show category display and household type selection
+        document.getElementById('categoryDisplayContainer').style.display = 'block';
+        document.getElementById('categoryDisplayText').textContent = applicationFormData.membership_category;
+        document.getElementById('householdTypeContainer').style.display = 'block';
+        document.getElementById('eligibilityButtonContainer').style.display = 'none';
+        document.getElementById('householdTypeButtonContainer').style.display = 'flex';
+      } else {
+        // Show eligibility questions (Q1 first)
+        document.getElementById('categoryDisplayContainer').style.display = 'none';
+        document.getElementById('householdTypeContainer').style.display = 'none';
+        // Hide all questions first
+        document.getElementById('questionQ1Container').style.display = 'none';
+        document.getElementById('questionQ1bContainer').style.display = 'none';
+        document.getElementById('questionQ2Container').style.display = 'none';
+        document.getElementById('questionQ3Container').style.display = 'none';
+        document.getElementById('questionQ4Container').style.display = 'none';
+        // Show Q1
+        document.getElementById('questionQ1Container').style.display = 'block';
+        document.getElementById('eligibilityButtonContainer').style.display = 'flex';
+        document.getElementById('householdTypeButtonContainer').style.display = 'none';
+        updateQuestionButtonVisibility('Q1');
+      }
+    }
 
     // Display assigned category in step 2
     if (currentApplicationStep === 2) {
@@ -4718,18 +4822,23 @@ function submitPasswordReset(event) {
    */
 
   function handleQ1Answer(isYes) {
+    lastAnsweredQuestion = 'Q1';
+    questionAnswerHistory['Q1'] = isYes;
     if (isYes) {
       // Q1=YES: Show Q1b (temporary duty question)
       document.getElementById('questionQ1Container').style.display = 'none';
       document.getElementById('questionQ1bContainer').style.display = 'block';
+      updateQuestionButtonVisibility('Q1b');
     } else {
       // Q1=NO: Show Q2 (embassy staff from outside / USG contractor)
       document.getElementById('questionQ1Container').style.display = 'none';
       document.getElementById('questionQ2Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q2');
     }
   }
 
   function handleQ1bAnswer(isYes) {
+    lastAnsweredQuestion = 'Q1b';
     if (isYes) {
       // Q1=YES, Q1b=YES: TEMPORARY MEMBERSHIP
       assignMembershipCategory('Temporary');
@@ -4739,7 +4848,18 @@ function submitPasswordReset(event) {
     }
   }
 
+  // Store the previous answer for each question to allow backward navigation
+  var questionAnswerHistory = {
+    'Q1': null,  // true = went to Q1b, false = went to Q2
+    'Q1b': null,
+    'Q2': null,  // true = went to Q3, false = went to category assignment
+    'Q3': null,  // true = went to Q4, false = went to category assignment
+    'Q4': null
+  };
+
   function handleQ2Answer(isYes) {
+    lastAnsweredQuestion = 'Q2';
+    questionAnswerHistory['Q2'] = isYes;
     if (isYes) {
       // Q2=YES: ASSOCIATE MEMBERSHIP
       assignMembershipCategory('Associate');
@@ -4747,10 +4867,13 @@ function submitPasswordReset(event) {
       // Q2=NO: Show Q3 (embassy local hire)
       document.getElementById('questionQ2Container').style.display = 'none';
       document.getElementById('questionQ3Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q3');
     }
   }
 
   function handleQ3Answer(isYes) {
+    lastAnsweredQuestion = 'Q3';
+    questionAnswerHistory['Q3'] = isYes;
     if (isYes) {
       // Q3=YES: AFFILIATE MEMBERSHIP
       assignMembershipCategory('Affiliate');
@@ -4758,16 +4881,100 @@ function submitPasswordReset(event) {
       // Q3=NO: Show Q4 (diplomat)
       document.getElementById('questionQ3Container').style.display = 'none';
       document.getElementById('questionQ4Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q4');
     }
   }
 
   function handleQ4Answer(isYes) {
+    lastAnsweredQuestion = 'Q4';
+    questionAnswerHistory['Q4'] = isYes;
     if (isYes) {
       // Q4=YES: DIPLOMATIC MEMBERSHIP
       assignMembershipCategory('Diplomatic');
     } else {
       // Q4=NO: COMMUNITY MEMBERSHIP
       assignMembershipCategory('Community');
+    }
+  }
+
+  /**
+   * Update button visibility based on which question is being displayed
+   * Q1: Show Cancel only (no Back button, answer Yes/No to advance)
+   * Q1b, Q2, Q3, Q4: Show Back + Cancel (answer Yes/No to advance or go back)
+   */
+  function updateQuestionButtonVisibility(currentQuestion) {
+    var backBtn = document.getElementById('questionBackBtn');
+
+    // Q1 has no back button since there's nowhere to go back to
+    if (currentQuestion === 'Q1') {
+      backBtn.style.display = 'none';
+    } else {
+      // Q1b, Q2, Q3, Q4 all have back buttons
+      backBtn.style.display = 'flex';
+    }
+  }
+
+  /**
+   * Navigate to the previous question based on answer history
+   */
+  function navigateToPreviousQuestion() {
+    // Determine which question is currently showing and go back
+    if (document.getElementById('questionQ4Container').style.display === 'block') {
+      // On Q4, go back to Q3
+      document.getElementById('questionQ4Container').style.display = 'none';
+      document.getElementById('questionQ3Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q3');
+      lastAnsweredQuestion = 'Q3';
+    } else if (document.getElementById('questionQ3Container').style.display === 'block') {
+      // On Q3, go back to Q2
+      document.getElementById('questionQ3Container').style.display = 'none';
+      document.getElementById('questionQ2Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q2');
+      lastAnsweredQuestion = 'Q2';
+    } else if (document.getElementById('questionQ2Container').style.display === 'block') {
+      // On Q2, go back to Q1 (always, because Q1=NO led to Q2)
+      document.getElementById('questionQ2Container').style.display = 'none';
+      document.getElementById('questionQ1Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q1');
+      lastAnsweredQuestion = 'Q1';
+    } else if (document.getElementById('questionQ1bContainer').style.display === 'block') {
+      // On Q1b, go back to Q1 (always, because Q1=YES led to Q1b)
+      document.getElementById('questionQ1bContainer').style.display = 'none';
+      document.getElementById('questionQ1Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q1');
+      lastAnsweredQuestion = 'Q1';
+    }
+  }
+
+  function backToLastQuestion() {
+    // Hide household type selection and category display
+    document.getElementById('householdTypeContainer').style.display = 'none';
+    document.getElementById('categoryDisplayContainer').style.display = 'none';
+    document.getElementById('documentRequirementsContainer').style.display = 'none';
+    document.getElementById('householdTypeButtonContainer').style.display = 'none';
+    document.getElementById('eligibilityButtonContainer').style.display = 'flex';
+
+    // Clear stored values to allow re-answering
+    applicationFormData.membership_category = null;
+    applicationFormData.household_type = null;
+
+    // Show the last answered question and set button visibility
+    if (lastAnsweredQuestion === 'Q1b') {
+      document.getElementById('questionQ1bContainer').style.display = 'block';
+      updateQuestionButtonVisibility('Q1b');
+    } else if (lastAnsweredQuestion === 'Q2') {
+      document.getElementById('questionQ2Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q2');
+    } else if (lastAnsweredQuestion === 'Q3') {
+      document.getElementById('questionQ3Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q3');
+    } else if (lastAnsweredQuestion === 'Q4') {
+      document.getElementById('questionQ4Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q4');
+    } else {
+      // Default to Q1
+      document.getElementById('questionQ1Container').style.display = 'block';
+      updateQuestionButtonVisibility('Q1');
     }
   }
 
@@ -4786,6 +4993,19 @@ function submitPasswordReset(event) {
     // Update Step 2 field visibility based on category
     updateStep2FieldsForCategory(category);
 
+    // Show document requirements (Config.js driven)
+    google.script.run.withSuccessHandler(function(requirementsText) {
+      var reqDiv = document.getElementById('documentRequirementsContainer');
+      if (reqDiv) {
+        document.getElementById('documentRequirementsText').innerHTML = requirementsText;
+        reqDiv.style.display = 'block';
+      }
+    }).getApplicantDocumentRequirements(category);
+
+    // Display the determined category
+    document.getElementById('categoryDisplayContainer').style.display = 'block';
+    document.getElementById('categoryDisplayText').textContent = category;
+
     // For Temporary membership, only individual is allowed
     if (category === 'Temporary') {
       applicationFormData.household_type = 'Individual';
@@ -4793,7 +5013,8 @@ function submitPasswordReset(event) {
     } else {
       // For other categories, show household type selection
       document.getElementById('householdTypeContainer').style.display = 'block';
-      document.getElementById('appStep1NextBtn').style.display = 'block';
+      document.getElementById('eligibilityButtonContainer').style.display = 'none';
+      document.getElementById('householdTypeButtonContainer').style.display = 'flex';
     }
   }
 
@@ -4804,6 +5025,13 @@ function submitPasswordReset(event) {
     document.getElementById('postingDateContainer').style.display = 'none';
     document.getElementById('departureDateContainer').style.display = 'none';
     document.getElementById('sponsorInStep2Container').style.display = 'none';
+
+    // Check if this category requires sponsor (read from Config.js server-side)
+    google.script.run.withSuccessHandler(function(requiresSponsor) {
+      if (requiresSponsor && document.getElementById('sponsorInStep2Container')) {
+        document.getElementById('sponsorInStep2Container').style.display = 'block';
+      }
+    }).categoryRequiresSponsor(category);
 
     // Show fields based on category
     switch(category) {
@@ -4847,15 +5075,15 @@ function submitPasswordReset(event) {
 
       case 'Community':
         // Community: Custom employer, job title, and sponsor info (in Step 2)
+        // Note: Sponsor display is now controlled by Config.js via categoryRequiresSponsor()
         document.getElementById('employerFieldContainer').style.display = 'block';
         document.getElementById('jobTitleContainer').style.display = 'block';
-        document.getElementById('sponsorInStep2Container').style.display = 'block';
         break;
     }
   }
 
   function selectHouseholdType(householdType) {
-    applicationFormData.household_type = householdType === 'family' ? 'Family' : 'Individual';
+    applicationFormData.household_type = householdType;
     nextApplicationStep();
   }
 
@@ -4993,12 +5221,24 @@ function submitPasswordReset(event) {
             break;
 
           case 'Community':
-            // Community needs custom employer, job title, and sponsor name
+            // Community needs custom employer, job title, and sponsor name (if sponsor required per Config)
             var employer = document.getElementById('appEmploymentOffice').value.trim();
             var jobTitle = document.getElementById('appJobTitle').value.trim();
-            var sponsorName = document.getElementById('appCommunitySponsornName').value.trim();
-            if (!employer || !jobTitle || !sponsorName) {
-              errorDiv.textContent = 'Please fill in all required fields (Employer, Job Title, and Sponsor Name are required).';
+            var sponsorContainer = document.getElementById('sponsorInStep2Container');
+            var sponsorName = '';
+
+            if (sponsorContainer && sponsorContainer.style.display !== 'none') {
+              sponsorName = document.getElementById('appCommunitySponsornName').value.trim();
+            }
+
+            if (!employer || !jobTitle) {
+              errorDiv.textContent = 'Please fill in all required fields (Employer and Job Title are required).';
+              errorDiv.style.display = 'block';
+              return false;
+            }
+
+            if (sponsorContainer && sponsorContainer.style.display !== 'none' && !sponsorName) {
+              errorDiv.textContent = 'Please fill in Sponsor Name (required for this membership category).';
               errorDiv.style.display = 'block';
               return false;
             }
@@ -5115,9 +5355,11 @@ function submitPasswordReset(event) {
         }
         break;
       case 3:
-        // Only collect sponsor info here if not Community (Community collects in Step 2)
-        if (applicationFormData.membership_category !== 'Community') {
-          applicationFormData.sponsor_name = capitalizeName(document.getElementById('appSponsorName').value);
+        // Collect sponsor info only if category requires sponsor and field is not from Step 2
+        // Note: Step 3 is currently skipped for all categories, so this may not execute
+        var sponsorField = document.getElementById('appSponsorName');
+        if (sponsorField && sponsorField.style.display !== 'none') {
+          applicationFormData.sponsor_name = capitalizeName(sponsorField.value);
           applicationFormData.sponsor_email = document.getElementById('appSponsorEmail').value;
         }
         break;
@@ -6527,7 +6769,7 @@ function submitPasswordReset(event) {
       { id: 'dashboard', label: 'Dashboard',            visible: true },
       { id: 'household', label: 'My Household',         visible: true },
       { id: 'status',    label: 'Application Status',   visible: appStatusVisible },
-      { id: 'documents', label: 'Documents',            visible: docsVisible },
+      { id: 'documents', label: 'Document Upload',      visible: docsVisible },
       { id: 'payment',   label: 'Payment Verification', visible: paymentVisible },
       { id: 'help',      label: 'Help & Contact',       visible: true }
     ];
@@ -6644,27 +6886,11 @@ function submitPasswordReset(event) {
     title.textContent = 'Application Timeline';
     card.appendChild(title);
 
-    var statusProgression = [
-      'awaiting_docs',
-      'board_initial_review',
-      'rso_docs_review',
-      'rso_application_review',
-      'board_final_review',
-      'approved_pending_payment',
-      'payment_submitted',
-      'payment_verified',
-      'activated'
-    ];
-
     var steps = [
       { label: 'Application Submitted', complete: true },
-      { label: 'Documents Uploaded & Submitted', complete: app.status !== 'awaiting_docs' },
-      { label: 'Board Reviews Verification Letters', complete: statusProgression.indexOf(app.status) >= statusProgression.indexOf('board_initial_review') },
-      { label: 'Board Initial Application Review', complete: statusProgression.indexOf(app.status) >= statusProgression.indexOf('board_initial_review') },
-      { label: 'RSO Reviews Documents', complete: statusProgression.indexOf(app.status) >= statusProgression.indexOf('rso_docs_review') },
-      { label: 'RSO Reviews Application', complete: statusProgression.indexOf(app.status) >= statusProgression.indexOf('rso_application_review') },
-      { label: 'Board Final Approval', complete: statusProgression.indexOf(app.status) >= statusProgression.indexOf('board_final_review') },
-      { label: 'Payment Submitted', complete: statusProgression.indexOf(app.status) >= statusProgression.indexOf('payment_submitted') },
+      { label: 'Documents Uploaded', complete: app.status !== 'awaiting_docs' },
+      { label: 'Board Approval', complete: ['approved_pending_payment', 'payment_submitted', 'activated'].indexOf(app.status) !== -1 },
+      { label: 'Payment Verification', complete: ['payment_submitted', 'activated'].indexOf(app.status) !== -1 },
       { label: 'Membership Activated', complete: app.status === 'activated' }
     ];
 
@@ -6686,6 +6912,73 @@ function submitPasswordReset(event) {
     return card;
   }
 
+  // Helper: Get category-specific display label for a document type
+  function getDocumentDisplayLabel(docType, category, isRequired) {
+    var labelMap = {
+      // Full Member
+      'Full': {
+        'Passport': 'DIPLOMATIC or OFFICIAL PASSPORT'
+      },
+      // Associate Member
+      'Associate': {
+        'Passport': 'PASSPORT',
+        'Funding Verification': 'FUNDING VERIFICATION LETTER'
+      },
+      // Community Member
+      'Community': {
+        'Passport': 'PASSPORT or OMANG'
+      },
+      // Temporary Member
+      'Temporary': {
+        'Passport': 'DIPLOMATIC or OFFICIAL PASSPORT'
+      },
+      // Affiliate Member
+      'Affiliate': {
+        'Passport': 'PASSPORT or OMANG'
+      },
+      // Diplomatic Member
+      'Diplomatic': {
+        'Passport': 'DIPLOMATIC or OFFICIAL PASSPORT',
+        'Diplomatic Accreditation': 'ACCREDITATION VERIFICATION LETTER'
+      },
+      // Family & Household Staff defaults
+      'Family': {
+        'Passport': 'PASSPORT or OMANG'
+      }
+    };
+
+    var categoryMap = labelMap[category] || labelMap['Family'];
+    var label = categoryMap[docType] || docType.toUpperCase();
+    var suffix = isRequired ? ': Required' : ': Optional';
+    return label + suffix;
+  }
+
+  function getDocumentStatusInfo(submissions) {
+    if (!submissions || submissions.length === 0) {
+      return { icon: 'fa-hand', color: '#E65100', status: 'not_uploaded', text: 'Required' };
+    }
+
+    var latest = submissions[0];
+    var status = latest.status || 'submitted';
+
+    if (status === 'approved' || status === 'verified') {
+      return { icon: 'fa-circle-check', color: '#2E7D32', status: 'approved', text: 'Approved', showButtons: false };
+    } else if (status === 'rejected' || status === 'rso_rejected' || status === 'gea_rejected' || status === 'board_rejection' || status === 'board_rejected_member_notified') {
+      return { icon: 'fa-circle-xmark', color: '#C62828', status: 'rejected', text: 'Rejected - Replace Required', showButtons: true, showReplace: true };
+    } else if (status === 'submitted' || status === 'submitted_for_board' || status === 'rso_approved' || status === 'gea_pending') {
+      var isUnderReview = status === 'submitted' || status === 'submitted_for_board' || status === 'gea_pending';
+      return {
+        icon: isUnderReview ? 'fa-hourglass-end' : 'fa-thumbs-up',
+        color: isUnderReview ? '#1565C0' : '#FF9800',
+        status: 'in_review',
+        text: isUnderReview ? 'Submitted - Under Review' : 'Uploaded',
+        showButtons: false
+      };
+    } else {
+      return { icon: 'fa-thumbs-up', color: '#FF9800', status: 'uploaded', text: 'Uploaded', showButtons: false };
+    }
+  }
+
   function buildApplicantDocumentsSection(app) {
     var wrapper = document.createElement('div');
     var card = document.createElement('div');
@@ -6696,11 +6989,12 @@ function submitPasswordReset(event) {
     title.textContent = 'Document Upload';
     card.appendChild(title);
 
-    var documentsToReplace = [];
+    var rejectedDocuments = {};
 
     (app.individuals || []).forEach(function(ind) {
       var age = _calculateAge(ind.date_of_birth);
       var isAdult = age === null || age >= 18;
+      var isApplicant = ind.individual_id === app.primary_individual_id;
 
       var member = document.createElement('div');
       member.style.padding = '12px 0';
@@ -6710,69 +7004,85 @@ function submitPasswordReset(event) {
       if (age !== null) {
         memberName.textContent += ' (Age ' + age + ')';
       }
+      if (isApplicant) {
+        memberName.textContent += ' (Applicant)';
+      }
       member.appendChild(memberName);
 
-      if (isAdult) {
-        // ADULTS: Show ID document as a group (passport or omang, one required)
-        var idRow = document.createElement('div');
-        idRow.style.display = 'flex';
-        idRow.style.justifyContent = 'space-between';
-        idRow.style.alignItems = 'center';
-        idRow.style.marginTop = '8px';
+      var allowedIdTypes = isApplicant && app.membership_category
+        ? APPLICANT_UPLOAD_TYPES[app.membership_category] || FAMILY_STAFF_UPLOAD_TYPES
+        : FAMILY_STAFF_UPLOAD_TYPES;
 
+      if (isAdult) {
+        // Adults: ID documents (passport/omang) + photo
         var passportSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'passport'; });
         var omangSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'omang'; });
-        var passportInfo = getDocumentStatusInfo(passportSubs);
-        var omangInfo = getDocumentStatusInfo(omangSubs);
-        var hasId = passportSubs.length > 0 || omangSubs.length > 0;
+        var showPassport = allowedIdTypes.indexOf('Passport') !== -1;
+        var showOmang = allowedIdTypes.indexOf('Omang') !== -1;
 
-        var idLabel = document.createElement('span');
-        idLabel.style.fontWeight = '600';
+        // ID row (passport or omang)
+        var row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'space-between';
+        row.style.alignItems = 'center';
+        row.style.marginTop = '8px';
+
+        var passportStatus = passportSubs.length > 0 ? getDocumentStatusInfo(passportSubs) : null;
+        var omangStatus = omangSubs.length > 0 ? getDocumentStatusInfo(omangSubs) : null;
+        var idStatus = passportStatus || omangStatus || getDocumentStatusInfo([]);
+
+        var label = document.createElement('span');
+        label.style.fontWeight = '600';
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.gap = '8px';
+
         var icon = document.createElement('i');
-        icon.className = 'fa ' + (hasId ? passportSubs.length > 0 ? passportInfo.icon : omangInfo.icon : passportInfo.icon);
-        idLabel.appendChild(icon);
+        icon.className = 'fas ' + idStatus.icon;
+        icon.style.color = idStatus.color;
+        icon.style.width = '20px';
+        label.appendChild(icon);
+
+        var idDisplayType = showPassport && showOmang ? 'PASSPORT or OMANG' : showPassport ? 'PASSPORT' : 'OMANG';
+        if (isApplicant && app.membership_category) {
+          idDisplayType = getDocumentDisplayLabel('Passport', app.membership_category, true).replace(': Required', '');
+        }
+
         var labelText = document.createElement('span');
-        labelText.style.marginLeft = '8px';
-        labelText.textContent = getDocumentDisplayLabel('passport', app.membership_category || 'Full');
-        idLabel.appendChild(labelText);
-        idRow.appendChild(idLabel);
+        labelText.textContent = idDisplayType + ': ' + idStatus.text;
+        label.appendChild(labelText);
+        row.appendChild(label);
 
-        var idBtnDiv = document.createElement('div');
-        idBtnDiv.style.display = 'flex';
-        idBtnDiv.style.gap = '6px';
+        var uploadDiv = document.createElement('div');
+        uploadDiv.style.display = 'flex';
+        uploadDiv.style.gap = '6px';
 
-        if (passportSubs.length > 0 && passportInfo.canReplace) {
-          var replacePassport = document.createElement('button');
-          replacePassport.className = 'btn btn-small';
-          replacePassport.textContent = 'Replace Passport';
-          replacePassport.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'passport', b); }; })(ind.individual_id, replacePassport);
-          idBtnDiv.appendChild(replacePassport);
-          documentsToReplace.push('passport');
-        } else if (omangSubs.length > 0 && omangInfo.canReplace) {
-          var replaceOmang = document.createElement('button');
-          replaceOmang.className = 'btn btn-small';
-          replaceOmang.textContent = 'Replace Omang';
-          replaceOmang.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'omang', b); }; })(ind.individual_id, replaceOmang);
-          idBtnDiv.appendChild(replaceOmang);
-          documentsToReplace.push('omang');
-        } else if (!hasId) {
-          var uploadPassport = document.createElement('button');
-          uploadPassport.className = 'btn btn-small';
-          uploadPassport.textContent = 'Upload Passport';
-          uploadPassport.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'passport', b); }; })(ind.individual_id, uploadPassport);
-          idBtnDiv.appendChild(uploadPassport);
+        if (showPassport && (passportSubs.length === 0 || idStatus.status === 'rejected')) {
+          var uploadPass = document.createElement('button');
+          uploadPass.className = 'btn btn-small';
+          uploadPass.innerHTML = '<i class="fas fa-passport" style="margin-right: 6px;"></i>' + (passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport');
+          uploadPass.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'passport'); }; })(ind.individual_id);
+          uploadDiv.appendChild(uploadPass);
+          if (idStatus.status === 'rejected') {
+            rejectedDocuments[ind.individual_id + '_passport'] = true;
+          }
+        }
 
+        if (showOmang && (omangSubs.length === 0 || idStatus.status === 'rejected')) {
           var uploadOmang = document.createElement('button');
           uploadOmang.className = 'btn btn-small';
-          uploadOmang.textContent = 'Upload Omang';
-          uploadOmang.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'omang', b); }; })(ind.individual_id, uploadOmang);
-          idBtnDiv.appendChild(uploadOmang);
+          uploadOmang.innerHTML = '<i class="fas fa-id-card" style="margin-right: 6px;"></i>' + (omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang');
+          uploadOmang.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'omang'); }; })(ind.individual_id);
+          uploadDiv.appendChild(uploadOmang);
+          if (idStatus.status === 'rejected') {
+            rejectedDocuments[ind.individual_id + '_omang'] = true;
+          }
         }
 
-        idRow.appendChild(idBtnDiv);
-        member.appendChild(idRow);
+        row.appendChild(uploadDiv);
+        member.appendChild(row);
 
-        // Photo (required for adults too)
+        // Photo row
         var photoRow = document.createElement('div');
         photoRow.style.display = 'flex';
         photoRow.style.justifyContent = 'space-between';
@@ -6780,85 +7090,144 @@ function submitPasswordReset(event) {
         photoRow.style.marginTop = '8px';
 
         var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
-        var photoInfo = getDocumentStatusInfo(photoSubs);
+        var photoStatus = getDocumentStatusInfo(photoSubs);
 
         var photoLabel = document.createElement('span');
         photoLabel.style.fontWeight = '600';
+        photoLabel.style.display = 'flex';
+        photoLabel.style.alignItems = 'center';
+        photoLabel.style.gap = '8px';
+
         var photoIcon = document.createElement('i');
-        photoIcon.className = 'fa ' + photoInfo.icon;
+        photoIcon.className = 'fas ' + photoStatus.icon;
+        photoIcon.style.color = photoStatus.color;
+        photoIcon.style.width = '20px';
         photoLabel.appendChild(photoIcon);
+
         var photoLabelText = document.createElement('span');
-        photoLabelText.style.marginLeft = '8px';
-        photoLabelText.textContent = 'PHOTO';
+        photoLabelText.textContent = 'PHOTO: ' + photoStatus.text;
         photoLabel.appendChild(photoLabelText);
         photoRow.appendChild(photoLabel);
 
-        var photoBtnDiv = document.createElement('div');
-        photoBtnDiv.style.display = 'flex';
-        photoBtnDiv.style.gap = '6px';
+        var photoUploadDiv = document.createElement('div');
+        photoUploadDiv.style.display = 'flex';
+        photoUploadDiv.style.gap = '6px';
 
-        if (photoInfo.canReplace) {
-          var replacePhoto = document.createElement('button');
-          replacePhoto.className = 'btn btn-small';
-          replacePhoto.textContent = 'Replace';
-          replacePhoto.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, replacePhoto);
-          photoBtnDiv.appendChild(replacePhoto);
-          documentsToReplace.push('photo');
-        } else if (photoSubs.length === 0) {
-          var uploadPhoto = document.createElement('button');
-          uploadPhoto.className = 'btn btn-small';
-          uploadPhoto.textContent = 'Upload';
-          uploadPhoto.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, uploadPhoto);
-          photoBtnDiv.appendChild(uploadPhoto);
+        if (photoSubs.length === 0 || photoStatus.status === 'rejected') {
+          var photoUpload = document.createElement('button');
+          photoUpload.className = 'btn btn-small';
+          photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace' : 'Upload');
+          photoUpload.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'photo'); }; })(ind.individual_id);
+          photoUploadDiv.appendChild(photoUpload);
+          if (photoStatus.status === 'rejected') {
+            rejectedDocuments[ind.individual_id + '_photo'] = true;
+          }
         }
 
-        photoRow.appendChild(photoBtnDiv);
+        photoRow.appendChild(photoUploadDiv);
         member.appendChild(photoRow);
+
+        // Category-specific documents (applicants only)
+        if (isApplicant && app.membership_category) {
+          var categoryDocs = APPLICANT_UPLOAD_TYPES[app.membership_category] || [];
+          var specialDocs = categoryDocs.filter(function(doc) {
+            return doc !== 'Passport' && doc !== 'Omang' && doc !== 'Photo';
+          });
+
+          specialDocs.forEach(function(docType) {
+            var docRow = document.createElement('div');
+            docRow.style.display = 'flex';
+            docRow.style.justifyContent = 'space-between';
+            docRow.style.alignItems = 'center';
+            docRow.style.marginTop = '8px';
+
+            var docSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+            var docStatus = getDocumentStatusInfo(docSubs);
+
+            var docLabel = document.createElement('span');
+            docLabel.style.fontWeight = '600';
+            docLabel.style.display = 'flex';
+            docLabel.style.alignItems = 'center';
+            docLabel.style.gap = '8px';
+
+            var docIcon = document.createElement('i');
+            docIcon.className = 'fas ' + docStatus.icon;
+            docIcon.style.color = docStatus.color;
+            docIcon.style.width = '20px';
+            docLabel.appendChild(docIcon);
+
+            var displayLabel = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
+            var docLabelText = document.createElement('span');
+            docLabelText.textContent = displayLabel + ': ' + docStatus.text;
+            docLabel.appendChild(docLabelText);
+
+            docRow.appendChild(docLabel);
+            var docUploadDiv = document.createElement('div');
+            docUploadDiv.style.display = 'flex';
+            docUploadDiv.style.gap = '6px';
+
+            if (docSubs.length === 0 || docStatus.status === 'rejected') {
+              var docUpload = document.createElement('button');
+              docUpload.className = 'btn btn-small';
+              docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace' : 'Upload');
+              docUpload.onclick = (function(id, dt) { return function() { triggerDocumentUpload(id, dt); }; })(ind.individual_id, docType);
+              docUploadDiv.appendChild(docUpload);
+              if (docStatus.status === 'rejected') {
+                rejectedDocuments[ind.individual_id + '_' + docType] = true;
+              }
+            }
+
+            docRow.appendChild(docUploadDiv);
+            member.appendChild(docRow);
+          });
+        }
       } else {
-        // MINORS: Photo is required, ID documents are optional
+        // Minors: photo required + optional ID docs
+        var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
+        var photoStatus = getDocumentStatusInfo(photoSubs);
+
         var photoRow = document.createElement('div');
         photoRow.style.display = 'flex';
         photoRow.style.justifyContent = 'space-between';
         photoRow.style.alignItems = 'center';
         photoRow.style.marginTop = '8px';
 
-        var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
-        var photoInfo = getDocumentStatusInfo(photoSubs);
-
         var photoLabel = document.createElement('span');
         photoLabel.style.fontWeight = '600';
-        var photoIcon = document.createElement('i');
-        photoIcon.className = 'fa ' + photoInfo.icon;
-        photoLabel.appendChild(photoIcon);
-        var photoLabelText = document.createElement('span');
-        photoLabelText.style.marginLeft = '8px';
-        photoLabelText.textContent = 'PHOTO (Required)';
-        photoLabel.appendChild(photoLabelText);
+        photoLabel.style.display = 'flex';
+        photoLabel.style.alignItems = 'center';
+        photoLabel.style.gap = '8px';
+
+        var minorPhotoIcon = document.createElement('i');
+        minorPhotoIcon.className = 'fas ' + photoStatus.icon;
+        minorPhotoIcon.style.color = photoStatus.color;
+        minorPhotoIcon.style.width = '20px';
+        photoLabel.appendChild(minorPhotoIcon);
+
+        var minorPhotoLabelText = document.createElement('span');
+        minorPhotoLabelText.textContent = 'PHOTO: ' + photoStatus.text;
+        photoLabel.appendChild(minorPhotoLabelText);
         photoRow.appendChild(photoLabel);
 
-        var photoBtnDiv = document.createElement('div');
-        photoBtnDiv.style.display = 'flex';
-        photoBtnDiv.style.gap = '6px';
+        var photoUploadDiv = document.createElement('div');
+        photoUploadDiv.style.display = 'flex';
+        photoUploadDiv.style.gap = '6px';
 
-        if (photoInfo.canReplace) {
-          var replacePhoto = document.createElement('button');
-          replacePhoto.className = 'btn btn-small';
-          replacePhoto.textContent = 'Replace';
-          replacePhoto.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, replacePhoto);
-          photoBtnDiv.appendChild(replacePhoto);
-          documentsToReplace.push('photo');
-        } else if (photoSubs.length === 0) {
-          var uploadPhoto = document.createElement('button');
-          uploadPhoto.className = 'btn btn-small';
-          uploadPhoto.textContent = 'Upload';
-          uploadPhoto.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, uploadPhoto);
-          photoBtnDiv.appendChild(uploadPhoto);
+        if (photoSubs.length === 0 || photoStatus.status === 'rejected') {
+          var photoUpload = document.createElement('button');
+          photoUpload.className = 'btn btn-small';
+          photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace' : 'Upload');
+          photoUpload.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'photo'); }; })(ind.individual_id);
+          photoUploadDiv.appendChild(photoUpload);
+          if (photoStatus.status === 'rejected') {
+            rejectedDocuments[ind.individual_id + '_photo'] = true;
+          }
         }
 
-        photoRow.appendChild(photoBtnDiv);
+        photoRow.appendChild(photoUploadDiv);
         member.appendChild(photoRow);
 
-        // Passport and Omang (optional for minors)
+        // Optional passport/omang for minors
         ['passport', 'omang'].forEach(function(docType) {
           var row = document.createElement('div');
           row.style.display = 'flex';
@@ -6867,36 +7236,39 @@ function submitPasswordReset(event) {
           row.style.marginTop = '8px';
 
           var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
-          var statusInfo = getDocumentStatusInfo(submissions);
+          var docStatus = getDocumentStatusInfo(submissions);
 
           var label = document.createElement('span');
           label.style.fontWeight = '600';
-          var docIcon = document.createElement('i');
-          docIcon.className = 'fa ' + statusInfo.icon;
-          label.appendChild(docIcon);
-          var labelText = document.createElement('span');
-          labelText.style.marginLeft = '8px';
-          labelText.textContent = docType.toUpperCase() + ' (Optional)';
-          label.appendChild(labelText);
-          row.appendChild(label);
+          label.style.display = 'flex';
+          label.style.alignItems = 'center';
+          label.style.gap = '8px';
 
+          var idIcon = document.createElement('i');
+          idIcon.className = 'fas ' + docStatus.icon;
+          idIcon.style.color = docStatus.color;
+          idIcon.style.width = '20px';
+          label.appendChild(idIcon);
+
+          var labelText = document.createElement('span');
+          labelText.textContent = docType.toUpperCase() + ': ' + docStatus.text;
+          label.appendChild(labelText);
+
+          row.appendChild(label);
           var btnDiv = document.createElement('div');
           btnDiv.style.display = 'flex';
           btnDiv.style.gap = '6px';
 
-          if (statusInfo.canReplace) {
-            var replaceBtn = document.createElement('button');
-            replaceBtn.className = 'btn btn-small';
-            replaceBtn.textContent = 'Replace';
-            replaceBtn.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, replaceBtn);
-            btnDiv.appendChild(replaceBtn);
-            documentsToReplace.push(docType);
-          } else if (submissions.length === 0) {
-            var uploadBtn = document.createElement('button');
-            uploadBtn.className = 'btn btn-small';
-            uploadBtn.textContent = 'Upload';
-            uploadBtn.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, uploadBtn);
-            btnDiv.appendChild(uploadBtn);
+          if (submissions.length === 0 || docStatus.status === 'rejected') {
+            var upload = document.createElement('button');
+            upload.className = 'btn btn-small';
+            var iconClass = docType === 'passport' ? 'fa-passport' : 'fa-id-card';
+            upload.innerHTML = '<i class="fas ' + iconClass + '" style="margin-right: 6px;"></i>' + (submissions.length > 0 ? 'Replace' : 'Upload');
+            upload.onclick = (function(id, dt) { return function() { triggerDocumentUpload(id, dt); }; })(ind.individual_id, docType);
+            btnDiv.appendChild(upload);
+            if (docStatus.status === 'rejected') {
+              rejectedDocuments[ind.individual_id + '_' + docType] = true;
+            }
           }
 
           row.appendChild(btnDiv);
@@ -6906,7 +7278,15 @@ function submitPasswordReset(event) {
       card.appendChild(member);
     });
 
-    if (app.status === 'awaiting_docs') {
+    if (Object.keys(rejectedDocuments).length > 0) {
+      var replaceBtn = document.createElement('button');
+      replaceBtn.className = 'btn btn-primary';
+      replaceBtn.style.marginTop = '12px';
+      replaceBtn.style.width = '100%';
+      replaceBtn.textContent = 'Submit Replacement Documents';
+      replaceBtn.onclick = (function(btn) { return function() { confirmDocuments(app.application_id, btn); }; })(replaceBtn);
+      card.appendChild(replaceBtn);
+    } else if (app.status === 'awaiting_docs') {
       var confirm = document.createElement('button');
       confirm.className = 'btn btn-primary';
       confirm.style.marginTop = '12px';
@@ -6914,14 +7294,6 @@ function submitPasswordReset(event) {
       confirm.textContent = 'Submit All Documents for Review';
       confirm.onclick = (function(btn) { return function() { confirmDocuments(app.application_id, btn); }; })(confirm);
       card.appendChild(confirm);
-    } else if (documentsToReplace.length > 0) {
-      var submitReplacement = document.createElement('button');
-      submitReplacement.className = 'btn btn-primary';
-      submitReplacement.style.marginTop = '12px';
-      submitReplacement.style.width = '100%';
-      submitReplacement.textContent = 'Submit Replacement Documents';
-      submitReplacement.onclick = (function(btn) { return function() { submitReplacementDocuments(app.application_id, btn); }; })(submitReplacement);
-      card.appendChild(submitReplacement);
     }
 
     wrapper.appendChild(card);
@@ -8270,77 +8642,6 @@ function submitPasswordReset(event) {
     return submittedCount + ' of ' + requiredCount + ' required uploads submitted.';
   }
 
-  /**
-   * Returns category-aware document display label
-   * @param {String} docType passport, omang, photo, or employment
-   * @param {String} category Membership category (Full, Associate, etc)
-   * @returns {String} Display label for document
-   */
-  function getDocumentDisplayLabel(docType, category) {
-    var labels = {
-      'Full': {
-        'passport': 'DIPLOMATIC or OFFICIAL PASSPORT',
-        'omang': 'BOTSWANA NATIONAL ID (OMANG)',
-        'photo': 'PHOTO'
-      },
-      'Associate': {
-        'passport': 'VALID PASSPORT or OFFICIAL ID',
-        'omang': 'BOTSWANA NATIONAL ID (OMANG)',
-        'photo': 'PHOTO'
-      },
-      'Community': {
-        'passport': 'VALID PASSPORT or OFFICIAL ID',
-        'omang': 'BOTSWANA NATIONAL ID (OMANG)',
-        'photo': 'PHOTO'
-      },
-      'Diplomatic': {
-        'passport': 'DIPLOMATIC PASSPORT or CREDENTIALS',
-        'omang': 'DIPLOMATIC ID',
-        'photo': 'PHOTO'
-      },
-      'Affiliate': {
-        'passport': 'VALID PASSPORT or OFFICIAL ID',
-        'omang': 'BOTSWANA NATIONAL ID (OMANG)',
-        'photo': 'PHOTO'
-      },
-      'Temporary': {
-        'passport': 'VALID PASSPORT or OFFICIAL ID',
-        'omang': 'BOTSWANA NATIONAL ID (OMANG)',
-        'photo': 'PHOTO'
-      }
-    };
-    var categoryLabels = labels[category] || labels['Full'];
-    return categoryLabels[docType] || docType.toUpperCase();
-  }
-
-  /**
-   * Returns icon and button state information for document status
-   * @param {Array} submissions Array of submission objects for this document type
-   * @returns {Object} {icon, label, canReplace, status}
-   */
-  function getDocumentStatusInfo(submissions) {
-    if (!submissions || submissions.length === 0) {
-      return { icon: 'fa-hand', label: 'Not uploaded', canReplace: false, status: 'none', iconClass: 'doc-none' };
-    }
-
-    var latest = submissions[submissions.length - 1];
-    var status = latest.status || 'submitted';
-
-    if (status === 'rejected' || status === 'rso_rejected' || status === 'gea_rejected') {
-      return { icon: 'fa-circle-xmark', label: 'Rejected', canReplace: true, status: 'rejected', iconClass: 'doc-rejected' };
-    } else if (status === 'approved' || status === 'verified') {
-      return { icon: 'fa-circle-check', label: 'Approved ✓', canReplace: false, status: 'approved', iconClass: 'doc-approved' };
-    } else if (status === 'gea_pending' || status === 'rso_approved' || status === 'submitted') {
-      if (status === 'submitted') {
-        return { icon: 'fa-thumbs-up', label: 'Uploaded', canReplace: false, status: 'uploaded', iconClass: 'doc-uploaded' };
-      } else {
-        return { icon: 'fa-hourglass-end', label: 'In review', canReplace: false, status: 'in_review', iconClass: 'doc-in-review' };
-      }
-    }
-
-    return { icon: 'fa-thumbs-up', label: 'Uploaded', canReplace: false, status: 'uploaded', iconClass: 'doc-uploaded' };
-  }
-
   function confirmDocuments(applicationId, btn) {
     if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
     apiCall('confirm_documents', { application_id: applicationId }).then(function(res) {
@@ -8353,22 +8654,6 @@ function submitPasswordReset(event) {
       }
     }).catch(function(err) {
       if (btn) { btn.disabled = false; btn.textContent = 'Submit All Documents for Review'; }
-      showError('Error: ' + err.message);
-    });
-  }
-
-  function submitReplacementDocuments(applicationId, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
-    apiCall('submit_replacement_documents', { application_id: applicationId }).then(function(res) {
-      if (res.success) {
-        showError('Replacement documents submitted! The board will review your updated documents.', 'success');
-        loadApplicantPortal();
-      } else {
-        if (btn) { btn.disabled = false; btn.textContent = 'Submit Replacement Documents'; }
-        showError('Error: ' + (res.message || 'Failed to submit replacement documents'));
-      }
-    }).catch(function(err) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Submit Replacement Documents'; }
       showError('Error: ' + err.message);
     });
   }

@@ -1054,12 +1054,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.22";
+var SYSTEM_VERSION          = "2.5.23";
 var SYSTEM_BUILD_DATE       = "2026-04-26";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Remove all RSO approval link system code";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-26 14:53:13";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add getDocumentStatusInfo helper for 5-state document status system";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-26 16:52:10";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

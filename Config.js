@@ -1054,12 +1054,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.27";
+var SYSTEM_VERSION          = "2.5.28";
 var SYSTEM_BUILD_DATE       = "2026-04-26";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Rebuild lost improvements from reverted commits (972a39e, 4b33c49, 278ad47, bfdf906)";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-26 20:45:40";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Update Application Timeline to use Font Awesome icons for consistency";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-26 20:49:40";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

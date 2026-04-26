@@ -15,8 +15,8 @@ photo_max_size_mb|5|Max file size for member photos (MB)||Documents & Files
 youth_document_required|FALSE|Document upload required for under-16||Documents & Files
 employment_verification_optional_at_application|TRUE|Employment verification not required at application time||Employment Verification
 employment_verification_requestable_by_admin|TRUE|Admin can request employment verification post-activation||Employment Verification
-exchange_rate_last_updated|4/25/2026 1:51:27|Timestamp of last exchange rate API update||Exchange Rate
-exchange_rate_usd_to_bwp|13.750083|Current USD to BWP conversion rate (updated nightly)||Exchange Rate
+exchange_rate_last_updated|4/26/2026 1:51:27|Timestamp of last exchange rate API update||Exchange Rate
+exchange_rate_usd_to_bwp|13.655252|Current USD to BWP conversion rate (updated nightly)||Exchange Rate
 leobo_bump_window_days|5|Business days for bumping tentative reservations||Facility Reservations
 leobo_max_hours|6|Max hours per leobo reservation||Facility Reservations
 leobo_monthly_limit|1|Max leobo reservations per household/month||Facility Reservations
@@ -41,13 +41,13 @@ staff_leobo_access|FALSE|Staff may access leobo independently||Staff Policies
 staff_max_children|99|Max children staff can escort (99 = unlimited)||Staff Policies
 staff_reservation_allowed|FALSE|Staff may make facility reservations independently||Staff Policies
 ADM_COUNTER|4|Administrator ID sequence counter (do not edit manually)||System Counters
-APP_COUNTER|17|Application ID sequence counter (do not edit manually)||System Counters
-HSH_COUNTER|17|Household ID sequence counter (do not edit manually)||System Counters
-IND_COUNTER|24|Individual ID sequence counter (do not edit manually)||System Counters
+APP_COUNTER|20|Application ID sequence counter (do not edit manually)||System Counters
+HSH_COUNTER|20|Household ID sequence counter (do not edit manually)||System Counters
+IND_COUNTER|27|Individual ID sequence counter (do not edit manually)||System Counters
 PAY_COUNTER|5|Payment ID sequence counter (do not edit manually)||System Counters
 RST_COUNTER|4|Reset/test counter (do not edit manually)||System Counters
-SES_COUNTER|183|Session ID sequence counter (do not edit manually)||System Counters
+SES_COUNTER|189|Session ID sequence counter (do not edit manually)||System Counters
 SUB_COUNTER|18|File submission ID sequence counter (do not edit manually)||System Counters
 MEMBERSHIP_HANDBOOK_FILE_ID||Drive file ID for the membership handbook||Membership & Renewal
-FSB_COUNTER|24|||
+FSB_COUNTER|29|||
 RES_COUNTER|1|||

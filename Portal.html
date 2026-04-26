@@ -6993,8 +6993,8 @@ function submitPasswordReset(event) {
     title.textContent = 'Document Upload';
     card.appendChild(title);
 
-    // Track if any rejected documents exist for the Submit Replacement button
-    var hasRejectedDocuments = false;
+    // Track documents with rejected status for button logic
+    var rejectedDocuments = {};  // { individualId_documentType: true }
 
     (app.individuals || []).forEach(function(ind) {
       var age = _calculateAge(ind.date_of_birth);
@@ -7031,10 +7031,10 @@ function submitPasswordReset(event) {
 
         // Track rejected docs for this individual
         if (passportSubs.some(function(s) { return s.status === 'rejected' || s.status === 'rso_rejected' || s.status === 'gea_rejected' || s.status === 'board_rejected_member_notified'; })) {
-          hasRejectedDocuments = true;
+          rejectedDocuments[ind.individual_id + '_passport'] = true;
         }
         if (omangSubs.some(function(s) { return s.status === 'rejected' || s.status === 'rso_rejected' || s.status === 'gea_rejected' || s.status === 'board_rejected_member_notified'; })) {
-          hasRejectedDocuments = true;
+          rejectedDocuments[ind.individual_id + '_omang'] = true;
         }
 
         var label = document.createElement('span');
@@ -7091,7 +7091,7 @@ function submitPasswordReset(event) {
           uploadPass.innerHTML = '<i class="fas fa-passport" style="margin-right: 6px;"></i>' + (passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport');
           uploadPass.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'passport', b); }; })(ind.individual_id, uploadPass);
 
-          // Show button based on status
+          // Show button: for initial upload (not uploaded) OR rejected
           if (passportSubs.length === 0 || passportStatus.status === 'rejected') {
             uploadDiv.appendChild(uploadPass);
           }
@@ -7103,7 +7103,7 @@ function submitPasswordReset(event) {
           uploadOmang.innerHTML = '<i class="fas fa-id-card" style="margin-right: 6px;"></i>' + (omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang');
           uploadOmang.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'omang', b); }; })(ind.individual_id, uploadOmang);
 
-          // Show button based on status
+          // Show button: for initial upload (not uploaded) OR rejected
           if (omangSubs.length === 0 || omangStatus.status === 'rejected') {
             uploadDiv.appendChild(uploadOmang);
           }
@@ -7122,7 +7122,7 @@ function submitPasswordReset(event) {
 
         // Track rejected docs
         if (photoSubs.some(function(s) { return s.status === 'rejected' || s.status === 'rso_rejected' || s.status === 'gea_rejected' || s.status === 'board_rejected_member_notified'; })) {
-          hasRejectedDocuments = true;
+          rejectedDocuments[ind.individual_id + '_photo'] = true;
         }
 
         var photoStatus = getDocumentStatusInfo(photoSubs);
@@ -7153,7 +7153,7 @@ function submitPasswordReset(event) {
         photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace' : 'Upload');
         photoUpload.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, photoUpload);
 
-        // Show button only if not uploaded or rejected
+        // Show button: for initial upload (not uploaded) OR rejected
         if (photoSubs.length === 0 || photoStatus.status === 'rejected') {
           photoUploadDiv.appendChild(photoUpload);
         }
@@ -7179,7 +7179,7 @@ function submitPasswordReset(event) {
 
             // Track rejected docs
             if (docSubs.some(function(s) { return s.status === 'rejected' || s.status === 'rso_rejected' || s.status === 'gea_rejected' || s.status === 'board_rejected_member_notified'; })) {
-              hasRejectedDocuments = true;
+              rejectedDocuments[ind.individual_id + '_' + docType] = true;
             }
 
             var docStatus = getDocumentStatusInfo(docSubs);
@@ -7211,7 +7211,7 @@ function submitPasswordReset(event) {
             docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace' : 'Upload');
             docUpload.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, docUpload);
 
-            // Show button only if not uploaded or rejected
+            // Show button: for initial upload (not uploaded) OR rejected
             if (docSubs.length === 0 || docStatus.status === 'rejected') {
               docUploadDiv.appendChild(docUpload);
             }
@@ -7231,7 +7231,7 @@ function submitPasswordReset(event) {
 
         // Track rejected docs
         if (photoSubs.some(function(s) { return s.status === 'rejected' || s.status === 'rso_rejected' || s.status === 'gea_rejected' || s.status === 'board_rejected_member_notified'; })) {
-          hasRejectedDocuments = true;
+          rejectedDocuments[ind.individual_id + '_photo'] = true;
         }
 
         var photoStatus = getDocumentStatusInfo(photoSubs);
@@ -7262,7 +7262,7 @@ function submitPasswordReset(event) {
         photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace' : 'Upload');
         photoUpload.onclick = (function(id, b) { return function() { triggerDocumentUpload(id, 'photo', b); }; })(ind.individual_id, photoUpload);
 
-        // Show button only if not uploaded or rejected
+        // Show button: for initial upload (not uploaded) OR rejected
         if (photoSubs.length === 0 || photoStatus.status === 'rejected') {
           photoUploadDiv.appendChild(photoUpload);
         }
@@ -7281,7 +7281,7 @@ function submitPasswordReset(event) {
 
           // Track rejected docs
           if (submissions.some(function(s) { return s.status === 'rejected' || s.status === 'rso_rejected' || s.status === 'gea_rejected' || s.status === 'board_rejected_member_notified'; })) {
-            hasRejectedDocuments = true;
+            rejectedDocuments[ind.individual_id + '_' + docType] = true;
           }
 
           var idStatus = getDocumentStatusInfo(submissions);
@@ -7313,7 +7313,7 @@ function submitPasswordReset(event) {
           upload.innerHTML = '<i class="fas ' + iconClass + '" style="margin-right: 6px;"></i>' + (submissions.length > 0 ? 'Replace' : 'Upload');
           upload.onclick = (function(id, dt, b) { return function() { triggerDocumentUpload(id, dt, b); }; })(ind.individual_id, docType, upload);
 
-          // Show button only if not uploaded or rejected
+          // Show button: for initial upload (not uploaded) OR rejected
           if (submissions.length === 0 || idStatus.status === 'rejected') {
             btnDiv.appendChild(upload);
           }
@@ -7326,7 +7326,8 @@ function submitPasswordReset(event) {
     });
 
     // Add "Submit Replacement Documents" button if there are rejected documents
-    if (hasRejectedDocuments) {
+    // Button only shows if there are rejected documents that have been replaced
+    if (Object.keys(rejectedDocuments).length > 0) {
       var replaceBtn = document.createElement('button');
       replaceBtn.className = 'btn btn-primary';
       replaceBtn.style.marginTop = '12px';

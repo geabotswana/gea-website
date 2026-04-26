@@ -82,6 +82,9 @@ function uploadFileSubmission(params) {
     _appendRowByHeaders_(submissionSheet, payload);
 
     if (documentType === "passport" || documentType === "omang") {
+      // Generate RSO approval link and send action-required email via generateRsoApprovalLink()
+      generateRsoApprovalLink(payload.submission_id);
+
       // Notify board for awareness (background notification, no action needed)
       var individual = getMemberById(payload.individual_id);
       if (individual) {
@@ -156,6 +159,86 @@ function rejectFileSubmission(submission_id, rejection_reason, user_email) {
   return _reviewFileSubmission_(submission_id, "reject", rejection_reason || "Rejected by reviewer", user_email);
 }
 
+function generateRsoApprovalLink(submission_id) {
+  try {
+    var found = _findSubmissionById_(submission_id);
+    if (!found) return { ok: false, error: "Submission not found" };
+
+    var docType = String(found.obj.document_type || "").toLowerCase();
+    if (docType !== "passport" && docType !== "omang") {
+      return { ok: false, error: "RSO links only apply to passport/omang" };
+    }
+
+    var tokenSeed = submission_id + "|" + new Date().getTime() + "|" + Utilities.getUuid();
+    var tokenBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, tokenSeed);
+    var token = tokenBytes.map(function(b) {
+      var v = (b + 256) % 256;
+      return (v < 16 ? "0" : "") + v.toString(16);
+    }).join("");
+
+    var expiresAt = new Date(new Date().getTime() + (RSO_APPROVAL_LINK_EXPIRY_HOURS * 60 * 60 * 1000));
+    _setSubmissionFields_(found, {
+      rso_approval_link_token: token,
+      rso_approval_link_expires_at: expiresAt,
+      rso_approval_link_sent_date: formatDate(new Date(), true)
+    });
+
+    var baseUrl = ScriptApp.getService().getUrl();
+    var linkUrl = baseUrl + "?action=rso_approve&token=" + encodeURIComponent(token);
+
+    // NOTE: RSO now reviews documents via portal login (see CLAUDE.md — RSO Portal Access).
+    // The token-based approval link above is still generated and stored, but the email
+    // directs RSO to the portal. If direct-link approval is needed, add APPROVAL_LINK /
+    // EXPIRES_AT / SUBMISSION_ID placeholders to the ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE
+    // template in the Email Templates sheet.
+    sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
+      APPLICANT_NAME:    submission_id,
+      APPLICATION_ID:    submission_id,
+      DOCUMENT_TYPES:    "Document submission",
+      APPROVAL_DEADLINE: formatDate(expiresAt)
+    });
+
+    return { ok: true, link_url: linkUrl, expires_at: expiresAt };
+  } catch (e) {
+    Logger.log("ERROR generateRsoApprovalLink: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+function handleRsoApprovalLink(token, action, rejection_reason) {
+  try {
+    if (!token) return { ok: false, error: "Missing token" };
+
+    var found = _findSubmissionByToken_(token);
+    if (!found) return { ok: false, error: "Invalid or expired link" };
+
+    var now = new Date();
+    var expires = found.obj.rso_approval_link_expires_at ? new Date(found.obj.rso_approval_link_expires_at) : null;
+    if (expires && now > expires) {
+      return { ok: false, error: "Link expired" };
+    }
+    if (found.obj.rso_approval_link_used_at) {
+      return { ok: false, error: "Link already used" };
+    }
+
+    var approve = String(action || "approve").toLowerCase() === "approve";
+    _setSubmissionFields_(found, {
+      status: approve ? "gea_pending" : "rso_rejected",
+      rso_reviewed_by: EMAIL_RSO_APPROVE,
+      rso_review_date: now,
+      member_facing_rejection_reason: approve ? "" : (rejection_reason || "Rejected by RSO"),
+      rso_approval_link_used_at: now
+    });
+
+    logAuditEntry(EMAIL_RSO_APPROVE, approve ? AUDIT_FILE_SUBMISSION_RSO_APPROVED : AUDIT_FILE_SUBMISSION_RSO_REJECTED,
+      "FileSubmission", found.obj.submission_id, approve ? "Approved via one-time link" : "Rejected via one-time link");
+
+    return { ok: true, submission_id: found.obj.submission_id, status: approve ? "gea_pending" : "rso_rejected" };
+  } catch (e) {
+    Logger.log("ERROR handleRsoApprovalLink: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
 
 function copyApprovedPhotoToCloudStorage(submission_id, individual_id) {
   try {
@@ -297,7 +380,7 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("docs_approved");
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));
     if (notes) {
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(notes);
     }
@@ -345,7 +428,7 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReappli
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("denied_recommendation");
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(denialMessage);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "allow_reapplication")).setValue(allowReapplication ? "true" : "false");
 
@@ -433,6 +516,30 @@ function checkDocumentExpirationWarnings() {
   }
 
   return { ok: true, warnings_sent: warningsSent };
+}
+
+function deleteExpiredRsoLinks() {
+  var sheet = _getFileSubmissionsSheet_();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var expiredCount = 0;
+  var now = new Date();
+
+  for (var i = 1; i < data.length; i++) {
+    var rowObj = rowToObject(headers, data[i]);
+    if (!rowObj.rso_approval_link_token || rowObj.rso_approval_link_used_at) continue;
+    if (!rowObj.rso_approval_link_expires_at) continue;
+    var exp = new Date(rowObj.rso_approval_link_expires_at);
+    if (now > exp) {
+      expiredCount++;
+      var statusCol = headers.indexOf("status") + 1;
+      var tokenCol = headers.indexOf("rso_approval_link_token") + 1;
+      if (statusCol > 0) sheet.getRange(i + 1, statusCol).setValue("rso_link_expired");
+      if (tokenCol > 0) sheet.getRange(i + 1, tokenCol).setValue("");
+    }
+  }
+
+  return { ok: true, expired_count: expiredCount };
 }
 
 function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEmail) {
@@ -584,6 +691,19 @@ function _findSubmissionById_(submissionId) {
   return null;
 }
 
+function _findSubmissionByToken_(token) {
+  var sheet = _getFileSubmissionsSheet_();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  for (var i = 1; i < data.length; i++) {
+    var obj = rowToObject(headers, data[i]);
+    if (obj.rso_approval_link_token === token) {
+      return { sheet: sheet, headers: headers, rowIndex: i + 1, obj: obj };
+    }
+  }
+  return null;
+}
+
 function _setSubmissionFields_(found, patch) {
   var headers = found.headers;
   for (var key in patch) {
@@ -694,7 +814,7 @@ function _expireCurrentSubmission_(individualId, documentType) {
       var currCol = headers.indexOf("is_current") + 1;
       var disabledCol = headers.indexOf("disabled_date") + 1;
       if (currCol > 0) sheet.getRange(i + 1, currCol).setValue(false);
-      if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(new Date());
+      if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(formatDate(new Date(), true));
     }
   }
 }
@@ -723,7 +843,7 @@ function _handleOldSubmissionOnReplacement_(individualId, documentType) {
         var currCol = headers.indexOf("is_current") + 1;
         var disabledCol = headers.indexOf("disabled_date") + 1;
         if (currCol > 0) sheet.getRange(i + 1, currCol).setValue(false);
-        if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(new Date());
+        if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(formatDate(new Date(), true));
       }
 
       return;
@@ -908,7 +1028,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     var patchObj = {
       status:                          newStatus,
       rso_reviewed_by:                 rsoEmail,
-      rso_review_date:                 new Date(),
+      rso_review_date:                 formatDate(new Date(), true),
       member_facing_rejection_reason:  approve ? "" : (rejectionReason || "Rejected by RSO")
     };
 
@@ -1211,7 +1331,7 @@ function sendBoardApplicationRejectionResponse(applicationId, boardMessage, allo
     // Record board message and mark as responded
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_rejection_message")).setValue(boardMessage);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_notified_by")).setValue(boardEmail);
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_notification_date")).setValue(new Date());
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_notification_date")).setValue(formatDate(new Date(), true));
 
     // Send email to applicant with RSO + board messages
     var applicantEmail = application.primary_applicant_email;

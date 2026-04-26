@@ -6886,11 +6886,30 @@ function submitPasswordReset(event) {
     title.textContent = 'Application Timeline';
     card.appendChild(title);
 
+    // Status progression order for step completion tracking
+    var statusProgression = [
+      'awaiting_docs',
+      'board_initial_review',
+      'rso_docs_review',
+      'rso_application_review',
+      'board_final_review',
+      'approved_pending_payment',
+      'payment_submitted',
+      'payment_verified',
+      'activated'
+    ];
+
+    var currentStatusIndex = statusProgression.indexOf(app.status);
+
     var steps = [
       { label: 'Application Submitted', complete: true },
       { label: 'Documents Uploaded', complete: app.status !== 'awaiting_docs' },
-      { label: 'Board Approval', complete: ['approved_pending_payment', 'payment_submitted', 'activated'].indexOf(app.status) !== -1 },
-      { label: 'Payment Verification', complete: ['payment_submitted', 'activated'].indexOf(app.status) !== -1 },
+      { label: 'Board Reviews Verification Letters', complete: currentStatusIndex >= statusProgression.indexOf('board_initial_review') },
+      { label: 'Board Initial Application Review', complete: currentStatusIndex >= statusProgression.indexOf('board_initial_review') },
+      { label: 'RSO Reviews Documents', complete: currentStatusIndex >= statusProgression.indexOf('rso_docs_review') },
+      { label: 'RSO Reviews Application', complete: currentStatusIndex >= statusProgression.indexOf('rso_application_review') },
+      { label: 'Board Final Approval', complete: currentStatusIndex >= statusProgression.indexOf('board_final_review') },
+      { label: 'Payment Submitted', complete: currentStatusIndex >= statusProgression.indexOf('payment_submitted') },
       { label: 'Membership Activated', complete: app.status === 'activated' }
     ];
 

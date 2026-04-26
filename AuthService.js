@@ -1730,7 +1730,7 @@ function adminLogin(email, password) {
 
     // Record first login date if this is the first login
     if (isFirstLogin && colIdx.first_login_date >= 0) {
-      sheet.getRange(rowIdx, colIdx.first_login_date + 1).setValue(new Date());
+      sheet.getRange(rowIdx, colIdx.first_login_date + 1).setValue(formatDate(new Date(), true));
     }
 
     logAuditEntry(email, AUDIT_ADMIN_LOGIN, "Administrator", adminRow[colIdx.admin_id],

@@ -684,7 +684,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       // Board approves — send to RSO
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_status")).setValue("approved");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_reviewed_by")).setValue(boardEmail);
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_review_date")).setValue(new Date());
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_review_date")).setValue(formatDate(new Date(), true));
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_notes")).setValue(notes || "");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_DOCS_REVIEW);
 
@@ -723,7 +723,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       // Board denies application
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_status")).setValue("denied");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_reviewed_by")).setValue(boardEmail);
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_review_date")).setValue(new Date());
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_review_date")).setValue(formatDate(new Date(), true));
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_denial_reason")).setValue(reason || "");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_DENIED);
 
@@ -781,7 +781,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
       // RSO approves — ready for board final review
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("approved");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_FINAL_REVIEW);
 
       logAuditEntry(rsoEmail, AUDIT_APPLICATION_RSO_REVIEWED, "Application", applicationId, "RSO approved documents");
@@ -800,7 +800,7 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
       // RSO rejects — loops back to initial review with feedback
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("denied");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(new Date());
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(privateNotes || "");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_INITIAL_REVIEW);
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_status")).setValue("");
@@ -871,7 +871,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       // Board final approval — applicant can now submit payment
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_status")).setValue("approved");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_reviewed_by")).setValue(boardEmail);
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_review_date")).setValue(new Date());
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_review_date")).setValue(formatDate(new Date(), true));
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_APPROVED_PENDING_PAYMENT);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_BOARD_FINAL, "Application", applicationId, "Final approval granted - awaiting payment");
@@ -908,7 +908,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       // Board final denial
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_status")).setValue("denied");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_reviewed_by")).setValue(boardEmail);
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_review_date")).setValue(new Date());
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_review_date")).setValue(formatDate(new Date(), true));
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_denial_reason")).setValue(reason || "");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_DENIED);
 
@@ -1136,7 +1136,7 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKING_ID).getSheetByName(TAB_PAYMENTS);
     var paymentRow = _findPaymentRow(application.payment_id);
     if (paymentRow > 0) {
-      paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "payment_verified_date")).setValue(new Date());
+      paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "payment_verified_date")).setValue(formatDate(new Date(), true));
       paymentSheet.getRange(paymentRow, _getColumnIndex(TAB_PAYMENTS, "payment_verified_by")).setValue(treasurerEmail);
     }
 
@@ -1147,10 +1147,10 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
     var hhRow = _findHouseholdRow(application.household_id);
     householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "active")).setValue(true);
-    householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_start_date")).setValue(new Date());
+    householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_start_date")).setValue(formatDate(new Date(), true));
     householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_expiration_date")).setValue(expirationDate);
     householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "approved_by")).setValue(treasurerEmail);
-    householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "approved_date")).setValue(new Date());
+    householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "approved_date")).setValue(formatDate(new Date(), true));
     householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_MEMBER);
 
     // Activate all individuals in household
@@ -1169,7 +1169,7 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var appRow = _findApplicationRow(applicationId);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_ACTIVATED);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "payment_status")).setValue("verified");
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "approved_date")).setValue(new Date());
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "approved_date")).setValue(formatDate(new Date(), true));
 
     logAuditEntry(treasurerEmail, AUDIT_APPLICATION_ACTIVATED, "Application", applicationId,
                   "Membership activated by Treasurer");
@@ -1244,7 +1244,7 @@ function withdrawApplication(applicationId, applicantEmail, withdrawalReason) {
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_WITHDRAWN);
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "withdrawal_date")).setValue(new Date());
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "withdrawal_date")).setValue(formatDate(new Date(), true));
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "withdrawal_reason")).setValue(withdrawalReason || "");
 
     logAuditEntry(applicantEmail, AUDIT_APPLICATION_WITHDRAWN, "Application", applicationId,

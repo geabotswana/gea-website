@@ -331,7 +331,7 @@ function _updateField(spreadsheetId, tabName, idColName, recordId,
     for (var i = 1; i < data.length; i++) {
       if (data[i][idCol] === recordId) {
         sheet.getRange(i + 1, fldCol + 1).setValue(value);
-        if (modCol !== -1) sheet.getRange(i + 1, modCol + 1).setValue(new Date());
+        if (modCol !== -1) sheet.getRange(i + 1, modCol + 1).setValue(formatDate(new Date(), true));
         logAuditEntry(updatedBy, auditAction, auditTarget, recordId,
                       "Updated " + fieldName + " → " + String(value));
         return true;

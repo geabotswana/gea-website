@@ -267,7 +267,6 @@ function _routeAction(action, params) {
     case "reject_file": return _handleRejectFileSubmission(params);
     case "request_employment": return _handleRequestEmploymentVerification(params);
     case "get_submission_history": return _handleGetSubmissionHistory(params);
-    case "rso_approve": return _handleRsoApprovalLink(params);
     case "send_contact_message":     return _handleSendContactMessage(params);
     case "get_household_members":    return _handleGetHouseholdMembers(params);
     case "add_household_member":     return _handleAddHouseholdMember(params);
@@ -2687,21 +2686,6 @@ function _handleGetSubmissionHistory(p) {
     return successResponse(result);
   } catch (e) {
     return errorResponse("Error retrieving submission history: " + e.toString(), "SERVER_ERROR");
-  }
-}
-
-/**
- * HANDLER: _handleRsoApprovalLink
- * PURPOSE: Public one-time RSO approval endpoint.
- */
-function _handleRsoApprovalLink(p) {
-  try {
-    if (!p.token) return errorResponse("token is required.", "INVALID_PARAM");
-    var result = handleRsoApprovalLink(p.token, p.decision || p.action_decision || "approve", p.rejection_reason || "");
-    if (!result.ok) return errorResponse(result.error || "RSO action failed", "RSO_ACTION_FAILED");
-    return successResponse(result);
-  } catch (e) {
-    return errorResponse("Error processing RSO approval link: " + e.toString(), "SERVER_ERROR");
   }
 }
 

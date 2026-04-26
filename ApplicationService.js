@@ -533,7 +533,7 @@ function submitReplacementDocumentsForApplication(applicationId, email) {
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(newStatus);
     }
 
-    logAuditEntry(email, AUDIT_APPLICATION_DOCUMENTS_RESUBMITTED, "Application", applicationId,
+    logAuditEntry(email, AUDIT_APPLICATION_BOARD_INITIAL, "Application", applicationId,
                   "Replacement documents submitted and ready for board review");
 
     var applicantName      = application.primary_applicant_name || "";

@@ -490,6 +490,79 @@ function confirmDocumentsUploaded(applicationId, email) {
 
 
 /**
+ * FUNCTION: submitReplacementDocumentsForApplication
+ * PURPOSE: Applicant resubmits replacement documents after rejections.
+ *
+ * @param {string} applicationId Application ID
+ * @param {string} email Applicant's email (for ownership verification)
+ * @returns {Object} { success, message }
+ */
+function submitReplacementDocumentsForApplication(applicationId, email) {
+  try {
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { success: false, message: "Application not found." };
+    }
+
+    // Verify ownership
+    if (application.primary_applicant_email !== email) {
+      return { success: false, message: "Unauthorized." };
+    }
+
+    // Get current status
+    var currentStatus = application.status || "";
+
+    // Determine new status based on current status
+    // If we're past board_initial_review, reset to board_initial_review
+    // Otherwise stay in awaiting_docs
+    var newStatus;
+    if (currentStatus === 'awaiting_docs') {
+      newStatus = 'awaiting_docs';
+    } else if (['board_initial_review', 'rso_docs_review', 'rso_application_review', 'board_final_review'].indexOf(currentStatus) !== -1) {
+      // Reset back to the beginning of the review process
+      newStatus = 'board_initial_review';
+    } else {
+      // For any other status, don't allow resubmission
+      return { success: false, message: "Replacement documents can only be submitted while your application is under review." };
+    }
+
+    // Update application status
+    var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appRow = _findApplicationRow(applicationId);
+    if (appRow > 0) {
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(newStatus);
+    }
+
+    logAuditEntry(email, AUDIT_APPLICATION_DOCUMENTS_RESUBMITTED, "Application", applicationId,
+                  "Replacement documents submitted and ready for board review");
+
+    var applicantName      = application.primary_applicant_name || "";
+    var applicantFirstName = applicantName.split(" ")[0] || "Applicant";
+    var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+
+    // Notify board of replacement documents
+    sendEmailFromTemplate("ADM_REPLACEMENT_DOCS_SUBMITTED_TO_BOARD", boardEmail, {
+      FIRST_NAME:      "Board",
+      APPLICANT_NAME:  applicantName,
+      APPLICATION_ID:  applicationId,
+      SUBMISSION_DATE: formatDate(new Date())
+    });
+
+    // Notify applicant that replacement documents have been received
+    sendEmailFromTemplate("ADM_REPLACEMENT_DOCS_SUBMITTED_TO_MEMBER", application.primary_applicant_email, {
+      FIRST_NAME:      applicantFirstName,
+      SUBMISSION_DATE: formatDate(new Date())
+    });
+
+    return { success: true, message: "Replacement documents submitted. The board will review them shortly." };
+
+  } catch (e) {
+    return { success: false, message: "Error submitting replacement documents: " + e.toString() };
+  }
+}
+
+
+/**
  * FUNCTION: listApplicationsForBoard
  * PURPOSE: List all applications for board view, optionally filtered by status.
  *

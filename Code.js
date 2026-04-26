@@ -141,56 +141,6 @@ function getDeploymentInfo() {
 }
 
 /**
- * Helper: Check if a membership category requires a sponsor.
- * Called from Portal.html to conditionally show sponsor fields.
- * @param {string} category - Membership category name
- * @returns {boolean} true if category requires sponsor
- */
-function categoryRequiresSponsor(category) {
-  return CATEGORIES_REQUIRING_SPONSOR.indexOf(category) !== -1;
-}
-
-/**
- * Helper: Get document requirements text for applicant based on category.
- * Called from Portal.html to display requirements before household type selection.
- * @param {string} category - Membership category name
- * @returns {string} HTML-formatted document requirements for the applicant
- */
-function getApplicantDocumentRequirements(category) {
-  if (!DOCUMENT_REQUIREMENTS[category]) {
-    return "Category not found.";
-  }
-
-  var req = DOCUMENT_REQUIREMENTS[category];
-  var html = req.applicant_note || "";
-
-  // Add note about annual renewal for Associate funding verification
-  if (category === "Associate") {
-    html += "<br><br><strong>Note:</strong> Funding verification must be provided annually.";
-  }
-
-  // Add note about family members for all categories
-  if (category !== "Temporary") {
-    html += "<br><br><strong>For family members:</strong> Either passport or omang is acceptable.";
-  }
-
-  return html;
-}
-
-/**
- * Helper: Get applicant upload configuration for all categories.
- * Called from Portal.html at page load to populate upload type restrictions.
- * Single source of truth from Config.js.
- * @returns {Object} {applicant: {...}, family: [...]} upload type mappings
- */
-function getApplicantUploadConfiguration() {
-  return {
-    applicant: APPLICANT_UPLOAD_TYPES,
-    family: FAMILY_STAFF_UPLOAD_TYPES
-  };
-}
-
-/**
  * Called from Portal.html via google.script.run to avoid CORS issues.
  * @param {string} action - The API action
  * @param {Object} params - Request parameters
@@ -258,6 +208,7 @@ function _routeAction(action, params) {
     case "application_status":  return _handleApplicationStatus(params);
     case "withdraw_application": return _handleWithdrawApplication(params);
     case "confirm_documents":   return _handleConfirmDocuments(params);
+    case "submit_replacement_documents": return _handleSubmitReplacementDocuments(params);
     case "upload_document":     return _handleUploadDocument(params);
     case "remove_document":     return _handleRemoveDocument(params);
     case "submit_payment_proof": return _handleSubmitPaymentProof(params);
@@ -267,6 +218,7 @@ function _routeAction(action, params) {
     case "reject_file": return _handleRejectFileSubmission(params);
     case "request_employment": return _handleRequestEmploymentVerification(params);
     case "get_submission_history": return _handleGetSubmissionHistory(params);
+    case "rso_approve": return _handleRsoApprovalLink(params);
     case "send_contact_message":     return _handleSendContactMessage(params);
     case "get_household_members":    return _handleGetHouseholdMembers(params);
     case "add_household_member":     return _handleAddHouseholdMember(params);
@@ -2444,6 +2396,45 @@ function _handleRemoveDocument(p) {
 }
 
 /**
+ * HANDLER: _handleSubmitReplacementDocuments
+ * PURPOSE: Applicant submits replacement documents after rejections
+ */
+function _handleSubmitReplacementDocuments(p) {
+  try {
+    var auth = requireAuth(p.token);
+    if (!auth.ok) return auth.response;
+
+    var result = submitReplacementDocumentsForApplication(p.application_id, auth.session.email);
+    if (result.success) {
+      return successResponse(result);
+    } else {
+      return errorResponse(result.message || "Failed to submit replacement documents", "OPERATION_FAILED");
+    }
+  } catch (e) {
+    return errorResponse("Error submitting replacement documents: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * Maps file extensions to MIME types.
+ * @private
+ */
+function _getMimeTypeFromExtension_(ext) {
+  var mimeMap = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  };
+  return mimeMap[ext] || 'application/octet-stream';
+}
+
+/**
  * HANDLER: _handleUploadDocument
  * PURPOSE: Applicant uploads a required document (passport, omang, photo)
  */
@@ -2468,20 +2459,7 @@ function _handleUploadDocument(p) {
     var dateStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd');
     var meaningfulName = p.individual_id + '_' + p.document_type + '_' + dateStr + '.' + ext;
     var decodedBytes = Utilities.base64Decode(p.file_data_base64);
-
-    // Determine MIME type based on file extension
-    var mimeType = "application/octet-stream";  // Default
-    var mimeTypes = {
-      "jpg": "image/jpeg",
-      "jpeg": "image/jpeg",
-      "png": "image/png",
-      "gif": "image/gif",
-      "pdf": "application/pdf"
-    };
-    if (mimeTypes[ext]) {
-      mimeType = mimeTypes[ext];
-    }
-
+    var mimeType = _getMimeTypeFromExtension_(ext);
     var blob = Utilities.newBlob(decodedBytes, mimeType, meaningfulName);
 
     // Use FileSubmissionService to handle upload
@@ -2686,6 +2664,21 @@ function _handleGetSubmissionHistory(p) {
     return successResponse(result);
   } catch (e) {
     return errorResponse("Error retrieving submission history: " + e.toString(), "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleRsoApprovalLink
+ * PURPOSE: Public one-time RSO approval endpoint.
+ */
+function _handleRsoApprovalLink(p) {
+  try {
+    if (!p.token) return errorResponse("token is required.", "INVALID_PARAM");
+    var result = handleRsoApprovalLink(p.token, p.decision || p.action_decision || "approve", p.rejection_reason || "");
+    if (!result.ok) return errorResponse(result.error || "RSO action failed", "RSO_ACTION_FAILED");
+    return successResponse(result);
+  } catch (e) {
+    return errorResponse("Error processing RSO approval link: " + e.toString(), "SERVER_ERROR");
   }
 }
 

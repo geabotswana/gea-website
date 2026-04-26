@@ -6900,10 +6900,14 @@ function submitPasswordReset(event) {
       row.style.alignItems = 'center';
       row.style.padding = '8px 0';
       row.style.borderBottom = '1px solid #eee';
-      var icon = document.createElement('span');
+
+      var icon = document.createElement('i');
+      icon.className = 'fas ' + (step.complete ? 'fa-circle-check' : 'fa-circle');
       icon.style.marginRight = '10px';
-      icon.textContent = step.complete ? '✅' : '⏳';
+      icon.style.color = step.complete ? '#2E7D32' : '#ccc';
+      icon.style.width = '20px';
       row.appendChild(icon);
+
       var label = document.createElement('span');
       label.textContent = step.label;
       row.appendChild(label);

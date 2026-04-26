@@ -1054,12 +1054,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.25";
+var SYSTEM_VERSION          = "2.5.26";
 var SYSTEM_BUILD_DATE       = "2026-04-26";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix date field formatting across all Service files";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-26 17:13:24";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Restore UI text changes lost in merge: Applicant Portal header and Document Upload tab name";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-26 20:03:41";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

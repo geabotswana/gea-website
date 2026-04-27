@@ -1054,12 +1054,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.29";
-var SYSTEM_BUILD_DATE       = "2026-04-26";
+var SYSTEM_VERSION          = "2.5.30";
+var SYSTEM_BUILD_DATE       = "2026-04-27";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Restore 9-step Application Status timeline";
-var DEPLOYMENT_TIMESTAMP    = "2026-04-26 21:01:31";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Remove review deadline from ADM_NEW_APPLICATION_BOARD_TO_BOARD email template";
+var DEPLOYMENT_TIMESTAMP    = "2026-04-27 14:54:39";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

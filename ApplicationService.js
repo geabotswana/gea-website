@@ -314,11 +314,10 @@ function createApplicationRecord(formData, createdBy) {
     };
     Logger.log("[DEBUG] Board email variables: " + JSON.stringify(boardEmailVars));
     sendEmailFromTemplate("ADM_NEW_APPLICATION_BOARD_TO_BOARD", boardEmail, {
-      FIRST_NAME:            "Board",
-      APPLICANT_NAME:        boardEmailVars["APPLICANT_NAME"],
-      APPLICATION_ID:        boardEmailVars["APPLICATION_ID"],
-      APPLICATION_DATE:      boardEmailVars["SUBMITTED_DATE"],
-      BOARD_REVIEW_DEADLINE: formatDate(addDays(new Date(), 3))
+      FIRST_NAME:       "Board",
+      APPLICANT_NAME:   boardEmailVars["APPLICANT_NAME"],
+      APPLICATION_ID:   boardEmailVars["APPLICATION_ID"],
+      APPLICATION_DATE: boardEmailVars["SUBMITTED_DATE"]
     });
 
     return {

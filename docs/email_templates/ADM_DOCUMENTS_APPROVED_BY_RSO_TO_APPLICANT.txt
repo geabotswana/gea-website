@@ -1,0 +1,26 @@
+Hi {{FIRST_NAME}},
+
+YOUR DOCUMENTS HAVE BEEN APPROVED
+
+Great news! All of your required identity documents have been reviewed and approved by our RSO team.
+
+APPLICATION DETAILS:
+Application ID: {{APPLICATION_ID}}
+Documents Approved: {{DOCUMENT_TYPES}}
+Approval Date: {{APPROVAL_DATE}}
+
+WHAT HAPPENS NEXT:
+Your application will now proceed to the final review stage with our board. The board will make the final approval decision based on all information submitted.
+
+Once the board approves your application, you will receive details about your membership payment, which is the final step to activate your membership.
+
+We appreciate your patience as we work through the application process. You should expect to hear from us within the next week.
+
+CHECK YOUR STATUS:
+Log into your member portal to see real-time updates: {{PORTAL_URL}}
+
+QUESTIONS?
+Need help or have questions about your application? Contact board@geabotswana.org - we're here to help!
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

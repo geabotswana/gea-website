@@ -1,0 +1,39 @@
+Hi RSO Approval Team,
+
+APPLICATION REVIEW REQUIRED
+
+All documents for this application have been approved. Now the application itself requires RSO review and approval.
+
+APPLICATION DETAILS:
+Applicant: {{APPLICANT_NAME}}
+Application ID: {{APPLICATION_ID}}
+Category Verification Requirements: {{CATEGORY_VERIFICATION_REQUIREMENTS}}
+Review Deadline: {{DEADLINE}}
+
+YOUR RESPONSIBILITIES:
+- Verify membership category eligibility
+- Validate sponsor credentials (if applicable)
+- Confirm all membership rules are met
+- Verify household composition
+- Approve or request clarifications as needed
+- Log your decision in the system
+
+APPROVAL OPTIONS:
+1. APPROVE: Application meets all eligibility requirements
+2. REQUEST CLARIFICATION: Need additional information
+3. RECOMMEND DENIAL: Does not meet requirements (board makes final decision)
+
+NEXT STEPS AFTER APPROVAL:
+Once approved, the application will go to the board for final approval decision. The member will then proceed to payment.
+
+ACCESS THE APPLICATION:
+Log into the RSO Portal to review application details and make your decision.
+
+TIMELINE:
+Please complete your review by {{DEADLINE}}.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need clarification.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

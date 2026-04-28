@@ -1,0 +1,25 @@
+Hi RSO Team,
+
+NEW MEMBER ACTIVATED
+
+A new member has completed the membership application process and their membership is now active. Please update your records accordingly.
+
+MEMBER DETAILS:
+Name: {{MEMBER_NAME}}
+Member ID: {{MEMBER_ID}}
+Application ID: {{APPLICATION_ID}}
+Activation Date: {{ACTIVATION_DATE}}
+
+YOUR NEXT STEPS:
+- Add member to active member directory
+- Provide member information to guards for facility access recognition
+- Update any relevant RSO records (guest lists, facility schedules, etc.)
+- Include member name in any future communications about facility usage
+
+The member now has full access to all GEA facilities and portal features.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need any additional information about the new member.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -11,10 +11,11 @@
 # Clasp credentials
 .clasp.json
 
-# Local tooling (exclude personal settings but track shared hooks)
+# Local tooling (exclude personal settings but track shared hooks and briefing)
 .claude/*
 !.claude/hooks/
 !.claude/settings.json
+!.claude/briefing.md
 .gea/
 node_modules/
 mcp/

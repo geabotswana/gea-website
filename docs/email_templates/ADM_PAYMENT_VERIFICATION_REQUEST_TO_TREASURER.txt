@@ -1,0 +1,35 @@
+Hi Treasurer,
+
+ACTION REQUIRED: PAYMENT VERIFICATION
+
+A new member has been approved and is ready to make their membership payment. Please verify payment when received.
+
+MEMBER DETAILS:
+Name: {{MEMBER_NAME}}
+Application ID: {{APPLICATION_ID}}
+Required Payment Amount: {{AMOUNT}} {{CURRENCY}}
+Payment Deadline: {{PAYMENT_DEADLINE}}
+
+YOUR RESPONSIBILITIES:
+- Monitor for payment proof submission from the member
+- Verify payment amount matches required dues
+- Confirm payment has been received by GEA
+- Log verification in the system when complete
+- Notify board once payment is verified
+
+PAYMENT WORKFLOW:
+1. Member submits proof of payment to the portal
+2. You receive notification of submission
+3. You verify the payment has cleared
+4. You log verification in the system
+5. Member receives activation confirmation
+
+If payment is not received by {{PAYMENT_DEADLINE}}, please notify the board.
+
+QUESTIONS?
+Contact board@geabotswana.org if you need assistance.
+
+NOTE: If the Treasurer is unavailable, any board member may step in to verify the payment.
+
+---
+This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -75,13 +75,7 @@
 **User Action:** Board reviews documents for completeness/authenticity
 
 ### Emails Sent:
-⚠️ **NONE CURRENTLY** - This is a silent review period
-
-**🆕 PROPOSED:** Board could send progress notification to applicant
-- **Template:** [NEW] ADM_BOARD_REVIEWING_DOCUMENTS_TO_MEMBER
-- **Subject:** "Your GEA Application Documents Are Being Reviewed"
-- **Recipient:** applicant email
-- **Purpose:** Transparency - lets applicant know board is actively reviewing
+⚠️ **NONE** - Silent review period (no applicant notification)
 
 ---
 
@@ -115,13 +109,7 @@
 - **Content Variables:** FIRST_NAME, DOCUMENT_TYPES, SUBMISSION_DATE
 - **Purpose:** Informs applicant that board approved and RSO is reviewing
 
-**🆕 PROPOSED - Step 4A.4:** Send explicit approval decision to applicant
-- **Template:** [NEW] ADM_BOARD_INITIAL_REVIEW_APPROVED_TO_MEMBER
-- **Subject:** "Great News: Your GEA Application Passed Initial Review"
-- **Recipient:** applicant email
-- **Trigger Location:** ApplicationService.js `boardInitialDecision()` line [NEW]
-- **Content Variables:** FIRST_NAME, APPLICATION_ID, NEXT_STEP_DESCRIPTION, TIMELINE
-- **Purpose:** CLARITY - Tells applicant explicitly that initial review passed
+**Note:** Initial approval notification to applicant is intentionally silent. Documents moving to RSO is sufficient transparency.
 
 #### Status after 4A: `rso_docs_review`
 
@@ -135,11 +123,7 @@
 - **Recipient:** applicant email
 - **Trigger Location:** ApplicationService.js `boardInitialDecision()` line 740
 - **Content Variables:** FIRST_NAME, APPLICATION_ID, DENIAL_REASON, CONTACT_EMAIL
-- **Purpose:** Notifies applicant of denial decision
-
-**🆕 PROPOSED - Step 4B.2:** Send explicit denial decision to board
-- **Template:** [NEW] ADM_BOARD_INITIAL_REVIEW_DENIED_TO_MEMBER (N/A - reuse ADM_BOARD_INITIAL_DENIED_TO_BOARD)
-- **Purpose:** Internal confirmation (board already knows, but creates audit trail)
+- **Purpose:** Notifies applicant of denial (stage-agnostic - uses board-written diplomatic reason)
 
 #### Status after 4B: `denied` (application closed)
 
@@ -161,17 +145,14 @@
 - **Content Variables:** APPLICANT_NAME, APPLICATION_ID
 - **Purpose:** Informs board that all documents passed RSO validation
 
-#### 5.3 → Applicant (if documents approved)
-- **Template:** ADM_DOCUMENT_APPROVED_BY_RSO_TO_BOARD (sent to board about member approval)
-- **Recipient:** board email
-- **Trigger Location:** FileSubmissionService.js line 1054
-- **Purpose:** Board internal notification (NOT sent to applicant currently)
-
-**🆕 PROPOSED - Step 5.3:** Send approval notification to applicant
-- **Template:** [NEW] ADM_DOCUMENTS_APPROVED_BY_RSO_TO_MEMBER
+#### 5.3 → Applicant (if all application ID documents approved)
+- **Template:** ADM_DOCUMENTS_APPROVED_BY_RSO_TO_APPLICANT
 - **Subject:** "Your GEA Documents Have Been Verified and Approved"
 - **Recipient:** applicant email
-- **Purpose:** Transparency - lets applicant know RSO approved their documents
+- **Trigger Location:** FileSubmissionService.js (NEW)
+- **Content Variables:** FIRST_NAME, APPLICATION_ID, APPROVAL_DATE, DOCUMENT_TYPES
+- **Purpose:** Transparency - lets applicant know all required ID documents passed RSO verification
+- **Note:** Fires only when ALL application-related identity documents have been approved
 
 #### Status after 5 (approval): Application moves to `rso_application_review` (if that status exists)
 #### Status after 5 (rejection): Applicant gets document rejection notice
@@ -195,41 +176,29 @@
 ---
 
 ## STEP 6: RSO Reviews Application
-**Status:** `rso_application_review` (theoretical - appears to be conflated with step 5)
-**User Action:** RSO validates membership category, sponsor credentials, eligibility rules
-
-### Current State:
-⚠️ **ISSUE:** This step appears to be CONFLATED with Step 5. RSO document review and application review are not distinguished in current code.
+**Status:** `rso_application_review`
+**User Action:** RSO validates membership category, sponsor credentials, eligibility rules (after all documents approved)
 
 ### Emails Sent:
-⚠️ **NONE SPECIFIC TO APPLICATION REVIEW** - Only document review notifications exist
 
-**🆕 PROPOSED:** Split RSO request into two clear action items:
-
-#### After Step 5 Documents Approved → Step 6 Application Review
-
-#### 6.1 → RSO (NEW ACTION REQUEST)
-- **Template:** [NEW] ADM_RSO_APPLICATION_REVIEW_REQUEST_TO_RSO_APPROVE
+#### 6.1 → RSO (IMMEDIATE after Step 5)
+- **Template:** ADM_RSO_APPLICATION_REVIEW_REQUEST_TO_RSO_APPROVE
 - **Subject:** "Action Required: Application Review for {{APPLICANT_NAME}}"
 - **Recipient:** RSO approve email
-- **Trigger Location:** [NEW] ApplicationService.js - after documents approved
+- **Trigger Location:** ApplicationService.js - after all documents approved
 - **Content Variables:** FIRST_NAME, APPLICANT_NAME, APPLICATION_ID, CATEGORY_VERIFICATION_REQUIREMENTS, DEADLINE
-- **Purpose:** ACTION REQUEST - Different from document review, focuses on eligibility
-
-#### 6.2 → Board (status update)
-- **Template:** [NEW or modify] Board notification when RSO moves to next phase
-- **Purpose:** Board aware that application review is underway
+- **Purpose:** ACTION REQUEST - Separate from document review, focuses on eligibility verification
 
 #### Status after 6 (approval): Application moves to `board_final_review`
-#### Status after 6 (rejection): Application loops back to `board_initial_review`
+#### Status after 6 (rejection): Application loops back to board review
 
-#### 6.3 → Applicant (if application APPROVED after RSO review)
+#### 6.2 → Applicant (if application APPROVED after RSO review)
 - **Template:** ADM_READY_FOR_FINAL_APPROVAL_TO_MEMBER
 - **Subject:** "Your GEA Application is Ready for Final Approval"
 - **Recipient:** applicant email
-- **Trigger Location:** FileSubmissionService.js (or ApplicationService - timing TBD)
+- **Trigger Location:** ApplicationService.js (after RSO approves)
 - **Content Variables:** FIRST_NAME, APPLICATION_ID
-- **Purpose:** Informs applicant that RSO completed review successfully
+- **Purpose:** Informs applicant that RSO completed eligibility review successfully
 
 ---
 
@@ -247,15 +216,7 @@
 - **Content Variables:** FIRST_NAME, APPLICANT_NAME, APPLICATION_ID, APPROVAL_DATE
 - **Purpose:** Internal board notification of final approval
 
-**🆕 PROPOSED - Step 7A.2:** Notify RSO of final approval
-- **Template:** [NEW] ADM_BOARD_FINAL_APPROVAL_TO_RSO
-- **Subject:** "Application Final Decision: {{APPLICANT_NAME}} — Approved"
-- **Recipient:** RSO notify email (read-only role)
-- **Trigger Location:** ApplicationService.js `boardFinalDecision()` line [NEW]
-- **Content Variables:** FIRST_NAME, APPLICANT_NAME, APPLICATION_ID
-- **Purpose:** FYI - Closure notification for RSO workflow
-
-#### 7A.3 → Applicant (IMMEDIATE)
+#### 7A.2 → Applicant (IMMEDIATE)
 - **Template:** MEM_APPLICATION_APPROVED_TO_APPLICANT
 - **Subject:** "GEA Application Approved — Payment Required to Activate"
 - **Recipient:** applicant email
@@ -263,19 +224,13 @@
 - **Content Variables:** FIRST_NAME, APPLICATION_ID, PAYMENT_AMOUNT, PAYMENT_DEADLINE, PORTAL_URL
 - **Purpose:** Notifies applicant of approval and payment requirement
 
-#### 7A.4 → Treasurer (IMMEDIATE)
-- **Template:** PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD (re-purposed)
+#### 7A.3 → Board (IMMEDIATE) - with Treasurer addressed
+- **Template:** ADM_PAYMENT_VERIFICATION_REQUEST_TO_TREASURER
 - **Subject:** "Action Required: Payment Verification for {{MEMBER_NAME}} — {{AMOUNT}}"
-- **Recipient:** treasurer email
-- **Trigger Location:** ApplicationService.js `boardFinalDecision()` line 897
-- **Content Variables:** FIRST_NAME, MEMBER_NAME, PAYMENT_ID, AMOUNT, CURRENCY, STATUS, SUBMISSION_DATE
-- **Purpose:** Proactive action request (currently FYI, should be ACTION REQUIRED)
-
-**🆕 PROPOSED - Step 7A.4 Alternative:** Create specific template
-- **Template:** [NEW] ADM_PAYMENT_VERIFICATION_REQUEST_TO_TREASURER
-- **Subject:** "Action Required: Payment Verification for {{MEMBER_NAME}} — {{AMOUNT}}"
-- **Recipient:** treasurer email (if role exists; else board email)
-- **Purpose:** EXPLICIT action request - more clear than FYI
+- **Recipient:** board email (sent to board as a whole, but addressed to Treasurer in body)
+- **Trigger Location:** ApplicationService.js `boardFinalDecision()` line [NEW]
+- **Content Variables:** FIRST_NAME, MEMBER_NAME, APPLICATION_ID, AMOUNT, CURRENCY, PAYMENT_DEADLINE
+- **Purpose:** ACTION REQUEST to Treasurer with board coverage if treasurer unavailable
 
 #### Status after 7A: `approved_pending_payment`
 
@@ -317,17 +272,13 @@
 - **Content Variables:** FIRST_NAME, PAYMENT_ID, SUBMISSION_DATE, EXPECTED_REVIEW_DATE
 - **Purpose:** Sets expectation for treasurer review timeline
 
-#### 8.3 → Treasurer (IMMEDIATE)
+#### 8.3 → Board (IMMEDIATE) - with Treasurer addressed
 - **Template:** PAY_PAYMENT_SUBMITTED_BOARD_FYI_TO_BOARD
 - **Subject:** "Payment Submitted: {{MEMBER_NAME}} — {{AMOUNT}} {{CURRENCY}}"
-- **Recipient:** treasurer email
+- **Recipient:** board email
 - **Trigger Location:** PaymentService.js `submitPaymentProof()` line 127
 - **Content Variables:** FIRST_NAME, MEMBER_NAME, AMOUNT, CURRENCY, SUBMISSION_DATE
-- **Purpose:** Notifies treasurer of payment submission for verification
-
-**🆕 PROPOSED - Step 8.3 Alternative:** Make this ACTION REQUEST
-- Modify subject to: "Action Required: Payment Verification for {{MEMBER_NAME}} — {{AMOUNT}}"
-- Or use [NEW] ADM_PAYMENT_VERIFICATION_REQUEST_TO_TREASURER template
+- **Purpose:** FYI to board when member submits payment proof during membership workflow
 
 #### Status after 8: `payment_submitted`
 
@@ -363,13 +314,13 @@
 - **Content Variables:** FIRST_NAME, MEMBER_NAME, APPLICATION_ID, ACTIVATION_DATE
 - **Purpose:** Board FYI - applicant is now active member
 
-**🆕 PROPOSED - Step 9.4:** Notify RSO of successful activation
-- **Template:** [NEW] ADM_MEMBERSHIP_ACTIVATED_TO_RSO
+#### 9.4 → RSO (IMMEDIATE)
+- **Template:** ADM_MEMBERSHIP_ACTIVATED_TO_RSO
 - **Subject:** "{{MEMBER_NAME}} Is Now an Active GEA Member"
 - **Recipient:** RSO notify email
 - **Trigger Location:** ApplicationService.js `verifyPaymentAndActivate()` line [NEW]
 - **Content Variables:** FIRST_NAME, MEMBER_NAME, APPLICATION_ID, MEMBER_ID
-- **Purpose:** Closure notification - RSO completes workflow visibility
+- **Purpose:** Closure notification - RSO now expects new member in directory for guards' awareness
 
 #### Status after 9: `activated` (application complete)
 
@@ -401,18 +352,21 @@
 
 ## SUMMARY: Email Count by Step
 
-| Step | To Applicant | To Board | To RSO | To Treasurer | Total |
-|------|-------------|----------|--------|--------------|-------|
-| 1: Submit | 2 | 1 | - | - | **3** |
-| 2: Upload | 2 | 2 | - | - | **4** |
-| 3: Review | 0 | 0 | - | - | **0** ⚠️ |
-| 4: Initial | 2-3 | 1 | 1 | - | **4-5** |
-| 5: RSO Docs | 1 | 2 | - | - | **3** |
-| 6: RSO App | 1 | 1 | 1 | - | **3** 🆕 |
-| 7: Final | 1 | 1 | 1 | 1 | **4** |
-| 8: Payment | 2 | - | - | 1 | **3** |
-| 9: Activate | 2 | 1 | 1 | - | **4** |
-| **TOTAL** | **13-14** | **9** | **4** | **2** | **28-29** |
+| Step | To Applicant | To Board | To RSO | Total |
+|------|-------------|----------|--------|-------|
+| 1: Submit | 2 | 1 | - | **3** |
+| 2: Upload | 2 | 2 | - | **4** |
+| 3: Review | - | - | - | **0** (silent) |
+| 4: Initial | 1 | 1 | - | **2** |
+| 4: Denial | 1 | - | - | **1** |
+| 5: RSO Docs | 1 | 1 | - | **2** |
+| 6: RSO App | 1 | - | 1 | **2** |
+| 7: Final | 1 | 1 | - | **2** |
+| 7: Payment Setup | - | 1 | - | **1** (to board, addressed to treasurer) |
+| 8: Payment Submitted | 2 | - | - | **2** |
+| 8: Payment Board FYI | - | 1 | - | **1** |
+| 9: Activate | 2 | 1 | 1 | **4** |
+| **TOTAL** | **13** | **8** | **2** | **23** |
 
 ---
 
@@ -420,12 +374,8 @@
 
 | # | Name | Recipient | Priority | Purpose |
 |---|------|-----------|----------|---------|
-| 1 | ADM_BOARD_INITIAL_REVIEW_APPROVED_TO_MEMBER | Applicant | CRITICAL | Explicit approval notification after step 4 |
-| 2 | ADM_BOARD_INITIAL_REVIEW_DENIED_TO_MEMBER | Applicant | CRITICAL | Explicit denial notification after step 4 |
-| 3 | ADM_BOARD_FINAL_APPROVAL_TO_RSO | RSO | MEDIUM | RSO sees final approval decision |
-| 4 | ADM_RSO_APPLICATION_REVIEW_REQUEST_TO_RSO_APPROVE | RSO | MEDIUM | Distinguish app review from doc review |
-| 5 | ADM_PAYMENT_VERIFICATION_REQUEST_TO_TREASURER | Treasurer | MEDIUM | Explicit action request vs. FYI |
-| 6 | ADM_MEMBERSHIP_ACTIVATED_TO_RSO | RSO | LOW | Closure notification for RSO |
-| 7 | ADM_DOCUMENTS_APPROVED_BY_RSO_TO_MEMBER | Applicant | MEDIUM | Transparency after RSO approval |
-| 8 | ADM_BOARD_REVIEWING_DOCUMENTS_TO_MEMBER | Applicant | LOW | Progress notification during Step 3 |
+| 1 | ADM_RSO_APPLICATION_REVIEW_REQUEST_TO_RSO_APPROVE | RSO approve | MEDIUM | Distinguish application review from document review (Step 6) |
+| 2 | ADM_PAYMENT_VERIFICATION_REQUEST_TO_TREASURER | Board (addressed to Treasurer) | MEDIUM | Explicit action request for payment verification (Step 7A.3) |
+| 3 | ADM_DOCUMENTS_APPROVED_BY_RSO_TO_APPLICANT | Applicant | MEDIUM | Transparency when all ID documents approved (Step 5.3) |
+| 4 | ADM_MEMBERSHIP_ACTIVATED_TO_RSO | RSO notify | MEDIUM | Closure notification — member now in directory (Step 9.4) |
 

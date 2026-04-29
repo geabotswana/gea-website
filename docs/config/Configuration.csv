@@ -15,8 +15,8 @@ photo_max_size_mb|5|Max file size for member photos (MB)||Documents & Files
 youth_document_required|FALSE|Document upload required for under-16||Documents & Files
 employment_verification_optional_at_application|TRUE|Employment verification not required at application time||Employment Verification
 employment_verification_requestable_by_admin|TRUE|Admin can request employment verification post-activation||Employment Verification
-exchange_rate_last_updated|4/28/2026 1:51:24|Timestamp of last exchange rate API update||Exchange Rate
-exchange_rate_usd_to_bwp|13.507515|Current USD to BWP conversion rate (updated nightly)||Exchange Rate
+exchange_rate_last_updated|4/29/2026 1:51:24|Timestamp of last exchange rate API update||Exchange Rate
+exchange_rate_usd_to_bwp|13.64355|Current USD to BWP conversion rate (updated nightly)||Exchange Rate
 leobo_bump_window_days|5|Business days for bumping tentative reservations||Facility Reservations
 leobo_max_hours|6|Max hours per leobo reservation||Facility Reservations
 leobo_monthly_limit|1|Max leobo reservations per household/month||Facility Reservations

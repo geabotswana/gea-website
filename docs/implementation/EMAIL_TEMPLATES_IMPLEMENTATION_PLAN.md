@@ -18,6 +18,229 @@
 
 ---
 
+## Pre-flight Code Checks
+
+**Run these checks BEFORE implementing any code changes.** All must pass.
+
+### 1. Verify Required Functions Exist in Utilities.js
+
+```bash
+grep -n "^function addDays\|^function formatDate\|^function getConfigValue" Utilities.js
+```
+
+**Expected Output:** 3 lines with function definitions  
+**Status Check:**
+- [ ] `function addDays(date, days)` exists (line ~344)
+- [ ] `function formatDate(date, forStorage)` exists (line ~288)
+- [ ] `function getConfigValue(key)` exists (line ~418)
+
+**Verification Command:**
+```bash
+grep -c "^function addDays\|^function formatDate\|^function getConfigValue" Utilities.js
+# Expected: 3
+```
+
+### 2. Verify Email Constants Exist in Config.js
+
+```bash
+grep -n "^var EMAIL_BOARD\|^var EMAIL_RSO_APPROVE\|^var EMAIL_RSO_NOTIFY" Config.js
+```
+
+**Expected Output:** 3 variable declarations  
+**Status Check:**
+- [ ] `var EMAIL_BOARD` defined (line ~174, default: "board@geabotswana.org")
+- [ ] `var EMAIL_RSO_APPROVE` defined (line ~176, default: "rso-approve@geabotswana.org")
+- [ ] `var EMAIL_RSO_NOTIFY` defined (line ~177, default: "rso-notify@geabotswana.org")
+
+**Verification Command:**
+```bash
+grep "^var EMAIL_BOARD\|^var EMAIL_RSO_APPROVE\|^var EMAIL_RSO_NOTIFY" Config.js
+# Expected: 3 lines with email addresses
+```
+
+### 3. Verify Config Value Retrieval Pattern
+
+**Check that EMAIL constants can be overridden via getConfigValue():**
+
+```bash
+grep "getConfigValue.*EMAIL_BOARD\|getConfigValue.*EMAIL_RSO" ApplicationService.js
+```
+
+**Expected Pattern:** `getConfigValue("EMAIL_BOARD") || "board@geabotswana.org"`
+
+**Status Check:**
+- [ ] `EMAIL_BOARD` retrieved via `getConfigValue("EMAIL_BOARD")` with fallback (multiple occurrences)
+- [ ] Code pattern uses fallback: `getConfigValue(...) || "default@..."` 
+- [ ] Same pattern works for `EMAIL_RSO_APPROVE` and `EMAIL_RSO_NOTIFY`
+
+**Note:** Email constants are accessed two ways:
+- **Via getConfigValue():** Used when config may be dynamic (EMAIL_BOARD, PORTAL_URL)
+- **Direct constant:** Used when always same (EMAIL_RSO_APPROVE, EMAIL_RSO_NOTIFY)
+
+### 4. Verify PORTAL_URL Configuration
+
+```bash
+grep "getConfigValue.*PORTAL_URL" ApplicationService.js | head -3
+```
+
+**Expected Output:** Multiple references with fallback  
+**Status Check:**
+- [ ] `PORTAL_URL` retrieved via `getConfigValue("PORTAL_URL")` with empty string fallback
+- [ ] Pattern: `getConfigValue("PORTAL_URL") || ""`
+- [ ] Used in existing templates (e.g., MEM_APPLICATION_APPROVED_TO_APPLICANT)
+
+### 5. Verify sendEmailFromTemplate() Function Exists
+
+```bash
+grep -n "^function sendEmailFromTemplate" EmailService.js
+```
+
+**Expected Output:** Single line with function definition  
+**Status Check:**
+- [ ] `sendEmailFromTemplate(templateName, recipient, variables, options)` exists
+- [ ] Function is accessible from ApplicationService.js and FileSubmissionService.js
+- [ ] Takes 4 parameters: template name (string), recipient (string/array), variables (object), options (object)
+
+**Verification Command:**
+```bash
+grep "^function sendEmailFromTemplate" EmailService.js
+# Expected: 1 line
+```
+
+### 6. Test Configuration Access
+
+**Run in Google Sheets Script Editor to verify all configs are accessible:**
+
+```javascript
+// Paste in Apps Script console and run:
+Logger.log("EMAIL_BOARD: " + (getConfigValue("EMAIL_BOARD") || EMAIL_BOARD));
+Logger.log("EMAIL_RSO_APPROVE: " + EMAIL_RSO_APPROVE);
+Logger.log("EMAIL_RSO_NOTIFY: " + EMAIL_RSO_NOTIFY);
+Logger.log("PORTAL_URL: " + (getConfigValue("PORTAL_URL") || ""));
+Logger.log("formatDate works: " + formatDate(new Date()));
+Logger.log("addDays works: " + formatDate(addDays(new Date(), 14)));
+```
+
+**Expected Output:** No errors, all values populated
+
+**Status Check:**
+- [ ] All 4 logger.log statements execute without error
+- [ ] All email addresses populated with valid values
+- [ ] formatDate() returns date string (YYYY-MM-DD format)
+- [ ] addDays() adds days correctly
+
+### 7. Scope Verification Checklist
+
+**Before implementing, verify scope in target files:**
+
+**FileSubmissionService.js:**
+- [ ] `approveDocumentByRso()` function exists and is accessible
+- [ ] Function has access to `sendEmailFromTemplate()`
+- [ ] Function has access to `EMAIL_RSO_APPROVE` constant
+- [ ] Function has access to `formatDate()` and `addDays()` functions
+- [ ] Function scope includes `app` object with applicant info
+- [ ] Function scope includes `found.obj.application_id`
+
+**ApplicationService.js:**
+- [ ] `boardFinalDecision()` function exists and is accessible
+- [ ] Function has access to `sendEmailFromTemplate()`
+- [ ] Function has access to `getConfigValue()` for EMAIL_BOARD
+- [ ] `verifyAndActivateMembership()` function exists and is accessible
+- [ ] Function has access to `sendEmailFromTemplate()`
+- [ ] Function has access to `getConfigValue()` for EMAIL_RSO_NOTIFY
+- [ ] Both functions have access to `formatDate()` and `addDays()`
+
+### 8. Pre-Implementation Validation Script
+
+**Save this as a test and run before implementing:**
+
+```javascript
+function validatePreflightChecks() {
+  var passed = 0;
+  var failed = 0;
+  
+  // Check 1: Functions exist
+  try {
+    if (typeof formatDate === 'function' && typeof addDays === 'function' && typeof getConfigValue === 'function') {
+      Logger.log("✓ All utility functions found");
+      passed++;
+    } else {
+      Logger.log("✗ Missing utility functions");
+      failed++;
+    }
+  } catch (e) {
+    Logger.log("✗ Error checking functions: " + e);
+    failed++;
+  }
+  
+  // Check 2: Email constants exist
+  try {
+    if (typeof EMAIL_BOARD === 'string' && typeof EMAIL_RSO_APPROVE === 'string' && typeof EMAIL_RSO_NOTIFY === 'string') {
+      Logger.log("✓ All email constants defined");
+      Logger.log("  EMAIL_BOARD: " + EMAIL_BOARD);
+      Logger.log("  EMAIL_RSO_APPROVE: " + EMAIL_RSO_APPROVE);
+      Logger.log("  EMAIL_RSO_NOTIFY: " + EMAIL_RSO_NOTIFY);
+      passed++;
+    } else {
+      Logger.log("✗ Missing email constants");
+      failed++;
+    }
+  } catch (e) {
+    Logger.log("✗ Error checking constants: " + e);
+    failed++;
+  }
+  
+  // Check 3: getConfigValue works
+  try {
+    var boardEmail = getConfigValue("EMAIL_BOARD") || EMAIL_BOARD;
+    var portalUrl = getConfigValue("PORTAL_URL") || "";
+    if (boardEmail && boardEmail.includes("@")) {
+      Logger.log("✓ getConfigValue() working");
+      Logger.log("  Board email: " + boardEmail);
+      Logger.log("  Portal URL: " + (portalUrl || "(empty)"));
+      passed++;
+    } else {
+      Logger.log("✗ getConfigValue() not returning expected values");
+      failed++;
+    }
+  } catch (e) {
+    Logger.log("✗ Error with getConfigValue: " + e);
+    failed++;
+  }
+  
+  // Check 4: sendEmailFromTemplate exists
+  try {
+    if (typeof sendEmailFromTemplate === 'function') {
+      Logger.log("✓ sendEmailFromTemplate() function found");
+      passed++;
+    } else {
+      Logger.log("✗ sendEmailFromTemplate() not found");
+      failed++;
+    }
+  } catch (e) {
+    Logger.log("✗ Error checking sendEmailFromTemplate: " + e);
+    failed++;
+  }
+  
+  Logger.log("\n" + "=".repeat(50));
+  Logger.log("PREFLIGHT CHECK RESULTS: " + passed + " passed, " + failed + " failed");
+  if (failed === 0) {
+    Logger.log("✓ ALL CHECKS PASSED - Ready to implement");
+  } else {
+    Logger.log("✗ CHECKS FAILED - Do not proceed with implementation");
+  }
+}
+```
+
+**To Run:**
+1. Open Apps Script Editor
+2. Create new function or add to existing test file
+3. Run `validatePreflightChecks()`
+4. Check Execution Log for results
+5. Must show "ALL CHECKS PASSED" before proceeding
+
+---
+
 ## Template 1: ADM_RSO_APPLICATION_REVIEW_REQUEST_TO_RSO_APPROVE
 
 ### Purpose

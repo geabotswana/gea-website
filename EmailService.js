@@ -418,6 +418,9 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
     var subject = substituteTemplateVariables(template.subject, variables);
     var plainBody = substituteTemplateVariables(template.body, variables);
 
+    // Append email footer (organization block + automated message notice)
+    plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
+
     // Wrap in GEA master HTML template for consistent branding
     var htmlBody = buildHtmlEmail(subject, plainBody);
 
@@ -1049,6 +1052,10 @@ function sendEmailFromTemplateWithAttachment(templateName, recipient, variables,
     // Substitute variables in subject and body
     var subject = substituteTemplateVariables(template.subject, variables);
     var plainBody = substituteTemplateVariables(template.body, variables);
+
+    // Append email footer (organization block + automated message notice)
+    plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
+
     var htmlBody = buildHtmlEmail(subject, plainBody);
 
     var to = Array.isArray(recipient) ? recipient.join(",") : recipient;

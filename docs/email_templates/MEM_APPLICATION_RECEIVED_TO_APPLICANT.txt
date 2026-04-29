@@ -1,34 +1,3 @@
 ﻿Hi {{FIRST_NAME}},
 
 APPLICATION RECEIVED
-
-Thank you for submitting your membership application! We're excited to welcome you to the Gaborone Employee Association community.
-
-YOUR SUBMISSION:
-Application ID: {{APPLICATION_ID}}
-Submitted: {{SUBMITTED_DATE}}
-Status: Under Review
-
-WHAT HAPPENS NEXT:
-Your application will go through a number of approval steps from
-submission to final membership activation.
-
-The action in the FIRST stage is YOURS: Please log into the Applicant
-Portal and upload the required documents for your category and household
-type.
-
-Your next action after this is payment—we will send you a specific email
-when we reach that stage.
-
-Thank you again for your interest in the GEA. We look forward to welcoming
-you to our community!
-
-CHECK YOUR STATUS:
-Log into your member portal: {{PORTAL_URL}}
-Your portal shows real-time updates on your application progress.
-
-QUESTIONS?
-Need help or have questions about your application? Contact board@geabotswana.org - we're here to help!
-
----
-This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

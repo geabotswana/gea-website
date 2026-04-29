@@ -25,10 +25,3 @@ Log into your member portal anytime: {{PORTAL_URL}}
 
 QUESTIONS?
 Contact board@geabotswana.org if you have questions or concerns.
-
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
-
----
-This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -18,10 +18,3 @@ Monitor your member portal anytime for real-time status updates: {{PORTAL_URL}}
 
 NEED ASSISTANCE?
 Questions or concerns? Contact us at board@geabotswana.org and we'll help.
-
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
-
----
-This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

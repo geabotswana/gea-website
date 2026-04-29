@@ -35,10 +35,3 @@ Please respond by {{DEADLINE}} to avoid delays to your membership activation.
 QUESTIONS?
 Contact: {{CONTACT_EMAIL}}
 board@geabotswana.org
-
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
-
----
-This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

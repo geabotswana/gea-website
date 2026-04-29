@@ -198,6 +198,9 @@ var BOARD_EMAIL_DELEGATED_USER    = "treasurer@geabotswana.org";
 // Set the real value via initializeBoardServiceAccount() in EmailService.js
 var BOARD_SERVICE_ACCOUNT_EMAIL   = "";
 
+// Email footer appended to all template emails (signature block + automated message notice)
+var EMAIL_FOOTER = "Gaborone Employee Association\nwww.geabotswana.org\nboard@geabotswana.org\n\n---\nThis is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.";
+
 
 // ============================================================
 // SECTION 7: ASSOCIATION INFORMATION

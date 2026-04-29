@@ -20,10 +20,3 @@ Monitor your request status anytime in your member portal: {{APPROVAL_URL}}
 
 NEED TO DISCUSS?
 Contact the board at board@geabotswana.org if you'd like to provide additional details about your request.
-
-Gaborone Employee Association
-www.geabotswana.org
-board@geabotswana.org
-
----
-This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

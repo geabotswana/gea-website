@@ -97,23 +97,23 @@ RESUBMIT_DEADLINE: formatDate(calculateBusinessDayDeadline(new Date(), 7))
 
 ## Examples: The Difference
 
-### Scenario: Today is Tuesday, April 29, 2026
+### Scenario: Today is Wednesday, April 29, 2026
 
 #### BACKWARD (Current Function) - Wrong for Deadlines
 ```javascript
 calculateBusinessDayDeadline(new Date(), 7)
-// Input: Today (Tuesday, April 29)
+// Input: Today (Wednesday, April 29)
 // Subtract 7 business days backward
-// Result: Tuesday, April 14 (7 days AGO)
+// Result: Monday, April 20 (7 business days AGO)
 // ❌ WRONG: Deadline is in the PAST
 ```
 
 #### FORWARD (Needed Function) - Correct for Deadlines
 ```javascript
 addBusinessDays(new Date(), 7)  // ← NOT YET CREATED
-// Input: Today (Tuesday, April 29)
+// Input: Today (Wednesday, April 29)
 // Add 7 business days forward
-// Result: Thursday, May 8 (7 days IN THE FUTURE)
+// Result: Friday, May 8 (7 business days IN THE FUTURE)
 // ✅ CORRECT: Deadline is actionable (future date)
 ```
 
@@ -124,8 +124,8 @@ addBusinessDays(new Date(), 7)  // ← NOT YET CREATED
 ### Test the Current Function
 
 ```javascript
-// Today: Tuesday, April 29, 2026
-var today = new Date(2026, 3, 29);  // Month is 0-indexed
+// Today: Wednesday, April 29, 2026
+var today = new Date(2026, 3, 29);  // Month is 0-indexed, day 29
 
 // What does calculateBusinessDayDeadline return?
 var deadline = calculateBusinessDayDeadline(today, 7);
@@ -134,7 +134,7 @@ Logger.log("7 business days from calculateBusinessDayDeadline: " + formatDate(de
 
 // Expected output:
 // Today: 2026-04-29
-// 7 business days from calculateBusinessDayDeadline: 2026-04-14  ← PAST DATE!
+// 7 business days from calculateBusinessDayDeadline: 2026-04-20  ← PAST DATE (7 days ago)!
 ```
 
 **Confirmed:** Function moves BACKWARD in time.
@@ -256,33 +256,90 @@ RESUBMIT_DEADLINE: formatDate(addBusinessDays(new Date(), 7))
 
 ```javascript
 function testAddBusinessDays() {
-  var today = new Date(2026, 3, 29);  // Tuesday, April 29, 2026
+  var today = new Date(2026, 3, 29);  // Wednesday, April 29, 2026
   
   var deadline5 = addBusinessDays(today, 5);
   var deadline7 = addBusinessDays(today, 7);
   var deadline30 = addBusinessDays(today, 30);
   
   Logger.log("Today: " + formatDate(today));
-  Logger.log("5 business days from today: " + formatDate(deadline5) + " (expected: Thu May 7 or later)");
-  Logger.log("7 business days from today: " + formatDate(deadline7) + " (expected: Thu May 9 or later)");
-  Logger.log("30 business days from today: " + formatDate(deadline30) + " (expected: late May)");
+  Logger.log("5 business days from today: " + formatDate(deadline5) + " (expected: Tuesday, May 5)");
+  Logger.log("7 business days from today: " + formatDate(deadline7) + " (expected: Friday, May 8)");
+  Logger.log("30 business days from today: " + formatDate(deadline30) + " (expected: late May/early June)");
+  
+  var passedTests = 0;
+  var failedTests = 0;
   
   // Verify all are in future
-  if (deadline5 <= today) Logger.log("ERROR: deadline5 is not in future!");
-  if (deadline7 <= today) Logger.log("ERROR: deadline7 is not in future!");
-  if (deadline30 <= today) Logger.log("ERROR: deadline30 is not in future!");
-  
-  // Verify none are weekends
-  for (var d = deadline5; d <= deadline30; d.setDate(d.getDate() + 1)) {
-    var dow = d.getDay();
-    if (dow === 0 || dow === 6) {
-      Logger.log("ERROR: Found weekend in deadline: " + formatDate(d));
-    }
+  if (deadline5 > today) {
+    Logger.log("✓ deadline5 is in future");
+    passedTests++;
+  } else {
+    Logger.log("✗ ERROR: deadline5 is not in future!");
+    failedTests++;
   }
   
-  Logger.log("✓ All tests passed");
+  if (deadline7 > today) {
+    Logger.log("✓ deadline7 is in future");
+    passedTests++;
+  } else {
+    Logger.log("✗ ERROR: deadline7 is not in future!");
+    failedTests++;
+  }
+  
+  if (deadline30 > today) {
+    Logger.log("✓ deadline30 is in future");
+    passedTests++;
+  } else {
+    Logger.log("✗ ERROR: deadline30 is not in future!");
+    failedTests++;
+  }
+  
+  // Verify each deadline is a business day (not weekend)
+  function isWeekend(date) {
+    var dow = date.getDay();
+    return dow === 0 || dow === 6;
+  }
+  
+  if (!isWeekend(deadline5)) {
+    Logger.log("✓ deadline5 (" + formatDate(deadline5) + ") is not a weekend");
+    passedTests++;
+  } else {
+    Logger.log("✗ ERROR: deadline5 (" + formatDate(deadline5) + ") is a weekend!");
+    failedTests++;
+  }
+  
+  if (!isWeekend(deadline7)) {
+    Logger.log("✓ deadline7 (" + formatDate(deadline7) + ") is not a weekend");
+    passedTests++;
+  } else {
+    Logger.log("✗ ERROR: deadline7 (" + formatDate(deadline7) + ") is a weekend!");
+    failedTests++;
+  }
+  
+  if (!isWeekend(deadline30)) {
+    Logger.log("✓ deadline30 (" + formatDate(deadline30) + ") is not a weekend");
+    passedTests++;
+  } else {
+    Logger.log("✗ ERROR: deadline30 (" + formatDate(deadline30) + ") is a weekend!");
+    failedTests++;
+  }
+  
+  Logger.log("\n" + "=".repeat(50));
+  Logger.log("TEST RESULTS: " + passedTests + " passed, " + failedTests + " failed");
+  if (failedTests === 0) {
+    Logger.log("✓ All tests passed");
+  }
 }
 ```
+
+**Key Improvements:**
+- Removed date range loop (was conceptually wrong)
+- Only validates the 3 actual deadline outputs themselves
+- Checks each deadline is a future date
+- Checks each deadline is not a weekend
+- Avoids Date object mutation
+- Clear pass/fail counts
 
 ### Step 3: Update EMAIL_DEADLINE_BUSINESS_DAYS_AUDIT.md
 - [ ] Correct all 5 fixes to use `addBusinessDays()` instead of `calculateBusinessDayDeadline()`

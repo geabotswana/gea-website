@@ -31,44 +31,35 @@
 
 ### Emails Sent (conditional on document type):
 
-#### 2.1a → Board (ON UPLOAD - if document is not photo)
-- **Template:** DOC_DOCUMENT_RECEIVED_TO_BOARD
-- **Recipient:** board email
-- **Trigger Location:** FileSubmissionService.js `submitFile()` line 91
-- **Purpose:** Board gets notification of document upload
-
-#### 2.1b → Board (ON UPLOAD - if document is photo)
-- **Template:** DOC_PHOTO_RECEIVED_TO_BOARD
-- **Recipient:** board email
-- **Trigger Location:** FileSubmissionService.js `submitFile()` line 103
-- **Purpose:** Board gets notification of photo upload
-
-#### 2.2 → Applicant (ON CONFIRMATION - when applicant confirms all docs)
+#### 2.1 → Applicant (ON CONFIRMATION - when applicant confirms all docs)
 - **Template:** ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_MEMBER
-- **Subject:** "GEA: Your Documents Are Under Board Review"
+- **Subject:** "[GEA] Your Documents Have Been Received"
 - **Recipient:** applicant email
 - **Trigger Location:** ApplicationService.js `confirmDocuments()` line 478
 - **Content Variables:** FIRST_NAME, SUBMISSION_DATE
-- **Purpose:** Confirms documents received and are now with board
+- **Purpose:** Receipt confirmation that documents have been received and will be reviewed as soon as possible
 
-#### 2.3 → Board (ON CONFIRMATION)
+#### 2.2 → Board (ON CONFIRMATION - if verification documents required for this category)
+- **Template:** ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_WITH_VERIFICATION_TO_BOARD
+- **Subject:** "Documents Received: {{APPLICANT_NAME}} — Verification Document Blocking Initial Review"
+- **Recipient:** board email
+- **Trigger Location:** ApplicationService.js `confirmDocuments()` line 469
+- **Content Variables:** APPLICANT_NAME, APPLICATION_ID, SUBMISSION_DATE, VERIFICATION_DOCUMENT_TYPE
+- **Purpose:** Notifies board that documents are received; verification document must be approved before board can proceed with initial review; photos are for informational purposes only
+
+#### 2.3 → Board (ON CONFIRMATION - if verification documents NOT required for this category)
 - **Template:** ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_BOARD
 - **Subject:** "Documents Ready for Your Review: {{APPLICANT_NAME}}"
 - **Recipient:** board email
 - **Trigger Location:** ApplicationService.js `confirmDocuments()` line 469
 - **Content Variables:** APPLICANT_NAME, APPLICATION_ID, SUBMISSION_DATE
-- **Purpose:** Notifies board that all documents are ready for initial review
+- **Purpose:** Notifies board that all documents are received and ready for initial review; photos included for informational purposes only
 
 **Status after Step 2:** Still `awaiting_docs` until board initial decision
 
 ---
 
-## STEP 3: Board Reviews Verification Letters
-**Status:** `awaiting_docs` (implicit action period)
-**User Action:** Board reviews documents for completeness/authenticity
-
-### Emails Sent:
-⚠️ **NONE** - Silent review period (no applicant notification)
+## STEP 3: Board Reviews Verification Letters (if required)
 
 ---
 

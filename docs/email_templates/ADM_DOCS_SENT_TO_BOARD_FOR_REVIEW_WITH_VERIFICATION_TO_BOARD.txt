@@ -1,0 +1,22 @@
+APPLICATION DOCUMENTS RECEIVED — ACTION REQUIRED
+
+Documents have been submitted for {{APPLICANT_NAME}} (Application {{APPLICATION_ID}}).
+
+Submission Date: {{SUBMISSION_DATE}}
+
+CRITICAL: VERIFICATION DOCUMENT MUST BE APPROVED FIRST
+
+This applicant's category requires verification of {{VERIFICATION_DOCUMENT_TYPE}}. The verification document must be approved before the Board can proceed with initial application review.
+
+ACTION REQUIRED:
+1. Review and approve/reject the {{VERIFICATION_DOCUMENT_TYPE}}
+2. Once approved, Board may proceed with initial application review
+
+PHOTOS (FOR INFORMATIONAL PURPOSES):
+Photos have also been submitted. These do not need approval before initial review and are for informational purposes only.
+
+DOCUMENT REVIEW PROCESS:
+Once verification is approved, the Board will conduct the standard initial review. If approved, documents will be forwarded to RSO for security verification.
+
+ACCESS:
+View application details in the Board Admin Portal: {{PORTAL_URL}}

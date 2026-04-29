@@ -1,24 +1,24 @@
 Hi {{FIRST_NAME}},
 
-YOUR DOCUMENTS ARE UNDER REVIEW
+YOUR DOCUMENTS HAVE BEEN RECEIVED
 
-Thank you for submitting your membership application documents. Your submission has been received and your documents are now being reviewed by the GEA Board.
+Thank you for submitting your membership application documents. We've received your submission and will begin review as soon as possible.
 
 WHAT WAS SUBMITTED:
 Document Types: {{DOCUMENT_TYPES}}
 Submission Date: {{SUBMISSION_DATE}}
 
 WHAT HAPPENS NEXT:
-The GEA Board will conduct an initial review of your submitted documents to ensure they are complete and meet our membership requirements.
+Your documents will be reviewed by the GEA Board to ensure they are complete and meet our membership requirements.
 
 EXPECTED TIMELINE:
-Board review typically takes 3-5 business days. If your documents are approved by the Board, they will then proceed to our Regional Security Officer (RSO) for security verification.
+Board review typically takes 3-5 business days. If your documents are approved by the Board, they will then proceed to our Regional Security Officer (RSO) for security verification (another 5-7 business days).
 
 TRACK YOUR STATUS:
 You can check your application status anytime in your member portal. Log in to see updates on your application progress.
 
 WHAT TO EXPECT:
-1. Board completes initial review (3-5 business days)
+1. Board reviews documents for completeness (3-5 business days)
 2. If approved → Documents sent to RSO for security verification (5-7 business days)
 3. You'll be notified of next steps via email
 

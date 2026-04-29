@@ -82,8 +82,13 @@ function uploadFileSubmission(params) {
     _appendRowByHeaders_(submissionSheet, payload);
 
     if (documentType === "passport" || documentType === "omang") {
-      // Generate RSO approval link and send action-required email via generateRsoApprovalLink()
-      generateRsoApprovalLink(payload.submission_id);
+      // RSO now reviews documents via portal login (RSO links discontinued)
+      sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
+        APPLICANT_NAME:    payload.submission_id,
+        APPLICATION_ID:    payload.submission_id,
+        DOCUMENT_TYPES:    documentType.charAt(0).toUpperCase() + documentType.slice(1),
+        APPROVAL_DEADLINE: formatDate(addBusinessDays(new Date(), 5))
+      });
 
       // Notify board for awareness (background notification, no action needed)
       var individual = getMemberById(payload.individual_id);
@@ -157,52 +162,6 @@ function approveFileSubmission(submission_id, user_email) {
 
 function rejectFileSubmission(submission_id, rejection_reason, user_email) {
   return _reviewFileSubmission_(submission_id, "reject", rejection_reason || "Rejected by reviewer", user_email);
-}
-
-function generateRsoApprovalLink(submission_id) {
-  try {
-    var found = _findSubmissionById_(submission_id);
-    if (!found) return { ok: false, error: "Submission not found" };
-
-    var docType = String(found.obj.document_type || "").toLowerCase();
-    if (docType !== "passport" && docType !== "omang") {
-      return { ok: false, error: "RSO links only apply to passport/omang" };
-    }
-
-    var tokenSeed = submission_id + "|" + new Date().getTime() + "|" + Utilities.getUuid();
-    var tokenBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, tokenSeed);
-    var token = tokenBytes.map(function(b) {
-      var v = (b + 256) % 256;
-      return (v < 16 ? "0" : "") + v.toString(16);
-    }).join("");
-
-    var expiresAt = new Date(new Date().getTime() + (RSO_APPROVAL_LINK_EXPIRY_HOURS * 60 * 60 * 1000));
-    _setSubmissionFields_(found, {
-      rso_approval_link_token: token,
-      rso_approval_link_expires_at: expiresAt,
-      rso_approval_link_sent_date: formatDate(new Date(), true)
-    });
-
-    var baseUrl = ScriptApp.getService().getUrl();
-    var linkUrl = baseUrl + "?action=rso_approve&token=" + encodeURIComponent(token);
-
-    // NOTE: RSO now reviews documents via portal login (see CLAUDE.md — RSO Portal Access).
-    // The token-based approval link above is still generated and stored, but the email
-    // directs RSO to the portal. If direct-link approval is needed, add APPROVAL_LINK /
-    // EXPIRES_AT / SUBMISSION_ID placeholders to the ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE
-    // template in the Email Templates sheet.
-    sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
-      APPLICANT_NAME:    submission_id,
-      APPLICATION_ID:    submission_id,
-      DOCUMENT_TYPES:    "Document submission",
-      APPROVAL_DEADLINE: formatDate(expiresAt)
-    });
-
-    return { ok: true, link_url: linkUrl, expires_at: expiresAt };
-  } catch (e) {
-    Logger.log("ERROR generateRsoApprovalLink: " + e);
-    return { ok: false, error: String(e) };
-  }
 }
 
 function handleRsoApprovalLink(token, action, rejection_reason) {
@@ -596,7 +555,7 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
             FIRST_NAME: individual.first_name || "Member",
             BOARD_REJECTION_MESSAGE: rejectionReason || "Your photo was rejected. Please resubmit.",
             PORTAL_URL: "https://geabotswana.org/member.html",
-            RESUBMIT_DEADLINE: formatDate(new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000)))
+            RESUBMIT_DEADLINE: formatDate(addBusinessDays(new Date(), 10))
           });
           sendEmailFromTemplate("DOC_PHOTO_REJECTION_TO_BOARD", EMAIL_BOARD, {
             MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
@@ -604,7 +563,7 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
             REJECTION_DATE: formatDate(new Date()),
             SUBMISSION_ID: submission_id,
             BOARD_REJECTION_MESSAGE: rejectionReason || "Rejected by board",
-            RESUBMIT_DEADLINE: formatDate(new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000)))
+            RESUBMIT_DEADLINE: formatDate(addBusinessDays(new Date(), 10))
           });
         }
       } else if (docType === "passport" || docType === "omang") {
@@ -625,7 +584,7 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
           });
         } else {
           // Document rejected - send to board to compose message, then to member
-          var resubmitDeadline = new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000));
+          var resubmitDeadline = addBusinessDays(new Date(), 10);
           sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_BOARD", EMAIL_BOARD, {
             MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
             DOCUMENT_TYPE: docType.charAt(0).toUpperCase() + docType.slice(1),
@@ -1214,7 +1173,7 @@ function rejectRsoMemberDocument(submission_id, rso_rejection_reason, rso_email)
       return { ok: false, error: "RSO approval only applies to passport/omang" };
     }
 
-    var resubmitDeadline = new Date(new Date().getTime() + (10 * 24 * 60 * 60 * 1000));
+    var resubmitDeadline = addBusinessDays(new Date(), 10);
 
     // Mark as rejected
     var patchObj = {

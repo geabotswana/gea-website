@@ -54,25 +54,25 @@ RESUBMIT_DEADLINE: formatDate(addDays(new Date(), 7))
 ```javascript
 PAYMENT_DEADLINE: formatDate(addDays(new Date(), 30))
 ```
-- **Type:** Calendar days (30 days = guaranteed 8-9 weekends!)
+- **Type:** Calendar days (currently 30 calendar days)
 - **Email:** MEM_APPLICATION_APPROVED_TO_APPLICANT
 - **Context:** Applicant must submit payment to activate
-- **Status:** NEEDS FIX → Use `addBusinessDays(new Date(), 30)`
-- **CRITICAL:** 30 calendar days is ~6 weeks including ~8 weekends
+- **Status:** NEEDS FIX → Use `addBusinessDays(new Date(), 15)`
+- **Rationale:** 15 business days (vs. 30 calendar days = 4.3 weeks) is more reasonable for payment deadline
 
 ---
 
 ### **FileSubmissionService.js** (7 deadline calculations)
 
-#### ⚠️ Line 179: RSO Link Expiry (Raw milliseconds)
+#### ❌ Line 179: RSO Link Expiry (TO BE REMOVED)
 ```javascript
 var expiresAt = new Date(new Date().getTime() + (RSO_APPROVAL_LINK_EXPIRY_HOURS * 60 * 60 * 1000));
 ```
-- **Type:** Raw millisecond calculation (hours-based, not days)
-- **Uses:** Line 198 `APPROVAL_DEADLINE: formatDate(expiresAt)`
-- **Email:** ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE
-- **Context:** Link expiry for RSO approval
-- **Status:** ⚠️ INVESTIGATE - Is this intentionally hours-based? (not days)
+- **Type:** Hours-based expiration (internal token)
+- **Context:** RSO approval link validity
+- **Status:** ❌ TO REMOVE - Per user: "RSO links have been done away with"
+- **Related Code:** Line 198 (APPROVAL_DEADLINE variable that uses expiresAt)
+- **Action:** Delete lines 179 and 198 (feature discontinued, no longer used)
 
 #### ❌ Line 599: Photo Resubmission Deadline
 ```javascript
@@ -133,13 +133,14 @@ RESUBMIT_DEADLINE: formatDate(addDays(new Date(), 14))
 - **Context:** Member must resubmit document
 - **Status:** NEEDS FIX → Use `addBusinessDays(new Date(), 14)`
 
-#### ⚠️ Line 622: Passport Warning Window
+#### ✅ Line 622: Passport Warning Window (CLARIFIED)
 ```javascript
 var warnBefore = addDays(new Date(), PASSPORT_WARNING_MONTHS * 30);
 ```
-- **Type:** Calendar days (but used for comparison, not deadline display)
-- **Context:** Calculate warning window for passport expiration
-- **Status:** ⚠️ INVESTIGATE - Is this used as deadline or just calculation?
+- **Type:** Calendar days comparison (~6 months = ~180 days)
+- **Context:** Trigger first passport expiration warning 6 months before expiration
+- **Status:** ✅ OK - 6 MONTHS is the correct business requirement (verified by user)
+- **Note:** Internal calculation for trigger timing, not member-facing deadline. No change needed.
 
 #### ✅ Lines 636-639: Passport Expiration Warning
 ```javascript
@@ -150,15 +151,15 @@ sendEmailFromTemplate("MEM_PASSPORT_EXPIRATION_WARNING_TO_MEMBER", m.email, {
 - **Type:** Fixed document expiration date
 - **Status:** ✅ OK - This is actual expiration date, not action deadline
 
-#### ⚠️ Lines 657-658: Renewal Reminder Dates
+#### ✅ Lines 657-658: Renewal Reminder Dates (CONFIRMED)
 ```javascript
 var in30  = addDays(today, RENEWAL_REMINDER_DAYS_1);  // RENEWAL_REMINDER_DAYS_1 = 30
 var in7   = addDays(today, RENEWAL_REMINDER_DAYS_2);  // RENEWAL_REMINDER_DAYS_2 = 7
 ```
-- **Type:** Calendar days (but used for comparison with expiration date)
-- **Context:** Send 30-day and 7-day renewal reminders BEFORE July 31 expiration
-- **Status:** ⚠️ INVESTIGATE - These are reminder triggers, not displayed deadlines
-- **Note:** These are relative to July 31 expiration, not "X days from now"
+- **Type:** Calendar days (CORRECT - user confirmed requirement)
+- **Context:** Send first renewal reminder 30 calendar days before July 31 expiration; second reminder 7 days before
+- **Status:** ✅ OK - Per user: "Membership-renewal first-notice should be 30 calendar days before expiration"
+- **Note:** These are trigger dates for sending reminders, not action deadlines. No change needed.
 
 #### ✅ Lines 681, 689: Renewal Deadline (Display)
 ```javascript
@@ -167,13 +168,14 @@ RENEWAL_DEADLINE: formatDate(expDate)  // expDate = July 31 (membership expirati
 - **Type:** Fixed membership expiration date
 - **Status:** ✅ OK - This is actual expiration (July 31), not action deadline
 
-#### ⚠️ Line 704: Grace Period End Date
+#### ✅ Line 704: Grace Period End Date (CONFIRMED)
 ```javascript
 var graceEndDate = addDays(expDate, RENEWAL_GRACE_PERIOD_DAYS);
 ```
 - **Type:** Calendar days added to July 31
 - **Context:** Calculate when membership is fully lapsed (after grace period)
-- **Status:** ⚠️ INVESTIGATE - Internal calculation, not email deadline
+- **Status:** ✅ OK - Per user: "Grace period can be shown to members when they log into the portal"
+- **Note:** This is a display value in the portal, not an action deadline. No change needed.
 
 ---
 
@@ -193,7 +195,7 @@ bumpDeadline = addDays(params.eventDate, -TENNIS_BUMP_WINDOW_DAYS);
 ```
 - **Type:** Calendar days, negative (days BEFORE event)
 - **Context:** Tennis bump window deadline
-- **Status:** ⚠️ INVESTIGATE - Correct pattern (before event), but calendar days
+- **Status:** ⚠️ INVESTIGATE - Should this use business days for consistency?
 
 #### ✅ Line 218: Leobo Bump Window (CORRECT)
 ```javascript
@@ -259,12 +261,24 @@ return new Date(new Date().getTime() + SESSION_TIMEOUT_HOURS * 60 * 60 * 1000);
 
 ### **NotificationService.js**
 
-#### ⚠️ Line 419: Submission Deadline
+#### ⚠️ Line 419: Photo Submission Reminder Deadline (PENDING CLARIFICATION)
 ```javascript
-SUBMISSION_DEADLINE: formatDate(deadline)
+var deadline = new Date();
+deadline.setDate(deadline.getDate() + 14);
+sendEmailFromTemplate("DOC_PHOTO_SUBMISSION_REMINDER_TO_MEMBER", m.email, {
+  SUBMISSION_DEADLINE: formatDate(deadline)
+})
 ```
-- **Type:** Depends on `deadline` variable source
-- **Status:** ⚠️ INVESTIGATE - Source unclear from this line
+- **Type:** Calendar days (14 days from today)
+- **Email:** DOC_PHOTO_SUBMISSION_REMINDER_TO_MEMBER
+- **Context:** Reminder sent to new members to submit profile photo
+- **Trigger:** `sendPhotoReminders()` in NotificationService.js
+- **Status:** ⚠️ PENDING - User noted "unclear" purpose
+- **Question:** Is this a hard deadline (action required) or a courtesy reminder? If hard deadline, should it be business days?
+- **Notes:** 
+  - This appears to be part of onboarding flow (triggered ~14 days after membership activation)
+  - Different from document rejection deadlines (which are clearly action deadlines)
+  - Need user clarification on business requirement before fixing
 
 #### ℹ️ Line 504: Date Arithmetic
 ```javascript
@@ -278,60 +292,76 @@ var nextWeek = new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000);
 ## Summary by Status
 
 ### ❌ NEEDS FIX (Apply addBusinessDays)
-| File | Line | Type | Item |
-|------|------|------|------|
-| ApplicationService.js | 712 | Calendar days | RSO approval deadline (5 days) |
-| ApplicationService.js | 818 | Calendar days | Document issue resolution (7 days) |
-| ApplicationService.js | 825 | Calendar days | Document resubmission (7 days) |
-| ApplicationService.js | 890 | Calendar days | Payment deadline (30 days) |
-| FileSubmissionService.js | 599 | Raw milliseconds | Photo resubmission (10 days) |
-| FileSubmissionService.js | 607 | Raw milliseconds | Document resubmission (10 days) |
-| FileSubmissionService.js | 628, 636, 646 | Raw milliseconds | Document rejection (10 days) |
-| FileSubmissionService.js | 1217, 1241 | Raw milliseconds | RSO issue deadline (10 days) |
-| MemberService.js | 527 | Calendar days | Document resubmission (14 days) |
+| File | Line | Type | Item | Business Days |
+|------|------|------|------|---|
+| ApplicationService.js | 712 | Calendar days | RSO approval deadline | 5 |
+| ApplicationService.js | 818 | Calendar days | Document issue resolution | 7 |
+| ApplicationService.js | 825 | Calendar days | Document resubmission | 7 |
+| ApplicationService.js | 890 | Calendar days → Business days | **Payment deadline** | **15** (was 30 calendar) |
+| FileSubmissionService.js | 599 | Raw milliseconds | Photo resubmission | 10 |
+| FileSubmissionService.js | 607 | Raw milliseconds | Document resubmission | 10 |
+| FileSubmissionService.js | 628, 636, 646 | Raw milliseconds | Document rejection (Board) | 10 |
+| FileSubmissionService.js | 1217, 1241 | Raw milliseconds | RSO document issue deadline | 10 |
+| MemberService.js | 527 | Calendar days | Document resubmission | 14 |
 
 **Total: 9 high-priority fixes needed**
+**Payment deadline change:** User confirmed "Payment deadline is actually just a suggestion. Let's say 15 business days."
 
 ---
 
 ### ✅ OK (No change needed)
 - Line 151: ReservationService - Guest list deadline (uses calculateBusinessDayDeadline) ✓
 - Line 218: ReservationService - Leobo bump window (uses calculateBusinessDayDeadline) ✓
-- All passport expiration warnings (fixed document dates) ✓
+- Line 622: MemberService - Passport warning window (6 months trigger, confirmed by user) ✓
+- Line 657-658: MemberService - Renewal reminder dates (30 calendar days trigger, confirmed by user) ✓
+- Line 704: MemberService - Grace period (display in portal, confirmed by user) ✓
+- Lines 481, 501: Passport expiration warnings (fixed document dates) ✓
 - All renewal deadlines that reference July 31 (fixed membership year end) ✓
 
 ---
 
-### ⚠️ NEEDS INVESTIGATION
-| File | Line | Issue |
-|------|------|-------|
-| FileSubmissionService.js | 179 | RSO link expiry - Is this intentionally hours-based? |
-| MemberService.js | 622 | Passport warning window - Used for comparison only? |
-| MemberService.js | 657-658 | Renewal reminder dates - Are these action deadlines or trigger dates? |
-| MemberService.js | 704 | Grace period calculation - Is this displayed to users? |
-| ReservationService.js | 216 | Tennis bump window - Should this use business days? |
-| NotificationService.js | 419 | Submission deadline - What is source of `deadline` variable? |
+### ⚠️ NEEDS INVESTIGATION / CLARIFICATION
+| File | Line | Status | Resolution |
+|------|------|--------|---|
+| FileSubmissionService.js | 179 | ❌ CONFIRMED REMOVE | RSO links discontinued (user verified) - DELETE |
+| MemberService.js | 622 | ✅ CONFIRMED OK | 6-month passport warning trigger (user verified) - NO CHANGE |
+| MemberService.js | 657-658 | ✅ CONFIRMED OK | 30-day renewal reminder trigger (user verified) - NO CHANGE |
+| MemberService.js | 704 | ✅ CONFIRMED OK | Grace period shown in portal (user verified) - NO CHANGE |
+| ReservationService.js | 216 | ⚠️ PENDING | Tennis bump window - need clarification on business day requirement |
+| NotificationService.js | 419 | ⚠️ PENDING | Photo submission reminder - need clarification on deadline type (hard vs. courtesy) |
 
 ---
 
-## Recommendations for Review
+## Phase 1: User Clarifications & Requirements (COMPLETED)
 
-**Immediate (Critical):**
-1. Review and approve the 9 fixes listed in "NEEDS FIX"
-2. Verify that 30-day payment deadline is intentionally that long (vs. 20-30 business days)
-
-**Short-term (Phase 2):**
-1. Investigate the 6 items in "NEEDS INVESTIGATION"
-2. Clarify whether reminder dates vs. action deadlines need different treatment
-3. Decide on Leobo bump window (calendar vs. business days)
-
-**Ongoing:**
-1. Ensure any NEW deadline variables follow the canonical rule:
-   - Member action deadlines → `addBusinessDays()`
-   - Event-relative deadlines → `calculateBusinessDayDeadline()`
-   - Fixed dates (expiration) → Display as-is
+**User-Verified Decisions:**
+1. ✅ Renewal reminder: 30 **calendar days** before July 31 expiration (not business days)
+2. ✅ Passport warning: 6 **months** before expiration date (not business days)
+3. ✅ Payment deadline: 15 **business days** from approval (changed from 30 calendar days)
+4. ✅ Grace period: Can be shown to members in portal
+5. ✅ RSO link expiry: DELETE lines 179 and 198 (feature discontinued)
 
 ---
 
-**Status:** Ready for user review and direction  
-**Next Step:** Approval to proceed with 9 high-priority fixes
+## Phase 2: Implementation (READY TO PROCEED)
+
+**Critical Fixes to Implement:**
+1. Apply `addBusinessDays()` to all 9 locations listed in "NEEDS FIX" table
+2. Delete RSO link expiry code (FileSubmissionService.js lines 179, 198)
+3. Change payment deadline from 30 calendar days to 15 business days
+
+**Outstanding Clarifications (non-blocking):**
+1. NotificationService.js line 419: Is photo submission reminder a hard deadline (should be business days) or courtesy reminder (stays calendar)?
+2. ReservationService.js line 216: Should tennis bump window use business days for consistency with Leobo bump?
+
+**Canonical Rule Going Forward:**
+- Member action deadlines → `addBusinessDays(new Date(), N)`
+- Event-relative deadlines → `calculateBusinessDayDeadline(eventDate, N)` 
+- Fixed dates (expiration, July 31) → Display as-is
+- Trigger dates (reminders) → Calendar days acceptable if per business requirement
+
+---
+
+**Status:** Phase 1 clarification complete, ready for Phase 2 implementation
+**Next Step:** Apply fixes to all 9 deadline locations using `addBusinessDays()`
+**Prerequisite:** Verify `addBusinessDays()` function exists in Utilities.js (added earlier)

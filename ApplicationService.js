@@ -709,7 +709,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
         APPLICANT_NAME:   _appName1,
         APPLICATION_ID:   applicationId,
         DOCUMENT_TYPES:   "Passport / Omang / Photo",
-        APPROVAL_DEADLINE: formatDate(addDays(new Date(), 5))
+        APPROVAL_DEADLINE: formatDate(addBusinessDays(new Date(), 5))
       });
 
       sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.primary_applicant_email, {
@@ -815,14 +815,14 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
         APPLICANT_NAME:       _appName3,
         APPLICATION_ID:       applicationId,
         ISSUE_DESCRIPTION:    privateNotes || "RSO identified issues with the submitted documents.",
-        DEADLINE_TO_RESOLVE:  formatDate(addDays(new Date(), 7))
+        DEADLINE_TO_RESOLVE:  formatDate(addBusinessDays(new Date(), 7))
       });
 
       sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_MEMBER", application.primary_applicant_email, {
         FIRST_NAME:        _appFirstName3,
         DOCUMENT_TYPE:     "Document",
         REJECTION_REASON:  publicReason || "Your submitted documents did not meet our security requirements.",
-        RESUBMIT_DEADLINE: formatDate(addDays(new Date(), 7)),
+        RESUBMIT_DEADLINE: formatDate(addBusinessDays(new Date(), 7)),
         PORTAL_URL:        getConfigValue("PORTAL_URL") || ""
       });
     }
@@ -887,7 +887,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
         FIRST_NAME:       _appFirstName4,
         APPLICATION_ID:   applicationId,
         PAYMENT_AMOUNT:   duesAmount,
-        PAYMENT_DEADLINE: formatDate(addDays(new Date(), 30)),
+        PAYMENT_DEADLINE: formatDate(addBusinessDays(new Date(), 15)),
         PORTAL_URL:       getConfigValue("PORTAL_URL") || ""
       });
 

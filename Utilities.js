@@ -35,6 +35,26 @@ function calculateBusinessDayDeadline(eventDate, daysBack) {
 }
 
 /**
+ * Adds business days to a start date, skipping weekends and holidays.
+ * Used for forward-looking deadlines (e.g., "due in 14 business days").
+ *
+ * @param {Date} startDate Starting date
+ * @param {number} daysForward Number of BUSINESS days to add
+ * @returns {Date} Deadline date (guaranteed to be a business day)
+ *
+ * Example: addBusinessDays(new Date(), 14) → 14 business days from today
+ */
+function addBusinessDays(startDate, daysForward) {
+  var current = new Date(startDate);
+  var counted = 0;
+  while (counted < daysForward) {
+    current.setDate(current.getDate() + 1);
+    if (isBusinessDay(current)) counted++;
+  }
+  return current;
+}
+
+/**
  * Returns true if a date is a business day (not weekend, not holiday).
  * @param {Date} date
  * @returns {boolean}

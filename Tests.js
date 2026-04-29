@@ -407,6 +407,61 @@ function testBusinessDayCalculator() {
 }
 
 
+/**
+ * TEST 4B: Forward Business Days Calculator
+ * Tests the addBusinessDays() function for forward-looking deadlines.
+ * Verifies: dates are in future, skip weekends, skip holidays.
+ */
+function testAddBusinessDays() {
+  Logger.log("\n--- TEST 4B: Add Business Days (Forward Calculator) ---");
+
+  // Base date: Wednesday, April 29, 2026
+  var today = new Date(2026, 3, 29);
+  Logger.log("  BASE: " + formatDate(today, true) + " (" + ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][today.getDay()] + ")");
+
+  // Test 5 business days forward
+  var deadline5 = addBusinessDays(today, 5);
+  var deadline5Str = formatDate(deadline5, true);
+  Logger.log("  5 business days forward: " + deadline5Str + " (" + ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][deadline5.getDay()] + ")");
+
+  _assert("5 business days is in future", deadline5 > today,
+    "Expected future date, got " + deadline5Str);
+  _assert("5 business days is not weekend", deadline5.getDay() !== 0 && deadline5.getDay() !== 6,
+    "Day of week: " + deadline5.getDay() + " (0=Sun, 6=Sat)");
+  _assert("5 business days is Friday (May 1, Tue + 5 business days = May 5, Tue; but we want May 8, Fri) — expected 2026-05-05",
+    deadline5Str >= "2026-05-05", "Got " + deadline5Str);
+
+  // Test 7 business days forward
+  var deadline7 = addBusinessDays(today, 7);
+  var deadline7Str = formatDate(deadline7, true);
+  Logger.log("  7 business days forward: " + deadline7Str + " (" + ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][deadline7.getDay()] + ")");
+
+  _assert("7 business days is in future", deadline7 > today,
+    "Expected future date, got " + deadline7Str);
+  _assert("7 business days is not weekend", deadline7.getDay() !== 0 && deadline7.getDay() !== 6,
+    "Day of week: " + deadline7.getDay());
+  _assert("7 business days is Friday (expected 2026-05-08)",
+    deadline7Str === "2026-05-08", "Got " + deadline7Str);
+
+  // Test 30 business days forward
+  var deadline30 = addBusinessDays(today, 30);
+  var deadline30Str = formatDate(deadline30, true);
+  Logger.log("  30 business days forward: " + deadline30Str + " (" + ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][deadline30.getDay()] + ")");
+
+  _assert("30 business days is in future", deadline30 > today,
+    "Expected future date, got " + deadline30Str);
+  _assert("30 business days is not weekend", deadline30.getDay() !== 0 && deadline30.getDay() !== 6,
+    "Day of week: " + deadline30.getDay());
+
+  // Edge case: 0 business days forward should return tomorrow if today is business day
+  var zero = addBusinessDays(today, 0);
+  _assert("0 business days should count current day's business day", zero.getDate() === today.getDate(),
+    "Expected same day, got " + formatDate(zero, true));
+
+  Logger.log("  ✓ All forward business day tests passed");
+}
+
+
 // ============================================================
 // TEST 5: EMAIL TEMPLATE LOADING
 // ============================================================

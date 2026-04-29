@@ -20,5 +20,9 @@ Notification Sent: {{NOTIFICATION_DATE}}
 AUDIT TRAIL:
 This confirms that the member has been notified of the rejection and has been provided with resubmission instructions. The member has 10 days to submit a revised document.
 
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

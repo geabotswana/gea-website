@@ -22,5 +22,9 @@ Log into your member portal to see real-time updates: {{PORTAL_URL}}
 QUESTIONS?
 Need help or have questions about your application? Contact board@geabotswana.org - we're here to help!
 
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

@@ -7,26 +7,19 @@
 ### Emails Sent (in order):
 
 #### 1.1 → Applicant (IMMEDIATE)
-- **Template:** MEM_APPLICATION_RECEIVED_TO_APPLICANT
-- **Subject:** "GEA Application Received — Next Steps Inside"
+- **Template:** MEM_APPLICATION_RECEIVED_WITH_CREDENTIALS_TO_APPLICANT
+- **Subject:** "Welcome to GEA — Your Application & Portal Access"
 - **Recipient:** applicant email
 - **Trigger Location:** ApplicationService.js `createApplicationRecord()` line 290
-- **Content Variables:** FIRST_NAME, APPLICATION_ID, PORTAL_URL
-- **Purpose:** Confirms receipt, explains next step (upload documents)
+- **Content Variables:** FIRST_NAME, APPLICATION_ID, SUBMITTED_DATE, EMAIL, TEMP_PASSWORD, PORTAL_URL
+- **Purpose:** Confirms receipt and delivers portal login credentials in a single email
+- **Note:** Combined template replaces former separate emails for application receipt + credentials
 
-#### 1.2 → Applicant (IMMEDIATE)
-- **Template:** MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT
-- **Subject:** "Your GEA Member Portal Login Details"
-- **Recipient:** applicant email
-- **Trigger Location:** ApplicationService.js `createApplicationRecord()` line 299
-- **Content Variables:** FIRST_NAME, TEMPORARY_PASSWORD, USERNAME, PORTAL_URL
-- **Purpose:** Delivers temporary login credentials for portal access
-
-#### 1.3 → Board (IMMEDIATE)
+#### 1.2 → Board (IMMEDIATE)
 - **Template:** ADM_NEW_APPLICATION_BOARD_TO_BOARD
 - **Subject:** "New Application: {{APPLICANT_NAME}} — Review by {{BOARD_REVIEW_DEADLINE}}"
 - **Recipient:** board email (EMAIL_BOARD config)
-- **Trigger Location:** ApplicationService.js `createApplicationRecord()` line 316
+- **Trigger Location:** ApplicationService.js `createApplicationRecord()` line 307
 - **Content Variables:** APPLICANT_NAME, APPLICATION_ID, SUBMISSION_DATE, BOARD_REVIEW_DEADLINE
 - **Purpose:** Notifies board of new application and review deadline
 

@@ -20,5 +20,9 @@ View your profile information anytime: {{PORTAL_URL}}
 QUESTIONS?
 If you have any questions or need to update your documents in the future, contact board@geabotswana.org
 
+Gaborone Employee Association
+www.geabotswana.org
+board@geabotswana.org
+
 ---
 This is an automated message from the GEA Management System. You may reply directly to this email -- someone will read it.

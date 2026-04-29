@@ -285,22 +285,15 @@ function createApplicationRecord(formData, createdBy) {
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
     Logger.log("[DEBUG] Sending emails - boardEmail: " + boardEmail);
 
-    // Email to applicant: application received confirmation
-    Logger.log("[DEBUG] Sending MEM_APPLICATION_RECEIVED_TO_APPLICANT to " + formData.email);
-    sendEmailFromTemplate("MEM_APPLICATION_RECEIVED_TO_APPLICANT", formData.email, {
+    // Email to applicant: application received + login credentials (combined)
+    Logger.log("[DEBUG] Sending MEM_APPLICATION_RECEIVED_WITH_CREDENTIALS_TO_APPLICANT to " + formData.email);
+    sendEmailFromTemplate("MEM_APPLICATION_RECEIVED_WITH_CREDENTIALS_TO_APPLICANT", formData.email, {
       "FIRST_NAME":     formData.first_name,
       "APPLICATION_ID": applicationId,
       "SUBMITTED_DATE": todayStr,
+      "EMAIL":          formData.email,
+      "TEMP_PASSWORD":  tempPassword,
       "PORTAL_URL":     "https://geabotswana.org/member.html"
-    });
-
-    // Email to applicant: temporary login credentials
-    Logger.log("[DEBUG] Sending MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT to " + formData.email);
-    sendEmailFromTemplate("MEM_ACCOUNT_CREDENTIALS_TO_APPLICANT", formData.email, {
-      "FIRST_NAME":    formData.first_name,
-      "EMAIL":         formData.email,
-      "TEMP_PASSWORD": tempPassword,
-      "LOGIN_URL":     "https://geabotswana.org/member.html"
     });
 
     // Email to board (sent FROM board@, so it arrives as incoming mail, not sent folder)

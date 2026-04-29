@@ -524,7 +524,7 @@ function updatePhotoStatus(individualId, status, decidedBy, rejectionReason) {
     if (m.email) sendEmailFromTemplate("DOC_PHOTO_REJECTED_TO_MEMBER", m.email, {
       FIRST_NAME:         m.first_name,
       REJECTION_REASON:   reason,
-      RESUBMIT_DEADLINE:  formatDate(addDays(new Date(), 14)),
+      RESUBMIT_DEADLINE:  formatDate(addBusinessDays(new Date(), 14)),
       PHOTO_GUIDELINES_URL: URL_MEMBER_PORTAL
     });
     logAuditEntry(decidedBy, AUDIT_PHOTO_REJECTED, "Individual", individualId,

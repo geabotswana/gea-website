@@ -1,8 +1,9 @@
-# Email Template Playbook: 9-Step Membership Application Workflow
+# Email Template Playbook: 10-Step Membership Application Workflow
 
 ## STEP 1: Application Submitted
 **Status:** `awaiting_docs`
 **User Action:** Applicant fills out and submits application form
+**Note:** Application remains in `awaiting_docs` until applicant confirms all documents uploaded
 
 ### Emails Sent (in order):
 
@@ -25,13 +26,13 @@
 
 ---
 
-## STEP 2: Documents Uploaded
-**Status:** `awaiting_docs` (unchanged)
-**User Action:** Applicant uploads identity documents and photo
+## STEP 2: Documents Uploaded and Confirmed
+**Status:** `awaiting_docs` → `board_initial_review` (or `board_verification_review` if verification required)
+**User Action:** Applicant uploads identity documents, verification documents (if applicable), and photo, then confirms batch
 
-### Emails Sent (conditional on document type):
+### Emails Sent (at document confirmation):
 
-#### 2.1 → Applicant (ON CONFIRMATION - when applicant confirms all docs)
+#### 2.1 → Applicant (IMMEDIATE ON CONFIRMATION)
 - **Template:** ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_MEMBER
 - **Subject:** "[GEA] Your Documents Have Been Received"
 - **Recipient:** applicant email
@@ -39,27 +40,37 @@
 - **Content Variables:** FIRST_NAME, SUBMISSION_DATE
 - **Purpose:** Receipt confirmation that documents have been received and will be reviewed as soon as possible
 
-#### 2.2 → Board (ON CONFIRMATION - if verification documents required for this category)
+#### 2.2 → Board (IMMEDIATE ON CONFIRMATION - if verification documents required for this category)
 - **Template:** ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_WITH_VERIFICATION_TO_BOARD
 - **Subject:** "Documents Received: {{APPLICANT_NAME}} — Verification Document Blocking Initial Review"
 - **Recipient:** board email
 - **Trigger Location:** ApplicationService.js `confirmDocuments()` line 469
 - **Content Variables:** APPLICANT_NAME, APPLICATION_ID, SUBMISSION_DATE, VERIFICATION_DOCUMENT_TYPE
 - **Purpose:** Notifies board that documents are received; verification document must be approved before board can proceed with initial review; photos are for informational purposes only
+- **Status Trigger:** Application moves to `board_verification_review` status (blocking initial review until verification approved)
 
-#### 2.3 → Board (ON CONFIRMATION - if verification documents NOT required for this category)
+#### 2.3 → Board (IMMEDIATE ON CONFIRMATION - if verification documents NOT required for this category)
 - **Template:** ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_BOARD
 - **Subject:** "Documents Ready for Your Review: {{APPLICANT_NAME}}"
 - **Recipient:** board email
 - **Trigger Location:** ApplicationService.js `confirmDocuments()` line 469
 - **Content Variables:** APPLICANT_NAME, APPLICATION_ID, SUBMISSION_DATE
 - **Purpose:** Notifies board that all documents are received and ready for initial review; photos included for informational purposes only
-
-**Status after Step 2:** Still `awaiting_docs` until board initial decision
+- **Status Trigger:** Application moves to `board_initial_review` status
 
 ---
 
-## STEP 3: Board Reviews Verification Letters (if required)
+## STEP 3: Board Reviews Verification Documents (if required)
+**Status:** `board_verification_review`
+**User Action:** Board approves or requests clarification on verification documents (e.g., funding verification, accreditation verification)
+
+#### 3.1 → Board
+- Board manually approves verification document in admin interface
+- No template (internal workflow)
+
+**Status after approval:** Application moves to `board_initial_review`
+
+---
 
 ---
 
@@ -108,8 +119,9 @@
 - **Trigger Location:** ApplicationService.js `boardInitialDecision()` line 740
 - **Content Variables:** FIRST_NAME, APPLICATION_ID, DENIAL_REASON, CONTACT_EMAIL
 - **Purpose:** Notifies applicant of denial (stage-agnostic - uses board-written diplomatic reason)
+- **Note:** Denial status is permanent for this application and blocks reapplication under the same email address. Denial is used for "not a desirable member" decisions. Document quality issues should be addressed via rejection and resubmission, not denial.
 
-#### Status after 4B: `denied` (application closed)
+#### Status after 4B: `denied` (application closed, email blocked from reapplication)
 
 ---
 
@@ -229,8 +241,9 @@
 - **Trigger Location:** ApplicationService.js `boardFinalDecision()` line 925
 - **Content Variables:** FIRST_NAME, APPLICATION_ID, DENIAL_REASON, CONTACT_EMAIL
 - **Purpose:** Notifies applicant of final denial
+- **Note:** Denial at final stage also blocks reapplication under the same email address.
 
-#### Status after 7B: `denied` (application closed)
+#### Status after 7B: `denied` (application closed, email blocked from reapplication)
 
 ---
 
@@ -268,13 +281,18 @@
 
 ---
 
-## STEP 9: Membership Activated
-**Status:** `payment_submitted` → `payment_verified` → `activated`
-**User Action:** Treasurer verifies payment and confirms in system
+## STEP 9: Payment Verified and Membership Activated
+**Status:** `payment_submitted` → `activated`
+**User Action:** Treasurer verifies payment AND confirms payment is in full
 
-### Emails Sent (in order):
+### Decision Point: Treasurer Payment Review
+Treasurer reviews payment proof and determines two things:
+1. **Is payment verified?** (proof matches expected amount, no fraud indicators)
+2. **Is account paid in full?** (received amount covers full membership dues)
 
-#### 9.1 → Applicant (IMMEDIATE after payment verified)
+#### SCENARIO A: Payment Verified AND Paid in Full
+
+##### 9A.1 → Applicant (IMMEDIATE)
 - **Template:** PAY_PAYMENT_VERIFIED_TO_MEMBER
 - **Subject:** "GEA: Your Payment Is Verified — Membership Is Now Active!"
 - **Recipient:** applicant email
@@ -282,15 +300,15 @@
 - **Content Variables:** FIRST_NAME, APPLICATION_ID, ACTIVATION_DATE, PORTAL_URL
 - **Purpose:** Final confirmation - membership is now active
 
-#### 9.2 → Applicant (IMMEDIATE)
+##### 9A.2 → Applicant (IMMEDIATE)
 - **Template:** MEM_MEMBERSHIP_ACTIVATED_TO_MEMBER
 - **Subject:** "Welcome to GEA — Your Membership Is Now Active!"
 - **Recipient:** applicant email
-- **Trigger Location:** ApplicationService.js `verifyPaymentAndActivate()` line [after 9.1]
+- **Trigger Location:** ApplicationService.js `verifyPaymentAndActivate()` line [after 9A.1]
 - **Content Variables:** FIRST_NAME, MEMBER_ID, WELCOME_MESSAGE, PORTAL_FEATURES, PORTAL_URL
 - **Purpose:** Welcome email - orientation to member benefits and portal
 
-#### 9.3 → Board (IMMEDIATE)
+##### 9A.3 → Board (IMMEDIATE)
 - **Template:** PAY_PAYMENT_VERIFIED_ACTIVATED_BOARD_FYI_TO_BOARD
 - **Subject:** "Payment Verified & Membership Activated: {{MEMBER_NAME}}"
 - **Recipient:** board email
@@ -298,7 +316,7 @@
 - **Content Variables:** FIRST_NAME, MEMBER_NAME, APPLICATION_ID, ACTIVATION_DATE
 - **Purpose:** Board FYI - applicant is now active member
 
-#### 9.4 → RSO (IMMEDIATE)
+##### 9A.4 → RSO (IMMEDIATE)
 - **Template:** ADM_MEMBERSHIP_ACTIVATED_TO_RSO
 - **Subject:** "{{MEMBER_NAME}} Is Now an Active GEA Member"
 - **Recipient:** RSO notify email
@@ -306,7 +324,53 @@
 - **Content Variables:** FIRST_NAME, MEMBER_NAME, APPLICATION_ID, MEMBER_ID
 - **Purpose:** Closure notification - RSO now expects new member in directory for guards' awareness
 
-#### Status after 9: `activated` (application complete)
+**Status after 9A:** `activated` (application complete)
+
+---
+
+#### SCENARIO B: Payment Verified BUT Not Paid in Full
+
+##### 9B.1 → Applicant (IMMEDIATE)
+- **Template:** PAY_PAYMENT_CLARIFICATION_REQUESTED_TO_MEMBER (or custom balance due email)
+- **Subject:** "GEA: Payment Received — Balance Remaining Due"
+- **Recipient:** applicant email
+- **Purpose:** Acknowledges payment received but indicates amount still due; provides updated payment amount and new deadline
+- **Content Variables:** FIRST_NAME, PAYMENT_APPLIED, BALANCE_DUE, PAYMENT_DEADLINE, PAYMENT_INSTRUCTIONS
+
+**Status after 9B:** `approved_pending_payment` (returns to payment submission state with updated balance)
+- Application cycles back to Step 8 for next payment submission attempt
+- Applicant resubmits when they have additional funds ready
+
+---
+
+## STEP 10: Application Withdrawal
+**Status:** Any status (awaiting_docs through approved_pending_payment) → `withdrawn`
+**User Action:** Applicant explicitly withdraws application from portal
+
+### Email Sent:
+
+#### 10.1 → Applicant (IMMEDIATE)
+- **Template:** (NEW - withdrawal confirmation)
+- **Subject:** "[GEA] Your Application Has Been Withdrawn"
+- **Recipient:** applicant email
+- **Purpose:** Confirms withdrawal and explains next steps for reapplication
+- **Content Variables:** FIRST_NAME, APPLICATION_ID, WITHDRAWAL_DATE
+
+#### 10.2 → Board (IMMEDIATE)
+- **Template:** (NEW - withdrawal notification)
+- **Subject:** "Application Withdrawn: {{APPLICANT_NAME}} ({{APPLICATION_ID}})"
+- **Recipient:** board email
+- **Purpose:** FYI that applicant has withdrawn their application
+- **Content Variables:** APPLICANT_NAME, APPLICATION_ID, WITHDRAWAL_DATE
+
+### System Action at Withdrawal:
+- Application status set to `withdrawn`
+- **Email address modified:** Original email prefixed with `WITHDRAWN-` (e.g., `joe@example.com` → `WITHDRAWN-joe@example.com`)
+  - This removes applicant portal access (session lookups fail on modified email)
+  - Prevents malicious reuse of old credentials
+  - Allows future reapplication under original email without uniqueness conflicts
+  - No notification sent to applicant about email modification
+  - Applicant can reapply by submitting new application with original email address
 
 ---
 
@@ -339,18 +403,22 @@
 | Step | To Applicant | To Board | To RSO | Total |
 |------|-------------|----------|--------|-------|
 | 1: Submit | 2 | 1 | - | **3** |
-| 2: Upload | 2 | 2 | - | **4** |
-| 3: Review | - | - | - | **0** (silent) |
-| 4: Initial | 1 | 1 | - | **2** |
-| 4: Denial | 1 | - | - | **1** |
+| 2: Confirm Docs | 1 | 2* | - | **3** (*depends on verification requirement) |
+| 3: Verification Review | - | - | - | **0** (silent) |
+| 4: Initial Review | 1 | 1 | 1 | **3** |
+| 4: Initial Denial | 1 | - | - | **1** |
 | 5: RSO Docs | 1 | 1 | - | **2** |
 | 6: RSO App | 1 | - | 1 | **2** |
-| 7: Final | 1 | 1 | - | **2** |
+| 7: Final Review | 1 | 1 | - | **2** |
+| 7: Final Denial | 1 | - | - | **1** |
 | 7: Payment Setup | - | 1 | - | **1** (to board, addressed to treasurer) |
-| 8: Payment Submitted | 2 | - | - | **2** |
-| 8: Payment Board FYI | - | 1 | - | **1** |
-| 9: Activate | 2 | 1 | 1 | **4** |
-| **TOTAL** | **13** | **8** | **2** | **23** |
+| 8: Payment Submitted | 2 | 1 | - | **3** |
+| 9A: Payment Verified | 2 | 1 | 1 | **4** |
+| 9B: Partial Payment | 1 | - | - | **1** (returns to Step 8) |
+| 10: Withdrawal | 1 | 1 | - | **2** |
+| **TOTAL** | **~15** | **~10** | **~3** | **~28** |
+
+*Note: Email count varies based on approval path (initial denial vs. final denial), payment scenario (full vs. partial), and withdrawal timing.
 
 ---
 

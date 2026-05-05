@@ -48,7 +48,7 @@
  * @returns {ContentService.TextOutput}
  */
 function doGet(e) {
-  var params = e.parameter || {};
+  var params = (e && e.parameter) || {};
   var action = params.action || "serve";
 
   // Public deployment metadata endpoint (JSONP for cross-origin)

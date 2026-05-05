@@ -4946,12 +4946,12 @@ function setupEmailTemplates_Instructions() {
 /**
  * TEST FUNCTION: testAllEmailTemplates()
  * Sends a test email for every active email template to michael@raneyworld.com
- * One email per minute to avoid rate limits
+ * One email every 10 seconds to stay within GAS 30-minute execution limit
  * Run from GAS editor: Functions dropdown → testAllEmailTemplates → Run
  */
 function testAllEmailTemplates() {
   var testEmailAddress = "michael@raneyworld.com";
-  var delayMs = 60000;
+  var delayMs = 10000; // 10 seconds between emails
 
   // Open the GEA System Backend spreadsheet
   var spreadsheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);

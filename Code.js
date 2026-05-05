@@ -4942,3 +4942,282 @@ function setupEmailTemplates_Instructions() {
   Logger.log("To sync to Google Sheets, copy the Email Templates sheet from the .xlsx");
   Logger.log("and paste it into the Google Sheets version.");
 }
+
+/**
+ * TEST FUNCTION: testAllEmailTemplates()
+ * Sends a test email for every active email template to michael@raneyworld.com
+ * One email per minute to avoid rate limits
+ * Run from GAS editor: Functions dropdown → testAllEmailTemplates → Run
+ */
+function testAllEmailTemplates() {
+  var testEmailAddress = "michael@raneyworld.com";
+  var delayMs = 60000;
+
+  // Get the Email Templates Sheet spreadsheet
+  var spreadsheets = SpreadsheetApp.getActive();
+  if (!spreadsheets) {
+    Logger.log("ERROR: Could not access spreadsheet");
+    return;
+  }
+
+  // Find the Email Templates sheet
+  var sheets = spreadsheets.getSheets();
+  var emailTemplatesSheet = null;
+  for (var s = 0; s < sheets.length; s++) {
+    if (sheets[s].getName() === "Email Templates") {
+      emailTemplatesSheet = sheets[s];
+      break;
+    }
+  }
+
+  if (!emailTemplatesSheet) {
+    Logger.log("ERROR: Could not find 'Email Templates' sheet");
+    return;
+  }
+
+  // Get all data from Email Templates sheet
+  var data = emailTemplatesSheet.getDataRange().getValues();
+  var templates = [];
+
+  // Skip header row
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var semanticName = row[0];
+    var displayName = row[1];
+    var subject = row[2];
+    var placeholdersStr = row[4];
+    var active = row[5];
+
+    if (active === true || active === "true") {
+      var placeholders = [];
+      if (placeholdersStr) {
+        placeholders = placeholdersStr.toString().split(';').map(function(p) { return p.trim(); }).filter(function(p) { return p; });
+      }
+      templates.push({
+        semanticName: semanticName,
+        displayName: displayName,
+        subject: subject,
+        placeholders: placeholders
+      });
+    }
+  }
+
+  Logger.log("Found " + templates.length + " active templates. Starting test run...");
+  Logger.log("Sending to: " + testEmailAddress);
+  Logger.log("");
+
+  var startTime = new Date();
+  var successCount = 0;
+  var failureCount = 0;
+
+  for (var t = 0; t < templates.length; t++) {
+    var template = templates[t];
+    var variables = generateSampleVariablesForTest(template.placeholders);
+
+    try {
+      var success = sendEmailFromTemplate(
+        template.semanticName,
+        testEmailAddress,
+        variables
+      );
+
+      if (success) {
+        Logger.log("✓ [" + (t+1) + "/" + templates.length + "] " + template.semanticName);
+        successCount++;
+      } else {
+        Logger.log("✗ [" + (t+1) + "/" + templates.length + "] " + template.semanticName + " - sendEmailFromTemplate returned false");
+        failureCount++;
+      }
+    } catch (e) {
+      Logger.log("✗ [" + (t+1) + "/" + templates.length + "] " + template.semanticName + " - ERROR: " + e.toString());
+      failureCount++;
+    }
+
+    if (t < templates.length - 1) {
+      Utilities.sleep(delayMs);
+    }
+  }
+
+  var endTime = new Date();
+  var elapsedMinutes = Math.round((endTime - startTime) / 60000);
+
+  Logger.log("");
+  Logger.log("========================================");
+  Logger.log("EMAIL TEMPLATE TEST COMPLETE");
+  Logger.log("========================================");
+  Logger.log("Total templates tested: " + templates.length);
+  Logger.log("Successful sends: " + successCount);
+  Logger.log("Failed sends: " + failureCount);
+  Logger.log("Elapsed time: " + elapsedMinutes + " minutes");
+  Logger.log("Sent to: " + testEmailAddress);
+  Logger.log("========================================");
+}
+
+/**
+ * Generate sample/dummy data for template variables
+ */
+function generateSampleVariablesForTest(placeholders) {
+  var vars = {};
+  var today = new Date();
+  var tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  var nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  var dateStr = Utilities.formatDate(today, 'GMT', 'MMM dd, yyyy');
+  var tomorrowStr = Utilities.formatDate(tomorrow, 'GMT', 'MMM dd, yyyy');
+  var nextWeekStr = Utilities.formatDate(nextWeek, 'GMT', 'MMM dd, yyyy');
+
+  var sampleValues = {
+    'FIRST_NAME': 'John',
+    'APPLICANT_NAME': 'John Smith',
+    'MEMBER_NAME': 'Jane Doe',
+    'HOUSEHOLD_NAME': 'Smith Family',
+    'EMAIL': 'test@example.com',
+    'MEMBER_EMAIL': 'member@example.com',
+    'APPLICATION_ID': 'APP-' + Math.floor(Math.random() * 100000),
+    'SUBMISSION_DATE': dateStr,
+    'SUBMITTED_DATE': dateStr,
+    'APPROVAL_DATE': dateStr,
+    'APPROVED_DATE': dateStr,
+    'ACTIVATION_DATE': tomorrowStr,
+    'APPROVAL_DEADLINE': nextWeekStr,
+    'BOARD_REVIEW_DEADLINE': nextWeekStr,
+    'REVIEW_DEADLINE': nextWeekStr,
+    'PAYMENT_DEADLINE': nextWeekStr,
+    'RESUBMIT_DEADLINE': nextWeekStr,
+    'PORTAL_URL': 'https://geabotswana.org/member-portal',
+    'LOGIN_URL': 'https://geabotswana.org/login',
+    'TEMP_PASSWORD': 'TestPass123!',
+    'PAYMENT_ID': 'PAY-' + Math.floor(Math.random() * 100000),
+    'AMOUNT': '500.00',
+    'CURRENCY': 'BWP',
+    'BALANCE_DUE': '250.00',
+    'PAYMENT_AMOUNT': '500.00',
+    'DOCUMENT_TYPE': 'Passport',
+    'DOCUMENT_TYPES': 'Passport, Omang, ID Photo',
+    'VERIFICATION_DOCUMENT_TYPE': 'Employment Letter',
+    'REJECTION_REASON': 'Document quality insufficient. Please resubmit.',
+    'DENIAL_REASON': 'Application does not meet membership eligibility.',
+    'CONTACT_EMAIL': 'board@geabotswana.org',
+    'FACILITY': 'Leobo Lounge',
+    'FACILITY_NAME': 'Tennis Court',
+    'RESERVATION_DATE': nextWeekStr,
+    'RESERVATION_TIME': '10:00 AM',
+    'GUEST_COUNT': '4',
+    'PAYMENT_APPLIED': '300.00',
+    'REFERENCE_NUMBER': 'REF-' + Math.floor(Math.random() * 100000),
+    'MEMBER_ID': 'MEM-' + Math.floor(Math.random() * 100000),
+    'CHILD_FIRST_NAME': 'Thomas',
+    'BIRTHDAY_DATE': dateStr,
+    'RESET_WINDOW_MINUTES': '30',
+    'CARD_ISSUANCE_DATE': dateStr,
+    'PHOTO_COUNT': '1',
+    'EXPIRATION_DATE': nextWeekStr,
+    'MEMBERSHIP_YEAR': new Date().getFullYear(),
+    'RENEWAL_DEADLINE': nextWeekStr,
+    'REACTIVATION_AMOUNT': '450.00',
+    'GRACE_END_DATE': nextWeekStr,
+    'LAPSED_DATE': dateStr,
+    'TERMINATION_DATE': dateStr,
+    'TERMINATION_REASON': 'Membership lapsed',
+    'RENEWAL_DATE': dateStr,
+    'NEW_EXPIRATION_DATE': nextWeekStr,
+    'MEMBERSHIP_LEVEL': 'Full Member',
+    'CATEGORY_VERIFICATION_REQUIREMENTS': 'Employment verification',
+    'SUBMISSION_ID': 'SUB-' + Math.floor(Math.random() * 100000),
+    'DEADLINE': nextWeekStr,
+    'DEADLINE_TO_RESOLVE': nextWeekStr,
+    'FILE_NAME': 'passport.pdf',
+    'PHOTO_REQUIREMENTS': '6x4cm, clear background',
+    'PHOTO_GUIDELINES_URL': 'https://geabotswana.org/photo-guidelines',
+    'ISSUE_DESCRIPTION': 'Document quality below standards',
+    'BOARD_REJECTION_MESSAGE': 'Please resubmit a clearer copy.',
+    'ALLOW_RESUBMIT': 'true',
+    'IF_ALLOW_RESUBMIT': 'Resubmit by deadline',
+    'ORIGINALLY_REJECTED_BY': 'RSO Team',
+    'REJECTION_SENT_DATE': dateStr,
+    'RSO_REJECTION_MESSAGE': 'Image quality too low',
+    'APPROVED_BY': 'Alice Johnson',
+    'APPROVED_BY_NAME': 'Alice Johnson',
+    'REJECTED_BY': 'Bob Smith',
+    'RESUBMISSION_INSTRUCTIONS': 'Clear, high-resolution scan required',
+    'SUPPORT_EMAIL': 'support@geabotswana.org',
+    'WELCOME_MESSAGE': 'Welcome to GEA!',
+    'PORTAL_FEATURES': 'Facility reservations, payments, directory',
+    'NEXT_STEP': 'Submit payment',
+    'NEXT_STEP_DETAILS': 'Transfer to board account',
+    'EXPECTED_REVIEW_DATE': nextWeekStr,
+    'TIMELINE': '3-5 business days',
+    'APPROVAL_URL': 'https://geabotswana.org/approve',
+    'ADMIN_PORTAL_URL': 'https://geabotswana.org/admin',
+    'REASON': 'Limit exceeded',
+    'OTHER_EVENTS_LIST': 'Leobo Sat 15 Jun',
+    'EXISTING_BOOKINGS_LIST': 'Leobo Sat 8 Jun',
+    'HOURS_USED': '8',
+    'LEOBO_MONTHLY_LIMIT': '12',
+    'LEOBO_USAGE': '8',
+    'LEOBO_MAX_HOURS': '12',
+    'LEOBO_BUMP_WINDOW_DAYS': '3',
+    'BUMP_DEADLINE': nextWeekStr,
+    'TENNIS_WEEKLY_LIMIT_HOURS': '3',
+    'MEMBER_PHONE': '+267 71 234 567',
+    'START_TIME': '2:00 PM',
+    'END_TIME': '3:30 PM',
+    'EVENT_NAME': 'Tennis',
+    'DURATION_HOURS': '1.5',
+    'END_IF': '',
+    'IF_GUESTS': 'Yes',
+    'GUEST_LIST_LINK': 'https://geabotswana.org/guestlist',
+    'APPROVE_LINK': 'https://geabotswana.org/approve',
+    'DENY_LINK': 'https://geabotswana.org/deny',
+    'WAITLIST_POSITION': '2',
+    'WAITLIST_HOLD_HOURS': '24',
+    'HOLIDAY_NAME': 'Christmas',
+    'FACILITY_CLOSURES': 'Dec 25-26',
+    'DATES': 'Dec 24-26',
+    'PENDING_COUNT': '3',
+    'PENDING_LIST': '3 pending items',
+    'CLARIFICATION_NEEDED': 'Proof of transfer needed',
+    'REQUEST_ID': 'REQ-' + Math.floor(Math.random() * 100000),
+    'REQUEST_SUMMARY': 'New member approval',
+    'BOARD_ITEM_TYPE': 'Member Admission',
+    'BOARD_MESSAGE': 'Approved',
+    'REAPPLICATION_INFO': 'Contact board',
+    'RSO_REASON': 'Document quality',
+    'MGT_APPROVED_BY': 'Management',
+    'CURRENT_RESERVATIONS': 'Leobo Sat 8 Jun',
+    'LIMIT': '12 hours/month',
+    'WAITLIST_INFO': 'Position 1',
+    'CONFIRMATION_DATE': dateStr,
+    'TODAY_DATE': dateStr,
+    'TOTAL_GUESTS': '12',
+    'TOTAL_MEMBERS': '4',
+    'TOTAL_RESERVATIONS': '5',
+    'RESERVATIONS_BLOCK': 'Leobo 6-8 PM',
+    'REMOVED_MEMBER_NAME': 'Thomas',
+    'REMOVED_MEMBER_RELATIONSHIP': 'Son',
+    'REMOVAL_DATE': dateStr,
+    'PRIMARY_MEMBER_NAME': 'Jane',
+    'NOTIFICATION_DATE': dateStr,
+    'DECISION_DATE': dateStr,
+    'VERIFIED_DATE': dateStr,
+    'RENEWAL_PROCESS': 'Visit portal',
+    'VERIFICATION_PROCESS': 'Submit letter',
+    'NEXT_STEPS': 'Await approval',
+    'ALLOW_REAPPLICATION': 'true',
+    'PAYMENT_VERIFIED': 'true',
+    'MEMBERSHIP_ACTIVATED': 'true',
+    'STATUS': 'Pending'
+  };
+
+  for (var i = 0; i < placeholders.length; i++) {
+    var placeholder = placeholders[i];
+    if (sampleValues[placeholder]) {
+      vars[placeholder] = sampleValues[placeholder];
+    } else {
+      vars[placeholder] = '[Sample ' + placeholder + ']';
+    }
+  }
+
+  return vars;
+}

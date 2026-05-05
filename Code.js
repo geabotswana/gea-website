@@ -4953,25 +4953,17 @@ function testAllEmailTemplates() {
   var testEmailAddress = "michael@raneyworld.com";
   var delayMs = 60000;
 
-  // Get the Email Templates Sheet spreadsheet
-  var spreadsheets = SpreadsheetApp.getActive();
-  if (!spreadsheets) {
-    Logger.log("ERROR: Could not access spreadsheet");
+  // Open the GEA System Backend spreadsheet
+  var spreadsheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
+  if (!spreadsheet) {
+    Logger.log("ERROR: Could not open GEA System Backend spreadsheet");
     return;
   }
 
   // Find the Email Templates sheet
-  var sheets = spreadsheets.getSheets();
-  var emailTemplatesSheet = null;
-  for (var s = 0; s < sheets.length; s++) {
-    if (sheets[s].getName() === "Email Templates") {
-      emailTemplatesSheet = sheets[s];
-      break;
-    }
-  }
-
+  var emailTemplatesSheet = spreadsheet.getSheetByName("Email Templates");
   if (!emailTemplatesSheet) {
-    Logger.log("ERROR: Could not find 'Email Templates' sheet");
+    Logger.log("ERROR: Could not find 'Email Templates' sheet in GEA System Backend");
     return;
   }
 

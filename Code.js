@@ -5057,7 +5057,6 @@ function testAllEmailTemplates() {
  * Validates that all variables are now properly substituted
  */
 function testPreviouslyFailedTemplates() {
-  var folder = DriveApp.getFolderById(Config.deploymentFolderId);
   var today = new Date();
   var nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
@@ -5067,7 +5066,7 @@ function testPreviouslyFailedTemplates() {
   var templates = [
     {
       name: 'DOC_PHOTO_REPLACED_REJECTED_TO_BOARD',
-      file: 'DOC_PHOTO_REPLACED_REJECTED_TO_BOARD.txt',
+      templateName: 'DOC_PHOTO_REPLACED_REJECTED_TO_BOARD',
       variables: {
         'MEMBER_NAME': 'Jane Doe',
         'REJECTED_BY': 'Bob Smith',
@@ -5079,7 +5078,7 @@ function testPreviouslyFailedTemplates() {
     },
     {
       name: 'DOC_DOCUMENT_REPLACED_REJECTED_TO_BOARD',
-      file: 'DOC_DOCUMENT_REPLACED_REJECTED_TO_BOARD.txt',
+      templateName: 'DOC_DOCUMENT_REPLACED_REJECTED_TO_BOARD',
       variables: {
         'MEMBER_NAME': 'John Smith',
         'DOCUMENT_TYPE': 'Passport',
@@ -5092,7 +5091,7 @@ function testPreviouslyFailedTemplates() {
     },
     {
       name: 'ADM_NEW_APPLICATION_BOARD_TO_BOARD',
-      file: 'ADM_NEW_APPLICATION_BOARD_TO_BOARD.txt',
+      templateName: 'ADM_NEW_APPLICATION_BOARD_TO_BOARD',
       variables: {
         'APPLICANT_NAME': 'Michael Chen',
         'APPLICATION_ID': 'APP-99999',
@@ -5102,7 +5101,7 @@ function testPreviouslyFailedTemplates() {
     },
     {
       name: 'ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_WITH_VERIFICATION_TO_BOARD',
-      file: 'ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_WITH_VERIFICATION_TO_BOARD.txt',
+      templateName: 'ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_WITH_VERIFICATION_TO_BOARD',
       variables: {
         'APPLICANT_NAME': 'Sarah Williams',
         'APPLICATION_ID': 'APP-55555',
@@ -5113,7 +5112,7 @@ function testPreviouslyFailedTemplates() {
     },
     {
       name: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD',
-      file: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt',
+      templateName: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD',
       variables: {
         'APPLICANT_NAME': 'David Brown',
         'INDIVIDUAL_ID': 'IND-11111',
@@ -5125,7 +5124,7 @@ function testPreviouslyFailedTemplates() {
     },
     {
       name: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD (allow_resubmit=false)',
-      file: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt',
+      templateName: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD',
       variables: {
         'APPLICANT_NAME': 'Emily Martinez',
         'INDIVIDUAL_ID': 'IND-22222',
@@ -5143,18 +5142,17 @@ function testPreviouslyFailedTemplates() {
   Logger.log("");
 
   for (var t = 0; t < templates.length; t++) {
-    var template = templates[t];
-    var files = folder.getFilesByName(template.file);
+    var templateDef = templates[t];
+    var template = getEmailTemplate(templateDef.templateName);
 
-    if (!files.hasNext()) {
-      Logger.log("✗ [" + (t + 1) + "/" + templates.length + "] " + template.name + " — FILE NOT FOUND");
+    if (!template) {
+      Logger.log("✗ [" + (t + 1) + "/" + templates.length + "] " + templateDef.name + " — TEMPLATE NOT FOUND");
       continue;
     }
 
-    var fileContent = files.next().getBlob().getDataAsString();
-    var rendered = substituteTemplateVariables(fileContent, template.variables);
+    var rendered = substituteTemplateVariables(template.body, templateDef.variables);
 
-    Logger.log("✓ [" + (t + 1) + "/" + templates.length + "] " + template.name);
+    Logger.log("✓ [" + (t + 1) + "/" + templates.length + "] " + templateDef.name);
     Logger.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     Logger.log(rendered);
     Logger.log("");
@@ -5217,16 +5215,12 @@ function catalogEmailTemplateVariables() {
 }
 
 function testADMDocumentRejectedTemplate() {
-  var folder = DriveApp.getFolderById(Config.deploymentFolderId);
-  var files = folder.getFilesByName("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt");
-  var templateContent = "";
-
-  if (files.hasNext()) {
-    templateContent = files.next().getBlob().getDataAsString();
-  } else {
-    Logger.log("ERROR: Could not find ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt template file");
+  var template = getEmailTemplate("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD");
+  if (!template) {
+    Logger.log("ERROR: Could not find ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD template");
     return;
   }
+  var templateContent = template.body;
 
   // Test Case 1: ALLOW_RESUBMIT = true
   Logger.log("========================================");

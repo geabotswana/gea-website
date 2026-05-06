@@ -5046,6 +5046,69 @@ function testAllEmailTemplates() {
 }
 
 /**
+ * TEST FUNCTION: testADMDocumentRejectedTemplate()
+ * Tests the ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD template with conditional logic
+ * Tests both ALLOW_RESUBMIT=true and ALLOW_RESUBMIT=false scenarios
+ * Outputs the rendered templates to the browser console and as a file
+ */
+function testADMDocumentRejectedTemplate() {
+  var folder = DriveApp.getFolderById(Config.deploymentFolderId);
+  var files = folder.getFilesByName("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt");
+  var templateContent = "";
+
+  if (files.hasNext()) {
+    templateContent = files.next().getBlob().getDataAsString();
+  } else {
+    Logger.log("ERROR: Could not find ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt template file");
+    return;
+  }
+
+  // Test Case 1: ALLOW_RESUBMIT = true
+  Logger.log("========================================");
+  Logger.log("TEST 1: ALLOW_RESUBMIT = true");
+  Logger.log("========================================");
+
+  var variables1 = {
+    'APPLICANT_NAME': 'John Smith',
+    'INDIVIDUAL_ID': 'IND-12345',
+    'DOCUMENT_TYPE': 'Identity Document',
+    'APPLICATION_ID': 'APP-67890',
+    'REJECTION_REASON': 'Document is blurry and illegible. Please submit a clearer copy.',
+    'ALLOW_RESUBMIT': true
+  };
+
+  var rendered1 = substituteTemplateVariables(templateContent, variables1);
+  Logger.log(rendered1);
+  Logger.log("");
+
+  // Test Case 2: ALLOW_RESUBMIT = false
+  Logger.log("========================================");
+  Logger.log("TEST 2: ALLOW_RESUBMIT = false");
+  Logger.log("========================================");
+
+  var variables2 = {
+    'APPLICANT_NAME': 'Jane Doe',
+    'INDIVIDUAL_ID': 'IND-54321',
+    'DOCUMENT_TYPE': 'Proof of Address',
+    'APPLICATION_ID': 'APP-11111',
+    'REJECTION_REASON': 'Document is expired and cannot be used for verification purposes.',
+    'ALLOW_RESUBMIT': false
+  };
+
+  var rendered2 = substituteTemplateVariables(templateContent, variables2);
+  Logger.log(rendered2);
+  Logger.log("");
+
+  Logger.log("========================================");
+  Logger.log("TEMPLATE TEST COMPLETE");
+  Logger.log("========================================");
+  Logger.log("✓ Check the execution log above to verify:");
+  Logger.log("  - No unreplaced {{VARIABLE}} placeholders");
+  Logger.log("  - No visible {{ELSE}} or {{END_IF}} markers");
+  Logger.log("  - Correct conditional text based on ALLOW_RESUBMIT value");
+}
+
+/**
  * Generate sample/dummy data for template variables
  */
 function generateSampleVariablesForTest(placeholders) {

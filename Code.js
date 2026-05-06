@@ -5051,6 +5051,53 @@ function testAllEmailTemplates() {
  * Tests both ALLOW_RESUBMIT=true and ALLOW_RESUBMIT=false scenarios
  * Outputs the rendered templates to the browser console and as a file
  */
+/**
+ * DEBUG FUNCTION: catalogEmailTemplateVariables()
+ * Extracts all variables from the Email Templates CSV and compares to actual TXT files
+ * Logs results for analysis
+ */
+function catalogEmailTemplateVariables() {
+  var spreadsheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
+  var emailTemplatesSheet = spreadsheet.getSheetByName("Email Templates");
+  var data = emailTemplatesSheet.getDataRange().getValues();
+
+  var csvVariables = new Set();
+
+  Logger.log("========================================");
+  Logger.log("EMAIL TEMPLATES CSV ANALYSIS");
+  Logger.log("========================================");
+  Logger.log("");
+
+  // Skip header row (row 0), process from row 1 onward
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var semanticName = row[0];
+    var placeholdersStr = row[4];  // Column 5 is placeholders
+
+    if (placeholdersStr && placeholdersStr.toString().trim()) {
+      var placeholders = placeholdersStr.toString().split(';').map(function(p) {
+        return p.trim();
+      }).filter(function(p) {
+        return p && p.length > 0;
+      });
+
+      for (var j = 0; j < placeholders.length; j++) {
+        csvVariables.add(placeholders[j]);
+      }
+    }
+  }
+
+  // Convert set to sorted array
+  var csvVarsArray = Array.from(csvVariables).sort();
+
+  Logger.log("Total unique variables in CSV: " + csvVarsArray.length);
+  Logger.log("");
+  Logger.log("Variables from CSV (alphabetical):");
+  for (var i = 0; i < csvVarsArray.length; i++) {
+    Logger.log("  - " + csvVarsArray[i]);
+  }
+}
+
 function testADMDocumentRejectedTemplate() {
   var folder = DriveApp.getFolderById(Config.deploymentFolderId);
   var files = folder.getFilesByName("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt");

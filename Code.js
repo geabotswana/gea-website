@@ -5107,7 +5107,7 @@ function testPreviouslyFailedTemplates() {
         'APPLICATION_ID': 'APP-55555',
         'SUBMISSION_DATE': dateStr,
         'VERIFICATION_DOCUMENT_TYPE': 'Employment Letter',
-        'PORTAL_URL': 'https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec'
+        'PORTAL_URL': 'https://geabotswana.org/member.html'
       }
     },
     {
@@ -5300,7 +5300,7 @@ function generateSampleVariablesForTest(placeholders) {
     'REVIEW_DEADLINE': nextWeekStr,
     'PAYMENT_DEADLINE': nextWeekStr,
     'RESUBMIT_DEADLINE': nextWeekStr,
-    'PORTAL_URL': 'https://geabotswana.org/member-portal',
+    'PORTAL_URL': 'https://geabotswana.org/member.html',
     'LOGIN_URL': 'https://geabotswana.org/login',
     'TEMP_PASSWORD': 'TestPass123!',
     'PAYMENT_ID': 'PAY-' + Math.floor(Math.random() * 100000),

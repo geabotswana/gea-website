@@ -5298,12 +5298,11 @@ function generateSampleVariablesForTest(placeholders) {
     'STATUS': 'Pending'
   };
 
-  for (var i = 0; i < placeholders.length; i++) {
-    var placeholder = placeholders[i];
-    if (sampleValues[placeholder]) {
-      vars[placeholder] = sampleValues[placeholder];
-    } else {
-      vars[placeholder] = '[Sample ' + placeholder + ']';
+  // Return ALL sample values, not just the ones listed in placeholders
+  // This ensures templates with variables not listed in CSV still get proper values
+  for (var key in sampleValues) {
+    if (sampleValues.hasOwnProperty(key)) {
+      vars[key] = sampleValues[key];
     }
   }
 

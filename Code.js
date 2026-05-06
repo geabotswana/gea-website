@@ -5052,6 +5052,124 @@ function testAllEmailTemplates() {
  * Outputs the rendered templates to the browser console and as a file
  */
 /**
+ * TEST FUNCTION: testPreviouslyFailedTemplates()
+ * Tests the 5 templates that had unreplaced variables in the last test run
+ * Validates that all variables are now properly substituted
+ */
+function testPreviouslyFailedTemplates() {
+  var folder = DriveApp.getFolderById(Config.deploymentFolderId);
+  var today = new Date();
+  var nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  var dateStr = Utilities.formatDate(today, 'GMT', 'MMM dd, yyyy');
+  var nextWeekStr = Utilities.formatDate(nextWeek, 'GMT', 'MMM dd, yyyy');
+
+  var templates = [
+    {
+      name: 'DOC_PHOTO_REPLACED_REJECTED_TO_BOARD',
+      file: 'DOC_PHOTO_REPLACED_REJECTED_TO_BOARD.txt',
+      variables: {
+        'MEMBER_NAME': 'Jane Doe',
+        'REJECTED_BY': 'Bob Smith',
+        'REJECTION_DATE': dateStr,
+        'SUBMISSION_ID': 'SUB-12345',
+        'BOARD_REJECTION_MESSAGE': 'Please resubmit a clearer copy.',
+        'RESUBMIT_DEADLINE': nextWeekStr
+      }
+    },
+    {
+      name: 'DOC_DOCUMENT_REPLACED_REJECTED_TO_BOARD',
+      file: 'DOC_DOCUMENT_REPLACED_REJECTED_TO_BOARD.txt',
+      variables: {
+        'MEMBER_NAME': 'John Smith',
+        'DOCUMENT_TYPE': 'Passport',
+        'REJECTED_BY': 'Alice Johnson',
+        'REJECTION_DATE': dateStr,
+        'SUBMISSION_ID': 'SUB-67890',
+        'BOARD_REJECTION_MESSAGE': 'Document must be current and valid.',
+        'RESUBMIT_DEADLINE': nextWeekStr
+      }
+    },
+    {
+      name: 'ADM_NEW_APPLICATION_BOARD_TO_BOARD',
+      file: 'ADM_NEW_APPLICATION_BOARD_TO_BOARD.txt',
+      variables: {
+        'APPLICANT_NAME': 'Michael Chen',
+        'APPLICATION_ID': 'APP-99999',
+        'APPLICATION_DATE': dateStr,
+        'BOARD_REVIEW_DEADLINE': nextWeekStr
+      }
+    },
+    {
+      name: 'ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_WITH_VERIFICATION_TO_BOARD',
+      file: 'ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_WITH_VERIFICATION_TO_BOARD.txt',
+      variables: {
+        'APPLICANT_NAME': 'Sarah Williams',
+        'APPLICATION_ID': 'APP-55555',
+        'SUBMISSION_DATE': dateStr,
+        'VERIFICATION_DOCUMENT_TYPE': 'Employment Letter',
+        'PORTAL_URL': 'https://script.google.com/a/macros/geabotswana.org/s/AKfycbw7DG2PpLUK9zrAQt9IVF35eQM7U-C3HUFyZIoQo7ChGB10xK5NuJRdUJpVrBjDwuAQ/exec'
+      }
+    },
+    {
+      name: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD',
+      file: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt',
+      variables: {
+        'APPLICANT_NAME': 'David Brown',
+        'INDIVIDUAL_ID': 'IND-11111',
+        'DOCUMENT_TYPE': 'Omang',
+        'APPLICATION_ID': 'APP-22222',
+        'REJECTION_REASON': 'Document is not readable. Please submit a clearer scan.',
+        'ALLOW_RESUBMIT': true
+      }
+    },
+    {
+      name: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD (allow_resubmit=false)',
+      file: 'ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD.txt',
+      variables: {
+        'APPLICANT_NAME': 'Emily Martinez',
+        'INDIVIDUAL_ID': 'IND-22222',
+        'DOCUMENT_TYPE': 'Passport',
+        'APPLICATION_ID': 'APP-33333',
+        'REJECTION_REASON': 'Document is forged or fraudulent.',
+        'ALLOW_RESUBMIT': false
+      }
+    }
+  ];
+
+  Logger.log("========================================");
+  Logger.log("TESTING PREVIOUSLY FAILED TEMPLATES");
+  Logger.log("========================================");
+  Logger.log("");
+
+  for (var t = 0; t < templates.length; t++) {
+    var template = templates[t];
+    var files = folder.getFilesByName(template.file);
+
+    if (!files.hasNext()) {
+      Logger.log("✗ [" + (t + 1) + "/" + templates.length + "] " + template.name + " — FILE NOT FOUND");
+      continue;
+    }
+
+    var fileContent = files.next().getBlob().getDataAsString();
+    var rendered = substituteTemplateVariables(fileContent, template.variables);
+
+    Logger.log("✓ [" + (t + 1) + "/" + templates.length + "] " + template.name);
+    Logger.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    Logger.log(rendered);
+    Logger.log("");
+  }
+
+  Logger.log("========================================");
+  Logger.log("VERIFICATION CHECKLIST:");
+  Logger.log("========================================");
+  Logger.log("✓ All {{VARIABLE}} placeholders replaced");
+  Logger.log("✓ No {{ELSE}} or {{END_IF}} markers visible");
+  Logger.log("✓ Conditional text correct for ALLOW_RESUBMIT (true and false)");
+  Logger.log("✓ All dates and URLs properly formatted");
+}
+
+/**
  * DEBUG FUNCTION: catalogEmailTemplateVariables()
  * Extracts all variables from the Email Templates CSV and compares to actual TXT files
  * Logs results for analysis

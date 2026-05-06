@@ -93,7 +93,28 @@ jobs:
           ).execute()
           print("✓ Code pushed to GAS")
 
-          # 4. Create a new version
+          # 4. Clean up old versions to stay under Google's 200-version limit
+          versions_response = service.projects().versions().list(
+              scriptId=script_id
+          ).execute()
+          versions = versions_response.get('versions', [])
+
+          # Keep only the 50 most recent versions
+          if len(versions) >= 190:
+              versions_to_delete = sorted(versions, key=lambda v: int(v['versionNumber']))[:50]
+              for v in versions_to_delete:
+                  try:
+                      service.projects().versions().delete(
+                          scriptId=script_id,
+                          versionId=v['versionNumber']
+                      ).execute()
+                      print(f"  Deleted old version: {v['versionNumber']}")
+                  except Exception as e:
+                      print(f"  Warning: Could not delete version {v['versionNumber']}: {e}")
+
+          print(f"✓ Version cleanup complete ({len(versions)} versions currently in project)")
+
+          # 5. Create a new version
           version_response = service.projects().versions().create(
               scriptId=script_id,
               body={}
@@ -101,7 +122,7 @@ jobs:
           version_number = version_response['versionNumber']
           print(f"✓ Created version: {version_number}")
 
-          # 5. Update production deployment to use new version
+          # 6. Update production deployment to use new version
           deployment_name = f"v{version_number}: {commit_msg[:60]}"
           update_response = service.projects().deployments().update(
               scriptId=script_id,

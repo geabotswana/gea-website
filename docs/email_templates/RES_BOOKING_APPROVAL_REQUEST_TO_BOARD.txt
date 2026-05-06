@@ -12,7 +12,7 @@ Time: {{START_TIME}} - {{END_TIME}}
 Event: {{EVENT_NAME}}
 Submitted: {{SUBMISSION_TIMESTAMP}}
 
-{{IF_GUESTS}}GUEST INFORMATION:
+{{IF GUESTS}}GUEST INFORMATION:
 Guest Count: {{GUEST_COUNT}} guests listed
 View Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
 

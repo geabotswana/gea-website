@@ -20,7 +20,7 @@ Duration: {{DURATION_HOURS}} hours
 Event: {{EVENT_NAME}}
 Tentative Status: If approved, will be TENTATIVE until {{BUMP_DEADLINE}}
 
-{{IF_GUESTS}}GUEST INFORMATION:
+{{IF GUESTS}}GUEST INFORMATION:
 Guest Count: {{GUEST_COUNT}} listed
 View Guest List: {{GUEST_LIST_LINK}}{{END_IF}}
 

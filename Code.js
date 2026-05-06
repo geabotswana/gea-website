@@ -5288,6 +5288,7 @@ function generateSampleVariablesForTest(placeholders) {
     'HOUSEHOLD_NAME': 'Smith Family',
     'EMAIL': 'test@example.com',
     'MEMBER_EMAIL': 'member@example.com',
+    'GUESTS': 'Yes',
     'APPLICATION_ID': 'APP-' + Math.floor(Math.random() * 100000),
     'APPLICATION_DATE': dateStr,
     'SUBMISSION_DATE': dateStr,

@@ -333,6 +333,11 @@ function substituteTemplateVariables(htmlBody, variables) {
   }
 
   var result = htmlBody;
+
+  // Process conditional blocks: {{IF VARIABLE}}...{{ELSE}}...{{END_IF}}
+  result = processConditionalBlocks(result, variables);
+
+  // Process simple variable substitutions
   for (var key in variables) {
     if (variables.hasOwnProperty(key)) {
       var value = variables[key];
@@ -343,6 +348,26 @@ function substituteTemplateVariables(htmlBody, variables) {
   }
 
   return result;
+}
+
+/**
+ * Process conditional blocks in template: {{IF VAR}}...{{ELSE}}...{{END_IF}}
+ * Removes the conditional markers and keeps/removes content based on variable truthiness
+ */
+function processConditionalBlocks(text, variables) {
+  // Match {{IF VARIABLE}}...{{ELSE}}...{{END_IF}} or {{IF VARIABLE}}...{{END_IF}}
+  var conditionalPattern = /\{\{IF\s+(\w+)\}\}([\s\S]*?)(?:\{\{ELSE\}\}([\s\S]*?))?\{\{END_IF\}\}/g;
+
+  return text.replace(conditionalPattern, function(match, variable, ifContent, elseContent) {
+    var value = variables[variable];
+    var isTruthy = value && value !== 'false' && value !== '0' && value !== '';
+
+    if (isTruthy) {
+      return ifContent || '';
+    } else {
+      return elseContent || '';
+    }
+  });
 }
 
 /**

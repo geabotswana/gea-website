@@ -1057,12 +1057,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.44";
+var SYSTEM_VERSION          = "2.5.45";
 var SYSTEM_BUILD_DATE       = "2026-05-06";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add testPreviouslyFailedTemplates() function";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-06 11:46:22";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix test functions to use getEmailTemplate instead of Drive folder access";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-06 12:31:24";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

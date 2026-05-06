@@ -1057,12 +1057,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.40";
+var SYSTEM_VERSION          = "2.5.41";
 var SYSTEM_BUILD_DATE       = "2026-05-06";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add conditional block processing to substituteTemplateVariables()";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-06 09:33:38";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Add testADMDocumentRejectedTemplate() function for conditional logic testing";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-06 11:26:03";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -127,7 +127,7 @@ Firestore:
 | Write 100 documents | 1 query = $0 | 100 write operations = $0.12 |
 | Monthly storage | Included with server | Pay per GB (~$0.18/GB) |
 
-**Current GEA Estimate:** ~$2-3/month (47 MB data, ~100K reads/day, ~10K writes/day)
+**Current GEA Estimate:** ~$0.50–1/month (47 MB data, ~100K reads/day, ~10K writes/day; first database is free-tier eligible — writes and storage stay within free quota, only excess reads are billed)
 
 ---
 
@@ -185,8 +185,20 @@ The project already has a Google Cloud Project set up. Verify it's configured co
 9. **Location type:** Select **"Region"** (not Multi-region)
    - Multi-region (`nam5`) is US-based, costs more, and has higher latency from Botswana
    - Under the Region dropdown, select **`europe-west1`** (Belgium) — closest available region to Botswana
-10. Click **"Create Database"**
-11. Wait for initialization (2-3 minutes)
+10. Under **"Show disaster recovery settings":**
+    - **Point-in-time recovery:** Enable it — 7-day retention window, negligible storage cost at GEA's ~47 MB data size
+    - **Scheduled backups:** Check **Weekly** — sufficient for Phase 1 (sessions + admins only). Upgrade to Daily once member/payment data is migrated in later phases.
+11. Under **"Show encryption options":**
+    - Leave **Google-managed encryption key** selected — Cloud KMS adds cost and complexity with no meaningful benefit for GEA
+12. Click **"Create Database"**
+13. Wait for initialization (2-3 minutes)
+
+**Pricing note (Free-tier eligible):**
+Your first Firestore database qualifies for the free quota:
+- 50,000 read units/day free — Phase 1 (sessions/admins) will be well under this
+- 40,000 write units/day free — full system (~10K writes/day) stays within free quota
+- 1 GiB storage free — GEA's full dataset (~47 MB) stays well within free quota
+- Once fully migrated (~100K reads/day), read costs will be ~$0.18/day — total system cost closer to **$0.50–1/month** (lower than the original $2–3/month estimate)
 
 **Verification:**
 ```
@@ -194,6 +206,8 @@ The project already has a Google Cloud Project set up. Verify it's configured co
 [ ] Database ID is "gea-firestore"
 [ ] Security rules show "Restrictive" (deny all by default)
 [ ] Location is europe-west1 (Region, not Multi-region)
+[ ] Point-in-time recovery enabled
+[ ] Weekly backup scheduled
 ```
 
 #### Step 1.4: Create Service Account (20 minutes)

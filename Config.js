@@ -1057,12 +1057,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.47";
-var SYSTEM_BUILD_DATE       = "2026-05-06";
+var SYSTEM_VERSION          = "2.5.48";
+var SYSTEM_BUILD_DATE       = "2026-05-07";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix conditional syntax in reservation approval templates";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-06 15:43:13";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Fix facility name in test data: 'Leobo Lounge' → 'Leobo'";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-07 09:11:38";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

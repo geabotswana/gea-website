@@ -1,6 +1,6 @@
 Hi {{FIRST_NAME}},
 
-MEMBERSHIP RENEWAL NOTICE - GRACE PERIOD EXPIRED
+MEMBERSHIP RENEWAL NOTICE [EMDASH] GRACE PERIOD EXPIRED
 
 Your GEA membership grace period has ended, and your membership is now lapsed.
 

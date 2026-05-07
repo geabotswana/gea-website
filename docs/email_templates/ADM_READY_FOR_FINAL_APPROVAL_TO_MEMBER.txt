@@ -1,6 +1,6 @@
 ﻿Dear {{FIRST_NAME}},
 
-APPLICATION PROGRESSING - FINAL BOARD APPROVAL PENDING
+APPLICATION PROGRESSING [EMDASH] FINAL BOARD APPROVAL PENDING
 
 Good news! Your application has passed the document review and security verification phases and is now ready for final board approval.
 

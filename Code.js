@@ -5496,3 +5496,74 @@ function testSend14thBirthdayNotice() {
 
   return success;
 }
+
+/**
+ * Test special character encoding in email templates.
+ * Sends sample emails from key templates with special characters to verify
+ * emoji and special characters render correctly (not as question marks).
+ */
+function testSpecialCharacterRendering() {
+  Logger.log("========== SPECIAL CHARACTER RENDERING TEST ==========");
+
+  var testRecipient = "michael@raneyworld.com";
+  var tests = [
+    {
+      name: "Birthday Milestone (emoji: celebration)",
+      template: "MEM_BIRTHDAY_AGE_14_MILESTONE_TO_MEMBER",
+      variables: { FIRST_NAME: "Test", CHILD_FIRST_NAME: "Child" }
+    },
+    {
+      name: "Application Approved (emoji: checkmark)",
+      template: "MEM_APPLICATION_APPROVED_TO_APPLICANT",
+      variables: { FIRST_NAME: "Test", APPLICATION_ID: "APP-001" }
+    },
+    {
+      name: "Document Approved (emoji: checkmark)",
+      template: "DOC_DOCUMENT_APPROVED_TO_MEMBER",
+      variables: { FIRST_NAME: "Test", DOCUMENT_TYPE: "Identity", APPROVAL_DATE: "Today" }
+    },
+    {
+      name: "Rejection Notice (arrow, hyphen)",
+      template: "DOC_DOCUMENT_REJECTION_SENT_TO_BOARD",
+      variables: {
+        MEMBER_NAME: "Test Member",
+        DOCUMENT_TYPE: "Identity",
+        ORIGINALLY_REJECTED_BY: "RSO",
+        REJECTION_SENT_DATE: "Today",
+        SUBMISSION_ID: "SUB-001",
+        RSO_REJECTION_MESSAGE: "Poor quality",
+        BOARD_REJECTION_MESSAGE: "Resubmit",
+        RESUBMIT_DEADLINE: "May 15, 2026"
+      }
+    }
+  ];
+
+  var passed = 0, failed = 0;
+  for (var i = 0; i < tests.length; i++) {
+    var test = tests[i];
+    try {
+      Logger.log("\n[TEST] " + test.name);
+      var success = sendEmailFromTemplate(test.template, testRecipient, test.variables);
+      if (success) {
+        Logger.log("[PASS] " + test.name);
+        passed++;
+      } else {
+        Logger.log("[FAIL] " + test.name + " - Send failed");
+        failed++;
+      }
+    } catch (e) {
+      Logger.log("[ERROR] " + test.name + ": " + e);
+      failed++;
+    }
+  }
+
+  Logger.log("\n========== TEST SUMMARY ==========");
+  Logger.log("Passed: " + passed + "/" + tests.length);
+  Logger.log("Failed: " + failed + "/" + tests.length);
+  Logger.log("All tests sent to: " + testRecipient);
+  Logger.log("Check the received emails to verify:");
+  Logger.log("  - [ICON:CELEBRATE] renders as 🎉 (celebration emoji)");
+  Logger.log("  - [ICON:CHECKMARK] renders as ✓ (checkmark)");
+  Logger.log("  - [ARROW] renders as → (arrow)");
+  Logger.log("  - [HYPHEN] renders as - (hyphen)");
+}

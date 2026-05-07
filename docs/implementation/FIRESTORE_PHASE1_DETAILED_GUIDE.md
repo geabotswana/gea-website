@@ -215,6 +215,8 @@ Your first Firestore database qualifies for the free quota:
 #### Step 1.4: Create Service Account (20 minutes)
 This allows Google Apps Script to authenticate with Firestore.
 
+**Note:** The system already has a service account for email sending. Do **not** reuse it for Firestore — keep them separate so Firestore access can be rotated or revoked independently without affecting email, and to keep permissions and audit trails clean.
+
 1. Go to "APIs & Services" → "Credentials"
 2. Click "Create Credentials" → "Service Account"
 3. Fill in:

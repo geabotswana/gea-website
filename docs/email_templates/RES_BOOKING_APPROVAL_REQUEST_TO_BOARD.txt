@@ -8,7 +8,7 @@ RESERVATION DETAILS:
 Member: {{MEMBER_NAME}} ({{MEMBER_EMAIL}}, {{MEMBER_PHONE}})
 Facility: {{FACILITY}}
 Date: {{RESERVATION_DATE}}
-Time: {{START_TIME}} - {{END_TIME}}
+Time: {{START_TIME}} to {{END_TIME}}
 Event: {{EVENT_NAME}}
 Submitted: {{SUBMISSION_TIMESTAMP}}
 

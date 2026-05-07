@@ -8,7 +8,7 @@ RESERVATION REQUEST:
 Member: {{MEMBER_NAME}} ({{MEMBER_EMAIL}}, {{MEMBER_PHONE}})
 Facility: {{FACILITY}}
 Date: {{RESERVATION_DATE}}
-Time: {{START_TIME}} - {{END_TIME}}
+Time: {{START_TIME}} to {{END_TIME}}
 Duration: {{DURATION_HOURS}} hours
 Event: {{EVENT_NAME}}
 Tentative Status: If approved, will be TENTATIVE until {{BUMP_DEADLINE}}

@@ -872,9 +872,11 @@ function convertSpecialCharacters(text) {
   if (!text) return "";
   // Use HTML numeric entities for emoji/special characters to avoid encoding issues
   // in base64-encoded email messages. These render correctly in all email clients.
+  // Note: Plain hyphens and other basic ASCII characters don't need conversion.
   var result = String(text)
-    .replace(/\[HYPHEN\]/g, "-")
     .replace(/\[ARROW\]/g, "&#8594;")      // → (HTML entity for right arrow)
+    .replace(/\[EMDASH\]/g, "&#8212;")     // — (HTML entity for em-dash)
+    .replace(/\[ENDASH\]/g, "&#8211;")     // – (HTML entity for en-dash)
     .replace(/\[ICON:WARNING\]/g, "&#9888;") // ⚠ (HTML entity for warning sign)
     .replace(/\[ICON:CHECKMARK\]/g, "&#10003;") // ✓ (HTML entity for checkmark)
     .replace(/\[ICON:CELEBRATE\]/g, "&#127881;"); // 🎉 (HTML entity for party popper)

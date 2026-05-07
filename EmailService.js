@@ -446,12 +446,13 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
     // Append email footer (organization block + automated message notice)
     plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
 
-    // Convert special character codes ([HYPHEN], [ARROW], etc.) to actual characters
-    subject = convertSpecialCharacters(subject);
-    plainBody = convertSpecialCharacters(plainBody);
-
     // Wrap in GEA master HTML template for consistent branding
     var htmlBody = buildHtmlEmail(subject, plainBody);
+
+    // Convert special character codes ([HYPHEN], [ARROW], etc.) to actual characters
+    // Do this AFTER HTML building to preserve emoji and special chars through text processing
+    subject = convertSpecialCharacters(subject);
+    htmlBody = convertSpecialCharacters(htmlBody);
 
     var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
 
@@ -1110,11 +1111,12 @@ function sendEmailFromTemplateWithAttachment(templateName, recipient, variables,
     // Append email footer (organization block + automated message notice)
     plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
 
-    // Convert special character codes ([HYPHEN], [ARROW], etc.) to actual characters
-    subject = convertSpecialCharacters(subject);
-    plainBody = convertSpecialCharacters(plainBody);
-
     var htmlBody = buildHtmlEmail(subject, plainBody);
+
+    // Convert special character codes ([HYPHEN], [ARROW], etc.) to actual characters
+    // Do this AFTER HTML building to preserve emoji and special chars through text processing
+    subject = convertSpecialCharacters(subject);
+    htmlBody = convertSpecialCharacters(htmlBody);
 
     var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
 

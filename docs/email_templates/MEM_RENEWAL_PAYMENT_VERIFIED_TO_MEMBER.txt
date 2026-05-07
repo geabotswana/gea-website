@@ -1,6 +1,6 @@
 Hi {{FIRST_NAME}},
 
-🎉 MEMBERSHIP RENEWED!
+[ICON:CELEBRATE] MEMBERSHIP RENEWED!
 
 Congratulations! Your renewal payment has been verified and your membership is now active again!
 

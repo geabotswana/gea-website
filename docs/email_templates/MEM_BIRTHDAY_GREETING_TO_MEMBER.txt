@@ -1,5 +1,5 @@
 ﻿Hi {{FIRST_NAME}},
 
-🎉 HAPPY BIRTHDAY!
+[ICON:CELEBRATE] HAPPY BIRTHDAY!
 
 Today is your day! The entire GEA community wishes you a wonderful birthday and a fantastic year ahead.

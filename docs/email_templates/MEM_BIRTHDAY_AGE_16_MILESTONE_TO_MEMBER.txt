@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-🎉 {{CHILD_FIRST_NAME}} HAS TURNED 16!
+[ICON:CELEBRATE] {{CHILD_FIRST_NAME}} HAS TURNED 16!
 
 Happy birthday to {{CHILD_FIRST_NAME}}! They are now 16 years old.
 

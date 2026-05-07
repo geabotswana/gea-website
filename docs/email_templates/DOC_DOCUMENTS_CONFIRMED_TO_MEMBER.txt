@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-✓ DOCUMENTS CONFIRMED
+[ICON:CHECKMARK] DOCUMENTS CONFIRMED
 
 Excellent news! Your documents have been received, reviewed, and confirmed!
 

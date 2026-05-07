@@ -857,9 +857,11 @@ function escapeHtml(text) {
  * The codes are converted to actual characters before rendering as HTML.
  *
  * Supported codes:
- *   [HYPHEN]       → - (simple hyphen, for time ranges like "2:00 PM - 3:30 PM")
- *   [ARROW]        → → (right arrow, for process flows like "Board → RSO → Board")
- *   [ICON:WARNING] → ⚠ (warning icon)
+ *   [HYPHEN]           → - (simple hyphen, for time ranges)
+ *   [ARROW]            → → (right arrow, for process flows)
+ *   [ICON:WARNING]     → ⚠ (warning icon)
+ *   [ICON:CHECKMARK]   → ✓ (checkmark for approvals)
+ *   [ICON:CELEBRATE]   → 🎉 (celebration emoji for milestone events)
  *
  * @param {string} text
  * @returns {string}
@@ -869,7 +871,9 @@ function convertSpecialCharacters(text) {
   return String(text)
     .replace(/\[HYPHEN\]/g, "-")
     .replace(/\[ARROW\]/g, "→")
-    .replace(/\[ICON:WARNING\]/g, "⚠");
+    .replace(/\[ICON:WARNING\]/g, "⚠")
+    .replace(/\[ICON:CHECKMARK\]/g, "✓")
+    .replace(/\[ICON:CELEBRATE\]/g, "🎉");
 }
 
 

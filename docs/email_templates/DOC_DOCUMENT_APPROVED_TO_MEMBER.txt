@@ -1,6 +1,6 @@
 Hi {{FIRST_NAME}},
 
-✓ DOCUMENT APPROVED!
+[ICON:CHECKMARK] DOCUMENT APPROVED!
 
 Great news! Your {{DOCUMENT_TYPE}} has been approved and verified!
 

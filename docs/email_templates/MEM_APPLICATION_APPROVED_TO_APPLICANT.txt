@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-🎉 APPLICATION APPROVED!
+[ICON:CELEBRATE] APPLICATION APPROVED!
 
 Congratulations! Your membership application has been approved by the GEA Board!
 

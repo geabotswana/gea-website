@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-✓ PHOTOS APPROVED!
+[ICON:CHECKMARK] PHOTOS APPROVED!
 
 Great news! Your member photos have been approved by the GEA Board!
 

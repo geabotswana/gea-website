@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-✓ RESERVATION APPROVED!
+[ICON:CHECKMARK] RESERVATION APPROVED!
 
 Great news! Your facility reservation has been approved by the GEA Board.
 

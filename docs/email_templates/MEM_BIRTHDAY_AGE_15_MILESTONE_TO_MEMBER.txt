@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-🎉 {{CHILD_FIRST_NAME}} HAS TURNED 15!
+[ICON:CELEBRATE] {{CHILD_FIRST_NAME}} HAS TURNED 15!
 
 Congratulations! {{CHILD_FIRST_NAME}} has reached an important milestone at GEA.
 

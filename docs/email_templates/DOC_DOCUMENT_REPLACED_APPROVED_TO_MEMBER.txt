@@ -1,6 +1,6 @@
 Hi {{FIRST_NAME}},
 
-✓ IDENTITY DOCUMENT APPROVED!
+[ICON:CHECKMARK] IDENTITY DOCUMENT APPROVED!
 
 Your updated {{DOCUMENT_TYPE}} has been approved and verified!
 

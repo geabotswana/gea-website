@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-✓ FILE RECEIVED
+[ICON:CHECKMARK] FILE RECEIVED
 
 Thank you for submitting your file! We've received it and will review it shortly.
 

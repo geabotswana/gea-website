@@ -1,6 +1,6 @@
 Hi {{FIRST_NAME}},
 
-🎉 {{CHILD_FIRST_NAME}} HAS TURNED 17!
+[ICON:CELEBRATE] {{CHILD_FIRST_NAME}} HAS TURNED 17!
 
 Major milestone! {{CHILD_FIRST_NAME}} is now 17 years old and eligible for full adult membership status at GEA.
 

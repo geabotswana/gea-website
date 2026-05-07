@@ -1,6 +1,6 @@
 Hi {{FIRST_NAME}},
 
-✓ YOUR DOCUMENT APPROVED!
+[ICON:CHECKMARK] YOUR DOCUMENT APPROVED!
 
 Excellent news! Your submitted document has been reviewed and approved by the RSO.
 

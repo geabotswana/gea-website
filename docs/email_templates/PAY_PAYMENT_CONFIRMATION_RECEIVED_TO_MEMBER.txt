@@ -1,6 +1,6 @@
 ﻿Hi {{FIRST_NAME}},
 
-✓ PAYMENT RECEIVED
+[ICON:CHECKMARK] PAYMENT RECEIVED
 
 Thank you for your payment! We've received it and will verify it shortly.
 

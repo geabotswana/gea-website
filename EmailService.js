@@ -869,12 +869,18 @@ function escapeHtml(text) {
  */
 function convertSpecialCharacters(text) {
   if (!text) return "";
-  return String(text)
+  var result = String(text)
     .replace(/\[HYPHEN\]/g, "-")
     .replace(/\[ARROW\]/g, "→")
     .replace(/\[ICON:WARNING\]/g, "⚠")
     .replace(/\[ICON:CHECKMARK\]/g, "✓")
     .replace(/\[ICON:CELEBRATE\]/g, "🎉");
+
+  if (result !== text) {
+    Logger.log("convertSpecialCharacters: Found and converted codes");
+  }
+
+  return result;
 }
 
 

@@ -180,16 +180,20 @@ The project already has a Google Cloud Project set up. Verify it's configured co
 5. **Modes:** Leave **"Firestore in Native mode"** selected (default)
 6. **Security rules:** Select **"Restrictive"** — denies all reads and writes by default (you will apply custom rules in Step 4 of this guide)
    - Do NOT select "Open" — it allows unrestricted public access for 30 days
-7. Click **Continue** to select a region
-8. Select region: **us-central1** (or for lower latency from Botswana: **europe-west1**)
-9. Click **"Create Database"**
-10. Wait for initialization (2-3 minutes)
+7. **Real-time Updates:** Leave **unchecked** — GAS runs server-side and does not use Firebase SDK real-time listeners; enabling this has no benefit and is a permanent choice
+8. **Firestore with MongoDB compatibility:** Leave **unselected** — not needed for GAS backend
+9. **Location type:** Select **"Region"** (not Multi-region)
+   - Multi-region (`nam5`) is US-based, costs more, and has higher latency from Botswana
+   - Under the Region dropdown, select **`europe-west1`** (Belgium) — closest available region to Botswana
+10. Click **"Create Database"**
+11. Wait for initialization (2-3 minutes)
 
 **Verification:**
 ```
 [ ] Firestore shows collections view (empty initially)
 [ ] Database ID is "gea-firestore"
 [ ] Security rules show "Restrictive" (deny all by default)
+[ ] Location is europe-west1 (Region, not Multi-region)
 ```
 
 #### Step 1.4: Create Service Account (20 minutes)

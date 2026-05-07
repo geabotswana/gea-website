@@ -446,6 +446,10 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
     // Append email footer (organization block + automated message notice)
     plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
 
+    // Convert special character codes ([HYPHEN], [ARROW], etc.) to actual characters
+    subject = convertSpecialCharacters(subject);
+    plainBody = convertSpecialCharacters(plainBody);
+
     // Wrap in GEA master HTML template for consistent branding
     var htmlBody = buildHtmlEmail(subject, plainBody);
 
@@ -847,6 +851,27 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Converts special character codes in email templates to their actual characters.
+ * Templates use these codes because plain text files don't support emojis and special chars.
+ * The codes are converted to actual characters before rendering as HTML.
+ *
+ * Supported codes:
+ *   [HYPHEN]       → - (simple hyphen, for time ranges like "2:00 PM - 3:30 PM")
+ *   [ARROW]        → → (right arrow, for process flows like "Board → RSO → Board")
+ *   [ICON:WARNING] → ⚠ (warning icon)
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function convertSpecialCharacters(text) {
+  if (!text) return "";
+  return String(text)
+    .replace(/\[HYPHEN\]/g, "-")
+    .replace(/\[ARROW\]/g, "→")
+    .replace(/\[ICON:WARNING\]/g, "⚠");
+}
+
 
 // ============================================================
 // SERVICE ACCOUNT EMAIL SENDING (sendEmailFromBoard helpers)
@@ -1080,6 +1105,10 @@ function sendEmailFromTemplateWithAttachment(templateName, recipient, variables,
 
     // Append email footer (organization block + automated message notice)
     plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
+
+    // Convert special character codes ([HYPHEN], [ARROW], etc.) to actual characters
+    subject = convertSpecialCharacters(subject);
+    plainBody = convertSpecialCharacters(plainBody);
 
     var htmlBody = buildHtmlEmail(subject, plainBody);
 

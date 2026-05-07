@@ -14,7 +14,7 @@ Review the new photo and approve or request changes.
 
 PROCESS:
 1. Log in to the Board Admin Portal
-2. Navigate to Household Documents → Photos for Review
+2. Navigate to Household Documents [ARROW] Photos for Review
 3. Approve or reject the new photo
 4. If approved, the old photo will be automatically deactivated and removed from Cloud Storage
 5. If rejected, the member will be notified with your feedback

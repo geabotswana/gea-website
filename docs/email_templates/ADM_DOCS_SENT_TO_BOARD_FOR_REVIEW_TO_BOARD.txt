@@ -11,7 +11,7 @@ Documents Submitted: {{DOCUMENT_TYPES}}
 Submission Date: {{SUBMISSION_DATE}}
 
 WHAT YOU NEED TO DO:
-Review the applicant's submitted documents in the Admin Portal under "Applications" → "Board Review". Check for completeness and compliance with GEA membership requirements.
+Review the applicant's submitted documents in the Admin Portal under "Applications" [ARROW] "Board Review". Check for completeness and compliance with GEA membership requirements.
 
 APPROVAL OPTIONS:
 1. Approve for RSO Review - Documents meet initial requirements and will proceed to the Regional Security Officer for security verification

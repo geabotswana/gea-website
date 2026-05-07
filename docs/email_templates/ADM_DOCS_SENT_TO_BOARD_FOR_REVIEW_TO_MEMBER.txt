@@ -19,7 +19,7 @@ You can check your application status anytime in your member portal. Log in to s
 
 WHAT TO EXPECT:
 1. Board reviews documents for completeness (3-5 business days)
-2. If approved → Documents sent to RSO for security verification (5-7 business days)
+2. If approved [ARROW] Documents sent to RSO for security verification (5-7 business days)
 3. You'll be notified of next steps via email
 
 QUESTIONS OR ISSUES?

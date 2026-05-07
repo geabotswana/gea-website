@@ -23,7 +23,7 @@ NEXT STEPS:
 - Member will attempt to resubmit a corrected document
 - When resubmitted, document will go to RSO for re-review
 - You will be notified when RSO review is complete
-- Follow-up review process: RSO → Board
+- Follow-up review process: RSO [ARROW] Board
 
 QUESTIONS?
 Contact board@geabotswana.org if you need further details.

@@ -225,14 +225,35 @@ This allows Google Apps Script to authenticate with Firestore.
 4. Click "Create and Continue"
 5. Grant role: **Editor** (temporary; will restrict later)
 6. Click "Continue"
-7. Click "Create Key" (use JSON format)
-8. Save JSON file to secure location (you'll need this for GAS)
+7. Click "Create Key" (use JSON format) — download on a personal/secure computer, not a work machine
+8. In GAS Script Properties (Project Settings → Script Properties), add:
+   - **Property:** `FIRESTORE_SERVICE_ACCOUNT_JSON`
+   - **Value:** Paste the entire JSON key file contents
 
 **Verification:**
 ```
-[ ] JSON key file downloaded and saved
+[ ] JSON key file downloaded and saved to secure location
 [ ] Key contains: "type": "service_account", "private_key", "client_email"
+[ ] FIRESTORE_SERVICE_ACCOUNT_JSON added to GAS Script Properties
 ```
+
+### Step 1.5: Add getFirestore() Helper to GAS
+
+Create a new file `FirestoreService.gs` with this helper. All Firestore operations call this to get a database reference:
+
+```javascript
+function getFirestore() {
+  var creds = JSON.parse(
+    PropertiesService.getScriptProperties().getProperty('FIRESTORE_SERVICE_ACCOUNT_JSON')
+  );
+  return FirestoreApp.getFirestore(creds.client_email, creds.private_key, creds.project_id);
+}
+```
+
+**Prerequisite:** This uses the [FirestoreApp](https://github.com/grahamearley/FirestoreGoogleAppsScript) library. Add it to your GAS project:
+1. In GAS editor, go to **Libraries** (+ icon in left sidebar)
+2. Search for script ID: `1VUSl4b1r1eoNcRWotZM3e87ybkVxJyTGKzCFzBRv7R5k7BYbkx5eVkM`
+3. Select the latest version and click **Add**
 
 ---
 

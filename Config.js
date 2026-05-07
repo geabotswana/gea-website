@@ -1057,12 +1057,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.53";
+var SYSTEM_VERSION          = "2.5.54";
 var SYSTEM_BUILD_DATE       = "2026-05-07";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add comprehensive test for special character rendering in email templates";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-07 11:52:53";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Use HTML numeric entities instead of raw emoji to fix encoding issues in base64 email messages";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-07 11:59:03";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

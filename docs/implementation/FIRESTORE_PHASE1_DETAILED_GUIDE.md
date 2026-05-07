@@ -189,7 +189,7 @@ The project already has a Google Cloud Project set up. Verify it's configured co
     - **Point-in-time recovery:** Enable it — 7-day retention window, negligible storage cost at GEA's ~47 MB data size
     - **Scheduled backups:** Check **Weekly** — sufficient for Phase 1 (sessions + admins only). Upgrade to Daily once member/payment data is migrated in later phases.
       - **Backup day:** Sunday (low-activity day)
-      - **Days until backups expire:** Start with **30 days** (4 weekly restore points — sufficient for Phase 1). Increase to 98 days (max) once financial/member data is migrated and longer recovery windows matter. Note: changing this later requires deleting and re-creating the backup schedule.
+      - **Days until backups expire:** **98 days** (maximum — ~14 weekly restore points). Can be reduced later if backup storage cost is a concern; note that changing this requires deleting and re-creating the backup schedule.
 11. Under **"Show encryption options":**
     - Leave **Google-managed encryption key** selected — Cloud KMS adds cost and complexity with no meaningful benefit for GEA
 12. Click **"Create Database"**

@@ -174,15 +174,22 @@ The project already has a Google Cloud Project set up. Verify it's configured co
 #### Step 1.3: Create Firestore Database (15 minutes)
 1. In GCP Console, go to "Firestore"
 2. Click "Create Database"
-3. Choose "Start in production mode" (we'll set security rules)
-4. Select region: **us-central1** (or closest to Botswana: `eur3` for Europe)
-5. Click "Create Database"
-6. Wait for initialization (2-3 minutes)
+3. **Name your database:** Set Database ID to `gea-firestore`
+4. **Select your edition:** Choose **Standard Edition** (sufficient for GEA — automatic indexing, ~$2-3/month)
+   - Enterprise Edition adds MongoDB compatibility and advanced query engine — not needed here
+5. **Modes:** Leave **"Firestore in Native mode"** selected (default)
+6. **Security rules:** Select **"Restrictive"** — denies all reads and writes by default (you will apply custom rules in Step 4 of this guide)
+   - Do NOT select "Open" — it allows unrestricted public access for 30 days
+7. Click **Continue** to select a region
+8. Select region: **us-central1** (or for lower latency from Botswana: **europe-west1**)
+9. Click **"Create Database"**
+10. Wait for initialization (2-3 minutes)
 
 **Verification:**
 ```
 [ ] Firestore shows collections view (empty initially)
-[ ] Database is in "Production" mode
+[ ] Database ID is "gea-firestore"
+[ ] Security rules show "Restrictive" (deny all by default)
 ```
 
 #### Step 1.4: Create Service Account (20 minutes)

@@ -5318,7 +5318,7 @@ function generateSampleVariablesForTest(placeholders) {
     'DENIAL_DATE': dateStr,
     'APPEAL_PROCESS': 'Submit appeal to board@geabotswana.org',
     'CONTACT_EMAIL': 'board@geabotswana.org',
-    'FACILITY': 'Leobo Lounge',
+    'FACILITY': 'Leobo',
     'FACILITY_NAME': 'Tennis Court',
     'RESERVATION_DATE': nextWeekStr,
     'REQUESTED_DATE': nextWeekStr,

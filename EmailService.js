@@ -890,15 +890,17 @@ function escapeHtml(text) {
  */
 function convertSpecialCharacters(text) {
   if (!text) return "";
+  // Use HTML numeric entities for emoji/special characters to avoid encoding issues
+  // in base64-encoded email messages. These render correctly in all email clients.
   var result = String(text)
     .replace(/\[HYPHEN\]/g, "-")
-    .replace(/\[ARROW\]/g, "→")
-    .replace(/\[ICON:WARNING\]/g, "⚠")
-    .replace(/\[ICON:CHECKMARK\]/g, "✓")
-    .replace(/\[ICON:CELEBRATE\]/g, "🎉");
+    .replace(/\[ARROW\]/g, "&#8594;")      // → (HTML entity for right arrow)
+    .replace(/\[ICON:WARNING\]/g, "&#9888;") // ⚠ (HTML entity for warning sign)
+    .replace(/\[ICON:CHECKMARK\]/g, "&#10003;") // ✓ (HTML entity for checkmark)
+    .replace(/\[ICON:CELEBRATE\]/g, "&#127881;"); // 🎉 (HTML entity for party popper)
 
   if (result !== text) {
-    Logger.log("convertSpecialCharacters: Found and converted codes");
+    Logger.log("convertSpecialCharacters: Found and converted " + (String(text).split('[').length - 1) + " codes");
   }
 
   return result;

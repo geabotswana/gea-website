@@ -140,20 +140,23 @@ Firestore:
 - [ ] GAS project linked to GCP project
 - [ ] Network access from GAS to Firestore API
 
-### Day 1: GCP Project Setup (~2-3 hours)
+### Day 1: GCP Project Setup (~1-2 hours)
 
-#### Step 1.1: Create GCP Project (15 minutes)
+**Note:** Using existing GCP project, so setup time is reduced.
+
+#### Step 1.1: Use Existing GCP Project
+The project already has a Google Cloud Project set up. Verify it's configured correctly:
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Click "Select a Project" at top
-3. Click "New Project"
-4. Enter name: `gea-firestore-prod` or `gea-firestore-staging`
-5. Click "Create"
-6. Wait 1-2 minutes for project initialization
+3. Confirm the existing GEA project is listed and select it
+4. Note the Project ID (you'll need this for Firestore setup)
 
 **Verification:**
 ```
-[ ] Project is created and selected in dropdown
-[ ] Project ID is displayed (e.g., "gea-firestore-prod-abc123")
+[ ] Existing GCP project is selected
+[ ] Project ID is noted (e.g., "gea-project-123456")
+[ ] You have Owner or Editor role in the project
 ```
 
 #### Step 1.2: Enable Firestore API (10 minutes)

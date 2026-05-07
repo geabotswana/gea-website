@@ -18,32 +18,32 @@ Migration from Google Sheets to Firestore reveals:
 
 ## Part A: Cleanup Opportunities
 
-### Removal Candidates (Zero Code References)
+### Fields to Keep (Currently Unused but Planned)
 
-These fields exist in the schema but are never referenced in any service module, frontend, or email template. **Safe to remove during migration.**
+These fields exist in the schema but are not yet actively used in code. They are planned for implementation in the Portal and Member Directory.
 
 #### Households Sheet
-| Field | References | Recommendation |
-|-------|-----------|-----------------|
-| `country_code_secondary` | 0 | ❌ Remove |
-| `phone_secondary` | 0 | ❌ Remove |
-| `phone_secondary_whatsapp` | 0 | ❌ Remove |
-| `country_code_emergency` | 0 | ❌ Remove |
-| `phone_emergency` | 0 | ❌ Remove |
-| `phone_emergency_whatsapp` | 0 | ❌ Remove |
+| Field | References | Recommendation | Notes |
+|-------|-----------|-----------------|-------|
+| `country_code_secondary` | 0 | ✅ Keep | Secondary contact phone |
+| `phone_secondary` | 0 | ✅ Keep | Secondary contact phone |
+| `phone_secondary_whatsapp` | 0 | ✅ Keep | Secondary contact phone |
+| `country_code_emergency` | 0 | ✅ Keep | Emergency contact phone |
+| `phone_emergency` | 0 | ✅ Keep | Emergency contact phone |
+| `phone_emergency_whatsapp` | 0 | ✅ Keep | Emergency contact phone |
 
 #### Individuals Sheet
-| Field | References | Recommendation |
-|-------|-----------|-----------------|
-| `country_code_secondary` | 0 | ❌ Remove |
-| `phone_secondary` | 0 | ❌ Remove |
-| `phone_secondary_whatsapp` | 0 | ❌ Remove |
-| `country_code_emergency` | 0 | ❌ Remove |
-| `phone_emergency` | 0 | ❌ Remove |
-| `phone_emergency_whatsapp` | 0 | ❌ Remove |
-| `employment_office` (Household context) | 1 ref (fallback) | ⚠️ Keep - document future use |
+| Field | References | Recommendation | Notes |
+|-------|-----------|-----------------|-------|
+| `country_code_secondary` | 0 | ✅ Keep | Secondary contact phone |
+| `phone_secondary` | 0 | ✅ Keep | Secondary contact phone |
+| `phone_secondary_whatsapp` | 0 | ✅ Keep | Secondary contact phone |
+| `country_code_emergency` | 0 | ✅ Keep | Emergency contact phone |
+| `phone_emergency` | 0 | ✅ Keep | Emergency contact phone |
+| `phone_emergency_whatsapp` | 0 | ✅ Keep | Emergency contact phone |
+| `employment_office` | 1 ref (fallback) | ✅ Keep | Embassy section code (EXEC, MGT, etc.) for verification |
 
-**Impact:** Removing these fields will simplify Firestore schema by ~10% without losing any functionality.
+**Implementation Plan:** These fields will be included in Firestore collections during Phase 6 (Households/Individuals migration). UI support will be added to Member Portal for editing and display in Member Directory.
 
 ---
 
@@ -188,6 +188,12 @@ Ordered by dependencies and risk profile:
   "country_code_primary": "BW",
   "phone_primary": "7182522",
   "phone_primary_whatsapp": true,
+  "country_code_secondary": "US",
+  "phone_secondary": "2015551234",
+  "phone_secondary_whatsapp": false,
+  "country_code_emergency": "BW",
+  "phone_emergency": "7189999",
+  "phone_emergency_whatsapp": true,
   "application_status": "Approved",
   "application_date": "2024-01-01",
   "approved_by": "board@example.com",
@@ -204,13 +210,9 @@ Ordered by dependencies and risk profile:
 }
 ```
 
-**Removed Fields:**
-- ~~`country_code_secondary`~~ ❌
-- ~~`phone_secondary`~~ ❌
-- ~~`phone_secondary_whatsapp`~~ ❌
-- ~~`country_code_emergency`~~ ❌
-- ~~`phone_emergency`~~ ❌
-- ~~`phone_emergency_whatsapp`~~ ❌
+**Phone & Contact Fields:**
+- ✅ `country_code_secondary`, `phone_secondary`, `phone_secondary_whatsapp` — Secondary contact (for Portal/Directory)
+- ✅ `country_code_emergency`, `phone_emergency`, `phone_emergency_whatsapp` — Emergency contact (for Portal/Directory)
 
 **Migration Notes:**
 - Index on `active`, `membership_status`, `membership_expiration_date`
@@ -240,6 +242,12 @@ Ordered by dependencies and risk profile:
   "country_code_primary": "US",
   "phone_primary": "2015551234",
   "phone_primary_whatsapp": false,
+  "country_code_secondary": "BW",
+  "phone_secondary": "7189999",
+  "phone_secondary_whatsapp": true,
+  "country_code_emergency": "US",
+  "phone_emergency": "2015559999",
+  "phone_emergency_whatsapp": false,
   "passport_number": "N12345678",
   "passport_status": "verified",
   "passport_expiration_date": "2028-12-31",
@@ -258,6 +266,7 @@ Ordered by dependencies and risk profile:
   "voting_eligible": true,
   "fitness_center_eligible": true,
   "office_eligible": true,
+  "employment_office": "EXEC",
   "employment_job_title": "Vice Consul",
   "employment_verification_file_id": "google_drive_file_id",
   "staff_rso_cleared": true,
@@ -275,13 +284,10 @@ Ordered by dependencies and risk profile:
 }
 ```
 
-**Removed Fields:**
-- ~~`country_code_secondary`~~ ❌
-- ~~`phone_secondary`~~ ❌
-- ~~`phone_secondary_whatsapp`~~ ❌
-- ~~`country_code_emergency`~~ ❌
-- ~~`phone_emergency`~~ ❌
-- ~~`phone_emergency_whatsapp`~~ ❌
+**Phone & Contact Fields:**
+- ✅ `country_code_secondary`, `phone_secondary`, `phone_secondary_whatsapp` — Secondary contact (for Portal/Directory)
+- ✅ `country_code_emergency`, `phone_emergency`, `phone_emergency_whatsapp` — Emergency contact (for Portal/Directory)
+- ✅ `employment_office` — Embassy section code (EXEC, MGT, etc.) for verification purposes
 
 **Migration Notes:**
 - Index on `email` (for login), `household_id`, `active`

@@ -5468,3 +5468,31 @@ function generateSampleVariablesForTest(placeholders) {
 
   return vars;
 }
+
+/**
+ * Test function to send the 14th birthday milestone notice
+ * Tests emoji rendering with [ICON:CELEBRATE] code conversion
+ */
+function testSend14thBirthdayNotice() {
+  var recipientEmail = "michael@raneyworld.com";
+
+  var variables = {
+    FIRST_NAME: "Michael",
+    CHILD_FIRST_NAME: "Thomas"
+  };
+
+  Logger.log("Sending 14th birthday notice to " + recipientEmail);
+  var success = sendEmailFromTemplate(
+    "MEM_BIRTHDAY_AGE_14_MILESTONE_TO_MEMBER",
+    recipientEmail,
+    variables
+  );
+
+  if (success) {
+    Logger.log("✓ Birthday notice sent successfully");
+  } else {
+    Logger.log("✗ Failed to send birthday notice");
+  }
+
+  return success;
+}

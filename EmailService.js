@@ -446,11 +446,32 @@ function sendEmailFromTemplate(templateName, recipient, variables, options) {
     // Append email footer (organization block + automated message notice)
     plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
 
+    // DEBUG: Check if codes are in plainBody before HTML conversion
+    Logger.log("DEBUG sendEmailFromTemplate: Checking plainBody for codes...");
+    if (plainBody.indexOf('[ICON:') > -1) {
+      Logger.log("DEBUG: plainBody contains [ICON:*] codes - GOOD");
+    } else {
+      Logger.log("DEBUG: WARNING - plainBody has NO [ICON:*] codes!");
+    }
+
     // Wrap in GEA master HTML template for consistent branding
     var htmlBody = buildHtmlEmail(subject, plainBody);
 
     // Convert special character codes ([HYPHEN], [ARROW], etc.) to actual characters
     // Do this AFTER HTML building to preserve emoji and special chars through text processing
+    Logger.log("DEBUG: Checking for codes in htmlBody...");
+    if (htmlBody.indexOf('[ICON:') > -1) {
+      Logger.log("DEBUG: Found [ICON:*] codes in htmlBody - converting now");
+    } else {
+      Logger.log("DEBUG: WARNING - No [ICON:*] codes found in htmlBody!");
+    }
+    if (htmlBody.indexOf('[ARROW]') > -1) {
+      Logger.log("DEBUG: Found [ARROW] in htmlBody");
+    }
+    if (htmlBody.indexOf('[HYPHEN]') > -1) {
+      Logger.log("DEBUG: Found [HYPHEN] in htmlBody");
+    }
+
     subject = convertSpecialCharacters(subject);
     htmlBody = convertSpecialCharacters(htmlBody);
 

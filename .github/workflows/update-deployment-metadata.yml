@@ -20,6 +20,7 @@ on:
       - 'Utilities.js'
       - 'FirestoreService.js'
       - 'FirestoreAuthService.js'
+      - 'FirestoreReservationService.js'
       - '.github/workflows/update-deployment-metadata.yml'
 
 jobs:

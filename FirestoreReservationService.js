@@ -246,3 +246,108 @@ function migrateGuestListsToFirestore() {
 
   Logger.log('Guest lists migration — created: ' + created + ', skipped: ' + skipped + ', errors: ' + errors);
 }
+
+/**
+ * Creates one test reservation + one test guest list in Firestore for
+ * HSH-2026-00020 / IND-2026-00027. Used to verify Phase 3 read/write
+ * before live traffic is routed through Firestore.
+ * Safe to re-run — deletes and recreates the test documents each time.
+ */
+function createTestReservationData() {
+  var db            = getFirestore();
+  var reservationId = 'RES-TEST-00001';
+  var guestListId   = 'GL-TEST-00001';
+  var householdId   = 'HSH-2026-00020';
+  var now           = new Date();
+  var eventDate     = new Date('2026-05-15');
+
+  // Delete any existing test docs first
+  try { db.deleteDocument('reservations/' + reservationId); } catch (e) {}
+  try { db.deleteDocument('guest_lists/'  + guestListId);   } catch (e) {}
+
+  // Test reservation
+  db.createDocument('reservations/' + reservationId, {
+    reservation_id:           reservationId,
+    household_id:             householdId,
+    household_name:           'Test Household',
+    submitted_by_individual_id: 'IND-2026-00027',
+    submitted_by_email:       'michael+jm@raneyworld.com',
+    submission_timestamp:     now,
+    facility:                 'Tennis Court',
+    reservation_date:         eventDate,
+    start_time:               '09:00',
+    end_time:                 '11:00',
+    duration_hours:           2,
+    event_name:               'Test Tennis Session',
+    status:                   'Confirmed',
+    has_guests:               true,
+    guest_count:              2,
+    guest_list_deadline:      new Date('2026-05-11'),
+    guest_list_submitted:     true,
+    is_excess_reservation:    false,
+    bump_window_deadline:     null,
+    bumped_by_household_id:   null,
+    bumped_date:              null,
+    no_fundraising_confirmed: true,
+    mgt_approved_by:          null,
+    mgt_approved_date:        null,
+    board_approval_required:  false,
+    board_approved_by:        null,
+    board_approval_timestamp: null,
+    board_denial_reason:      null,
+    calendar_event_id:        null,
+    cancelled_by:             null,
+    cancellation_timestamp:   null,
+    cancellation_reason:      null,
+    notes:                    'Test data for Phase 3 verification',
+    created_at:               now,
+    updated_at:               now
+  });
+  Logger.log('Created test reservation: ' + reservationId);
+
+  // Test guest list
+  var guests = [
+    { first_name: 'Alice', last_name: 'Smith',   age_group: 'over_18',  id_number: 'P12345678' },
+    { first_name: 'Bob',   last_name: 'Johnson', age_group: 'under_18', id_number: '' }
+  ];
+
+  db.createDocument('guest_lists/' + guestListId, {
+    guest_list_id:      guestListId,
+    reservation_id:     reservationId,
+    household_id:       householdId,
+    household_name:     'Test Household',
+    primary_email:      'michael+jm@raneyworld.com',
+    facility:           'Tennis Court',
+    event_date:         eventDate,
+    guests_json:        JSON.stringify(guests),
+    guest_count:        guests.length,
+    submitted_date:     now,
+    submission_status:  'submitted',
+    rso_reviewed_by:    null,
+    rso_review_date:    null,
+    rso_draft_json:     null,
+    last_modified_date: now
+  });
+  Logger.log('Created test guest list: ' + guestListId);
+  Logger.log('Test data ready — run testPhase3ReservationRead() to verify reads.');
+}
+
+/**
+ * Verifies Firestore reads for Phase 3 test data.
+ * Run after createTestReservationData().
+ */
+function testPhase3ReservationRead() {
+  var res = firestoreGetReservationById('RES-TEST-00001');
+  Logger.log('Reservation read: ' + (res ? 'OK — ' + res.facility + ' on ' + res.reservation_date : 'FAILED'));
+
+  var gl = firestoreGetGuestListForReservation('RES-TEST-00001');
+  Logger.log('Guest list read: ' + (gl ? 'OK — ' + gl.guest_count + ' guest(s)' : 'FAILED'));
+
+  try {
+    var hours = firestoreSumReservationHours('HSH-2026-00020', ['Tennis Court'],
+      new Date('2026-05-01'), new Date('2026-06-01'), ['Confirmed', 'Approved', 'Tentative']);
+    Logger.log('Sum hours: ' + hours + ' (expect 2)');
+  } catch (e) {
+    Logger.log('Sum hours FAILED: ' + e.message);
+  }
+}

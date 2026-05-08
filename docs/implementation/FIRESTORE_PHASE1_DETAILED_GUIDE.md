@@ -251,9 +251,11 @@ function getFirestore() {
 ```
 
 **Prerequisite:** This uses the FirestoreApp library by Graham Earley. Add it to your GAS project:
-1. Find the current script ID in the README of the GitHub repo: search Google for **"FirestoreApp Google Apps Script library"**
-2. In GAS editor, go to **Libraries** (+ icon in left sidebar)
-3. Paste the script ID → click **Look up** → select the latest version → click **Add**
+1. In GAS editor, go to **Libraries** (+ icon in left sidebar)
+2. Paste script ID: `1VUSl4b1r1eoNcRWotZM3e87ygkxvXltOgyDZhixqncz9lQ3MjfT1iKFw`
+3. Click **Look up** → select the latest version → click **Add**
+
+The library is also declared in `appsscript.json` as `FirestoreApp` (version 33).
 
 ---
 

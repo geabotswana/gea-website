@@ -59,6 +59,7 @@ jobs:
               'index.html',
               'member.html'
           }
+          EXCLUDE_PATTERNS = ['GEA_board_emails']
           EXCLUDE_DIRS = {'.git', '.github', '.claude', 'node_modules', 'docs', 'scripts'}
 
           files = []
@@ -66,6 +67,8 @@ jobs:
               dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS and not d.startswith('.')]
               for filename in filenames:
                   if filename in EXPLICIT_EXCLUDES:
+                      continue
+                  if any(filename.startswith(p) for p in EXCLUDE_PATTERNS):
                       continue
                   if filename == 'appsscript.json':
                       file_type = 'JSON'

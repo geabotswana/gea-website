@@ -17,7 +17,7 @@ function getFirestore() {
   var creds = JSON.parse(
     PropertiesService.getScriptProperties().getProperty('FIRESTORE_SERVICE_ACCOUNT_JSON')
   );
-  return FirestoreApp.getFirestore(creds.client_email, creds.private_key, creds.project_id, 'gea-firestore');
+  return FirestoreApp.getFirestore(creds.client_email, creds.private_key, creds.project_id);
 }
 
 function testFirestoreConnection() {

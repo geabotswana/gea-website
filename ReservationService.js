@@ -195,7 +195,7 @@ function createReservation(params) {
   if (!hh) return { success: false, message: ERR_NOT_MEMBER };
 
   // Check for conflicts
-  if (hasConflict(params.facility, params.startTime, params.endTime)) {
+  if (hasConflict(params.facility, params.reservationStart, params.reservationEnd)) {
     return { success: false, message: ERR_CONFLICT };
   }
 
@@ -230,29 +230,36 @@ function createReservation(params) {
   var now           = new Date();
 
   var row = {
-    reservation_id:           reservationId,
-    household_id:             params.householdId,
-    household_name:           hh.household_name,
-    submitted_by_email:       params.primaryEmail,
-    facility:                 params.facility,
-    reservation_date:         params.eventDate,
-    start_time:               params.startTime,
-    end_time:                 params.endTime,
-    duration_hours:           params.durationHours,
-    event_name:               sanitizeInput(params.eventName),
-    status:                   initialStatus,
-    has_guests:               params.hasGuests || false,
-    guest_count:              params.guestCount || 0,
-    guest_list_deadline:      guestDeadline,
-    guest_list_submitted:     false,
-    is_excess_reservation:    limitCheck.isExcess,
-    bump_window_deadline:     bumpDeadline,
-    bumped_by_household_id:   "",
-    bumped_date:              "",
-    no_fundraising_confirmed: params.noFundraisingConfirmed || false,
-    mgt_approved_by:          "",
-    mgt_approved_date:        "",
-    submission_timestamp:     now
+    reservation_id:             reservationId,
+    household_id:               params.householdId,
+    submitted_by_individual_id: params.submittedByIndividualId || '',
+    submitted_by_email:         params.primaryEmail,
+    submission_timestamp:       now,
+    facility:                   params.facility,
+    reservation_start:          params.reservationStart,
+    reservation_end:            params.reservationEnd,
+    duration_hours:             params.durationHours,
+    event_name:                 sanitizeInput(params.eventName),
+    guest_count:                params.guestCount || 0,
+    guest_list_submitted:       false,
+    guest_list_deadline:        guestDeadline,
+    status:                     initialStatus,
+    board_approval_required:    needsBoardApproval,
+    board_approved_by:          '',
+    board_approval_timestamp:   '',
+    board_denial_reason:        '',
+    rso_notified_timestamp:     '',
+    calendar_event_id:          '',
+    cancelled_by:               '',
+    cancellation_timestamp:     '',
+    cancellation_reason:        '',
+    notes:                      '',
+    is_excess_reservation:      limitCheck.isExcess,
+    bump_window_deadline:       bumpDeadline,
+    bumped_by_household_id:     '',
+    bumped_date:                '',
+    mgt_approved_by:            '',
+    mgt_approved_date:          ''
   };
 
   try {
@@ -406,26 +413,29 @@ function processBumpingQueue() {
 
     var bumped = 0;
     excessReservations.forEach(function(excess) {
-      // Look for a regular (non-excess) confirmed reservation at same facility/date/time
+      // Look for a regular (non-excess) confirmed reservation with overlapping datetime
       var conflict = false;
+      var excessStart = new Date(excess.reservation_start).getTime();
+      var excessEnd   = new Date(excess.reservation_end).getTime();
       for (var j = 1; j < data.length; j++) {
         var r = rowToObject(headers, data[j]);
         if (r.reservation_id === excess.reservation_id) continue;
         if (r.facility !== excess.facility) continue;
-        if (r.reservation_date !== excess.reservation_date) continue;
         if (r.status !== STATUS_CONFIRMED && r.status !== STATUS_TENTATIVE) continue;
         if (r.is_excess_reservation === true || r.is_excess_reservation === "TRUE") continue;
-        // Time overlap check
-        if (r.start_time < excess.end_time && r.end_time > excess.start_time) {
+        var rStart = new Date(r.reservation_start).getTime();
+        var rEnd   = new Date(r.reservation_end).getTime();
+        if (rStart < excessEnd && rEnd > excessStart) {
           conflict = true;
           _updateReservationField(excess.reservation_id, "status", STATUS_CANCELLED, "system");
           _updateReservationField(excess.reservation_id, "bumped_by_household_id", r.household_id, "system");
           _updateReservationField(excess.reservation_id, "bumped_date", now, "system");
           _updateReservationField(excess.reservation_id, "cancellation_reason",
-            "Bumped by " + r.household_name + " (" + r.reservation_id + ")", "system");
+            "Bumped by " + r.household_id + " (" + r.reservation_id + ")", "system");
           logAuditEntry("system", AUDIT_RESERVATION_BUMPED, "Reservation", excess.reservation_id,
-            "Bumped by " + r.reservation_id + " (" + r.household_name + ")");
-          _sendBumpNotification(excess, r);
+            "Bumped by " + r.reservation_id + " (" + r.household_id + ")");
+          var bumperHh = getHouseholdById(r.household_id);
+          _sendBumpNotification(excess, Object.assign({}, r, { household_name: bumperHh ? bumperHh.household_name : r.household_id }));
           bumped++;
           break;
         }
@@ -464,7 +474,7 @@ function getReservationsForHousehold(householdId) {
       results.push(rowToObject(headers, data[i]));
     }
     results.sort(function(a, b) {
-      return new Date(b.reservation_date) - new Date(a.reservation_date);
+      return new Date(b.reservation_start) - new Date(a.reservation_start);
     });
     return results;
   } catch (e) {
@@ -492,10 +502,10 @@ function getUpcomingReservations() {
     for (var i = 1; i < data.length; i++) {
       var row = rowToObject(headers, data[i]);
       if (activeStatuses.indexOf(row.status) === -1) continue;
-      if (new Date(row.reservation_date) < today) continue;
+      if (new Date(row.reservation_start) < today) continue;
       results.push(row);
     }
-    results.sort(function(a, b) { return new Date(a.reservation_date) - new Date(b.reservation_date); });
+    results.sort(function(a, b) { return new Date(a.reservation_start) - new Date(b.reservation_start); });
     return results;
   } catch (e) {
     Logger.log("ERROR getUpcomingReservations: " + e);
@@ -584,7 +594,7 @@ function sendGuestListReminders() {
           FIRST_NAME:       _getPrimaryFirstName(res.household_id),
           RESERVATION_ID:   res.reservation_id,
           FACILITY_NAME:    res.facility,
-          RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
+          RESERVATION_DATE: formatDate(new Date(res.reservation_start)),
           DEADLINE:         formatDate(deadline),
           DAYS_LEFT:        daysLeft,
           PORTAL_URL:       URL_MEMBER_PORTAL
@@ -640,7 +650,7 @@ function autoSubmitPastDeadlineGuestLists() {
               FIRST_NAME:       _getPrimaryFirstName(res.household_id),
               RESERVATION_ID:   res.reservation_id,
               FACILITY_NAME:    res.facility,
-              RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
+              RESERVATION_DATE: formatDate(new Date(res.reservation_start)),
               PORTAL_URL:       URL_MEMBER_PORTAL
             });
         } catch (e) { Logger.log("WARN autoSubmit email: " + e); }
@@ -689,7 +699,7 @@ function getAllReservations(status) {
       results.push(row);
     }
     results.sort(function(a, b) {
-      return new Date(b.reservation_date) - new Date(a.reservation_date);
+      return new Date(b.reservation_start) - new Date(a.reservation_start);
     });
     return results;
   } catch (e) {
@@ -713,7 +723,7 @@ function getReservationsByFacilityAndDateRange(facility, fromDate, toDate) {
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
     var facCol  = headers.indexOf("facility");
-    var dateCol = headers.indexOf("reservation_date");
+    var dateCol = headers.indexOf("reservation_start");
     var results = [];
 
     for (var i = 1; i < data.length; i++) {
@@ -722,7 +732,7 @@ function getReservationsByFacilityAndDateRange(facility, fromDate, toDate) {
       if (d < fromDate || d > toDate) continue;
       results.push(rowToObject(headers, data[i]));
     }
-    results.sort(function(a, b) { return new Date(a.reservation_date) - new Date(b.reservation_date); });
+    results.sort(function(a, b) { return new Date(a.reservation_start) - new Date(b.reservation_start); });
     return results;
   } catch (e) {
     Logger.log("ERROR getReservationsByFacilityAndDateRange: " + e);
@@ -744,24 +754,21 @@ function getReservationsByFacilityAndDateRange(facility, fromDate, toDate) {
  */
 function formatReservationForPortal(row) {
   return {
-    reservation_id:           row.reservation_id,
-    household_id:             row.household_id,
-    facility:                 row.facility,
-    reservation_date:         row.reservation_date ? formatDate(new Date(row.reservation_date)) : "",
-    start_time:               row.start_time        ? formatTime(row.start_time) : "",
-    end_time:                 row.end_time          ? formatTime(row.end_time)   : "",
-    duration_hours:           row.duration_hours,
-    event_name:               row.event_name        || "",
-    status:                   row.status,
-    has_guests:               row.has_guests === true || row.has_guests === "TRUE",
-    guest_count:              Number(row.guest_count) || 0,
-    guest_list_submitted:     row.guest_list_submitted === true || row.guest_list_submitted === "TRUE",
-    guest_list_deadline:      row.guest_list_deadline ? formatDate(new Date(row.guest_list_deadline)) : "",
-    is_excess_reservation:    row.is_excess_reservation === true || row.is_excess_reservation === "TRUE",
-    bump_window_deadline:     row.bump_window_deadline ? formatDate(new Date(row.bump_window_deadline)) : "",
-    no_fundraising_confirmed: row.no_fundraising_confirmed === true || row.no_fundraising_confirmed === "TRUE",
-    notes:                    row.notes || "",
-    GUEST_LIST_DEADLINE:      row.guest_list_deadline ? formatDate(new Date(row.guest_list_deadline)) : ""
+    reservation_id:        row.reservation_id,
+    household_id:          row.household_id,
+    facility:              row.facility,
+    reservation_start:     row.reservation_start ? new Date(row.reservation_start).toISOString() : "",
+    reservation_end:       row.reservation_end   ? new Date(row.reservation_end).toISOString()   : "",
+    duration_hours:        row.duration_hours,
+    event_name:            row.event_name || "",
+    status:                row.status,
+    guest_count:           Number(row.guest_count) || 0,
+    guest_list_submitted:  row.guest_list_submitted === true || row.guest_list_submitted === "TRUE",
+    guest_list_deadline:   row.guest_list_deadline ? formatDate(new Date(row.guest_list_deadline)) : "",
+    is_excess_reservation: row.is_excess_reservation === true || row.is_excess_reservation === "TRUE",
+    bump_window_deadline:  row.bump_window_deadline ? formatDate(new Date(row.bump_window_deadline)) : "",
+    notes:                 row.notes || "",
+    GUEST_LIST_DEADLINE:   row.guest_list_deadline ? formatDate(new Date(row.guest_list_deadline)) : ""
   };
 }
 
@@ -800,7 +807,7 @@ function submitGuestList(reservationId, guests, memberEmail) {
     return { ok: false, message: "Cannot submit guest list for a cancelled reservation." };
   }
 
-  var late = !isGuestListDeadlineMet(new Date(res.reservation_date));
+  var late = !isGuestListDeadlineMet(new Date(res.reservation_start));
 
   var guestListId = generateId("GL");
   var now         = new Date();
@@ -812,14 +819,16 @@ function submitGuestList(reservationId, guests, memberEmail) {
   });
 
   var row = {
-    guest_list_id:    guestListId,
-    reservation_id:   reservationId,
-    household_id:     res.household_id,
-    household_name:   res.household_name,
-    primary_email:    memberEmail,
-    facility:         res.facility,
-    event_date:       res.reservation_date,
-    guests_json:      JSON.stringify(guests),
+    guest_list_id:     guestListId,
+    reservation_id:    reservationId,
+    household_id:      res.household_id,
+    household_name:    res.household_name,
+    primary_email:     memberEmail,
+    facility:          res.facility,
+    event_date:        res.reservation_start ? new Date(res.reservation_start) : null,
+    reservation_start: res.reservation_start,
+    reservation_end:   res.reservation_end,
+    guests_json:       JSON.stringify(guests),
     guest_count:      guests.length,
     submitted_date:   now,
     submission_status: GUEST_LIST_STATUS_SUBMITTED,
@@ -856,9 +865,9 @@ function submitGuestList(reservationId, guests, memberEmail) {
     FIRST_NAME:       _getPrimaryFirstName(res.household_id),
     RESERVATION_ID:   reservationId,
     FACILITY_NAME:    res.facility,
-    RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
+    RESERVATION_DATE: formatDate(new Date(res.reservation_start)),
     GUEST_COUNT:      guests.length,
-    DEADLINE:         formatDate(getGuestListDeadline(new Date(res.reservation_date))),
+    DEADLINE:         formatDate(getGuestListDeadline(new Date(res.reservation_start))),
     PORTAL_URL:       URL_MEMBER_PORTAL
   });
 
@@ -1395,14 +1404,9 @@ function _createCalendarEvent(params, reservationId, status) {
     var cal     = CalendarApp.getCalendarById(RESERVATIONS_CALENDAR_ID);
     if (!cal) return null;
 
-    var title   = params.facility + " - " + params.householdName + " (" + reservationId + ")";
-    var start   = new Date(params.eventDate);
-    var end     = new Date(params.eventDate);
-
-    var startParts = params.startTime.split(":");
-    var endParts   = params.endTime.split(":");
-    start.setHours(parseInt(startParts[0]), parseInt(startParts[1] || 0), 0, 0);
-    end.setHours(  parseInt(endParts[0]),   parseInt(endParts[1]   || 0), 0, 0);
+    var title = params.facility + " - " + params.householdName + " (" + reservationId + ")";
+    var start = new Date(params.reservationStart);
+    var end   = new Date(params.reservationEnd);
 
     var description = [
       "Reservation ID: " + reservationId,
@@ -1485,19 +1489,26 @@ function getReservationById(reservationId) {
  * @param {Date}   endTime
  * @returns {boolean}
  */
-function hasConflict(facility, startTime, endTime) {
+function hasConflict(facility, reservationStart, reservationEnd) {
+  // Firestore-first
+  try {
+    return firestoreHasConflict(facility, reservationStart, reservationEnd);
+  } catch (e) {
+    Logger.log("WARN hasConflict Firestore fallback: " + e.message);
+  }
+  // Sheets fallback
   try {
     var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
     var facCol  = headers.indexOf("facility");
-    var stCol   = headers.indexOf("start_time");
-    var etCol   = headers.indexOf("end_time");
+    var stCol   = headers.indexOf("reservation_start");
+    var etCol   = headers.indexOf("reservation_end");
     var statCol = headers.indexOf("status");
 
     var activeStatuses = [STATUS_PENDING, STATUS_APPROVED, STATUS_TENTATIVE, STATUS_CONFIRMED];
-    var newStart = new Date(startTime).getTime();
-    var newEnd   = new Date(endTime).getTime();
+    var newStart = new Date(reservationStart).getTime();
+    var newEnd   = new Date(reservationEnd).getTime();
 
     for (var i = 1; i < data.length; i++) {
       if (data[i][facCol] !== facility) continue;
@@ -1551,7 +1562,7 @@ function _sumReservationHours(householdId, facility, fromDate, toDate, statuses)
     var headers = data[0];
     var hhCol   = headers.indexOf("household_id");
     var facCol  = headers.indexOf("facility");
-    var dateCol = headers.indexOf("reservation_date");
+    var dateCol = headers.indexOf("reservation_start");
     var durCol  = headers.indexOf("duration_hours");
     var statCol = headers.indexOf("status");
 
@@ -1585,7 +1596,7 @@ function _countReservations(householdId, facilities, fromDate, toDate, statuses)
     var headers = data[0];
     var hhCol   = headers.indexOf("household_id");
     var facCol  = headers.indexOf("facility");
-    var dateCol = headers.indexOf("reservation_date");
+    var dateCol = headers.indexOf("reservation_start");
     var statCol = headers.indexOf("status");
 
     for (var i = 1; i < data.length; i++) {
@@ -1604,9 +1615,9 @@ function _countReservations(householdId, facilities, fromDate, toDate, statuses)
  * Sends all notification emails triggered by a new reservation.
  */
 function _sendReservationNotifications(params, row, hh, limitCheck) {
-  var dateStr  = formatDate(params.eventDate);
-  var startStr = formatTime(params.startTime);
-  var endStr   = formatTime(params.endTime);
+  var dateStr  = formatDate(new Date(params.reservationStart));
+  var startStr = formatTime(new Date(params.reservationStart));
+  var endStr   = formatTime(new Date(params.reservationEnd));
 
   var baseVars = {
     FIRST_NAME:        _getPrimaryFirstName(params.householdId),
@@ -1655,9 +1666,9 @@ function _notifyOtherHouseholdsOfExcess(params, row) {
   var households = getAllHouseholds();
   if (!households || !households.length) return;
 
-  var dateStr   = formatDate(params.eventDate);
-  var startStr  = formatTime(params.startTime);
-  var endStr    = formatTime(params.endTime);
+  var dateStr   = formatDate(new Date(params.reservationStart));
+  var startStr  = formatTime(new Date(params.reservationStart));
+  var endStr    = formatTime(new Date(params.reservationEnd));
   var deadline  = row.bump_window_deadline ? formatDate(new Date(row.bump_window_deadline)) : "";
 
   households.forEach(function(hh) {
@@ -1683,9 +1694,9 @@ function _sendApprovalNotification(res, approvedBy) {
       FIRST_NAME:       _getPrimaryFirstName(res.household_id),
       RESERVATION_ID:   res.reservation_id,
       FACILITY_NAME:    res.facility,
-      RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
-      START_TIME:       formatTime(res.start_time),
-      END_TIME:         formatTime(res.end_time),
+      RESERVATION_DATE: formatDate(new Date(res.reservation_start)),
+      START_TIME:       formatTime(new Date(res.reservation_start)),
+      END_TIME:         formatTime(new Date(res.reservation_end)),
       APPROVED_BY:      approvedBy,
       PORTAL_URL:       URL_MEMBER_PORTAL
     });
@@ -1698,7 +1709,7 @@ function _sendDenialNotification(res, deniedBy, reason) {
       FIRST_NAME:       _getPrimaryFirstName(res.household_id),
       RESERVATION_ID:   res.reservation_id,
       FACILITY_NAME:    res.facility,
-      RESERVATION_DATE: formatDate(new Date(res.reservation_date)),
+      RESERVATION_DATE: formatDate(new Date(res.reservation_start)),
       DENIAL_REASON:    reason || "No reason provided",
       PORTAL_URL:       URL_MEMBER_PORTAL
     });
@@ -1715,7 +1726,7 @@ function _sendCancellationNotification(res, cancelledBy, reason) {
       FIRST_NAME:          _getPrimaryFirstName(res.household_id),
       RESERVATION_ID:      res.reservation_id,
       FACILITY_NAME:       res.facility,
-      RESERVATION_DATE:    formatDate(new Date(res.reservation_date)),
+      RESERVATION_DATE:    formatDate(new Date(res.reservation_start)),
       CANCELLATION_REASON: reason || "No reason provided",
       CANCELLED_BY:        cancelledBy,
       PORTAL_URL:          URL_MEMBER_PORTAL
@@ -1729,7 +1740,7 @@ function _sendBumpNotification(bumpedRes, bumperRes) {
       FIRST_NAME:       _getPrimaryFirstName(bumpedRes.household_id),
       RESERVATION_ID:   bumpedRes.reservation_id,
       FACILITY_NAME:    bumpedRes.facility,
-      RESERVATION_DATE: formatDate(new Date(bumpedRes.reservation_date)),
+      RESERVATION_DATE: formatDate(new Date(bumpedRes.reservation_start)),
       BUMPER_HOUSEHOLD: bumperRes.household_name,
       PORTAL_URL:       URL_MEMBER_PORTAL
     });

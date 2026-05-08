@@ -19,6 +19,7 @@ on:
       - 'RulesService.js'
       - 'Utilities.js'
       - 'FirestoreService.js'
+      - 'FirestoreAuthService.js'
       - '.github/workflows/update-deployment-metadata.yml'
 
 jobs:

@@ -69,7 +69,7 @@ function firestoreGetReservationsForLimitCheck(householdId, facilities, fromDate
       if (!r) return false;
       if (facilityArray.indexOf(r.facility) === -1) return false;
       if (statuses.indexOf(r.status) === -1) return false;
-      var d = new Date(r.reservation_date);
+      var d = new Date(r.reservation_start);
       return d >= fromDate && d < toDate;
     });
 }
@@ -93,19 +93,23 @@ function firestoreGetReservationsByStatus(status) {
   }
 }
 
-function firestoreHasConflict(facility, reservationDate, startTime, endTime) {
+function firestoreHasConflict(facility, reservationStart, reservationEnd) {
   try {
     var activeStatuses = ['Pending', 'Approved', 'Tentative', 'Confirmed'];
+    var newStart = new Date(reservationStart).getTime();
+    var newEnd   = new Date(reservationEnd).getTime();
+
     var results = getFirestore()
       .query('reservations')
       .Where('facility', '==', facility)
-      .Where('reservation_date', '==', reservationDate)
       .Execute();
 
     return results.some(function(doc) {
       var r = doc.obj;
       if (!r || activeStatuses.indexOf(r.status) === -1) return false;
-      return r.start_time < endTime && r.end_time > startTime;
+      var exStart = new Date(r.reservation_start).getTime();
+      var exEnd   = new Date(r.reservation_end).getTime();
+      return newStart < exEnd && newEnd > exStart;
     });
   } catch (e) {
     throw e;
@@ -143,7 +147,8 @@ function firestoreSubmitGuestList(row) {
     household_name:     row.household_name,
     primary_email:      row.primary_email,
     facility:           row.facility,
-    event_date:         row.event_date ? new Date(row.event_date) : null,
+    reservation_start:  row.reservation_start ? new Date(row.reservation_start) : null,
+    reservation_end:    row.reservation_end   ? new Date(row.reservation_end)   : null,
     guests_json:        JSON.stringify(cleanGuests),
     guest_count:        row.guest_count,
     submitted_date:     row.submitted_date,
@@ -191,7 +196,7 @@ function firestoreGetGuestListsByStatus(status) {
   return results
     .map(function(doc) { return doc.obj; })
     .filter(Boolean)
-    .sort(function(a, b) { return new Date(a.event_date) - new Date(b.event_date); });
+    .sort(function(a, b) { return new Date(a.reservation_start) - new Date(b.reservation_start); });
 }
 
 /**
@@ -442,7 +447,7 @@ function _firestoreUpdateProfileAfterReview(profileId, rsoStatus, rsoNote, gl) {
     var profile = doc.obj;
     var updates = {
       times_invited:      (profile.times_invited  || 0) + 1,
-      last_invited_date:  gl.event_date ? new Date(gl.event_date) : null,
+      last_invited_date:  gl.reservation_start ? new Date(gl.reservation_start) : null,
       last_modified_date: new Date()
     };
 
@@ -532,7 +537,8 @@ function migrateGuestListsToFirestore() {
       household_name:     row.household_name      || '',
       primary_email:      row.primary_email       || '',
       facility:           row.facility            || '',
-      event_date:         row.event_date          ? new Date(row.event_date) : null,
+      reservation_start:  row.reservation_start   ? new Date(row.reservation_start) : null,
+      reservation_end:    row.reservation_end     ? new Date(row.reservation_end)   : null,
       guests_json:        row.guests_json         || '[]',
       guest_count:        Number(row.guest_count) || 0,
       submitted_date:     row.submitted_date      ? new Date(row.submitted_date) : null,
@@ -577,7 +583,8 @@ function createTestReservationData() {
   var reservationId = 'RES-TEST-00001';
   var householdId   = 'HSH-2026-00020';
   var now           = new Date();
-  var eventDate     = new Date('2026-05-15');
+  var resStart      = new Date('2026-05-15T09:00:00+02:00');
+  var resEnd        = new Date('2026-05-15T11:00:00+02:00');
 
   // Delete existing test docs
   try { db.deleteDocument('reservations/' + reservationId); } catch (e) {}
@@ -587,36 +594,33 @@ function createTestReservationData() {
   db.createDocument('reservations/' + reservationId, {
     reservation_id:             reservationId,
     household_id:               householdId,
-    household_name:             'Test Household',
     submitted_by_individual_id: 'IND-2026-00027',
     submitted_by_email:         'michael+jm@raneyworld.com',
     submission_timestamp:       now,
     facility:                   'Tennis Court',
-    reservation_date:           eventDate,
-    start_time:                 '09:00',
-    end_time:                   '11:00',
+    reservation_start:          resStart,
+    reservation_end:            resEnd,
     duration_hours:             2,
     event_name:                 'Test Tennis Session',
     status:                     'Confirmed',
-    has_guests:                 true,
     guest_count:                2,
-    guest_list_deadline:        new Date('2026-05-11'),
+    guest_list_deadline:        new Date('2026-05-11T00:00:00+02:00'),
     guest_list_submitted:       true,
-    is_excess_reservation:      false,
-    bump_window_deadline:       null,
-    bumped_by_household_id:     null,
-    bumped_date:                null,
-    no_fundraising_confirmed:   true,
-    mgt_approved_by:            null,
-    mgt_approved_date:          null,
     board_approval_required:    false,
     board_approved_by:          null,
     board_approval_timestamp:   null,
     board_denial_reason:        null,
+    rso_notified_timestamp:     null,
     calendar_event_id:          null,
+    is_excess_reservation:      false,
+    bump_window_deadline:       null,
+    bumped_by_household_id:     null,
+    bumped_date:                null,
     cancelled_by:               null,
     cancellation_timestamp:     null,
     cancellation_reason:        null,
+    mgt_approved_by:            null,
+    mgt_approved_date:          null,
     notes:                      'Test data for Phase 3 verification',
     created_at:                 now,
     updated_at:                 now
@@ -636,7 +640,8 @@ function createTestReservationData() {
     household_name:     'Test Household',
     primary_email:      'michael+jm@raneyworld.com',
     facility:           'Tennis Court',
-    event_date:         eventDate,
+    reservation_start:  resStart,
+    reservation_end:    resEnd,
     guests_json:        JSON.stringify(guests),
     guest_count:        guests.length,
     submitted_date:     now,
@@ -658,7 +663,7 @@ function createTestReservationData() {
  */
 function testPhase3ReservationRead() {
   var res = firestoreGetReservationById('RES-TEST-00001');
-  Logger.log('Reservation read: ' + (res ? 'OK — ' + res.facility + ' on ' + res.reservation_date : 'FAILED'));
+  Logger.log('Reservation read: ' + (res ? 'OK — ' + res.facility + ' at ' + res.reservation_start : 'FAILED'));
 
   var gl = firestoreGetGuestListForReservation('RES-TEST-00001');
   Logger.log('Guest list read: ' + (gl ? 'OK — ' + gl.guest_count + ' guest(s), status: ' + gl.submission_status : 'FAILED'));

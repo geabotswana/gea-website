@@ -18,6 +18,7 @@ on:
       - 'ApplicationService.js'
       - 'RulesService.js'
       - 'Utilities.js'
+      - 'FirestoreService.js'
       - '.github/workflows/update-deployment-metadata.yml'
 
 jobs:

@@ -2,8 +2,15 @@
  * FirestoreService.js
  * Core Firestore connection helper used by all Firestore service modules.
  *
- * Requires: FirestoreApp library (script ID: 1VUSl4b1r1eoNcRWotZM3e87ybkVxJyTGKzCFzBRv7R5k7BYbkx5eVkM)
+ * Requires: FirestoreApp library (ID: 1VUSl4b1r1eoNcRWotZM3e87ygkxvXltOgyDZhixqncz9lQ3MjfT1iKFw)
  * Credentials stored in Script Properties as FIRESTORE_SERVICE_ACCOUNT_JSON.
+ *
+ * FirestoreApp API uses path-based access, not .collection().doc() chaining:
+ *   Read:   db.getDocument('collection/docId')
+ *   Write:  db.createDocument('collection/docId', fields)
+ *   Update: db.updateDocument('collection/docId', fields)
+ *   Delete: db.deleteDocument('collection/docId')
+ *   Query:  db.query('collection').where('field', '==', value).execute()
  */
 
 function getFirestore() {
@@ -16,9 +23,9 @@ function getFirestore() {
 function testFirestoreConnection() {
   try {
     var db = getFirestore();
-    var query = db.collection('sessions').limit(1).get();
+    var results = db.query('sessions').execute();
     Logger.log('SUCCESS: Firestore connection working!');
-    Logger.log('Sessions collection size: ' + query.size);
+    Logger.log('Sessions returned: ' + results.length);
     return { success: true };
   } catch (error) {
     Logger.log('ERROR: ' + error.message);

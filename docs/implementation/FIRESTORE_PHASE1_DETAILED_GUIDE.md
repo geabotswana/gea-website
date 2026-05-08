@@ -340,7 +340,17 @@ service cloud.firestore {
 
 ## 5. COMPLETE FIRESTOREAUTH SERVICE
 
-Create a new file `FirestoreAuthService.gs`:
+**Important:** FirestoreApp uses a **path-based API**, not the Firebase Admin SDK's `.collection().doc()` chaining. The correct methods are:
+
+| Operation | FirestoreApp syntax |
+|-----------|-------------------|
+| Read doc | `db.getDocument('collection/docId')` |
+| Create doc | `db.createDocument('collection/docId', fields)` |
+| Update doc | `db.updateDocument('collection/docId', fields)` |
+| Delete doc | `db.deleteDocument('collection/docId')` |
+| Query | `db.query('collection').where('field', '==', value).execute()` |
+
+Create a new file `FirestoreAuthService.js`:
 
 ```javascript
 /**
@@ -353,14 +363,14 @@ function firestoreCreateSession(email, role) {
     if (!email || !role) {
       throw new Error("Email and role required");
     }
-    
+
     var db = getFirestore();
     var token = _generateToken();
     var tokenHash = _hashToken(token);
     var now = new Date();
     var expiryTime = new Date(now.getTime() + SESSION_TIMEOUT_HOURS * 60 * 60 * 1000);
-    
-    db.collection("sessions").doc(tokenHash).set({
+
+    db.createDocument('sessions/' + tokenHash, {
       token_hash: tokenHash,
       email: email,
       role: role,
@@ -368,10 +378,10 @@ function firestoreCreateSession(email, role) {
       expires_at: expiryTime,
       active: true
     });
-    
+
     Logger.log("Session created for " + email);
     return token;
-    
+
   } catch (error) {
     Logger.log("ERROR creating session: " + error.message);
     throw error;
@@ -383,39 +393,34 @@ function firestoreValidateSession(token) {
     if (!token) {
       return { valid: false, reason: "No token provided" };
     }
-    
+
     var db = getFirestore();
     var tokenHash = _hashToken(token);
-    var sessionDoc = db.collection("sessions").doc(tokenHash).get();
-    
-    if (!sessionDoc.exists) {
+    var sessionDoc = db.getDocument('sessions/' + tokenHash);
+    var sessionData = sessionDoc.obj;
+
+    if (!sessionData) {
       return { valid: false, reason: "Session not found" };
     }
-    
-    var sessionData = sessionDoc.data();
-    
+
     if (!sessionData.active) {
       return { valid: false, reason: "Session inactive" };
     }
-    
+
     var now = new Date();
-    var expiryTime = sessionData.expires_at;
-    
-    if (expiryTime && typeof expiryTime.toDate === 'function') {
-      expiryTime = expiryTime.toDate();
-    }
-    
+    var expiryTime = new Date(sessionData.expires_at);
+
     if (now > expiryTime) {
       return { valid: false, reason: "Session expired" };
     }
-    
+
     return {
       valid: true,
       email: sessionData.email,
       role: sessionData.role,
       expires_at: expiryTime
     };
-    
+
   } catch (error) {
     Logger.log("ERROR validating session: " + error.message);
     return { valid: false, reason: "Validation error" };
@@ -425,14 +430,14 @@ function firestoreValidateSession(token) {
 function firestoreDeleteSession(token) {
   try {
     if (!token) return false;
-    
+
     var db = getFirestore();
     var tokenHash = _hashToken(token);
-    db.collection("sessions").doc(tokenHash).delete();
-    
+    db.deleteDocument('sessions/' + tokenHash);
+
     Logger.log("Session deleted");
     return true;
-    
+
   } catch (error) {
     Logger.log("ERROR deleting session: " + error.message);
     return false;
@@ -442,12 +447,11 @@ function firestoreDeleteSession(token) {
 function firestoreGetAdministrator(email) {
   try {
     if (!email) return null;
-    
+
     var db = getFirestore();
-    var adminDoc = db.collection("administrators").doc(email).get();
-    
-    return adminDoc.exists ? adminDoc.data() : null;
-    
+    var adminDoc = db.getDocument('administrators/' + email);
+    return adminDoc.obj || null;
+
   } catch (error) {
     Logger.log("ERROR getting administrator: " + error.message);
     return null;
@@ -459,15 +463,17 @@ function firestoreCreateAdministrator(email, firstName, lastName, role, password
     if (!email || !role || !passwordHash) {
       throw new Error("Required fields missing");
     }
-    
+
     var db = getFirestore();
-    var existingDoc = db.collection("administrators").doc(email).get();
-    
-    if (existingDoc.exists) {
-      return false;
+
+    try {
+      var existing = db.getDocument('administrators/' + email);
+      if (existing.obj) return false;
+    } catch (e) {
+      // Document doesn't exist — proceed
     }
-    
-    db.collection("administrators").doc(email).set({
+
+    db.createDocument('administrators/' + email, {
       email: email,
       first_name: firstName,
       last_name: lastName,
@@ -476,10 +482,10 @@ function firestoreCreateAdministrator(email, firstName, lastName, role, password
       active: true,
       created_at: new Date()
     });
-    
+
     Logger.log("Administrator created: " + email);
     return true;
-    
+
   } catch (error) {
     Logger.log("ERROR creating administrator: " + error.message);
     throw error;
@@ -547,21 +553,18 @@ function validateSession(token) {
 
 ### Test Function
 
-Add to `Code.js`:
+Already defined in `FirestoreService.js`. Run `testFirestoreConnection()` from the GAS editor:
 
 ```javascript
 function testFirestoreConnection() {
   try {
     var db = getFirestore();
-    var sessionsRef = db.collection("sessions");
-    var query = sessionsRef.limit(1).get();
-    
-    Logger.log("SUCCESS: Firestore connection working!");
-    Logger.log("Sessions collection size: " + query.size);
+    var results = db.query('sessions').execute();
+    Logger.log('SUCCESS: Firestore connection working!');
+    Logger.log('Sessions returned: ' + results.length);
     return { success: true };
-    
   } catch (error) {
-    Logger.log("ERROR: " + error.message);
+    Logger.log('ERROR: ' + error.message);
     return { success: false, message: error.message };
   }
 }

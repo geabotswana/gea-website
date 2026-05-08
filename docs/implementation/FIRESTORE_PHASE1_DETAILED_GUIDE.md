@@ -174,7 +174,7 @@ The project already has a Google Cloud Project set up. Verify it's configured co
 #### Step 1.3: Create Firestore Database (15 minutes)
 1. In GCP Console, go to "Firestore"
 2. Click "Create Database"
-3. **Name your database:** Leave Database ID as **`(default)`** — the FirestoreApp GAS library only connects to the default database and has no parameter to specify a named database
+3. **Name your database:** Leave Database ID as **`(default)`** — the FirestoreApp GAS library only connects to the default database. Note: `(default)` only appears as an option under **Standard Edition**; it is not permitted under Enterprise Edition
 4. **Select your edition:** Choose **Standard Edition** (sufficient for GEA — automatic indexing, ~$2-3/month)
    - Enterprise Edition adds MongoDB compatibility and advanced query engine — not needed here
 5. **Modes:** Leave **"Firestore in Native mode"** selected (default)

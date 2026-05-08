@@ -22,14 +22,7 @@ function getFirestore() {
 
 function testFirestoreConnection() {
   try {
-    var creds = JSON.parse(
-      PropertiesService.getScriptProperties().getProperty('FIRESTORE_SERVICE_ACCOUNT_JSON')
-    );
-    Logger.log('client_email: ' + creds.client_email);
-    Logger.log('project_id: ' + creds.project_id);
-    Logger.log('private_key starts with: ' + creds.private_key.substring(0, 40));
-
-    var db = FirestoreApp.getFirestore(creds.client_email, creds.private_key, creds.project_id);
+    var db = getFirestore();
     var results = db.query('sessions').Execute();
     Logger.log('SUCCESS: Firestore connection working!');
     Logger.log('Sessions returned: ' + results.length);

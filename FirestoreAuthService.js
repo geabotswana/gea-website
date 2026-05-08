@@ -119,3 +119,62 @@ function firestoreCreateAdministrator(email, firstName, lastName, role, password
   Logger.log('Administrator created in Firestore: ' + email);
   return true;
 }
+
+// ─── Migration ────────────────────────────────────────────────────────────────
+
+/**
+ * One-time migration: copy all admin records from the Administrators sheet
+ * into the Firestore administrators collection.
+ *
+ * Safe to re-run — skips any email already present in Firestore.
+ * Run from GAS editor; check execution log for results.
+ */
+function migrateAdministratorsToFirestore() {
+  var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+  var data    = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var db      = getFirestore();
+
+  var created = 0, skipped = 0, errors = 0;
+
+  for (var i = 1; i < data.length; i++) {
+    var row = {};
+    headers.forEach(function(col, idx) { row[col] = data[i][idx]; });
+
+    var email = (row.email || '').toString().toLowerCase().trim();
+    if (!email) continue;
+
+    // Skip if already in Firestore
+    try {
+      var existing = db.getDocument('administrators/' + email);
+      if (existing.obj) {
+        Logger.log('SKIP (exists): ' + email);
+        skipped++;
+        continue;
+      }
+    } catch (e) { /* not found — proceed */ }
+
+    try {
+      db.createDocument('administrators/' + email, {
+        email:              email,
+        first_name:         row.first_name        || '',
+        last_name:          row.last_name         || '',
+        role:               row.role              || '',
+        active:             row.active === true || row.active === 'TRUE',
+        password_hash:      row.password_hash     || '',
+        created_by:         row.created_by        || '',
+        created_date:       row.created_date ? new Date(row.created_date) : null,
+        deactivated_by:     row.deactivated_by    || null,
+        deactivated_date:   row.deactivated_date ? new Date(row.deactivated_date) : null,
+        first_login_date:   row.first_login_date ? new Date(row.first_login_date) : null
+      });
+      Logger.log('CREATED: ' + email + ' (' + row.role + ')');
+      created++;
+    } catch (e) {
+      Logger.log('ERROR ' + email + ': ' + e.message);
+      errors++;
+    }
+  }
+
+  Logger.log('Migration complete — created: ' + created + ', skipped: ' + skipped + ', errors: ' + errors);
+}

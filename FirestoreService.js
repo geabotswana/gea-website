@@ -23,7 +23,7 @@ function getFirestore() {
 function testFirestoreConnection() {
   try {
     var db = getFirestore();
-    var results = db.query('sessions').execute();
+    var results = db.query('sessions').Execute();
     Logger.log('SUCCESS: Firestore connection working!');
     Logger.log('Sessions returned: ' + results.length);
     return { success: true };

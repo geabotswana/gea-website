@@ -111,12 +111,12 @@ MySQL:
   WHERE active = true AND expires_at > NOW()
   LIMIT 10;
 
-Firestore:
-  db.collection('sessions')
-    .where('active', '==', true)
-    .where('expires_at', '>', admin.firestore.Timestamp.now())
-    .limit(10)
-    .get();
+Firestore (FirestoreApp):
+  db.query('sessions')
+    .Where('active', '==', true)
+    .Where('expires_at', '>', new Date())
+    .Limit(10)
+    .Execute();
 ```
 
 ### Cost Implications
@@ -348,7 +348,7 @@ service cloud.firestore {
 | Create doc | `db.createDocument('collection/docId', fields)` |
 | Update doc | `db.updateDocument('collection/docId', fields)` |
 | Delete doc | `db.deleteDocument('collection/docId')` |
-| Query | `db.query('collection').where('field', '==', value).execute()` |
+| Query | `db.query('collection').Where('field', '==', value).Execute()` |
 
 Create a new file `FirestoreAuthService.js`:
 
@@ -559,7 +559,7 @@ Already defined in `FirestoreService.js`. Run `testFirestoreConnection()` from t
 function testFirestoreConnection() {
   try {
     var db = getFirestore();
-    var results = db.query('sessions').execute();
+    var results = db.query('sessions').Execute();
     Logger.log('SUCCESS: Firestore connection working!');
     Logger.log('Sessions returned: ' + results.length);
     return { success: true };

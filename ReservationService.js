@@ -825,6 +825,7 @@ function submitGuestList(reservationId, guests, memberEmail) {
     household_name:    res.household_name,
     primary_email:     memberEmail,
     facility:          res.facility,
+    event_date:        res.reservation_start ? new Date(res.reservation_start) : null,
     reservation_start: res.reservation_start,
     reservation_end:   res.reservation_end,
     guests_json:       JSON.stringify(guests),

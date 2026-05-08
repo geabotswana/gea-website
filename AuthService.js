@@ -446,6 +446,13 @@ function validateSession(token) {
   if (!token) return { valid: false, message: "No session token provided." };
 
   try {
+    var fsResult = firestoreValidateSession(token);
+    if (fsResult.valid) return fsResult;
+  } catch (e) {
+    Logger.log('WARN validateSession: Firestore failed, using Sheets: ' + e.message);
+  }
+
+  try {
     var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
@@ -491,6 +498,7 @@ function validateSession(token) {
  */
 function logout(token) {
   if (!token) return false;
+  try { firestoreDeleteSession(token); } catch (e) { /* non-fatal */ }
   try {
     var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
     var data    = sheet.getDataRange().getValues();
@@ -1061,6 +1069,12 @@ function _markResetTokenAsUsed(tokenId) {
  */
 function _getAdminByEmail(email) {
   try {
+    var fsAdmin = firestoreGetAdministrator(email);
+    if (fsAdmin) return fsAdmin;
+  } catch (e) {
+    Logger.log('WARN _getAdminByEmail: Firestore failed, using Sheets: ' + e.message);
+  }
+  try {
     if (!email) return null;
     var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
     var data = sheet.getDataRange().getValues();
@@ -1220,6 +1234,12 @@ function requireAuth(token, requiredRole) {
  * @returns {string} token
  */
 function _createSession(email, role) {
+  try {
+    return firestoreCreateSession(email, role);
+  } catch (e) {
+    Logger.log('WARN _createSession: Firestore failed, using Sheets: ' + e.message);
+  }
+
   var token     = _generateToken();
   var tokenHash = _hashToken(token);  // Store hash, not plain-text
   var now       = new Date();

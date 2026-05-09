@@ -1057,12 +1057,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.76";
+var SYSTEM_VERSION          = "2.5.77";
 var SYSTEM_BUILD_DATE       = "2026-05-09";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Merge pull request #161 from geabotswana/codex/review-firestore_migration_plan.md";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-09 14:52:19";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "refactor: remove Firestore integration, revert to Sheets-only";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-09 20:10:33";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -65,10 +65,12 @@ function healthCheck() {
       "[SYSTEM] Health Check - " + new Date().toISOString(),
       "This is a health check test email. If you are seeing this, the Gmail API is operational. This draft should be deleted."
     );
+    // Delete the draft immediately (we only needed to verify Gmail API is accessible)
+    testDraft.deleteDraft();
     results.checks.push({
       name: "Gmail API",
       status: "PASS",
-      detail: "Draft creation successful (not sent)"
+      detail: "Draft creation and deletion successful"
     });
   } catch (e) {
     results.checks.push({

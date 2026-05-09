@@ -1057,12 +1057,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.65";
+var SYSTEM_VERSION          = "2.5.72";
 var SYSTEM_BUILD_DATE       = "2026-05-08";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add FirestoreAuthService.js to deployment trigger paths";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-08 18:24:57";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Merge branch 'claude/fix-firestore-guide-docs-fEfiW' - full datetime cutover and Firestore reservation wrappers (ReservationService.js)";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-08 23:02:11";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

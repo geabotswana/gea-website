@@ -255,10 +255,13 @@ These are important for completeness but don't block core implementation.
 
 - [x] **Disaster Recovery RPO** — RESOLVED: 24 hours (same as RPO Target above)
 
-- [ ] **Disaster Recovery Runbook** — DEFERRED TO IMPLEMENTATION
-  - To be created by Claude Code when Phase 2 Disaster Recovery system is implemented
-  - Will include: backup restoration procedures, Google Drive version history restoration, GitHub code deployment
-  - Will be concrete with real file paths and commands
+- [x] **Disaster Recovery Runbook** — RESOLVED ✅
+  - Created: docs/operational/DISASTER_RECOVERY_RUNBOOK.md
+  - Includes: Backup restoration procedures, code rollback, complete system restoration
+  - Format: Concrete step-by-step procedures with decision trees and checklists
+  - Supports all recovery paths: Data restoration (45 min), Code rollback (30 min), Full system restoration (75 min)
+  - Includes: Communication templates, testing schedules, post-incident procedures
+  - Setup guide: docs/operational/DISASTER_RECOVERY_SETUP_GUIDE.md (8-phase implementation, ~1 hour)
 
 ---
 
@@ -395,11 +398,23 @@ These are implementation details for Phase 3 guides (60% & 50% ready). Less crit
 
 #### Holiday Calendar
 
-- [ ] **Holiday Calendar Integration** — TBD
-  - Load US Federal holidays?
-  - Load Botswana public holidays?
-  - Update frequency? (Annually before July 31?)
-  - Store in Holiday Calendar sheet?
+- [x] **Holiday Calendar Integration** — RESOLVED ✅
+  - [x] Load US Federal holidays? **YES** — 11 US Federal holidays loaded for 2026
+  - [x] Load Botswana public holidays? **YES** — 13 Botswana Public holidays loaded for 2026
+  - [x] Store in Holiday Calendar sheet? **YES** — "Holiday Calendar" tab in System Backend spreadsheet
+  - [x] One-Off holidays support? **YES** — "One-Off" holiday type for ad hoc declared holidays
+  - [x] Implementation location:
+    - **Config.js** (line 74): `TAB_HOLIDAY_CALENDAR = "Holiday Calendar"`
+    - **Config.js** (lines 599-611): Holiday type constants (US Federal, Botswana Public, One-Off)
+    - **Utilities.js** (lines 73-108): `getHolidays(year)`, `isHoliday(date)`, caching
+    - **Utilities.js** (lines 38-65): Integration in `addBusinessDays()` function
+  - [x] Data structure: holiday_id | holiday_date | holiday_name | holiday_type | holiday_year | notes | active | created_by | created_date
+  - [x] Features:
+    - Caching by year for performance (`_holidayCache`)
+    - Filters for "active" holidays only
+    - Used in business day calculations (skips weekends + holidays)
+    - Supports multiple holiday types in single sheet
+  - [x] Update frequency: **TBD** (Manual updates to Holiday Calendar sheet; consider automating annually before July 31)
 
 ### **CLAUDE_DisasterRecovery.md** (8 items) ✅
 
@@ -683,10 +698,10 @@ These are implementation details for Phase 3 guides (60% & 50% ready). Less crit
 | **Phase 2** | Deployment | 1 | ✅ **RESOLVED** |
 | **Phase 2** | Disaster Recovery | 4 | ✅ **RESOLVED** |
 | **Phase 2** | Security | 3 | ✅ **2 RESOLVED, 1 DEFERRED** |
-| **Phase 3** | Google APIs | 15+ | ✅ **ALL RESOLVED** |
+| **Phase 3** | Google APIs | 16 | ✅ **ALL RESOLVED** (Holiday Calendar integrated) |
 | **Phase 3** | Payments | 16 | ✅ **ALL RESOLVED** |
 | **Phase 3** | Disaster Recovery (implementation) | 8 | ✅ **ALL RESOLVED** |
-| | | **~50 total items** | **PHASE 1-2-3 COMPLETE** |
+| | | **~51 total items** | **PHASE 1-2-3 COMPLETE** |
 
 ---
 

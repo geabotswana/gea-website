@@ -4,28 +4,18 @@ on:
     workflows: ["Auto-update Deployment Metadata"]
     types: [completed]
   workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to deploy (default: main)'
-        required: false
-        default: 'main'
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Pull latest changes
-        run: |
-          BRANCH="${{ github.event.inputs.branch || 'main' }}"
-          echo "Deploying from branch: $BRANCH"
-          git pull origin "$BRANCH"
+      - name: Pull latest changes from main
+        run: git pull origin main
 
       - name: Get commit message
         id: commit_msg
-        run: |
-          BRANCH="${{ github.event.inputs.branch || 'main' }}"
-          echo "message=$(git log -1 --pretty=%B $BRANCH | head -1)" >> $GITHUB_OUTPUT
+        run: echo "message=$(git log -1 --pretty=%B | head -1)" >> $GITHUB_OUTPUT
 
       - name: Set up Python
         uses: actions/setup-python@v5

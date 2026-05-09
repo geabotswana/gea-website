@@ -41,7 +41,7 @@ function healthCheck() {
 
   // Check 1: Sheets API (read from Member Directory)
   try {
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID_MEMBERS);
+    var ss = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
     var membersSheet = ss.getSheetByName(TAB_HOUSEHOLDS);
     var data = membersSheet.getRange(1, 1, 1, 5).getValues();
     results.checks.push({
@@ -82,7 +82,7 @@ function healthCheck() {
 
   // Check 3: Audit Log accessible
   try {
-    var systemSheet = SpreadsheetApp.openById(SPREADSHEET_ID_SYSTEM);
+    var systemSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
     var auditSheet = systemSheet.getSheetByName(TAB_AUDIT_LOG);
     var auditData = auditSheet.getRange(1, 1, 1, 5).getValues();
     results.checks.push({
@@ -102,10 +102,10 @@ function healthCheck() {
   // Log result
   if (results.allPassed) {
     Logger.log("✅ Health check PASSED at " + results.timestamp);
-    logAuditEntry("HEALTH_CHECK_PASSED", null, "All checks passed", null);
+    logAuditEntry(null, "HEALTH_CHECK_PASSED", null, null, "All checks passed");
   } else {
     Logger.log("❌ Health check FAILED at " + results.timestamp);
-    logAuditEntry("HEALTH_CHECK_FAILED", null, JSON.stringify(results.checks), null);
+    logAuditEntry(null, "HEALTH_CHECK_FAILED", null, null, JSON.stringify(results.checks));
 
     // Check failure count in past hour
     var failureCount = _countRecentHealthCheckFailures(60);
@@ -123,10 +123,11 @@ function healthCheck() {
 /**
  * Count health check failures in the past N minutes.
  * Returns count of HEALTH_CHECK_FAILED entries.
+ * Audit Log columns: timestamp(0), user_email(1), action_type(2), target_type(3), target_id(4), details(5), ip_address(6)
  */
 function _countRecentHealthCheckFailures(minutesBack) {
   try {
-    var systemSheet = SpreadsheetApp.openById(SPREADSHEET_ID_SYSTEM);
+    var systemSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
     var auditSheet = systemSheet.getSheetByName(TAB_AUDIT_LOG);
     var allData = auditSheet.getDataRange().getValues();
 
@@ -136,8 +137,8 @@ function _countRecentHealthCheckFailures(minutesBack) {
     var count = 0;
     for (var i = 1; i < allData.length; i++) {
       var row = allData[i];
-      var actionType = row[2]; // Column 3: action_type
-      var timestamp = new Date(row[0]); // Column 1: timestamp
+      var actionType = row[2]; // Column 2: action_type (0-indexed)
+      var timestamp = new Date(row[0]); // Column 0: timestamp
 
       if (actionType === "HEALTH_CHECK_FAILED" && timestamp >= cutoffTime) {
         count++;
@@ -244,7 +245,14 @@ function runDiagnostics() {
     { id: SPREADSHEET_ID_PAYMENTS, name: "Payments" }
   ];
 
-  sheetTests.forEach(function(sheet) {
+  var sheetTestDefs = [
+    { id: MEMBER_DIRECTORY_ID, name: "Member Directory" },
+    { id: RESERVATIONS_ID, name: "Reservations" },
+    { id: SYSTEM_BACKEND_ID, name: "System Backend" },
+    { id: PAYMENT_TRACKING_ID, name: "Payments" }
+  ];
+
+  sheetTestDefs.forEach(function(sheet) {
     try {
       var ss = SpreadsheetApp.openById(sheet.id);
       var sheetList = ss.getSheets();
@@ -287,7 +295,7 @@ function runDiagnostics() {
   // TEST 5: Authentication (Sessions sheet)
   Logger.log("\nTEST 5: Authentication System");
   try {
-    var systemSheet = SpreadsheetApp.openById(SPREADSHEET_ID_SYSTEM);
+    var systemSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
     var sessionsSheet = systemSheet.getSheetByName(TAB_SESSIONS);
     var sessionCount = sessionsSheet.getLastRow();
     report.details.push({
@@ -305,7 +313,7 @@ function runDiagnostics() {
   // TEST 6: Data Integrity - Sample rows
   Logger.log("\nTEST 6: Data Integrity (Sample Rows)");
   try {
-    var membersSheet = SpreadsheetApp.openById(SPREADSHEET_ID_MEMBERS).getSheetByName(TAB_HOUSEHOLDS);
+    var membersSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
     var memberData = membersSheet.getRange(2, 1, Math.min(10, membersSheet.getLastRow() - 1), 5).getValues();
     var intactRows = memberData.filter(function(row) { return row[0]; }).length;
 
@@ -324,7 +332,7 @@ function runDiagnostics() {
   // TEST 7: Audit Log accessibility
   Logger.log("\nTEST 7: Audit Log");
   try {
-    var auditSheet = SpreadsheetApp.openById(SPREADSHEET_ID_SYSTEM).getSheetByName(TAB_AUDIT_LOG);
+    var auditSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_AUDIT_LOG);
     var auditCount = auditSheet.getLastRow();
     report.details.push({
       test: "Audit Log",
@@ -397,10 +405,10 @@ function performDailyBackup() {
 
   // Define sheets to backup
   var sheetsToBackup = [
-    { id: SPREADSHEET_ID_MEMBERS, name: "Members" },
-    { id: SPREADSHEET_ID_RESERVATIONS, name: "Reservations" },
-    { id: SPREADSHEET_ID_PAYMENTS, name: "Payments" },
-    { id: SPREADSHEET_ID_SYSTEM, name: "System" }
+    { id: MEMBER_DIRECTORY_ID, name: "Members" },
+    { id: RESERVATIONS_ID, name: "Reservations" },
+    { id: PAYMENT_TRACKING_ID, name: "Payments" },
+    { id: SYSTEM_BACKEND_ID, name: "System" }
   ];
 
   // Export each sheet
@@ -422,7 +430,7 @@ function performDailyBackup() {
       });
 
       Logger.log("✅ Backed up " + sheetDef.name + " → " + fileName);
-      logAuditEntry("BACKUP_EXPORT_SUCCESS", null, sheetDef.name + " exported as " + fileName, null);
+      logAuditEntry(null, "BACKUP_EXPORT_SUCCESS", null, null, sheetDef.name + " exported as " + fileName);
 
     } catch (e) {
       results.exports.push({
@@ -432,7 +440,7 @@ function performDailyBackup() {
         timestamp: new Date()
       });
       Logger.log("❌ Failed to backup " + sheetDef.name + ": " + e);
-      logAuditEntry("BACKUP_EXPORT_FAILED", null, sheetDef.name + " - " + e.toString(), null);
+      logAuditEntry(null, "BACKUP_EXPORT_FAILED", null, null, sheetDef.name + " - " + e.toString());
     }
   });
 
@@ -466,7 +474,7 @@ function _cleanupOldBackups(folder, daysToKeep) {
   var cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 
-  var files = folder.getFilesByName(/.+/);
+  var files = folder.getFiles();
   var deletedCount = 0;
 
   while (files.hasNext()) {
@@ -595,14 +603,14 @@ function logIncident(date, time, description, impact, resolution, durationMinute
     }
 
     var financialFolder = financialFolders.next();
-    var logSheets = financialFolder.getFilesByName(sheetName);
+    var logFiles = financialFolder.getFilesByName(sheetName);
 
-    if (!logSheets.hasNext()) {
+    if (!logFiles.hasNext()) {
       Logger.log("⚠️ Incident Log sheet not found. Run initializeIncidentLog() first.");
       return;
     }
 
-    var logFile = logSheets.next();
+    var logFile = logFiles.next();
     var logSs = SpreadsheetApp.openById(logFile.getId());
     var logSheet = logSs.getActiveSheet();
 

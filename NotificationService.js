@@ -12,7 +12,8 @@
  * TRIGGER SETUP (do this once in Apps Script → Triggers):
  *   Function                  Frequency        Suggested Time
  *   ─────────────────────     ──────────────   ──────────────
- *   runNightlyTasks()         Daily            2:00 AM
+ *   runNightlyTasks()         Daily            2:00 AM (includes backup export)
+ *   healthCheck()             Daily            4:00 AM (after backup completes)
  *   sendRsoDailySummary()     Daily            6:00 AM
  *   sendHolidayCalReminder()  Day of year      Nov 1 (yearly)
  *
@@ -33,6 +34,14 @@
  */
 function runNightlyTasks() {
   Logger.log("=== Nightly tasks starting: " + new Date().toString() + " ===");
+
+  // 0. BACKUP: Export critical sheets to cloud storage
+  //    (Must run before other tasks to ensure fresh backup)
+  try {
+    performDailyBackup();
+  } catch (e) {
+    Logger.log("ERROR in performDailyBackup: " + e);
+  }
 
   // 1. Membership renewals: send 30-day and 7-day reminders,
   //    deactivate households that expired today

@@ -67,7 +67,7 @@ Ordered by dependencies and risk profile:
 - **Why:** Can be migrated together (Guest Lists reference Reservations)
 - **Risk:** Medium — booking logic is complex
 - **Dependencies:** Needs live Households/Individuals for lookups
-- **Firestore collections:** `reservations`, `reservations/{id}/guest_lists`
+- **Firestore collections:** `reservations`, `guest_lists`
 - **Code change:** Update ReservationService → FirestoreReservationService
 - **Hybrid Mode:** Can query live Households from Sheets during transition
 
@@ -75,9 +75,10 @@ Ordered by dependencies and risk profile:
 - **Why:** Manageable size, complex approval workflow
 - **Risk:** Medium — multi-stage approval process
 - **Dependencies:** Needs live Individuals for lookups
-- **Firestore collections:** `individuals/{id}/file_submissions`
-- **Code change:** Update FileSubmissionService → FirestoreFileService
-- **Hybrid Mode:** Can query live Individuals from Sheets during transition
+- **Firestore collections:** `submissions` (top-level collection keyed by `submission_id`)
+- **Code change:** Update FileSubmissionService → FirestorePhase4Service submission helpers
+- **Hybrid Mode:** FileSubmissionService writes to Sheets and mirrors to Firestore; reads are Firestore-first with Sheets fallback during transition
+- **Design decision:** Use a top-level collection rather than `individuals/{id}/file_submissions` so RSO/board queues can query by `status`, `submission_type`, `document_type`, and `application_id` without collection-group support in Apps Script.
 
 ### Phase 5: Payments (MEDIUM)
 - **Why:** Financial data — requires careful validation
@@ -300,7 +301,7 @@ Ordered by dependencies and risk profile:
 
 **Purpose:** Facility reservations  
 **Document ID:** Use `reservation_id`  
-**Subcollection:** `guest_lists` (1:N relationship)
+**Related collection:** `guest_lists` (one upsert document per reservation)
 
 ```json
 {
@@ -348,11 +349,11 @@ Ordered by dependencies and risk profile:
 **Migration Notes:**
 - Index on `facility`, `reservation_date`, `status`, `household_id`
 - Denormalize `household_name` for quick display without joins
-- Subcollection `guest_lists` for 1:N relationship (see below)
+- Top-level `guest_lists` documents keyed by `reservation_id` for the current upsert model
 
 ---
 
-### 6. `reservations/{reservation_id}/guest_lists` Subcollection
+### 6. `guest_lists` Collection
 
 **Purpose:** Guest list for a reservation  
 **Document ID:** Use `guest_list_id`
@@ -389,7 +390,7 @@ Ordered by dependencies and risk profile:
 
 ---
 
-### 7. `individuals/{individual_id}/file_submissions` Subcollection
+### 7. `submissions` Collection
 
 **Purpose:** Document and photo uploads  
 **Document ID:** Use `submission_id`
@@ -429,8 +430,8 @@ Ordered by dependencies and risk profile:
 - (None — all fields actively used)
 
 **Migration Notes:**
-- Subcollection under `individuals/{id}/file_submissions` for clean relationship
-- Index on `status`, `is_current`, `document_type`
+- Top-level collection by design for efficient RSO/board queues and Apps Script FirestoreApp compatibility
+- Index on `individual_id`, `application_id`, `status`, `is_current`, `document_type`, and `submission_type`
 - RSO approval workflow: Store token hash (never plaintext)
 
 ---
@@ -654,7 +655,7 @@ Based on current system load:
 | `sessions` | 50 (active) | 0.5 KB | 25 KB |
 | `reservations` | 5,000 | 1.5 KB | 7.5 MB |
 | `guest_lists` | 10,000 | 0.8 KB | 8 MB |
-| `file_submissions` | 1,200 | 1.2 KB | 1.4 MB |
+| `submissions` | 1,200 | 1.2 KB | 1.4 MB |
 | `payments` | 2,000 | 1.0 KB | 2 MB |
 | `applications` | 300 | 2.5 KB | 750 KB |
 | `administrators` | 15 | 0.6 KB | 9 KB |

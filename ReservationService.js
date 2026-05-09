@@ -1663,10 +1663,3 @@ function _sendBumpNotification(bumpedRes, bumperRes) {
     });
   } catch (e) { Logger.log("WARN _sendBumpNotification: " + e); }
 }
-
-function _getPrimaryFirstName(householdId) {
-  try {
-    var hh = getHouseholdById(householdId);
-    return hh ? (hh.primary_first_name || hh.household_name || "") : "";
-  } catch (e) { return ""; }
-}

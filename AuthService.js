@@ -1117,27 +1117,6 @@ function _updateAdminField(adminId, fieldName, value) {
 
 /**
  * INTERNAL: Invalidates all active sessions for a specific email address.
- * Used when a user resets their password to force them to re-authenticate.
- *
- * @param {string} email  Email address whose sessions should be invalidated
- */
-function _invalidateSessionsForEmail(email) {
-  try {
-    var sheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
-    var data = sheet.getDataRange().getValues();
-    var headers = data[0];
-    var emailCol = headers.indexOf("email");
-    var actCol = headers.indexOf("active");
-
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][emailCol] === email && data[i][actCol]) {
-        sheet.getRange(i + 1, actCol + 1).setValue(false);
-      }
-    }
-  } catch (e) {
-    Logger.log("ERROR _invalidateSessionsForEmail: " + e);
-  }
-}
 
 
 // ============================================================
@@ -2056,28 +2035,6 @@ function _setAdminActiveFlag(adminId, active, callerEmail) {
 }
 
 /**
- * Invalidates all active sessions for the given email.
- * Used when deactivating an account or resetting a password.
- * @param {string} email
- */
-function _invalidateSessionsForEmail(email) {
-  try {
-    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
-    var data    = sheet.getDataRange().getValues();
-    var headers = data[0];
-    var emlCol  = headers.indexOf("email");
-    var actCol  = headers.indexOf("active");
-
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][emlCol] === email && data[i][actCol]) {
-        sheet.getRange(i + 1, actCol + 1).setValue(false);
-      }
-    }
-  } catch (e) {
-    Logger.log("ERROR _invalidateSessionsForEmail: " + e);
-  }
-}
-
 /**
  * Returns a subset of member fields safe to send to the browser.
  * Strips sensitive fields (document numbers, payment info, etc.)

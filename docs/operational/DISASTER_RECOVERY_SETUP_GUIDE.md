@@ -212,21 +212,22 @@ The GEA system now has automated disaster recovery infrastructure. This guide wa
      ```
      === GEA SYSTEM DIAGNOSTICS ===
 
-     TEST 1: Apps Script Deployment
-     ✅ Apps Script deployment is responding
-
-     TEST 2: Sheets API (Critical Sheets)
+     TEST 1: Sheets API (Critical Sheets)
      ✅ Member Directory (...): OK
      ✅ Reservations (...): OK
      ✅ System Backend (...): OK
      ✅ Payments (...): OK
 
+     TEST 2: Gmail API
+     ✅ Gmail accessible, [N] messages remaining
+
      ... [more tests] ...
 
      === SUMMARY ===
-     Tests run: 7
-     Passed: 7
+     Tests run: 6
+     Passed: 6
      Failed: 0
+     (6 core tests: Sheets API, Gmail API, Cloud Storage, Sessions, Data Integrity, Audit Log)
      ✅ No critical issues detected
      ```
 

@@ -36,7 +36,7 @@
 
 1. **Automated Health Check** (4:00 AM daily)
    - Apps Script automatically tests Sheets, Gmail, Audit Log
-   - If 3+ failures in 1 hour → Alert email to Treasurer + board@geabotswana.org
+   - On ANY failure → Alert email sent to Treasurer + board@geabotswana.org
    - Check email for alerts each morning
 
 2. **Member/Board Notification** (Real-time)

@@ -7,9 +7,10 @@
  *
  * FUNCTIONS TO ATTACH AS TRIGGERS:
  *   healthCheck() — Daily at 4:00 AM (after backup at 2:00 AM)
+ *     Alerts Treasurer + Board on ANY health check failure
  *
  * MANUAL FUNCTIONS (run from Apps Script editor):
- *   runDiagnostics() — Comprehensive system health report
+ *   runDiagnostics() — Comprehensive system health report (6 core tests)
  *   performDailyBackup() — Manually trigger backup export
  * ============================================================
  */

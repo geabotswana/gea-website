@@ -106,11 +106,8 @@ function healthCheck() {
 
     // Check failure count in past hour
     var failureCount = _countRecentHealthCheckFailures(60);
-    if (failureCount >= 3) {
-      _sendHealthCheckAlert(results, true); // escalation
-    } else {
-      _sendHealthCheckAlert(results, false); // normal alert
-    }
+    // Alert on any failure (escalation = true) since daily checks should be rare failures
+    _sendHealthCheckAlert(results, true);
   }
 
   return results;
@@ -151,13 +148,10 @@ function _countRecentHealthCheckFailures(minutesBack) {
 
 /**
  * Send alert email for health check failure.
- * escalation = true → send to Treasurer + Board
- * escalation = false → send to Treasurer only
+ * Alerts both Treasurer and Board on any health check failure.
  */
 function _sendHealthCheckAlert(results, escalation) {
-  var subject = escalation
-    ? "🚨 GEA ESCALATION: Health Check Failed Multiple Times"
-    : "⚠️ GEA Health Check Failed";
+  var subject = "🚨 GEA Health Check Failed - Immediate Investigation Required";
 
   var body = "GEA System Health Check Results:\n\n";
   body += "Time: " + results.timestamp.toISOString() + "\n\n";
@@ -174,16 +168,11 @@ function _sendHealthCheckAlert(results, escalation) {
   body += "3. Run Tests.js > runDiagnostics() for detailed diagnostics\n";
   body += "4. Check Apps Script execution logs\n\n";
 
-  if (escalation) {
-    body += "This is an ESCALATION alert: Health check failed 3+ times in 1 hour.\n";
-    body += "Immediate investigation required.\n";
-  }
+  body += "Contact Claude Code / Developer if the issue persists.\n";
 
   try {
     MailApp.sendEmail(EMAIL_TREASURER, subject, body);
-    if (escalation) {
-      MailApp.sendEmail(EMAIL_BOARD, subject, body);
-    }
+    MailApp.sendEmail(EMAIL_BOARD, subject, body);
   } catch (e) {
     Logger.log("ERROR sending health check alert: " + e);
   }
@@ -218,23 +207,8 @@ function runDiagnostics() {
 
   Logger.log("\n=== GEA SYSTEM DIAGNOSTICS ===\n");
 
-  // TEST 1: Apps Script deployment
-  Logger.log("TEST 1: Apps Script Deployment");
-  try {
-    var deploymentInfo = {
-      status: "PASS",
-      detail: "Apps Script is responding"
-    };
-    report.details.push({ test: "Apps Script Deployment", ...deploymentInfo });
-    Logger.log("✅ Apps Script deployment is responding");
-  } catch (e) {
-    report.details.push({ test: "Apps Script Deployment", status: "FAIL", detail: e.toString() });
-    report.criticalIssues.push("Apps Script deployment not accessible: " + e);
-    Logger.log("❌ Apps Script deployment error: " + e);
-  }
-
-  // TEST 2: Sheets API - All 4 critical sheets
-  Logger.log("\nTEST 2: Sheets API (Critical Sheets)");
+  // TEST 1: Sheets API - All 4 critical sheets
+  Logger.log("TEST 1: Sheets API (Critical Sheets)");
   var sheetTestDefs = [
     { id: MEMBER_DIRECTORY_ID, name: "Member Directory" },
     { id: RESERVATIONS_ID, name: "Reservations" },
@@ -259,8 +233,8 @@ function runDiagnostics() {
     }
   });
 
-  // TEST 3: Gmail API
-  Logger.log("\nTEST 3: Gmail API");
+  // TEST 2: Gmail API
+  Logger.log("\nTEST 2: Gmail API");
   try {
     // Check Gmail quota without requiring broad mail.google.com scope
     var quota = MailApp.getRemainingDailyQuota();
@@ -272,8 +246,8 @@ function runDiagnostics() {
     Logger.log("❌ Gmail API error: " + e);
   }
 
-  // TEST 4: Cloud Storage bucket (backup)
-  Logger.log("\nTEST 4: Cloud Storage (Backup Bucket)");
+  // TEST 3: Cloud Storage bucket (backup)
+  Logger.log("\nTEST 3: Cloud Storage (Backup Bucket)");
   try {
     var cloudStorage = DriveApp.getRootFolder().getId();
     report.details.push({ test: "Cloud Storage", status: "PASS", detail: "Drive API accessible" });
@@ -283,8 +257,8 @@ function runDiagnostics() {
     Logger.log("⚠️ Cloud Storage access limited: " + e);
   }
 
-  // TEST 5: Authentication (Sessions sheet)
-  Logger.log("\nTEST 5: Authentication System");
+  // TEST 4: Authentication (Sessions sheet)
+  Logger.log("\nTEST 4: Authentication System");
   try {
     var systemSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
     var sessionsSheet = systemSheet.getSheetByName(TAB_SESSIONS);
@@ -301,27 +275,40 @@ function runDiagnostics() {
     Logger.log("❌ Sessions sheet error: " + e);
   }
 
-  // TEST 6: Data Integrity - Sample rows
-  Logger.log("\nTEST 6: Data Integrity (Sample Rows)");
+  // TEST 5: Data Integrity - Sample rows
+  Logger.log("\nTEST 5: Data Integrity (Sample Rows)");
   try {
     var membersSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
-    var memberData = membersSheet.getRange(2, 1, Math.min(10, membersSheet.getLastRow() - 1), 5).getValues();
-    var intactRows = memberData.filter(function(row) { return row[0]; }).length;
+    var lastRow = membersSheet.getLastRow();
+    var dataRows = Math.max(0, lastRow - 1); // Subtract 1 for header row
 
-    report.details.push({
-      test: "Households Data Integrity",
-      status: "PASS",
-      detail: intactRows + " of " + memberData.length + " sample rows readable"
-    });
-    Logger.log("✅ Households data sample: " + intactRows + "/" + memberData.length + " rows readable");
+    if (dataRows === 0) {
+      report.details.push({
+        test: "Households Data Integrity",
+        status: "PASS",
+        detail: "Sheet has header only (no data rows)"
+      });
+      Logger.log("⚠️ Households sheet: header only (no data rows)");
+    } else {
+      var rowsToRead = Math.min(10, dataRows);
+      var memberData = membersSheet.getRange(2, 1, rowsToRead, 5).getValues();
+      var intactRows = memberData.filter(function(row) { return row[0]; }).length;
+
+      report.details.push({
+        test: "Households Data Integrity",
+        status: "PASS",
+        detail: intactRows + " of " + rowsToRead + " sample rows readable"
+      });
+      Logger.log("✅ Households data sample: " + intactRows + "/" + rowsToRead + " rows readable");
+    }
   } catch (e) {
     report.details.push({ test: "Data Integrity", status: "FAIL", detail: e.toString() });
     report.criticalIssues.push("Data integrity check failed: " + e);
     Logger.log("❌ Data integrity check failed: " + e);
   }
 
-  // TEST 7: Audit Log accessibility
-  Logger.log("\nTEST 7: Audit Log");
+  // TEST 6: Audit Log accessibility
+  Logger.log("\nTEST 6: Audit Log");
   try {
     var auditSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_AUDIT_LOG);
     var auditCount = auditSheet.getLastRow();
@@ -351,6 +338,7 @@ function runDiagnostics() {
   Logger.log("Tests run: " + report.summary.testsRun);
   Logger.log("Passed: " + report.summary.passed);
   Logger.log("Failed: " + report.summary.failed);
+  Logger.log("(6 core tests: Sheets API, Gmail API, Cloud Storage, Sessions, Data Integrity, Audit Log)");
 
   if (report.criticalIssues.length > 0) {
     Logger.log("\n❌ CRITICAL ISSUES:");

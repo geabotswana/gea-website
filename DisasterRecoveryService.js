@@ -433,38 +433,16 @@ function performDailyBackup() {
 
 
 /**
- * Get or create Financial Records folder for Incident Log.
- * Attempts to use shared drive (GEA Administration) if configured.
- * Falls back to personal Drive with warning if shared drive not configured.
+ * Get Incident Log folder in GEA Administration Shared Drive.
+ * Incident logs are stored in the shared drive System Data folder.
  */
 function _getOrCreateIncidentLogFolder() {
-  var folderName = "Financial Records";
-
   try {
-    // Try to use shared drive folder if SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID is configured
-    if (typeof SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID !== 'undefined' && SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID) {
-      try {
-        var sharedFolder = DriveApp.getFolderById(SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID);
-        Logger.log("✅ Using configured shared drive: Financial Records");
-        return sharedFolder;
-      } catch (e) {
-        Logger.log("⚠️ Shared drive folder not accessible: " + e.toString());
-      }
-    }
-
-    // Fall back to personal Drive
-    Logger.log("⚠️ SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID not configured. Using personal Drive.");
-    Logger.log("   TODO: Add shared drive folder ID to Config.js for production use.");
-    var root = DriveApp.getRootFolder();
-    var folders = root.getFoldersByName(folderName);
-
-    if (folders.hasNext()) {
-      return folders.next();
-    } else {
-      return root.createFolder(folderName);
-    }
+    // Use shared drive System Data folder for incident logs
+    var sharedFolder = DriveApp.getFolderById(SHARED_DRIVE_SYSTEM_DATA_FOLDER_ID);
+    return sharedFolder;
   } catch (e) {
-    Logger.log("❌ Error accessing folder: " + e.toString());
+    Logger.log("❌ Error accessing Shared Drive System Data folder: " + e.toString());
     return null;
   }
 }
@@ -526,19 +504,15 @@ function _cleanupOldBackups(folder, daysToKeep) {
  * Creates Google Sheet with columns:
  * log_id | timestamp | description | impact | resolution | duration_minutes | root_cause | lessons_learned
  *
- * Location: GEA Administration Shared Drive (Financial Records folder)
+ * Location: GEA Administration Shared Drive (System Data folder)
  * Naming: "GEA Incident Log [YEAR]"
- *
- * TODO: If SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID is not configured in Config.js,
- * this will create the folder in personal Drive as a fallback with a warning.
- * Update Config.js once shared drive folder ID is available.
  */
 function initializeIncidentLog() {
   var year = new Date().getFullYear();
   var sheetName = "GEA Incident Log " + year;
 
   try {
-    // Find or create Financial Records folder (prefers shared drive if configured)
+    // Get System Data folder from GEA Administration Shared Drive
     var financialFolder = _getOrCreateIncidentLogFolder();
 
     // Check if incident log already exists
@@ -586,7 +560,7 @@ function initializeIncidentLog() {
     financialFolder.addFile(file);
 
     Logger.log("✅ Created Incident Log: " + sheetName);
-    Logger.log("📁 Location: Financial Records folder (on GEA Administration Shared Drive)");
+    Logger.log("📁 Location: System Data folder (GEA Administration Shared Drive)");
     Logger.log("📊 Spreadsheet ID: " + ss.getId());
 
     return ss;
@@ -616,10 +590,10 @@ function logIncident(date, time, description, impact, resolution, durationMinute
     var year = new Date().getFullYear();
     var sheetName = "GEA Incident Log " + year;
 
-    // Find Financial Records folder (prefers shared drive if configured)
+    // Get System Data folder from GEA Administration Shared Drive
     var financialFolder = _getOrCreateIncidentLogFolder();
     if (!financialFolder) {
-      Logger.log("⚠️ Could not access Financial Records folder. Check shared drive configuration.");
+      Logger.log("⚠️ Could not access Shared Drive System Data folder.");
       return;
     }
     var logFiles = financialFolder.getFilesByName(sheetName);

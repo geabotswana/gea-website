@@ -546,7 +546,7 @@ Current Actions:
 - Running system diagnostics
 - Attempting restoration from backup
 
-We apologize for the inconvenience. Updates will be provided 
+We apologize for the inconvenience. Updates will be provided
 every 30 minutes.
 
 Questions? Contact: board@geabotswana.org

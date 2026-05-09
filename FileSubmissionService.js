@@ -80,6 +80,7 @@ function uploadFileSubmission(params) {
 
     _handleOldSubmissionOnReplacement_(payload.individual_id, documentType);
     _appendRowByHeaders_(submissionSheet, payload);
+    _mirrorFileSubmissionToFirestore_(payload);
 
     if (documentType === "passport" || documentType === "omang") {
       // RSO now reviews documents via portal login (RSO links discontinued)
@@ -231,7 +232,7 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
     var ids = individual_ids || [];
     for (var i = 0; i < ids.length; i++) {
       var submissionSheet = _getFileSubmissionsSheet_();
-      _appendRowByHeaders_(submissionSheet, {
+      var employmentPayload = {
         submission_id: generateId("FSB"),
         individual_id: ids[i],
         document_type: "employment",
@@ -241,7 +242,9 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
         request_reason: request_reason || "Employment verification requested",
         household_id: household_id,
         is_current: true
-      });
+      };
+      _appendRowByHeaders_(submissionSheet, employmentPayload);
+      _mirrorFileSubmissionToFirestore_(employmentPayload);
     }
     return { ok: true, requested_count: ids.length };
   } catch (e) {
@@ -257,15 +260,12 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
  */
 function checkApplicationDocumentReadiness(applicationId) {
   try {
-    var sheet = _getFileSubmissionsSheet_();
-    var data = sheet.getDataRange().getValues();
-    var headers = data[0];
+    var allSubmissions = _getAllSubmissions_();
     var submissions = [];
 
-    for (var i = 1; i < data.length; i++) {
-      var obj = rowToObject(headers, data[i]);
-      if (obj.application_id === applicationId) {
-        submissions.push(obj);
+    for (var i = 0; i < allSubmissions.length; i++) {
+      if (allSubmissions[i].application_id === applicationId) {
+        submissions.push(allSubmissions[i]);
       }
     }
 
@@ -637,7 +637,22 @@ function _appendRowByHeaders_(sheet, obj) {
   sheet.appendRow(row);
 }
 
+function _mirrorFileSubmissionToFirestore_(payload) {
+  try {
+    firestoreCreateSubmission(payload);
+  } catch (e) {
+    Logger.log("WARN FileSubmission Firestore mirror: " + e.message);
+  }
+}
+
 function _findSubmissionById_(submissionId) {
+  try {
+    var fsSubmission = firestoreGetSubmission(submissionId);
+    if (fsSubmission) return { firestore: true, obj: fsSubmission };
+  } catch (e) {
+    Logger.log("WARN _findSubmissionById_ Firestore fallback: " + e.message);
+  }
+
   var sheet = _getFileSubmissionsSheet_();
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -651,6 +666,13 @@ function _findSubmissionById_(submissionId) {
 }
 
 function _findSubmissionByToken_(token) {
+  try {
+    var fsSubmission = firestoreGetSubmissionByRsoToken(token);
+    if (fsSubmission) return { firestore: true, obj: fsSubmission };
+  } catch (e) {
+    Logger.log("WARN _findSubmissionByToken_ Firestore fallback: " + e.message);
+  }
+
   var sheet = _getFileSubmissionsSheet_();
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
@@ -664,6 +686,20 @@ function _findSubmissionByToken_(token) {
 }
 
 function _setSubmissionFields_(found, patch) {
+  if (!found || !found.obj) return;
+
+  for (var patchKey in patch) {
+    if (patch.hasOwnProperty(patchKey)) found.obj[patchKey] = patch[patchKey];
+  }
+
+  if (found.firestore) {
+    try { firestoreUpdateSubmission(found.obj.submission_id, patch); } catch (e) {
+      Logger.log("WARN _setSubmissionFields_ Firestore update: " + e.message);
+    }
+    _mirrorSubmissionPatchToSheet_(found.obj.submission_id, patch);
+    return;
+  }
+
   var headers = found.headers;
   for (var key in patch) {
     if (!patch.hasOwnProperty(key)) continue;
@@ -672,6 +708,31 @@ function _setSubmissionFields_(found, patch) {
       found.sheet.getRange(found.rowIndex, col).setValue(patch[key]);
       found.obj[key] = patch[key];
     }
+  }
+
+  try { firestoreUpdateSubmission(found.obj.submission_id, patch); } catch (fsErr) {
+    Logger.log("WARN _setSubmissionFields_ Firestore mirror: " + fsErr.message);
+  }
+}
+
+function _mirrorSubmissionPatchToSheet_(submissionId, patch) {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var idCol = headers.indexOf("submission_id");
+    if (idCol < 0) return;
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][idCol] !== submissionId) continue;
+      for (var key in patch) {
+        if (!patch.hasOwnProperty(key)) continue;
+        var col = headers.indexOf(key) + 1;
+        if (col > 0) sheet.getRange(i + 1, col).setValue(patch[key]);
+      }
+      return;
+    }
+  } catch (e) {
+    Logger.log("WARN _mirrorSubmissionPatchToSheet_: " + e.message);
   }
 }
 
@@ -685,12 +746,33 @@ function _getSubmissionsForIndividual_(individualId) {
 }
 
 function _getAllSubmissions_() {
-  var sheet = _getFileSubmissionsSheet_();
-  var data = sheet.getDataRange().getValues();
-  var headers = data[0];
-  var out = [];
-  for (var i = 1; i < data.length; i++) out.push(rowToObject(headers, data[i]));
-  return out;
+  var byId = {};
+  var ordered = [];
+
+  function addSubmission(submission) {
+    if (!submission) return;
+    var id = submission.submission_id || ('NO_ID_' + ordered.length);
+    if (!byId[id]) ordered.push(id);
+    byId[id] = submission;
+  }
+
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    for (var i = 1; i < data.length; i++) addSubmission(rowToObject(headers, data[i]));
+  } catch (sheetErr) {
+    Logger.log("WARN _getAllSubmissions_ Sheets read: " + sheetErr.message);
+  }
+
+  try {
+    var fsSubmissions = firestoreGetAllSubmissions();
+    for (var j = 0; j < fsSubmissions.length; j++) addSubmission(fsSubmissions[j]);
+  } catch (fsErr) {
+    Logger.log("WARN _getAllSubmissions_ Firestore read: " + fsErr.message);
+  }
+
+  return ordered.map(function(id) { return byId[id]; });
 }
 
 /**
@@ -711,6 +793,9 @@ function removeDocumentSubmission(individualId, documentType, callerEmail) {
         var submissionId = obj.submission_id;
         var fileId = obj.file_id;
         sheet.deleteRow(i + 1);
+        try { firestoreDeleteSubmission(submissionId); } catch (fsErr) {
+          Logger.log("WARN removeDocumentSubmission Firestore delete: " + fsErr.message);
+        }
         if (fileId) {
           try { DriveApp.getFileById(fileId).setTrashed(true); } catch (fe) { /* file already gone */ }
         }
@@ -743,6 +828,9 @@ function removeAllFileSubmissionsForIndividual(individualId, callerEmail) {
       if (obj.individual_id === individualId) {
         var fileId = obj.file_id;
         sheet.deleteRow(i + 1);
+        try { firestoreDeleteSubmission(obj.submission_id); } catch (fsErr) {
+          Logger.log("WARN removeAllFileSubmissionsForIndividual Firestore delete: " + fsErr.message);
+        }
         deletedCount++;
 
         // Clean up associated Drive file
@@ -774,6 +862,9 @@ function _expireCurrentSubmission_(individualId, documentType) {
       var disabledCol = headers.indexOf("disabled_date") + 1;
       if (currCol > 0) sheet.getRange(i + 1, currCol).setValue(false);
       if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(formatDate(new Date(), true));
+      try { firestoreUpdateSubmission(obj.submission_id, { is_current: false, disabled_date: formatDate(new Date(), true) }); } catch (fsErr) {
+        Logger.log("WARN _expireCurrentSubmission_ Firestore mirror: " + fsErr.message);
+      }
     }
   }
 }
@@ -794,6 +885,9 @@ function _handleOldSubmissionOnReplacement_(individualId, documentType) {
         // Unapproved submission - delete it completely
         var fileId = obj.file_id;
         sheet.deleteRow(i + 1);
+        try { firestoreDeleteSubmission(obj.submission_id); } catch (fsErr) {
+          Logger.log("WARN _handleOldSubmissionOnReplacement_ Firestore delete: " + fsErr.message);
+        }
         if (fileId) {
           try { DriveApp.getFileById(fileId).setTrashed(true); } catch (fe) { /* file already gone */ }
         }
@@ -803,6 +897,9 @@ function _handleOldSubmissionOnReplacement_(individualId, documentType) {
         var disabledCol = headers.indexOf("disabled_date") + 1;
         if (currCol > 0) sheet.getRange(i + 1, currCol).setValue(false);
         if (disabledCol > 0) sheet.getRange(i + 1, disabledCol).setValue(formatDate(new Date(), true));
+        try { firestoreUpdateSubmission(obj.submission_id, { is_current: false, disabled_date: formatDate(new Date(), true) }); } catch (fsErr) {
+          Logger.log("WARN _handleOldSubmissionOnReplacement_ Firestore deactivate: " + fsErr.message);
+        }
       }
 
       return;
@@ -904,13 +1001,11 @@ function getDocumentsForRsoReview(documentTypeFilter) {
  */
 function _getDocumentsForRsoReviewByType_(submissionType, documentTypeFilter) {
   try {
-    var sheet   = _getFileSubmissionsSheet_();
-    var data    = sheet.getDataRange().getValues();
-    var headers = data[0];
+    var submissions = _getAllSubmissions_();
     var results = [];
 
-    for (var i = 1; i < data.length; i++) {
-      var obj = rowToObject(headers, data[i]);
+    for (var i = 0; i < submissions.length; i++) {
+      var obj = submissions[i];
       var docType = String(obj.document_type || "").toLowerCase();
       var status  = String(obj.status || "").toLowerCase();
       var subType = String(obj.submission_type || "").toLowerCase();
@@ -1081,7 +1176,7 @@ function autoRejectPendingSubmissionsOnMemberRemoval(individualId, actingBy) {
       var obj = rowToObject(headers, data[i]);
       if (obj.individual_id === individualId && pendingStatuses.includes(obj.status)) {
         // Update submission to rejected with automated message
-        _setSubmissionFields_(data[i], {
+        _setSubmissionFields_({ sheet: sheet, headers: headers, rowIndex: i + 1, obj: obj }, {
           status: 'rejected',
           rejection_reason: 'Subject individual has been removed from member household',
           gea_reviewed_by: actingBy,

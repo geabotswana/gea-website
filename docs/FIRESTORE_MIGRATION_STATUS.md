@@ -1,8 +1,8 @@
 # Firestore Migration Status & Implementation Guide Index
 
-**Date:** May 9, 2026  
-**Overall Status:** Phase 1-4 Implementation Complete, Documentation Finalized  
-**Repository:** github.com/geabotswana/gea-website  
+**Date:** May 9, 2026
+**Overall Status:** Phase 1-4 Implementation Complete, Documentation Finalized
+**Repository:** github.com/geabotswana/gea-website
 
 ---
 
@@ -12,8 +12,9 @@ The GEA Management System Firestore migration is progressing through a phased im
 
 - **Phase 1-2:** ✅ Complete (Sessions, Administrators via FirestoreAuthService)
 - **Phase 3:** ✅ Complete (Reservations via FirestoreReservationService)
-- **Phase 4:** ✅ Complete with Critical Fixes (Submissions, Payments, Applications, Households, Individuals via FirestorePhase4Service)
-- **Phase 5+:** 🔄 Planning stage (Configuration, Audit Log, cutover strategy)
+- **Phase 4:** ✅ Complete with Critical Fixes (File submissions via top-level `submissions` collection)
+- **Phase 5:** 🔄 Scaffolding present (Payments, Applications, Households, Individuals wrappers exist but are not the Phase 4 cutover)
+- **Phase 6+:** 🔄 Planning stage (Configuration, Audit Log, final cutover strategy)
 
 **Critical Milestone (May 9, 2026):**
 - Fixed Phase 4 error handling (try/catch blocks on all read operations)
@@ -25,10 +26,10 @@ The GEA Management System Firestore migration is progressing through a phased im
 ## Implementation Status by Phase
 
 ### Phase 1: Sessions Authentication
-**Status:** ✅ **COMPLETE**  
-**Service File:** `FirestoreAuthService.js` (6.3 KB, 150+ lines)  
-**Collections:** `sessions`, `administrators`  
-**Key Functions:** login(), validateSession(), requireAuth()  
+**Status:** ✅ **COMPLETE**
+**Service File:** `FirestoreAuthService.js` (6.3 KB, 150+ lines)
+**Collections:** `sessions`, `administrators`
+**Key Functions:** login(), validateSession(), requireAuth()
 **Documentation:** [FIRESTORE_PHASE1_DETAILED_GUIDE.md](./implementation/FIRESTORE_PHASE1_DETAILED_GUIDE.md)
 
 **Completed Tasks:**
@@ -41,46 +42,41 @@ The GEA Management System Firestore migration is progressing through a phased im
 ---
 
 ### Phase 3: Reservations & Guest Lists
-**Status:** ✅ **COMPLETE**  
-**Service File:** `FirestoreReservationService.js` (25.4 KB, 750+ lines)  
-**Collections:** `reservations`, `reservations/{id}/guest_lists` (subcollection)  
-**Key Functions:** firestoreCreateReservation(), firestoreGetReservation(), firestoreAddGuestToList()  
+**Status:** ✅ **COMPLETE**
+**Service File:** `FirestoreReservationService.js` (25.4 KB, 750+ lines)
+**Collections:** `reservations`, `guest_lists` (top-level upsert documents)
+**Key Functions:** firestoreCreateReservation(), firestoreGetReservation(), firestoreAddGuestToList()
 **Documentation:** [FIRESTORE_PHASE3_DETAILED_GUIDE.md](./implementation/FIRESTORE_PHASE3_DETAILED_GUIDE.md)
 
 **Completed Tasks:**
 - [x] Reservation collection schema (facility_id, reservation_start/end, status)
-- [x] Guest list subcollection under each reservation
+- [x] Top-level guest list documents keyed by reservation ID
 - [x] Booking limit checks and bumping logic
 - [x] Query operations (by facility, date range, household)
 - [x] Error handling with try/catch patterns
 - [x] Test function (testPhase3Read())
 
 **Notable Patterns:**
-- Subcollection paths: `reservations/{reservation_id}/guest_lists`
+- Guest list paths: `guest_lists/{reservation_id}`
 - Timestamp handling: ISO-8601 format for consistency with Sheets
 - Merge flag usage on all updateDocument calls
 
 ---
 
-### Phase 4: Submissions, Payments, Applications, Households, Individuals
-**Status:** ✅ **COMPLETE** (Error Handling & Merge Patterns Fixed May 9, 2026)  
-**Service File:** `FirestorePhase4Service.js` (37.9 KB, 900+ lines)  
+### Phase 4: File Submissions
+**Status:** ✅ **COMPLETE** (Error Handling, Merge Patterns, and FileSubmissionService wiring fixed May 9, 2026)
+**Service File:** `FirestorePhase4Service.js` submission helpers
 **Collections:**
-- `submissions` (top-level)
-- `payments` (top-level)
-- `applications` (top-level)
-- `households` (top-level)
-- `households/{id}/individuals` (subcollection)
+- `submissions` (top-level, keyed by `submission_id`)
 
 **Documentation:** [FIRESTORE_PHASE4_DETAILED_GUIDE.md](./implementation/FIRESTORE_PHASE4_DETAILED_GUIDE.md)
 
 **Completed Tasks:**
 - [x] Submissions schema with 2-tier approval workflow (RSO → GEA)
-- [x] Payments schema with currency conversion and pro-ration
-- [x] Applications schema with 11-step membership workflow
-- [x] Households schema with primary_member tracking
-- [x] Individuals subcollection under households
-- [x] 50+ CRUD and query functions across all collections
+- [x] Top-level `submissions` design confirmed for RSO/board queue queries
+- [x] FileSubmissionService mirrors uploads, employment requests, updates, deletes, and replacements to Firestore
+- [x] Firestore-first read helpers with Sheets fallback for submission lookup/listing
+- [x] Additional wrappers for payments/applications/households/individuals retained as Phase 5+ scaffolding
 - [x] **CRITICAL FIX (May 9):** Error handling on all read operations
 - [x] **CRITICAL FIX (May 9):** Merge flag (true) on all update operations
 - [x] Test functions (testPhase4Read())
@@ -130,14 +126,14 @@ function firestoreUpdateSubmission(submissionId, updates) {
 |----------|----------|----------|
 | [FIRESTORE_PHASE1_DETAILED_GUIDE.md](./implementation/FIRESTORE_PHASE1_DETAILED_GUIDE.md) | Sessions, Administrators, setup | All developers |
 | [FIRESTORE_PHASE3_DETAILED_GUIDE.md](./implementation/FIRESTORE_PHASE3_DETAILED_GUIDE.md) | Reservations, Guest Lists, patterns | All developers |
-| [FIRESTORE_PHASE4_DETAILED_GUIDE.md](./implementation/FIRESTORE_PHASE4_DETAILED_GUIDE.md) | Submissions, Payments, Applications, Households, Individuals | All developers |
+| [FIRESTORE_PHASE4_DETAILED_GUIDE.md](./implementation/FIRESTORE_PHASE4_DETAILED_GUIDE.md) | File submissions (`submissions`) plus Phase 5+ scaffolding notes | All developers |
 
 ### Reference Documents
 
 | Document | Purpose |
 |----------|---------|
 | [FIRESTORE_MIGRATION_PLAN.md](./implementation/FIRESTORE_MIGRATION_PLAN.md) | High-level phasing, risk assessment, timeline |
-| [FIRESTORE_MIGRATION_HANDOVER.md](./FIRESTORE_MIGRATION_HANDOVER.md) | Original project handover (April 23, 2026) |
+| [FIRESTORE_MIGRATION_HANDOVER.md](../FIRESTORE_MIGRATION_HANDOVER.md) | Original project handover (April 23, 2026) |
 | **This Document** | Status tracking and guide index |
 
 ---
@@ -192,23 +188,24 @@ db.query('collections')
 
 ## Next Steps (Phase 5+)
 
-1. **Phase 6: Data Migration Planning** (Pending)
-   - [ ] Create migration scripts for each collection
-   - [ ] Validate data integrity post-migration
-   - [ ] Test hybrid mode (Sheets + Firestore)
-
-2. **Phase 7: Service Integration** (Pending)
-   - [ ] Update FileSubmissionService to use Firestore
+1. **Phase 5: Payments Service Integration** (Pending)
    - [ ] Update PaymentService to use Firestore
-   - [ ] Update ApplicationService to use Firestore
-   - [ ] Update MemberService to use Firestore
+   - [ ] Validate payment audit trail and balance calculations
 
-3. **Phase 8: System Cutover** (Pending)
+2. **Phase 6: Households + Individuals Integration** (Pending)
+   - [ ] Update MemberService to use Firestore
+   - [ ] Validate dependent lookup paths
+
+3. **Phase 7: Applications + Membership Levels Integration** (Pending)
+   - [ ] Update ApplicationService to use Firestore
+   - [ ] Validate full application workflow
+
+4. **Phase 8: System Cutover** (Pending)
    - [ ] Migrate live data from Sheets to Firestore
    - [ ] Switch Code.js routing to Firestore services
    - [ ] Archive Sheets as read-only backup
 
 ---
 
-**Document Status:** ✅ Current and Maintained  
+**Document Status:** ✅ Current and Maintained
 **Last Updated:** May 9, 2026

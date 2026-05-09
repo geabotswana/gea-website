@@ -1700,13 +1700,65 @@ function adminLogin(email, password) {
     return { success: false, message: "Invalid email or password." };
   }
 
+  var normalizedEmail = email.toLowerCase().trim();
+
+  // Firestore-first admin authentication. Fall back to Sheets only if Firestore is
+  // unavailable or the admin has not yet been migrated.
+  try {
+    var fsAdmin = firestoreGetAdministrator(normalizedEmail);
+    if (fsAdmin) {
+      var fsActive = (fsAdmin.active === true || String(fsAdmin.active).toLowerCase() === "true");
+      if (!fsActive) {
+        logAuditEntry(normalizedEmail, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", fsAdmin.admin_id || normalizedEmail,
+                      "Failed admin login: account deactivated");
+        return { success: false, message: "This account has been deactivated. Contact the board to reinstate access." };
+      }
+
+      var providedHash = hashPassword(password);
+      var storedHash   = fsAdmin.password_hash || "";
+      if (!storedHash || !constantTimeCompare(providedHash, storedHash)) {
+        logAuditEntry(normalizedEmail, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", fsAdmin.admin_id || normalizedEmail,
+                      "Failed admin login: incorrect password");
+        return { success: false, message: "Invalid email or password." };
+      }
+
+      var fsRole       = fsAdmin.role;
+      var fsToken      = _createSession(normalizedEmail, fsRole);
+      var isFirstLogin = !fsAdmin.first_login_date;
+      if (isFirstLogin) {
+        try { firestoreMarkAdminFirstLogin(normalizedEmail); } catch (markErr) {
+          Logger.log('WARN adminLogin Firestore first_login update: ' + markErr.message);
+        }
+        _mirrorAdminFirstLoginToSheet_(normalizedEmail);
+      }
+
+      logAuditEntry(normalizedEmail, AUDIT_ADMIN_LOGIN, "Administrator", fsAdmin.admin_id || normalizedEmail,
+                    "Admin login successful (role: " + fsRole + ")");
+
+      return {
+        success: true,
+        token: fsToken,
+        role: fsRole,
+        require_password_change: isFirstLogin,
+        admin: {
+          admin_id:   fsAdmin.admin_id || normalizedEmail,
+          email:      fsAdmin.email || normalizedEmail,
+          first_name: fsAdmin.first_name || "",
+          last_name:  fsAdmin.last_name || "",
+          role:       fsRole
+        }
+      };
+    }
+  } catch (fsErr) {
+    Logger.log('WARN adminLogin: Firestore failed, using Sheets: ' + fsErr.message);
+  }
+
   try {
     var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
     var colIdx  = _adminColMap(headers);
 
-    var normalizedEmail = email.toLowerCase().trim();
     var adminRow = null;
     var rowIdx   = -1;
 
@@ -1720,47 +1772,57 @@ function adminLogin(email, password) {
 
     // No email match — return generic error (don't reveal if email exists)
     if (!adminRow) {
-      logAuditEntry(email, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", "-",
+      logAuditEntry(normalizedEmail, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", "-",
                     "Failed admin login: email not found");
       return { success: false, message: "Invalid email or password." };
     }
 
     // Check active flag
-    if (!adminRow[colIdx.active]) {
-      logAuditEntry(email, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", adminRow[colIdx.admin_id],
+    var sheetActive = (adminRow[colIdx.active] === true || String(adminRow[colIdx.active]).toLowerCase() === "true");
+    if (!sheetActive) {
+      logAuditEntry(normalizedEmail, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", adminRow[colIdx.admin_id],
                     "Failed admin login: account deactivated");
       return { success: false, message: "This account has been deactivated. Contact the board to reinstate access." };
     }
 
     // Verify password
-    var providedHash = hashPassword(password);
-    var storedHash   = adminRow[colIdx.password_hash] || "";
-    if (!storedHash || !constantTimeCompare(providedHash, storedHash)) {
-      logAuditEntry(email, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", adminRow[colIdx.admin_id],
+    var providedPasswordHash = hashPassword(password);
+    var sheetStoredHash      = adminRow[colIdx.password_hash] || "";
+    if (!sheetStoredHash || !constantTimeCompare(providedPasswordHash, sheetStoredHash)) {
+      logAuditEntry(normalizedEmail, AUDIT_ADMIN_LOGIN_FAILED, "Administrator", adminRow[colIdx.admin_id],
                     "Failed admin login: incorrect password");
       return { success: false, message: "Invalid email or password." };
     }
 
     // All checks passed
     var role  = adminRow[colIdx.role];
-    var token = _createSession(email, role);
+    var token = _createSession(normalizedEmail, role);
 
     // Check if this is first login BEFORE updating the field
-    var isFirstLogin = !adminRow[colIdx.first_login_date];
+    var sheetFirstLogin = !adminRow[colIdx.first_login_date];
 
     // Record first login date if this is the first login
-    if (isFirstLogin && colIdx.first_login_date >= 0) {
+    if (sheetFirstLogin && colIdx.first_login_date >= 0) {
       sheet.getRange(rowIdx, colIdx.first_login_date + 1).setValue(formatDate(new Date(), true));
     }
 
-    logAuditEntry(email, AUDIT_ADMIN_LOGIN, "Administrator", adminRow[colIdx.admin_id],
+    // Mirror the Sheets account into Firestore after a successful fallback login.
+    try {
+      firestoreCreateAdministrator(normalizedEmail, adminRow[colIdx.first_name], adminRow[colIdx.last_name],
+        role, sheetStoredHash, adminRow[colIdx.admin_id], adminRow[colIdx.created_by]);
+      if (!sheetFirstLogin) firestoreUpdateAdministrator(normalizedEmail, { first_login_date: adminRow[colIdx.first_login_date] });
+    } catch (mirrorErr) {
+      Logger.log('WARN adminLogin Firestore mirror: ' + mirrorErr.message);
+    }
+
+    logAuditEntry(normalizedEmail, AUDIT_ADMIN_LOGIN, "Administrator", adminRow[colIdx.admin_id],
                   "Admin login successful (role: " + role + ")");
 
     return {
       success:    true,
       token:      token,
       role:       role,
-      require_password_change: isFirstLogin,
+      require_password_change: sheetFirstLogin,
       admin: {
         admin_id:   adminRow[colIdx.admin_id],
         email:      adminRow[colIdx.email],
@@ -1774,6 +1836,7 @@ function adminLogin(email, password) {
     return { success: false, message: "An error occurred. Please try again." };
   }
 }
+
 
 /**
  * Gets admin account data from a valid session token.
@@ -1797,6 +1860,26 @@ function getAdminByToken(token) {
 
     var email = sessionData.email;
     var role  = sessionData.role;
+
+    // Get admin account details from Firestore first.
+    try {
+      var fsAdmin = firestoreGetAdministrator(email);
+      if (fsAdmin) {
+        return {
+          success: true,
+          admin: {
+            admin_id:   fsAdmin.admin_id || fsAdmin.email,
+            email:      fsAdmin.email,
+            first_name: fsAdmin.first_name || "",
+            last_name:  fsAdmin.last_name || "",
+            role:       role
+          },
+          role: role
+        };
+      }
+    } catch (fsErr) {
+      Logger.log('WARN getAdminByToken: Firestore failed, using Sheets: ' + fsErr.message);
+    }
 
     // Get the admin account details from the Administrators sheet
     var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
@@ -1836,6 +1919,29 @@ function getAdminByToken(token) {
  */
 function listAdminAccounts(callerEmail) {
   try {
+    var fsAdmins = firestoreListAdministrators();
+    if (fsAdmins.length) {
+      return fsAdmins.map(function(admin) {
+        return {
+          admin_id:         admin.admin_id || admin.email,
+          email:            admin.email,
+          first_name:       admin.first_name || "",
+          last_name:        admin.last_name || "",
+          role:             admin.role || "",
+          active:           admin.active === true || String(admin.active).toLowerCase() === "true",
+          created_by:       admin.created_by || "",
+          created_date:     admin.created_date || admin.created_at || "",
+          deactivated_by:   admin.deactivated_by || "",
+          deactivated_date: admin.deactivated_date || "",
+          has_password:     !!(admin.password_hash)
+        };
+      });
+    }
+  } catch (fsErr) {
+    Logger.log('WARN listAdminAccounts: Firestore failed, using Sheets: ' + fsErr.message);
+  }
+
+  try {
     var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
@@ -1849,7 +1955,7 @@ function listAdminAccounts(callerEmail) {
         first_name:       data[i][colIdx.first_name],
         last_name:        data[i][colIdx.last_name],
         role:             data[i][colIdx.role],
-        active:           data[i][colIdx.active] === true,
+        active:           data[i][colIdx.active] === true || String(data[i][colIdx.active]).toLowerCase() === "true",
         created_by:       data[i][colIdx.created_by],
         created_date:     data[i][colIdx.created_date],
         deactivated_by:   data[i][colIdx.deactivated_by],
@@ -1888,6 +1994,14 @@ function createAdminAccount(params, callerEmail) {
   }
 
   try {
+    if (firestoreGetAdministrator(email)) {
+      return { success: false, message: "An admin account with this email already exists." };
+    }
+  } catch (fsErr) {
+    Logger.log('WARN createAdminAccount Firestore duplicate check: ' + fsErr.message);
+  }
+
+  try {
     var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
     var data    = sheet.getDataRange().getValues();
     var headers = data[0];
@@ -1918,6 +2032,12 @@ function createAdminAccount(params, callerEmail) {
     row[headers[colIdx.deactivated_date]] = "";
 
     sheet.appendRow(headers.map(function(h) { return row[h] !== undefined ? row[h] : ""; }));
+
+    try {
+      firestoreCreateAdministrator(email, firstName, lastName, role, passwordHash, adminId, callerEmail);
+    } catch (fsErr) {
+      Logger.log('WARN createAdminAccount Firestore mirror: ' + fsErr.message);
+    }
 
     logAuditEntry(callerEmail, AUDIT_ADMIN_CREATED, "Administrator", adminId,
                   "Admin account created: " + email + " (role: " + role + ")");
@@ -1971,6 +2091,9 @@ function resetAdminPassword(adminId, newPassword, callerEmail) {
       if (data[i][colIdx.admin_id] === adminId) {
         var newHash = hashPassword(newPassword);
         sheet.getRange(i + 1, colIdx.password_hash + 1).setValue(newHash);
+        try { firestoreResetAdministratorPassword(adminId, newHash); } catch (fsErr) {
+          Logger.log('WARN resetAdminPassword Firestore mirror: ' + fsErr.message);
+        }
 
         // Invalidate all active sessions for this admin
         _invalidateSessionsForEmail(data[i][colIdx.email]);
@@ -1979,6 +2102,17 @@ function resetAdminPassword(adminId, newPassword, callerEmail) {
                       "Password reset by " + callerEmail);
         return { success: true, message: "Password reset successfully. The admin must log in again." };
       }
+    }
+    try {
+      if (firestoreResetAdministratorPassword(adminId, hashPassword(newPassword))) {
+        var fsAdmin = firestoreGetAdministratorById(adminId);
+        if (fsAdmin && fsAdmin.email) _invalidateSessionsForEmail(fsAdmin.email);
+        logAuditEntry(callerEmail, AUDIT_ADMIN_PASSWORD_RESET, "Administrator", adminId,
+                      "Password reset by " + callerEmail);
+        return { success: true, message: "Password reset successfully. The admin must log in again." };
+      }
+    } catch (fsErr) {
+      Logger.log('WARN resetAdminPassword Firestore-only fallback: ' + fsErr.message);
     }
     return { success: false, message: "Admin account not found." };
   } catch (e) {
@@ -2019,6 +2153,26 @@ function _adminColMap(headers) {
   return map;
 }
 
+
+function _mirrorAdminFirstLoginToSheet_(email) {
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_ADMINISTRATORS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var colIdx  = _adminColMap(headers);
+    if (colIdx.first_login_date < 0) return;
+    var normalizedEmail = String(email || "").toLowerCase().trim();
+    for (var i = 1; i < data.length; i++) {
+      if ((data[i][colIdx.email] || "").toLowerCase().trim() === normalizedEmail && !data[i][colIdx.first_login_date]) {
+        sheet.getRange(i + 1, colIdx.first_login_date + 1).setValue(formatDate(new Date(), true));
+        return;
+      }
+    }
+  } catch (e) {
+    Logger.log('WARN _mirrorAdminFirstLoginToSheet_: ' + e.message);
+  }
+}
+
 /**
  * Sets the active flag on an admin account and logs the action.
  * @param {string} adminId
@@ -2037,6 +2191,9 @@ function _setAdminActiveFlag(adminId, active, callerEmail) {
     for (var i = 1; i < data.length; i++) {
       if (data[i][colIdx.admin_id] === adminId) {
         sheet.getRange(i + 1, colIdx.active + 1).setValue(active);
+        try { firestoreSetAdministratorActive(adminId, active, callerEmail); } catch (fsErr) {
+          Logger.log('WARN _setAdminActiveFlag Firestore mirror: ' + fsErr.message);
+        }
 
         if (!active) {
           // Record deactivation details
@@ -2064,6 +2221,17 @@ function _setAdminActiveFlag(adminId, active, callerEmail) {
         return { success: true, message: active ? "Account reactivated." : "Account deactivated." };
       }
     }
+    try {
+      if (firestoreSetAdministratorActive(adminId, active, callerEmail)) {
+        var fsAdmin = firestoreGetAdministratorById(adminId);
+        if (!active && fsAdmin && fsAdmin.email) _invalidateSessionsForEmail(fsAdmin.email);
+        logAuditEntry(callerEmail, active ? AUDIT_ADMIN_REACTIVATED : AUDIT_ADMIN_DEACTIVATED, "Administrator", adminId,
+                      (active ? "Admin account reactivated" : "Admin account deactivated"));
+        return { success: true, message: active ? "Account reactivated." : "Account deactivated." };
+      }
+    } catch (fsErr) {
+      Logger.log('WARN _setAdminActiveFlag Firestore-only fallback: ' + fsErr.message);
+    }
     return { success: false, message: "Admin account not found." };
   } catch (e) {
     Logger.log("ERROR _setAdminActiveFlag: " + e);
@@ -2077,6 +2245,21 @@ function _setAdminActiveFlag(adminId, active, callerEmail) {
  * @param {string} email
  */
 function _invalidateSessionsForEmail(email) {
+  try {
+    var activeSessions = getFirestore()
+      .query('sessions')
+      .Where('email', '==', email)
+      .Where('active', '==', true)
+      .Execute();
+    activeSessions.forEach(function(doc) {
+      if (doc.obj && doc.obj.token_hash) {
+        getFirestore().updateDocument('sessions/' + doc.obj.token_hash, { active: false }, true);
+      }
+    });
+  } catch (fsErr) {
+    Logger.log('WARN _invalidateSessionsForEmail Firestore: ' + fsErr.message);
+  }
+
   try {
     var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
     var data    = sheet.getDataRange().getValues();

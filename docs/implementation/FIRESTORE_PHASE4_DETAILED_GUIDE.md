@@ -1,9 +1,9 @@
 # FIRESTORE PHASE 4 DETAILED IMPLEMENTATION GUIDE
 
-**Document Version:** 1.0  
-**Status:** Implementation Complete (Error Handling & Merge Patterns Fixed May 9, 2026)  
-**Target Audience:** Developers familiar with Firestore, reviewing Phase 4 collections  
-**Date Completed:** May 9, 2026  
+**Document Version:** 1.0
+**Status:** Phase 4 File Submissions Complete (Error Handling, Merge Patterns, and Service Wiring Fixed May 9, 2026)
+**Target Audience:** Developers familiar with Firestore, reviewing Phase 4 collections
+**Date Completed:** May 9, 2026
 **Last Updated:** May 9, 2026
 
 ---
@@ -12,13 +12,13 @@
 
 ### Phase 4 Scope
 
+Phase 4 is limited to File Submissions. The implementation keeps submissions in a top-level `submissions` collection, keyed by `submission_id`, so Apps Script can query RSO/board queues directly by status and document metadata.
+
 | Collection | Purpose | Type | Volume |
 |-----------|---------|------|--------|
 | **submissions** | File/document uploads with approval workflows | Top-level | ~100-500/year |
-| **payments** | Membership & facility payment records | Top-level | ~50-200/year |
-| **applications** | Membership application tracking (11-step workflow) | Top-level | ~30-100/year |
-| **households** | Membership units/families | Top-level | ~300-500 |
-| **individuals** | People within households | Subcollection | ~800-1500 |
+
+> Note: `FirestorePhase4Service.js` also contains early wrappers for payments, applications, households, and individuals. Those wrappers are retained as Phase 5+ scaffolding and are not part of the Phase 4 cutover scope.
 
 ### Critical Pattern: Merge Flag on Updates
 
@@ -155,7 +155,7 @@ fs.updateDocument('collections/docId', updates);
 
 ### 2.5 `individuals` Subcollection
 
-**Path:** `households/{household_id}/individuals`  
+**Path:** `households/{household_id}/individuals`
 **Document ID:** `individual_id` (e.g., `IND-2026-00001`)
 
 | Field | Type | Nullable | Notes |
@@ -318,5 +318,5 @@ function migrateHouseholdsToFirestore() {
 
 ---
 
-**For questions:** board@geabotswana.org  
+**For questions:** board@geabotswana.org
 **Last Updated:** May 9, 2026

@@ -24,26 +24,42 @@ function firestoreCreateSubmission(submission) {
     application_id: submission.application_id || null,
     document_type: submission.document_type,
     file_id: submission.file_id,
-    submitted_by_email: submission.submitted_by_email,
+    file_name: submission.file_name || submission.file_display_name || '',
+    file_content_type: submission.file_content_type || '',
+    submitted_by_email: submission.submitted_by_email || submission.user_email || '',
+    user_email: submission.user_email || submission.submitted_by_email || '',
     submitted_date: submission.submitted_date ? new Date(submission.submitted_date) : new Date(),
     status: submission.status || 'submitted',
-    is_current: submission.is_current !== false,
+    is_current: submission.is_current !== false && String(submission.is_current).toLowerCase() !== 'false',
     disabled_date: submission.disabled_date ? new Date(submission.disabled_date) : null,
     cloud_storage_path: submission.cloud_storage_path || '',
     file_display_name: submission.file_display_name || '',
     file_size_bytes: submission.file_size_bytes || 0,
+    rso_approval_link_token: submission.rso_approval_link_token || null,
+    rso_approval_link_expires_at: submission.rso_approval_link_expires_at ? new Date(submission.rso_approval_link_expires_at) : null,
+    rso_approval_link_used_at: submission.rso_approval_link_used_at ? new Date(submission.rso_approval_link_used_at) : null,
+    rso_approval_link_sent_date: submission.rso_approval_link_sent_date ? new Date(submission.rso_approval_link_sent_date) : null,
     rso_reviewed_by: submission.rso_reviewed_by || null,
     rso_review_date: submission.rso_review_date ? new Date(submission.rso_review_date) : null,
     gea_reviewed_by: submission.gea_reviewed_by || null,
     gea_review_date: submission.gea_review_date ? new Date(submission.gea_review_date) : null,
     rejection_reason: submission.rejection_reason || null,
     member_facing_rejection_reason: submission.member_facing_rejection_reason || null,
+    clarification_requested_by: submission.clarification_requested_by || null,
+    clarification_request_date: submission.clarification_request_date ? new Date(submission.clarification_request_date) : null,
+    clarification_request_details: submission.clarification_request_details || null,
+    board_rejection_message: submission.board_rejection_message || null,
+    board_notified_by: submission.board_notified_by || null,
+    board_notification_date: submission.board_notification_date ? new Date(submission.board_notification_date) : null,
+    requested_by_admin: submission.requested_by_admin === true || String(submission.requested_by_admin).toLowerCase() === 'true',
+    request_date: submission.request_date ? new Date(submission.request_date) : null,
+    request_reason: submission.request_reason || null,
     notes: submission.notes || null,
     upload_device_type: submission.upload_device_type || null,
     document_expiration_date: submission.document_expiration_date ? new Date(submission.document_expiration_date) : null,
     expiration_warning_6m_sent_date: submission.expiration_warning_6m_sent_date ? new Date(submission.expiration_warning_6m_sent_date) : null,
     expiration_warning_1m_sent_date: submission.expiration_warning_1m_sent_date ? new Date(submission.expiration_warning_1m_sent_date) : null,
-    allow_resubmit: submission.allow_resubmit === true,
+    allow_resubmit: submission.allow_resubmit === true || String(submission.allow_resubmit).toLowerCase() === 'true',
     submission_type: submission.submission_type || 'document',
     created_at: new Date(),
     updated_at: new Date()
@@ -63,6 +79,41 @@ function firestoreGetSubmission(submissionId) {
     return result.obj || null;
   } catch (e) {
     return null;
+  }
+}
+
+function firestoreGetSubmissionByRsoToken(token) {
+  if (!token) return null;
+  try {
+    var results = getFirestore()
+      .query('submissions')
+      .Where('rso_approval_link_token', '==', token)
+      .Execute();
+    return results.length > 0 ? results[0].obj : null;
+  } catch (e) {
+    Logger.log('Error querying submission by RSO token: ' + e);
+    return null;
+  }
+}
+
+function firestoreGetAllSubmissions() {
+  try {
+    var results = getFirestore().query('submissions').Execute();
+    return results.map(function(doc) { return doc.obj; }).filter(Boolean);
+  } catch (e) {
+    Logger.log('Error querying all submissions: ' + e);
+    return [];
+  }
+}
+
+function firestoreDeleteSubmission(submissionId) {
+  if (!submissionId) return false;
+  try {
+    getFirestore().deleteDocument('submissions/' + submissionId);
+    return true;
+  } catch (e) {
+    Logger.log('Error deleting submission ' + submissionId + ': ' + e);
+    return false;
   }
 }
 
@@ -912,25 +963,4 @@ function testPhase4Read() {
 
   var appsByHh = firestoreGetApplicationsForHousehold(householdId);
   Logger.log('Applications for household: ' + (appsByHh.length > 0 ? 'OK — ' + appsByHh.length + ' found' : 'FAILED (0 returned)'));
-}
-
-// ============================================================================
-// HELPER: Generate ID
-// ============================================================================
-
-function generateId(prefix) {
-  var timestamp = String(new Date().getTime()).slice(-6);
-  var random = String(Math.floor(Math.random() * 10000)).padStart(5, '0');
-  return prefix + '-' + timestamp + '-' + random;
-}
-
-// ============================================================================
-// HELPER: Get Firestore instance
-// ============================================================================
-
-function getFirestore() {
-  var creds = JSON.parse(
-    PropertiesService.getScriptProperties().getProperty('FIRESTORE_SERVICE_ACCOUNT_JSON')
-  );
-  return FirestoreApp.getFirestore(creds.client_email, creds.private_key, creds.project_id);
 }

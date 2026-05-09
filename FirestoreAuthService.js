@@ -85,39 +85,120 @@ function firestoreDeleteSession(token) {
 
 // ─── Administrators ───────────────────────────────────────────────────────────
 
+function _firestoreNormalizeAdminEmail(email) {
+  return String(email || '').toLowerCase().trim();
+}
+
+function _firestoreAdminDocToObj(doc) {
+  var obj = doc && doc.obj ? doc.obj : doc;
+  if (!obj) return null;
+  if (obj.active === 'TRUE') obj.active = true;
+  if (obj.active === 'FALSE') obj.active = false;
+  return obj;
+}
+
 function firestoreGetAdministrator(email) {
+  email = _firestoreNormalizeAdminEmail(email);
   if (!email) return null;
   try {
-    var doc = getFirestore().getDocument('administrators/' + email.toLowerCase());
-    return doc.obj || null;
+    var doc = getFirestore().getDocument('administrators/' + email);
+    return _firestoreAdminDocToObj(doc);
   } catch (e) {
     return null;
   }
 }
 
-function firestoreCreateAdministrator(email, firstName, lastName, role, passwordHash) {
+function firestoreGetAdministratorById(adminId) {
+  if (!adminId) return null;
+  try {
+    var results = getFirestore()
+      .query('administrators')
+      .Where('admin_id', '==', adminId)
+      .Execute();
+    return results.length ? _firestoreAdminDocToObj(results[0]) : null;
+  } catch (e) {
+    Logger.log('ERROR firestoreGetAdministratorById: ' + e.message);
+    return null;
+  }
+}
+
+function firestoreListAdministrators() {
+  try {
+    var results = getFirestore().query('administrators').Execute();
+    return results.map(function(doc) { return _firestoreAdminDocToObj(doc); }).filter(Boolean);
+  } catch (e) {
+    Logger.log('ERROR firestoreListAdministrators: ' + e.message);
+    return [];
+  }
+}
+
+function firestoreCreateAdministrator(email, firstName, lastName, role, passwordHash, adminId, createdBy) {
+  email = _firestoreNormalizeAdminEmail(email);
   if (!email || !role || !passwordHash) throw new Error('Required fields missing');
 
   var db = getFirestore();
 
   // Check for existing — getDocument throws if not found, so treat throw as "doesn't exist"
   try {
-    var existing = db.getDocument('administrators/' + email.toLowerCase());
+    var existing = db.getDocument('administrators/' + email);
     if (existing.obj) return false;
   } catch (e) { /* doesn't exist — proceed */ }
 
-  db.createDocument('administrators/' + email.toLowerCase(), {
-    email:         email.toLowerCase(),
-    first_name:    firstName,
-    last_name:     lastName,
-    role:          role,
-    password_hash: passwordHash,
-    active:        true,
-    created_at:    new Date()
+  db.createDocument('administrators/' + email, {
+    admin_id:       adminId || generateId('ADM'),
+    email:          email,
+    first_name:     firstName || '',
+    last_name:      lastName || '',
+    role:           role,
+    password_hash:  passwordHash,
+    active:         true,
+    first_login_date: null,
+    created_by:     createdBy || '',
+    created_date:   new Date(),
+    deactivated_by: null,
+    deactivated_date: null,
+    created_at:     new Date(),
+    updated_at:     new Date()
   });
 
   Logger.log('Administrator created in Firestore: ' + email);
   return true;
+}
+
+function firestoreUpdateAdministrator(email, updates) {
+  email = _firestoreNormalizeAdminEmail(email);
+  if (!email) return false;
+  updates.updated_at = new Date();
+  getFirestore().updateDocument('administrators/' + email, updates, true);
+  return true;
+}
+
+function firestoreUpdateAdministratorById(adminId, updates) {
+  var admin = firestoreGetAdministratorById(adminId);
+  if (!admin || !admin.email) return false;
+  return firestoreUpdateAdministrator(admin.email, updates);
+}
+
+function firestoreSetAdministratorActive(adminId, active, callerEmail) {
+  var updates = { active: active };
+  if (active) {
+    updates.deactivated_by = null;
+    updates.deactivated_date = null;
+  } else {
+    updates.deactivated_by = callerEmail || '';
+    updates.deactivated_date = new Date();
+  }
+  return firestoreUpdateAdministratorById(adminId, updates);
+}
+
+function firestoreResetAdministratorPassword(adminId, passwordHash) {
+  return firestoreUpdateAdministratorById(adminId, { password_hash: passwordHash });
+}
+
+function firestoreMarkAdminFirstLogin(email) {
+  var admin = firestoreGetAdministrator(email);
+  if (!admin || admin.first_login_date) return false;
+  return firestoreUpdateAdministrator(email, { first_login_date: new Date() });
 }
 
 // ─── Migration ────────────────────────────────────────────────────────────────
@@ -160,7 +241,7 @@ function migrateAdministratorsToFirestore() {
         first_name:         row.first_name        || '',
         last_name:          row.last_name         || '',
         role:               row.role              || '',
-        active:             row.active === true || row.active === 'TRUE',
+        active:             row.active === true || String(row.active).toLowerCase() === 'true',
         password_hash:      row.password_hash     || '',
         created_by:         row.created_by        || '',
         created_date:       row.created_date ? new Date(row.created_date) : null,

@@ -1,9 +1,9 @@
 # FIRESTORE PHASE 3 DETAILED IMPLEMENTATION GUIDE
 
-**Document Version:** 1.0  
-**Status:** Implementation Complete  
-**Target Audience:** Developers familiar with Firestore, reviewing reservation system migration  
-**Date Completed:** May 9, 2026  
+**Document Version:** 1.0
+**Status:** Implementation Complete
+**Target Audience:** Developers familiar with Firestore, reviewing reservation system migration
+**Date Completed:** May 9, 2026
 **Last Updated:** May 9, 2026
 
 ---
@@ -13,7 +13,7 @@
 ### Phase 3 Scope
 Phase 3 migrates the reservation system from Google Sheets to Firestore:
 - **reservations** collection (top-level)
-- **guest_lists** subcollection (under each reservation)
+- **guest_lists** top-level collection (one upsert document per reservation)
 
 ### FirestoreApp API Reference
 This implementation uses **FirestoreApp** library (not the native Firebase SDK).
@@ -61,9 +61,9 @@ db.query('reservations')
 | `created_at` | timestamp | NO | Creation time |
 | `updated_at` | timestamp | NO | Last modification |
 
-### 2.2 `guest_lists` Subcollection
+### 2.2 `guest_lists` Collection
 
-**Path:** `reservations/{reservation_id}/guest_lists`  
+**Path:** `guest_lists/{reservation_id}`
 **Document ID:** `guest_id`
 
 | Field | Type | Nullable | Notes |
@@ -138,18 +138,16 @@ function firestoreGetReservationsByFacility(facilityId) {
 }
 ```
 
-### Subcollection Query
+### Guest List Direct Lookup
 
 ```javascript
 function firestoreGetGuestList(reservationId) {
-  if (!reservationId) return [];
-  var fs = getFirestore();
+  if (!reservationId) return null;
   try {
-    var results = fs.query('reservations/' + reservationId + '/guest_lists')
-      .Execute();
-    return results.map(function(doc) { return doc.obj; });
+    var doc = getFirestore().getDocument('guest_lists/' + reservationId);
+    return doc.obj || null;
   } catch (e) {
-    return [];
+    return null;
   }
 }
 ```
@@ -205,11 +203,11 @@ function migrateReservationsToFirestore() {
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | "No matching index" | Multi-field query without composite index | Create index in Firestore console |
-| Guest list empty | Wrong subcollection path | Use `reservations/{id}/guest_lists` |
+| Guest list empty | Wrong subcollection path | Use `guest_lists/{reservation_id}` |
 | Update not saved | Missing merge flag | Add `true` as third param to `updateDocument()` |
 | "Path validation failed" | Invalid doc ID or path format | Validate IDs, check for special chars |
 
 ---
 
-**For questions:** board@geabotswana.org  
+**For questions:** board@geabotswana.org
 **Last Updated:** May 9, 2026

@@ -486,3 +486,140 @@ function _cleanupOldBackups(folder, daysToKeep) {
     Logger.log("Cleanup: Removed " + deletedCount + " old backup files");
   }
 }
+
+
+// ============================================================
+// INCIDENT LOG SETUP (one-time initialization)
+// ============================================================
+
+/**
+ * Initialize Incident Log sheet in Financial Records folder.
+ * Run once manually: Select initializeIncidentLog() and click Run.
+ *
+ * Creates Google Sheet with columns:
+ * Date | Time | Description | Impact | Resolution | Duration (min) | Root Cause | Lessons Learned
+ *
+ * Location: Financial Records folder
+ * Naming: "GEA Incident Log [YEAR]"
+ */
+function initializeIncidentLog() {
+  var year = new Date().getFullYear();
+  var sheetName = "GEA Incident Log " + year;
+
+  try {
+    // Find or create Financial Records folder
+    var financialFolder = _getOrCreateFolder("Financial Records");
+
+    // Check if incident log already exists
+    var existing = financialFolder.getFilesByName(sheetName);
+    if (existing.hasNext()) {
+      Logger.log("⚠️ Incident Log for " + year + " already exists");
+      return existing.next();
+    }
+
+    // Create new incident log spreadsheet
+    var ss = SpreadsheetApp.create(sheetName);
+    var sheet = ss.getActiveSheet();
+
+    // Add headers
+    var headers = [
+      "Date",
+      "Time (GMT+2)",
+      "Description",
+      "Impact",
+      "Resolution",
+      "Duration (minutes)",
+      "Root Cause",
+      "Lessons Learned"
+    ];
+    sheet.appendRow(headers);
+
+    // Format header row
+    var headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setFontWeight("bold");
+    headerRange.setBackground("#4285F4");
+    headerRange.setFontColor("#FFFFFF");
+
+    // Set column widths
+    sheet.setColumnWidth(1, 100); // Date
+    sheet.setColumnWidth(2, 120); // Time
+    sheet.setColumnWidth(3, 200); // Description
+    sheet.setColumnWidth(4, 200); // Impact
+    sheet.setColumnWidth(5, 200); // Resolution
+    sheet.setColumnWidth(6, 120); // Duration
+    sheet.setColumnWidth(7, 150); // Root Cause
+    sheet.setColumnWidth(8, 200); // Lessons
+
+    // Move to Financial Records folder
+    var file = DriveApp.getFileById(ss.getId());
+    financialFolder.addFile(file);
+
+    Logger.log("✅ Created Incident Log: " + sheetName);
+    Logger.log("📁 Location: Financial Records folder");
+    Logger.log("📊 Spreadsheet ID: " + ss.getId());
+
+    return ss;
+  } catch (e) {
+    Logger.log("❌ Error creating Incident Log: " + e);
+    throw e;
+  }
+}
+
+
+/**
+ * Helper: Log incident to Incident Log sheet.
+ * Called automatically when incidents are recorded.
+ *
+ * Parameters:
+ *   date (Date) - Incident date
+ *   time (string) - Incident time (GMT+2)
+ *   description (string) - What happened
+ *   impact (string) - How it affected users
+ *   resolution (string) - How it was fixed
+ *   durationMinutes (number) - How long (in minutes)
+ *   rootCause (string) - Why it happened
+ *   lessonsLearned (string) - How to prevent future
+ */
+function logIncident(date, time, description, impact, resolution, durationMinutes, rootCause, lessonsLearned) {
+  try {
+    var year = new Date().getFullYear();
+    var sheetName = "GEA Incident Log " + year;
+
+    // Find Financial Records folder
+    var root = DriveApp.getRootFolder();
+    var financialFolders = root.getFoldersByName("Financial Records");
+
+    if (!financialFolders.hasNext()) {
+      Logger.log("⚠️ Financial Records folder not found. Create it first.");
+      return;
+    }
+
+    var financialFolder = financialFolders.next();
+    var logSheets = financialFolder.getFilesByName(sheetName);
+
+    if (!logSheets.hasNext()) {
+      Logger.log("⚠️ Incident Log sheet not found. Run initializeIncidentLog() first.");
+      return;
+    }
+
+    var logFile = logSheets.next();
+    var logSs = SpreadsheetApp.openById(logFile.getId());
+    var logSheet = logSs.getActiveSheet();
+
+    // Append incident row
+    logSheet.appendRow([
+      date,
+      time,
+      description,
+      impact,
+      resolution,
+      durationMinutes,
+      rootCause,
+      lessonsLearned
+    ]);
+
+    Logger.log("✅ Incident logged to " + sheetName);
+  } catch (e) {
+    Logger.log("⚠️ Could not log incident: " + e);
+  }
+}

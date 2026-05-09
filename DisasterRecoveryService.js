@@ -433,7 +433,46 @@ function performDailyBackup() {
 
 
 /**
- * Get or create a backup folder in root Google Drive.
+ * Get or create Financial Records folder for Incident Log.
+ * Attempts to use shared drive (GEA Administration) if configured.
+ * Falls back to personal Drive with warning if shared drive not configured.
+ */
+function _getOrCreateIncidentLogFolder() {
+  var folderName = "Financial Records";
+
+  try {
+    // Try to use shared drive folder if SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID is configured
+    if (typeof SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID !== 'undefined' && SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID) {
+      try {
+        var sharedFolder = DriveApp.getFolderById(SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID);
+        Logger.log("✅ Using configured shared drive: Financial Records");
+        return sharedFolder;
+      } catch (e) {
+        Logger.log("⚠️ Shared drive folder not accessible: " + e.toString());
+      }
+    }
+
+    // Fall back to personal Drive
+    Logger.log("⚠️ SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID not configured. Using personal Drive.");
+    Logger.log("   TODO: Add shared drive folder ID to Config.js for production use.");
+    var root = DriveApp.getRootFolder();
+    var folders = root.getFoldersByName(folderName);
+
+    if (folders.hasNext()) {
+      return folders.next();
+    } else {
+      return root.createFolder(folderName);
+    }
+  } catch (e) {
+    Logger.log("❌ Error accessing folder: " + e.toString());
+    return null;
+  }
+}
+
+
+/**
+ * Helper: Get or create folder by name (personal Drive only).
+ * Used for backup folder creation.
  */
 function _getOrCreateFolder(folderName) {
   var root = DriveApp.getRootFolder();
@@ -481,22 +520,26 @@ function _cleanupOldBackups(folder, daysToKeep) {
 // ============================================================
 
 /**
- * Initialize Incident Log sheet in Financial Records folder.
+ * Initialize Incident Log sheet in GEA Administration Shared Drive.
  * Run once manually: Select initializeIncidentLog() and click Run.
  *
  * Creates Google Sheet with columns:
- * Date | Time | Description | Impact | Resolution | Duration (min) | Root Cause | Lessons Learned
+ * log_id | timestamp | description | impact | resolution | duration_minutes | root_cause | lessons_learned
  *
- * Location: Financial Records folder
+ * Location: GEA Administration Shared Drive (Financial Records folder)
  * Naming: "GEA Incident Log [YEAR]"
+ *
+ * TODO: If SHARED_DRIVE_FINANCIAL_RECORDS_FOLDER_ID is not configured in Config.js,
+ * this will create the folder in personal Drive as a fallback with a warning.
+ * Update Config.js once shared drive folder ID is available.
  */
 function initializeIncidentLog() {
   var year = new Date().getFullYear();
   var sheetName = "GEA Incident Log " + year;
 
   try {
-    // Find or create Financial Records folder
-    var financialFolder = _getOrCreateFolder("Financial Records");
+    // Find or create Financial Records folder (prefers shared drive if configured)
+    var financialFolder = _getOrCreateIncidentLogFolder();
 
     // Check if incident log already exists
     var existing = financialFolder.getFilesByName(sheetName);
@@ -509,16 +552,16 @@ function initializeIncidentLog() {
     var ss = SpreadsheetApp.create(sheetName);
     var sheet = ss.getActiveSheet();
 
-    // Add headers
+    // Add headers (snake_case to match system schema)
     var headers = [
-      "Date",
-      "Time (GMT+2)",
-      "Description",
-      "Impact",
-      "Resolution",
-      "Duration (minutes)",
-      "Root Cause",
-      "Lessons Learned"
+      "log_id",
+      "timestamp",
+      "description",
+      "impact",
+      "resolution",
+      "duration_minutes",
+      "root_cause",
+      "lessons_learned"
     ];
     sheet.appendRow(headers);
 
@@ -529,21 +572,21 @@ function initializeIncidentLog() {
     headerRange.setFontColor("#FFFFFF");
 
     // Set column widths
-    sheet.setColumnWidth(1, 100); // Date
-    sheet.setColumnWidth(2, 120); // Time
-    sheet.setColumnWidth(3, 200); // Description
-    sheet.setColumnWidth(4, 200); // Impact
-    sheet.setColumnWidth(5, 200); // Resolution
-    sheet.setColumnWidth(6, 120); // Duration
-    sheet.setColumnWidth(7, 150); // Root Cause
-    sheet.setColumnWidth(8, 200); // Lessons
+    sheet.setColumnWidth(1, 130); // log_id
+    sheet.setColumnWidth(2, 150); // timestamp
+    sheet.setColumnWidth(3, 200); // description
+    sheet.setColumnWidth(4, 200); // impact
+    sheet.setColumnWidth(5, 200); // resolution
+    sheet.setColumnWidth(6, 140); // duration_minutes
+    sheet.setColumnWidth(7, 160); // root_cause
+    sheet.setColumnWidth(8, 200); // lessons_learned
 
     // Move to Financial Records folder
     var file = DriveApp.getFileById(ss.getId());
     financialFolder.addFile(file);
 
     Logger.log("✅ Created Incident Log: " + sheetName);
-    Logger.log("📁 Location: Financial Records folder");
+    Logger.log("📁 Location: Financial Records folder (on GEA Administration Shared Drive)");
     Logger.log("📊 Spreadsheet ID: " + ss.getId());
 
     return ss;
@@ -573,16 +616,12 @@ function logIncident(date, time, description, impact, resolution, durationMinute
     var year = new Date().getFullYear();
     var sheetName = "GEA Incident Log " + year;
 
-    // Find Financial Records folder
-    var root = DriveApp.getRootFolder();
-    var financialFolders = root.getFoldersByName("Financial Records");
-
-    if (!financialFolders.hasNext()) {
-      Logger.log("⚠️ Financial Records folder not found. Create it first.");
+    // Find Financial Records folder (prefers shared drive if configured)
+    var financialFolder = _getOrCreateIncidentLogFolder();
+    if (!financialFolder) {
+      Logger.log("⚠️ Could not access Financial Records folder. Check shared drive configuration.");
       return;
     }
-
-    var financialFolder = financialFolders.next();
     var logFiles = financialFolder.getFilesByName(sheetName);
 
     if (!logFiles.hasNext()) {

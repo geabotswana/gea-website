@@ -152,42 +152,20 @@ function _countRecentHealthCheckFailures(minutesBack) {
  * Alerts both Treasurer and Board on any health check failure.
  */
 function _sendHealthCheckAlert(results, escalation) {
-  var subject = "🚨 GEA Health Check Failed - Immediate Investigation Required";
-
-  var plainBody = "GEA System Health Check Results:\n\n";
-  plainBody += "Time: " + results.timestamp.toISOString() + "\n\n";
-
+  var checkDetails = "";
   results.checks.forEach(function(check) {
-    plainBody += "[" + check.status + "] " + check.name + "\n";
-    plainBody += "  Detail: " + check.detail + "\n\n";
+    checkDetails += "[" + check.status + "] " + check.name + "\n";
+    checkDetails += "  Detail: " + check.detail + "\n\n";
   });
 
-  plainBody += "---\n";
-  plainBody += "IMMEDIATE ACTIONS:\n";
-  plainBody += "1. Check Google Cloud Status: https://status.cloud.google.com\n";
-  plainBody += "2. Try accessing portals manually\n";
-  plainBody += "3. Run Tests.js > runDiagnostics() for detailed diagnostics\n";
-  plainBody += "4. Check Apps Script execution logs\n\n";
-
-  plainBody += "Contact Claude Code / Developer if the issue persists.\n";
+  var variables = {
+    TIMESTAMP: results.timestamp.toISOString(),
+    CHECK_DETAILS: checkDetails
+  };
 
   try {
-    var encodedSubject = encodeSubjectLine(subject);
-    var htmlBody = buildHtmlEmail(subject, plainBody);
-
-    GmailApp.sendEmail(EMAIL_TREASURER, encodedSubject, plainBody, {
-      htmlBody: htmlBody,
-      name: EMAIL_SENDER_NAME,
-      replyTo: EMAIL_BOARD,
-      charset: "UTF-8"
-    });
-
-    GmailApp.sendEmail(EMAIL_BOARD, encodedSubject, plainBody, {
-      htmlBody: htmlBody,
-      name: EMAIL_SENDER_NAME,
-      replyTo: EMAIL_BOARD,
-      charset: "UTF-8"
-    });
+    sendEmailFromTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD", EMAIL_TREASURER, variables);
+    sendEmailFromTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD", EMAIL_BOARD, variables);
   } catch (e) {
     Logger.log("ERROR sending health check alert: " + e);
   }

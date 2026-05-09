@@ -1,0 +1,26 @@
+GEA System Health Check Alert
+
+SYSTEM HEALTH CHECK FAILURE DETECTED
+
+A critical system health check has failed. Immediate investigation is required.
+
+CHECK RESULTS:
+Timestamp: {{TIMESTAMP}}
+{{CHECK_DETAILS}}
+
+IMMEDIATE ACTIONS REQUIRED:
+1. Check Google Cloud Status: https://status.cloud.google.com
+2. Try accessing the portals (Portal and Admin) manually
+3. Run diagnostics from Apps Script editor: runDiagnostics()
+4. Review Apps Script execution logs for errors
+
+ESCALATION:
+If the issue persists after 30 minutes, contact the developer immediately.
+
+NEXT STEPS:
+1. Verify all critical systems are accessible
+2. Check cloud service status dashboard
+3. Monitor Audit Log for additional errors
+4. Prepare incident report if issue requires resolution
+
+For urgent support: Contact the developer or system administrator.

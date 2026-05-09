@@ -379,8 +379,8 @@ function performDailyBackup() {
     exports: []
   };
 
-  var backupFolderName = "GEA Backups";
-  var backupFolder = _getOrCreateFolder(backupFolderName);
+  // Use shared drive GEA Backups folder
+  var backupFolder = DriveApp.getFolderById(SHARED_DRIVE_BACKUPS_FOLDER_ID);
   var dateStr = Utilities.formatDate(new Date(), "Africa/Johannesburg", "yyyy-MM-dd");
 
   // Define sheets to backup
@@ -428,6 +428,7 @@ function performDailyBackup() {
   _cleanupOldBackups(backupFolder, 30);
 
   Logger.log("=== Backup complete ===");
+  Logger.log("📁 Backups stored in: GEA Admin Shared Drive (GEA Backups folder)");
   return results;
 }
 

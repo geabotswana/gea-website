@@ -101,6 +101,7 @@ var FOLDER_IDENTIFICATION_SCANS     = "1uNDYDRLo_NpHTgNMvdiobuni5Jm_6kk8";  // R
 var FOLDER_EMPLOYMENT_VERIFICATION  = "1Ee9acuyKpbfEv7NVHCJqfRcaBExJHOEs";
 var FOLDER_FILE_SUBMISSION_ARCHIVE  = "1r-G03qnH-kN_1FBaze5OAtq3WfjyDYuy";
 var SHARED_DRIVE_SYSTEM_DATA_FOLDER_ID = "1FlXCWMzTjzSHZ3Eg-0eHiUuTMoqlFZNU";  // GEA Admin Shared Drive: System Data
+var SHARED_DRIVE_BACKUPS_FOLDER_ID = "1w6xOjxuQb4LMY9YcyX4r2yEz4gcmVo-A";  // GEA Admin Shared Drive: GEA Backups
 
 
 // ============================================================

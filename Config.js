@@ -100,6 +100,7 @@ var FOLDER_PAYMENT_CONFIRMATIONS    = "1vmcu23niZhkC6b2Ctw6gmVLxwM2dKUee";
 var FOLDER_IDENTIFICATION_SCANS     = "1uNDYDRLo_NpHTgNMvdiobuni5Jm_6kk8";  // Rename Drive folder: "Passport Scans" → "Identification Scans"
 var FOLDER_EMPLOYMENT_VERIFICATION  = "1Ee9acuyKpbfEv7NVHCJqfRcaBExJHOEs";
 var FOLDER_FILE_SUBMISSION_ARCHIVE  = "1r-G03qnH-kN_1FBaze5OAtq3WfjyDYuy";
+var SHARED_DRIVE_SYSTEM_DATA_FOLDER_ID = "1FlXCWMzTjzSHZ3Eg-0eHiUuTMoqlFZNU";  // GEA Admin Shared Drive: System Data
 
 
 // ============================================================

@@ -58,19 +58,15 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 2: Gmail API (draft test email)
+  // Check 2: Gmail API (verify service is accessible)
   try {
-    var testDraft = GmailApp.createDraft(
-      EMAIL_TREASURER,
-      "[SYSTEM] Health Check - " + new Date().toISOString(),
-      "This is a health check test email. If you are seeing this, the Gmail API is operational. This draft should be deleted."
-    );
-    // Delete the draft immediately (we only needed to verify Gmail API is accessible)
-    testDraft.deleteDraft();
+    // Check Gmail quota without requiring broad mail.google.com scope
+    // MailApp.getRemainingDailyQuota() requires only gmail.send scope
+    var quota = MailApp.getRemainingDailyQuota();
     results.checks.push({
       name: "Gmail API",
       status: "PASS",
-      detail: "Draft creation and deletion successful"
+      detail: "Gmail service accessible, " + quota + " messages remaining today"
     });
   } catch (e) {
     results.checks.push({
@@ -266,9 +262,10 @@ function runDiagnostics() {
   // TEST 3: Gmail API
   Logger.log("\nTEST 3: Gmail API");
   try {
-    var threads = GmailApp.getInboxThreads(0, 1);
-    report.details.push({ test: "Gmail API", status: "PASS", detail: "Gmail is accessible" });
-    Logger.log("✅ Gmail API: OK");
+    // Check Gmail quota without requiring broad mail.google.com scope
+    var quota = MailApp.getRemainingDailyQuota();
+    report.details.push({ test: "Gmail API", status: "PASS", detail: "Gmail accessible, " + quota + " messages remaining" });
+    Logger.log("✅ Gmail API: OK (" + quota + " messages remaining)");
   } catch (e) {
     report.details.push({ test: "Gmail API", status: "FAIL", detail: e.toString() });
     report.criticalIssues.push("Gmail API error: " + e);

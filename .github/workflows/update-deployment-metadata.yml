@@ -6,7 +6,8 @@ on:
       - main
     paths:
       - '*.js'
-      - '*.html'
+      - 'Admin.html'
+      - 'Portal.html'
       - '.github/workflows/update-deployment-metadata.yml'
 
 jobs:

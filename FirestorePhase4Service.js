@@ -57,9 +57,13 @@ function firestoreCreateSubmission(submission) {
  * Get a submission by ID.
  */
 function firestoreGetSubmission(submissionId) {
-  var fs = getFirestore();
-  var result = fs.getDocument('submissions/' + submissionId);
-  return result ? result.obj : null;
+  if (!submissionId) return null;
+  try {
+    var result = getFirestore().getDocument('submissions/' + submissionId);
+    return result.obj || null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -148,7 +152,7 @@ function firestoreUpdateSubmission(submissionId, updates) {
     updates.document_expiration_date = new Date(updates.document_expiration_date);
   }
 
-  fs.updateDocument('submissions/' + submissionId, updates);
+  fs.updateDocument('submissions/' + submissionId, updates, true);
 }
 
 /**
@@ -226,9 +230,13 @@ function firestoreCreatePayment(payment) {
  * Get a payment by ID.
  */
 function firestoreGetPayment(paymentId) {
-  var fs = getFirestore();
-  var result = fs.getDocument('payments/' + paymentId);
-  return result ? result.obj : null;
+  if (!paymentId) return null;
+  try {
+    var result = getFirestore().getDocument('payments/' + paymentId);
+    return result.obj || null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -280,7 +288,7 @@ function firestoreUpdatePayment(paymentId, updates) {
     updates.payment_verified_date = new Date(updates.payment_verified_date);
   }
 
-  fs.updateDocument('payments/' + paymentId, updates);
+  fs.updateDocument('payments/' + paymentId, updates, true);
 }
 
 // ============================================================================
@@ -350,9 +358,13 @@ function firestoreCreateApplication(application) {
  * Get an application by ID.
  */
 function firestoreGetApplication(applicationId) {
-  var fs = getFirestore();
-  var result = fs.getDocument('applications/' + applicationId);
-  return result ? result.obj : null;
+  if (!applicationId) return null;
+  try {
+    var result = getFirestore().getDocument('applications/' + applicationId);
+    return result.obj || null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -413,7 +425,7 @@ function firestoreUpdateApplication(applicationId, updates) {
     updates.board_final_review_date = new Date(updates.board_final_review_date);
   }
 
-  fs.updateDocument('applications/' + applicationId, updates);
+  fs.updateDocument('applications/' + applicationId, updates, true);
 }
 
 // ============================================================================
@@ -481,9 +493,13 @@ function firestoreCreateHousehold(household) {
  * Get a household by ID.
  */
 function firestoreGetHousehold(householdId) {
-  var fs = getFirestore();
-  var result = fs.getDocument('households/' + householdId);
-  return result ? result.obj : null;
+  if (!householdId) return null;
+  try {
+    var result = getFirestore().getDocument('households/' + householdId);
+    return result.obj || null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -535,7 +551,7 @@ function firestoreUpdateHousehold(householdId, updates) {
     updates.approved_date = new Date(updates.approved_date);
   }
 
-  fs.updateDocument('households/' + householdId, updates);
+  fs.updateDocument('households/' + householdId, updates, true);
 }
 
 // ============================================================================
@@ -611,9 +627,13 @@ function firestoreCreateIndividual(householdId, individual) {
  * Get an individual by household ID and individual ID.
  */
 function firestoreGetIndividual(householdId, individualId) {
-  var fs = getFirestore();
-  var result = fs.getDocument('households/' + householdId + '/individuals/' + individualId);
-  return result ? result.obj : null;
+  if (!householdId || !individualId) return null;
+  try {
+    var result = getFirestore().getDocument('households/' + householdId + '/individuals/' + individualId);
+    return result.obj || null;
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -656,7 +676,7 @@ function firestoreUpdateIndividual(householdId, individualId, updates) {
     updates.staff_rso_clearance_date = new Date(updates.staff_rso_clearance_date);
   }
 
-  fs.updateDocument('households/' + householdId + '/individuals/' + individualId, updates);
+  fs.updateDocument('households/' + householdId + '/individuals/' + individualId, updates, true);
 }
 
 /**

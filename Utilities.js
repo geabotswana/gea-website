@@ -676,3 +676,57 @@ function rowToObject(headers, row) {
   for (var i = 0; i < headers.length; i++) obj[headers[i]] = row[i];
   return obj;
 }
+
+
+// ============================================================
+// CONSOLIDATED HELPER FUNCTIONS (moved from service modules)
+// ============================================================
+
+/**
+ * Appends a row to a sheet using column headers as object keys.
+ * Used by PaymentService and FileSubmissionService.
+ * @param {Sheet} sheet Google Sheet with headers in row 1
+ * @param {Object} obj  Object with keys matching column headers
+ */
+function _appendRowByHeaders_(sheet, obj) {
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var row = [];
+  for (var i = 0; i < headers.length; i++) row.push(obj[headers[i]] !== undefined ? obj[headers[i]] : "");
+  sheet.appendRow(row);
+}
+
+/**
+ * Gets the primary member's first name for a household.
+ * Used by MemberService, ReservationService, and Code.js.
+ * @param {string} householdId
+ * @returns {string} Primary member's first name or empty string
+ */
+function _getPrimaryFirstName(householdId) {
+  try {
+    var hh = getHouseholdById(householdId);
+    return hh ? (hh.primary_first_name || hh.household_name || "") : "";
+  } catch (e) { return ""; }
+}
+
+/**
+ * Invalidates all active sessions for a given email address.
+ * Used by AuthService for logout, password reset, and role changes.
+ * @param {string} email Member email address
+ */
+function _invalidateSessionsForEmail(email) {
+  try {
+    var sheet   = SpreadsheetApp.openById(SYSTEM_BACKEND_ID).getSheetByName(TAB_SESSIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var emlCol  = headers.indexOf("email");
+    var actCol  = headers.indexOf("active");
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][emlCol] === email && data[i][actCol]) {
+        sheet.getRange(i + 1, actCol + 1).setValue(false);
+      }
+    }
+  } catch (e) {
+    Logger.log("ERROR _invalidateSessionsForEmail: " + e);
+  }
+}

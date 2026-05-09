@@ -777,14 +777,6 @@ function _getPrimaryEmail(householdId) {
   return null;
 }
 
-function _getPrimaryFirstName(householdId) {
-  var members = getHouseholdMembers(householdId);
-  for (var i = 0; i < members.length; i++) {
-    if (members[i].relationship_to_primary === RELATIONSHIP_PRIMARY) return members[i].first_name;
-  }
-  return "";
-}
-
 function _getPrimaryFullName(householdId) {
   var members = getHouseholdMembers(householdId);
   for (var i = 0; i < members.length; i++) {

@@ -628,13 +628,6 @@ function _getFileSubmissionsSheet_() {
   return SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_FILE_SUBMISSIONS);
 }
 
-function _appendRowByHeaders_(sheet, obj) {
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var row = [];
-  for (var i = 0; i < headers.length; i++) row.push(obj[headers[i]] !== undefined ? obj[headers[i]] : "");
-  sheet.appendRow(row);
-}
-
 function _findSubmissionById_(submissionId) {
   var sheet = _getFileSubmissionsSheet_();
   var data = sheet.getDataRange().getValues();

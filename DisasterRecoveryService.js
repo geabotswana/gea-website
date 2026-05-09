@@ -152,28 +152,19 @@ function _countRecentHealthCheckFailures(minutesBack) {
  * Alerts both Treasurer and Board on any health check failure.
  */
 function _sendHealthCheckAlert(results, escalation) {
-  var subject = "🚨 GEA Health Check Failed - Immediate Investigation Required";
+  var checkDetails = results.checks.map(function(check) {
+    return "[" + check.status + "] " + check.name + " - " + check.detail;
+  }).join("\n");
 
-  var body = "GEA System Health Check Results:\n\n";
-  body += "Time: " + results.timestamp.toISOString() + "\n\n";
-
-  results.checks.forEach(function(check) {
-    body += "[" + check.status + "] " + check.name + "\n";
-    body += "  Detail: " + check.detail + "\n\n";
-  });
-
-  body += "---\n";
-  body += "IMMEDIATE ACTIONS:\n";
-  body += "1. Check Google Cloud Status: https://status.cloud.google.com\n";
-  body += "2. Try accessing portals manually\n";
-  body += "3. Run Tests.js > runDiagnostics() for detailed diagnostics\n";
-  body += "4. Check Apps Script execution logs\n\n";
-
-  body += "Contact Claude Code / Developer if the issue persists.\n";
+  var variables = {
+    TIMESTAMP: results.timestamp.toISOString(),
+    CHECK_DETAILS: checkDetails,
+    DIAGNOSTIC_URL: URL_MEMBER_PORTAL + "?page=diagnostics"
+  };
 
   try {
-    MailApp.sendEmail(EMAIL_TREASURER, subject, body);
-    MailApp.sendEmail(EMAIL_BOARD, subject, body);
+    sendEmailFromTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD", EMAIL_BOARD, variables);
+    sendEmailFromTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD", EMAIL_TREASURER, variables);
   } catch (e) {
     Logger.log("ERROR sending health check alert: " + e);
   }

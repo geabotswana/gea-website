@@ -273,11 +273,6 @@ function createReservation(params) {
     return { success: false, message: "Failed to save reservation. Please try again." };
   }
 
-  // Mirror to Firestore (non-fatal)
-  try { firestoreCreateReservation(row); } catch (e) {
-    Logger.log("WARN createReservation Firestore write: " + e.message);
-  }
-
   logAuditEntry(params.primaryEmail, AUDIT_RESERVATION_CREATED, "Reservation",
                 reservationId, params.facility + " on " + formatDate(params.eventDate));
 
@@ -849,11 +844,6 @@ function submitGuestList(reservationId, guests, memberEmail) {
     return { ok: false, message: "Failed to save guest list. Please try again." };
   }
 
-  // Mirror to Firestore (non-fatal)
-  try { firestoreSubmitGuestList(row); } catch (e) {
-    Logger.log("WARN submitGuestList Firestore write: " + e.message);
-  }
-
   // Mark reservation as having a submitted guest list
   _updateReservationField(reservationId, "guest_list_submitted", true, memberEmail);
 
@@ -886,10 +876,6 @@ function submitGuestList(reservationId, guests, memberEmail) {
  */
 function getGuestListForReservation(reservationId) {
   if (!reservationId) return null;
-  // Firestore-first
-  var fsResult = firestoreGetGuestListForReservation(reservationId);
-  if (fsResult) return fsResult;
-  // Sheets fallback
   try {
     var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
     var data    = sheet.getDataRange().getValues();
@@ -921,14 +907,6 @@ function getGuestListForReservation(reservationId) {
  */
 function getGuestListsByStatus(status) {
   status = status || GUEST_LIST_STATUS_SUBMITTED;
-  // Firestore-first
-  try {
-    var fsResults = firestoreGetGuestListsByStatus(status);
-    if (fsResults.length) return fsResults;
-  } catch (e) {
-    Logger.log("WARN getGuestListsByStatus Firestore fallback: " + e.message);
-  }
-  // Sheets fallback
   try {
     var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_LISTS);
     var data    = sheet.getDataRange().getValues();
@@ -992,10 +970,6 @@ function saveGuestProfile(householdId, guestData, actorEmail) {
           logAuditEntry(actorEmail, AUDIT_GUEST_PROFILE_SAVED, "GuestProfile",
                         existingProfileId,
                         "Updated profile for " + guestData.first_name + " " + guestData.last_name);
-          // Mirror to Firestore (non-fatal)
-          try { firestoreSaveGuestProfile(householdId, Object.assign({}, guestData, { guest_profile_id: existingProfileId })); } catch (e) {
-            Logger.log("WARN saveGuestProfile Firestore update: " + e.message);
-          }
           return existingProfileId;
         }
       }
@@ -1020,11 +994,6 @@ function saveGuestProfile(householdId, guestData, actorEmail) {
     logAuditEntry(actorEmail, AUDIT_GUEST_PROFILE_SAVED, "GuestProfile",
                   profileId, "Created profile for " + guestData.first_name + " " + guestData.last_name);
 
-    // Mirror to Firestore (non-fatal)
-    try { firestoreSaveGuestProfile(householdId, Object.assign({}, guestData, { guest_profile_id: profileId })); } catch (e) {
-      Logger.log("WARN saveGuestProfile Firestore: " + e.message);
-    }
-
     return profileId;
   } catch (e) {
     Logger.log("ERROR saveGuestProfile: " + e);
@@ -1040,14 +1009,6 @@ function saveGuestProfile(householdId, guestData, actorEmail) {
  */
 function getGuestProfiles(householdId) {
   if (!householdId) return [];
-  // Firestore-first
-  try {
-    var fsResults = firestoreGetHouseholdGuestProfiles(householdId);
-    if (fsResults.length) return fsResults;
-  } catch (e) {
-    Logger.log("WARN getGuestProfiles Firestore fallback: " + e.message);
-  }
-  // Sheets fallback
   try {
     var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_GUEST_PROFILES);
     if (!sheet) return [];
@@ -1154,14 +1115,6 @@ function saveGuestListDraft(guestListId, decisions, rsoEmail) {
       sheet.getRange(i + 1, headers.indexOf("rso_reviewed_by")   + 1).setValue(rsoEmail);
       sheet.getRange(i + 1, headers.indexOf("last_modified_date") + 1).setValue(now);
 
-      // Mirror to Firestore (non-fatal)
-      var gl = rowToObject(headers, data[i]);
-      try {
-        firestoreSaveGuestListDraft(gl.reservation_id, decisions, rsoEmail, gl.guests_json);
-      } catch (e) {
-        Logger.log("WARN saveGuestListDraft Firestore: " + e.message);
-      }
-
       logAuditEntry(rsoEmail, AUDIT_GUEST_LIST_DRAFT_SAVED, "GuestList",
                     guestListId, "Draft saved with " + decisions.length + " decision(s)");
       return true;
@@ -1220,13 +1173,6 @@ function finalizeGuestListReview(guestListId, decisions, rsoEmail) {
       sheet.getRange(i + 1, headers.indexOf("rso_reviewed_by")   + 1).setValue(rsoEmail);
       sheet.getRange(i + 1, headers.indexOf("rso_review_date")   + 1).setValue(now);
       sheet.getRange(i + 1, headers.indexOf("last_modified_date") + 1).setValue(now);
-
-      // Mirror to Firestore (non-fatal) — also updates guest profiles
-      try {
-        firestoreFinalizeGuestListReview(gl.reservation_id, decisions, rsoEmail, gl);
-      } catch (e) {
-        Logger.log("WARN finalizeGuestListReview Firestore: " + e.message);
-      }
 
       logAuditEntry(rsoEmail, AUDIT_GUEST_LIST_FINALIZED, "GuestList",
                     guestListId, "Finalized: " + approved.length + " approved, " + rejected.length + " rejected");
@@ -1466,10 +1412,6 @@ function _deleteCalendarEvent(calEventId) {
  */
 function getReservationById(reservationId) {
   if (!reservationId) return null;
-  // Firestore-first
-  var fsResult = firestoreGetReservationById(reservationId);
-  if (fsResult) return fsResult;
-  // Sheets fallback
   try {
     var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
     var data    = sheet.getDataRange().getValues();
@@ -1490,13 +1432,6 @@ function getReservationById(reservationId) {
  * @returns {boolean}
  */
 function hasConflict(facility, reservationStart, reservationEnd) {
-  // Firestore-first
-  try {
-    return firestoreHasConflict(facility, reservationStart, reservationEnd);
-  } catch (e) {
-    Logger.log("WARN hasConflict Firestore fallback: " + e.message);
-  }
-  // Sheets fallback
   try {
     var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
     var data    = sheet.getDataRange().getValues();
@@ -1535,10 +1470,6 @@ function _updateReservationField(reservationId, fieldName, value, updatedBy) {
     reservationId, fieldName, value, updatedBy,
     AUDIT_RESERVATION_CREATED, "Reservation"
   );
-  // Mirror to Firestore (non-fatal)
-  try { firestoreUpdateReservationField(reservationId, fieldName, value); } catch (e) {
-    Logger.log("WARN _updateReservationField Firestore: " + e.message);
-  }
   return result;
 }
 
@@ -1548,13 +1479,6 @@ function _updateReservationField(reservationId, fieldName, value, updatedBy) {
  */
 function _sumReservationHours(householdId, facility, fromDate, toDate, statuses) {
   var facilities = Array.isArray(facility) ? facility : [facility];
-  // Firestore-first
-  try {
-    return firestoreSumReservationHours(householdId, facilities, fromDate, toDate, statuses);
-  } catch (e) {
-    Logger.log("WARN _sumReservationHours Firestore fallback: " + e.message);
-  }
-  // Sheets fallback
   var total = 0;
   try {
     var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
@@ -1582,13 +1506,6 @@ function _sumReservationHours(householdId, facility, fromDate, toDate, statuses)
  * Counts reservation rows matching household, facilities, date range, statuses.
  */
 function _countReservations(householdId, facilities, fromDate, toDate, statuses) {
-  // Firestore-first
-  try {
-    return firestoreCountReservations(householdId, facilities, fromDate, toDate, statuses);
-  } catch (e) {
-    Logger.log("WARN _countReservations Firestore fallback: " + e.message);
-  }
-  // Sheets fallback
   var count = 0;
   try {
     var sheet = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);

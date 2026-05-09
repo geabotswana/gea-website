@@ -660,15 +660,41 @@ function firestoreUpdateIndividual(householdId, individualId, updates) {
 }
 
 /**
- * Get all individuals across all households by email (CollectionGroup query).
+ * Get an individual by email across all households.
+ * Queries all households' individuals subcollections (fallback since CollectionGroup not directly supported).
  */
 function firestoreGetIndividualByEmail(email) {
   var fs = getFirestore();
   try {
-    var results = fs.query('individuals')
-      .Where('email', '==', email)
-      .Execute();
-    return results.length > 0 ? results[0].obj : null;
+    // Get all households
+    var households = firestoreGetActiveHouseholds();
+
+    // Search each household's individuals for matching email
+    for (var i = 0; i < households.length; i++) {
+      var householdId = households[i].household_id;
+      var individuals = firestoreGetIndividualsForHousehold(householdId);
+
+      for (var j = 0; j < individuals.length; j++) {
+        if (individuals[j].email === email) {
+          return individuals[j];
+        }
+      }
+    }
+
+    // Also search inactive households if not found
+    var allHouseholds = fs.query('households').Execute();
+    for (var k = 0; k < allHouseholds.length; k++) {
+      var hhId = allHouseholds[k].obj.household_id;
+      var inds = firestoreGetIndividualsForHousehold(hhId);
+
+      for (var l = 0; l < inds.length; l++) {
+        if (inds[l].email === email) {
+          return inds[l];
+        }
+      }
+    }
+
+    return null;
   } catch (e) {
     Logger.log('Error querying individual by email ' + email + ': ' + e);
     return null;

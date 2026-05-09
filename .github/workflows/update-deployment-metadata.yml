@@ -5,22 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'Code.js'
-      - 'Admin.html'
-      - 'Portal.html'
-      - 'AuthService.js'
-      - 'MemberService.js'
-      - 'ReservationService.js'
-      - 'PaymentService.js'
-      - 'FileSubmissionService.js'
-      - 'EmailService.js'
-      - 'NotificationService.js'
-      - 'ApplicationService.js'
-      - 'RulesService.js'
-      - 'Utilities.js'
-      - 'FirestoreService.js'
-      - 'FirestoreAuthService.js'
-      - 'FirestoreReservationService.js'
+      - '*.js'
+      - '*.html'
       - '.github/workflows/update-deployment-metadata.yml'
 
 jobs:
@@ -65,9 +51,9 @@ jobs:
 
           # Update Config.js with proper escaping of special characters in commit message
           ESCAPED_FEATURE=$(printf '%s\n' "$FEATURE" | sed -e 's/[\/&]/\\&/g')
-          sed -i "s|var SYSTEM_VERSION.*=.*|var SYSTEM_VERSION          = \"$NEW_VERSION\";|" Config.js
-          sed -i "s|var SYSTEM_BUILD_DATE.*|var SYSTEM_BUILD_DATE       = \"$(date +%Y-%m-%d)\";|" Config.js
-          sed -i "s|var SYSTEM_LAST_FEATURE.*|var SYSTEM_LAST_FEATURE     = \"$ESCAPED_FEATURE\";|" Config.js
+          sed -i "s|var SYSTEM_VERSION.*=.*|var SYSTEM_VERSION          = \"$NEW_VERSION\";"|" Config.js
+          sed -i "s|var SYSTEM_BUILD_DATE.*|var SYSTEM_BUILD_DATE       = \"$(date +%Y-%m-%d)\";"|" Config.js
+          sed -i "s|var SYSTEM_LAST_FEATURE.*|var SYSTEM_LAST_FEATURE     = \"$ESCAPED_FEATURE\";"|" Config.js
 
           echo "✅ Updated version from $CURRENT_VERSION → $NEW_VERSION"
           echo "✅ Feature: $FEATURE"

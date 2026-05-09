@@ -6338,7 +6338,12 @@ function submitPasswordReset(event) {
 
       // Time column
       var timeTd = document.createElement('td');
-      timeTd.textContent = (res.start_time || '—') + '–' + (res.end_time || '—');
+      var fmtTime = function(iso) {
+        if (!iso) return '—';
+        var d = new Date(iso);
+        return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      };
+      timeTd.textContent = fmtTime(res.reservation_start) + '–' + fmtTime(res.reservation_end);
       row.appendChild(timeTd);
 
       // Status column
@@ -9185,17 +9190,18 @@ function submitPasswordReset(event) {
 
           // Date
           var dateTd = document.createElement('td');
-          var resDate = res.reservation_date || res.event_date;
-          var dateStr = resDate ? new Date(resDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+          var dateStr = res.reservation_start
+            ? new Date(res.reservation_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '—';
           dateTd.textContent = dateStr;
           row.appendChild(dateTd);
 
           // Facility + time
           var facilityTd = document.createElement('td');
           var facilityText = (res.facility || '—');
-          if (res.start_time && res.end_time) {
-            facilityText += ' (' + new Date(res.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) +
-                            ' – ' + new Date(res.end_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ')';
+          if (res.reservation_start && res.reservation_end) {
+            facilityText += ' (' + new Date(res.reservation_start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) +
+                            ' – ' + new Date(res.reservation_end).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ')';
           }
           facilityTd.textContent = facilityText;
           row.appendChild(facilityTd);
@@ -9393,7 +9399,7 @@ function submitPasswordReset(event) {
     // Index events by YYYY-MM-DD for the selected month
     var byDate = {};
     _portalCalReservations.forEach(function(res) {
-      var rawDate = res.reservation_date || res.event_date;
+      var rawDate = res.reservation_start;
       if (!rawDate) return;
       var d = new Date(rawDate);
       if (isNaN(d.getTime())) return;
@@ -9510,8 +9516,8 @@ function submitPasswordReset(event) {
     apiCall('book', {
       facility: facility,
       event_date: eventDate,
-      start_time: eventDate + 'T' + startTime,
-      end_time: eventDate + 'T' + endTime,
+      reservation_start: eventDate + 'T' + startTime,
+      reservation_end: eventDate + 'T' + endTime,
       duration_hours: durationHours,
       event_name: eventName,
       has_guests: hasGuests,

@@ -975,7 +975,7 @@ function _handleBook(p) {
   if (!auth.ok) return auth.response;
 
   // Validate required parameters
-  var required = ["facility", "event_date", "start_time", "end_time",
+  var required = ["facility", "event_date", "reservation_start", "reservation_end",
                   "duration_hours", "event_name"];
   for (var i = 0; i < required.length; i++) {
     if (!p[required[i]]) {
@@ -1009,8 +1009,8 @@ function _handleBook(p) {
     primaryEmail:            auth.session.email,
     facility:                facility,
     eventDate:               eventDate,
-    startTime:               new Date(p.start_time),
-    endTime:                 new Date(p.end_time),
+    reservationStart:        new Date(p.reservation_start),
+    reservationEnd:          new Date(p.reservation_end),
     durationHours:           parseFloat(p.duration_hours),
     eventName:               p.event_name,
     hasGuests:               p.has_guests === "true",
@@ -1214,9 +1214,9 @@ function _handleAdminPending(p) {
       }
     }
 
-    // Step 4: Sort by reservation_date ascending
+    // Step 4: Sort by reservation_start ascending
     pending.sort(function(a, b) {
-      return new Date(a.reservation_date) - new Date(b.reservation_date);
+      return new Date(a.reservation_start) - new Date(b.reservation_start);
     });
 
     return successResponse({
@@ -1410,11 +1410,11 @@ function _handleAdminWaitlistList(p) {
       }
     }
 
-    // Sort: facility asc, then reservation_date asc, then submission_timestamp asc
+    // Sort: facility asc, then reservation_start asc, then submission_timestamp asc
     waitlisted.sort(function(a, b) {
       if (a.facility < b.facility) return -1;
       if (a.facility > b.facility) return  1;
-      var da = new Date(a.reservation_date), db = new Date(b.reservation_date);
+      var da = new Date(a.reservation_start), db = new Date(b.reservation_start);
       if (da - db !== 0) return da - db;
       return new Date(a.submission_timestamp) - new Date(b.submission_timestamp);
     });

@@ -63,8 +63,7 @@ function healthCheck() {
     var testDraft = GmailApp.createDraft(
       EMAIL_TREASURER,
       "[SYSTEM] Health Check - " + new Date().toISOString(),
-      "This is a health check test email. If you are seeing this, the Gmail API is operational. This draft should be deleted.",
-      { from: SESSION_EMAIL }
+      "This is a health check test email. If you are seeing this, the Gmail API is operational. This draft should be deleted."
     );
     results.checks.push({
       name: "Gmail API",
@@ -123,7 +122,7 @@ function healthCheck() {
 /**
  * Count health check failures in the past N minutes.
  * Returns count of HEALTH_CHECK_FAILED entries.
- * Audit Log columns: timestamp(0), user_email(1), action_type(2), target_type(3), target_id(4), details(5), ip_address(6)
+ * Audit Log columns: log_id(0), timestamp(1), user_email(2), action_type(3), target_type(4), target_id(5), details(6)
  */
 function _countRecentHealthCheckFailures(minutesBack) {
   try {
@@ -137,8 +136,8 @@ function _countRecentHealthCheckFailures(minutesBack) {
     var count = 0;
     for (var i = 1; i < allData.length; i++) {
       var row = allData[i];
-      var actionType = row[2]; // Column 2: action_type (0-indexed)
-      var timestamp = new Date(row[0]); // Column 0: timestamp
+      var actionType = row[3]; // Column 3: action_type (0-indexed)
+      var timestamp = new Date(row[1]); // Column 1: timestamp
 
       if (actionType === "HEALTH_CHECK_FAILED" && timestamp >= cutoffTime) {
         count++;
@@ -238,13 +237,6 @@ function runDiagnostics() {
 
   // TEST 2: Sheets API - All 4 critical sheets
   Logger.log("\nTEST 2: Sheets API (Critical Sheets)");
-  var sheetTests = [
-    { id: SPREADSHEET_ID_MEMBERS, name: "Member Directory" },
-    { id: SPREADSHEET_ID_RESERVATIONS, name: "Reservations" },
-    { id: SPREADSHEET_ID_SYSTEM, name: "System Backend" },
-    { id: SPREADSHEET_ID_PAYMENTS, name: "Payments" }
-  ];
-
   var sheetTestDefs = [
     { id: MEMBER_DIRECTORY_ID, name: "Member Directory" },
     { id: RESERVATIONS_ID, name: "Reservations" },

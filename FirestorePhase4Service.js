@@ -676,6 +676,199 @@ function firestoreGetIndividualByEmail(email) {
 }
 
 // ============================================================================
+// TESTS
+// ============================================================================
+
+/**
+ * Creates test documents for all Phase 4 collections.
+ * Run this first, then run testPhase4Read() to verify.
+ */
+function createTestPhase4Data() {
+  var db  = getFirestore();
+  var now = new Date();
+
+  var householdId   = 'HSH-TEST-00001';
+  var individualId  = 'IND-TEST-00001';
+  var submissionId  = 'FSB-TEST-00001';
+  var paymentId     = 'PAY-TEST-00001';
+  var applicationId = 'APP-TEST-00001';
+
+  // Clean up existing test docs
+  try { db.deleteDocument('households/' + householdId); } catch (e) {}
+  try { db.deleteDocument('households/' + householdId + '/individuals/' + individualId); } catch (e) {}
+  try { db.deleteDocument('submissions/' + submissionId); } catch (e) {}
+  try { db.deleteDocument('payments/' + paymentId); } catch (e) {}
+  try { db.deleteDocument('applications/' + applicationId); } catch (e) {}
+
+  // Household
+  firestoreCreateHousehold({
+    household_id:              householdId,
+    household_name:            'Test Family',
+    primary_member_id:         individualId,
+    household_type:            'Family',
+    membership_category:       'Full',
+    membership_level_id:       'full_family',
+    membership_duration_months: 12,
+    membership_start_date:     new Date('2026-01-01'),
+    membership_expiration_date: new Date('2026-12-31'),
+    dues_amount:               500,
+    dues_paid_amount:          500,
+    balance_due:               0,
+    address_city:              'Gaborone',
+    address_country:           'Botswana',
+    active:                    true,
+    membership_status:         'Member',
+    approved_by:               'board@geabotswana.org',
+    approved_date:             new Date('2026-01-10')
+  });
+  Logger.log('Created test household: ' + householdId);
+
+  // Individual (subcollection)
+  firestoreCreateIndividual(householdId, {
+    individual_id:             individualId,
+    first_name:                'Test',
+    last_name:                 'User',
+    email:                     'testuser@example.com',
+    date_of_birth:             new Date('1985-06-15'),
+    age_category:              'Adult',
+    relationship_to_primary:   'Primary',
+    citizenship_country:       'United States',
+    us_citizen:                true,
+    passport_status:           'verified',
+    passport_expiration_date:  new Date('2030-01-01'),
+    photo_status:              'approved',
+    can_access_unaccompanied:  true,
+    voting_eligible:           true,
+    fitness_center_eligible:   true,
+    office_eligible:           true,
+    active:                    true,
+    employment_job_title:      'Test Officer',
+    employment_office:         'EXEC'
+  });
+  Logger.log('Created test individual: ' + individualId + ' under ' + householdId);
+
+  // Submission
+  firestoreCreateSubmission({
+    submission_id:        submissionId,
+    individual_id:        individualId,
+    household_id:         householdId,
+    document_type:        'passport',
+    file_id:              'test_file_id_001',
+    submitted_by_email:   'testuser@example.com',
+    submitted_date:       now,
+    status:               'verified',
+    is_current:           true,
+    cloud_storage_path:   'gs://gea-test/passport_test.pdf',
+    file_display_name:    'passport_test.pdf',
+    file_size_bytes:      204800,
+    document_expiration_date: new Date('2030-01-01'),
+    submission_type:      'document'
+  });
+  Logger.log('Created test submission: ' + submissionId);
+
+  // Payment
+  firestoreCreatePayment({
+    payment_id:              paymentId,
+    household_id:            householdId,
+    household_name:          'Test Family',
+    payment_date:            new Date('2026-01-15'),
+    payment_method:          'Bank Transfer',
+    currency:                'USD',
+    amount:                  500,
+    amount_usd:              500,
+    amount_bwp:              6700,
+    payment_type:            'Dues Payment',
+    applied_to_period:       '2026',
+    recorded_by:             'board@geabotswana.org',
+    payment_submitted_date:  new Date('2026-01-10'),
+    payment_verified_date:   new Date('2026-01-15'),
+    payment_verified_by:     'board@geabotswana.org',
+    payment_status:          'verified',
+    balance_due_amount:      0
+  });
+  Logger.log('Created test payment: ' + paymentId);
+
+  // Application
+  firestoreCreateApplication({
+    application_id:            applicationId,
+    household_id:              householdId,
+    primary_individual_id:     individualId,
+    primary_applicant_name:    'Test User',
+    primary_applicant_email:   'testuser@example.com',
+    membership_category:       'Full',
+    household_type:            'Family',
+    employment_job_title:      'Test Officer',
+    dues_amount:               500,
+    membership_start_date:     new Date('2026-01-01'),
+    membership_expiration_date: new Date('2026-12-31'),
+    status:                    'activated',
+    submitted_date:            new Date('2025-12-01'),
+    board_initial_status:      'approved',
+    board_initial_reviewed_by: 'board@geabotswana.org',
+    board_initial_review_date: new Date('2025-12-10'),
+    rso_status:                'approved',
+    rso_reviewed_by:           'rso@embassy.gov',
+    rso_review_date:           new Date('2025-12-15'),
+    board_final_status:        'approved',
+    board_final_reviewed_by:   'board@geabotswana.org',
+    board_final_review_date:   new Date('2025-12-20'),
+    payment_status:            'verified',
+    payment_id:                paymentId,
+    rules_agreement_accepted:  true,
+    rules_agreement_name:      'Test User',
+    rules_agreement_date:      new Date('2025-12-01')
+  });
+  Logger.log('Created test application: ' + applicationId);
+
+  Logger.log('Phase 4 test data ready — run testPhase4Read() to verify.');
+}
+
+/**
+ * Verifies Firestore reads for all Phase 4 collections.
+ * Run after createTestPhase4Data().
+ */
+function testPhase4Read() {
+  var householdId   = 'HSH-TEST-00001';
+  var individualId  = 'IND-TEST-00001';
+  var submissionId  = 'FSB-TEST-00001';
+  var paymentId     = 'PAY-TEST-00001';
+  var applicationId = 'APP-TEST-00001';
+
+  var hh = firestoreGetHousehold(householdId);
+  Logger.log('Household read: ' + (hh ? 'OK — ' + hh.household_name + ', status: ' + hh.membership_status : 'FAILED'));
+
+  var ind = firestoreGetIndividual(householdId, individualId);
+  Logger.log('Individual read: ' + (ind ? 'OK — ' + ind.first_name + ' ' + ind.last_name + ', email: ' + ind.email : 'FAILED'));
+
+  var indByEmail = firestoreGetIndividualByEmail('testuser@example.com');
+  Logger.log('Individual by email: ' + (indByEmail ? 'OK — ' + indByEmail.individual_id : 'FAILED'));
+
+  var inds = firestoreGetIndividualsForHousehold(householdId);
+  Logger.log('Individuals for household: ' + (inds.length > 0 ? 'OK — ' + inds.length + ' found' : 'FAILED (0 returned)'));
+
+  var sub = firestoreGetSubmission(submissionId);
+  Logger.log('Submission read: ' + (sub ? 'OK — ' + sub.document_type + ', status: ' + sub.status : 'FAILED'));
+
+  var currentPassport = firestoreGetCurrentSubmissionByType(individualId, 'passport');
+  Logger.log('Current passport: ' + (currentPassport ? 'OK — ' + currentPassport.submission_id : 'FAILED'));
+
+  var subsByInd = firestoreGetSubmissionsForIndividual(individualId);
+  Logger.log('Submissions for individual: ' + (subsByInd.length > 0 ? 'OK — ' + subsByInd.length + ' found' : 'FAILED (0 returned)'));
+
+  var pay = firestoreGetPayment(paymentId);
+  Logger.log('Payment read: ' + (pay ? 'OK — $' + pay.amount_usd + ' ' + pay.payment_status : 'FAILED'));
+
+  var paysByHh = firestoreGetPaymentsForHousehold(householdId);
+  Logger.log('Payments for household: ' + (paysByHh.length > 0 ? 'OK — ' + paysByHh.length + ' found' : 'FAILED (0 returned)'));
+
+  var app = firestoreGetApplication(applicationId);
+  Logger.log('Application read: ' + (app ? 'OK — ' + app.membership_category + ', status: ' + app.status : 'FAILED'));
+
+  var appsByHh = firestoreGetApplicationsForHousehold(householdId);
+  Logger.log('Applications for household: ' + (appsByHh.length > 0 ? 'OK — ' + appsByHh.length + ' found' : 'FAILED (0 returned)'));
+}
+
+// ============================================================================
 // HELPER: Generate ID
 // ============================================================================
 

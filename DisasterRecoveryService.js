@@ -7,7 +7,7 @@
  *
  * FUNCTIONS TO ATTACH AS TRIGGERS:
  *   healthCheck() — Daily at 4:00 AM (after backup at 2:00 AM)
- *     Alerts Board on ANY health check failure
+ *     Alerts Treasurer + Board on ANY health check failure
  *
  * MANUAL FUNCTIONS (run from Apps Script editor):
  *   runDiagnostics() — Comprehensive system health report (6 core tests)
@@ -97,19 +97,17 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Log result
+  // Log result and send daily report
   if (results.allPassed) {
     Logger.log("✅ Health check PASSED at " + results.timestamp);
     logAuditEntry(null, "HEALTH_CHECK_PASSED", null, null, "All checks passed");
   } else {
     Logger.log("❌ Health check FAILED at " + results.timestamp);
     logAuditEntry(null, "HEALTH_CHECK_FAILED", null, null, JSON.stringify(results.checks));
-
-    // Check failure count in past hour
-    var failureCount = _countRecentHealthCheckFailures(60);
-    // Alert on any failure (escalation = true) since daily checks should be rare failures
-    _sendHealthCheckAlert(results, true);
   }
+
+  // Send daily report (whether passed or failed) to board
+  _sendHealthCheckResults(results);
 
   return results;
 }
@@ -148,10 +146,14 @@ function _countRecentHealthCheckFailures(minutesBack) {
 
 
 /**
- * Send alert email for health check failure.
- * Alerts the Board on any health check failure. Board delivery includes the Treasurer.
+ * Send daily health check results to the Board.
+ * Sends success report if all checks pass, alert if any check fails.
+ * If email send fails, sends critical fallback alert via GmailApp.
+ *
+ * @param {Object} results Health check results object with checks array
  */
-function _sendHealthCheckAlert(results, escalation) {
+function _sendHealthCheckResults(results) {
+  // Build detailed check results
   var checkDetails = "";
   results.checks.forEach(function(check) {
     checkDetails += "[" + check.status + "] " + check.name + "\n";
@@ -164,18 +166,39 @@ function _sendHealthCheckAlert(results, escalation) {
     CHECK_DETAILS: checkDetails
   };
 
-  // Send only to the board address. The Treasurer receives board mail through
-  // that group, so a separate Treasurer copy would be a duplicate.
-  // Use the GmailApp template transport so this alert path does not depend on
-  // UrlFetchApp/service-account token exchange.
-  var boardSent = sendEmailFromTemplateWithGmailApp(
-    "SYS_HEALTH_CHECK_ALERT_TO_BOARD",
-    EMAIL_BOARD,
-    variables
-  );
+  // Choose template based on results
+  var templateName = results.allPassed ?
+    "SYS_HEALTH_CHECK_PASSED_TO_BOARD" :
+    "SYS_HEALTH_CHECK_ALERT_TO_BOARD";
 
-  if (!boardSent) {
-    Logger.log("ERROR sending health check alert: board recipient failed");
+  Logger.log("Sending health check results: template=" + templateName + ", status=" + (results.allPassed ? "PASS" : "FAIL"));
+
+  // Send daily report using the proven sendEmailFromTemplate method
+  // (service-account DWD, not GmailApp)
+  var emailSent = sendEmailFromTemplate(templateName, EMAIL_BOARD, variables);
+
+  if (!emailSent) {
+    Logger.log("ERROR: Health check email send failed - sending critical fallback alert");
+    logAuditEntry(null, "HEALTH_CHECK_EMAIL_FAILED", null, null,
+                  "Failed to send health check results email to board");
+
+    // Critical fallback: if the healthcheck email itself fails, send immediate alert
+    try {
+      GmailApp.sendEmail(EMAIL_BOARD,
+        "🚨 CRITICAL: GEA Health Check Email Failed",
+        "The daily health check ran but FAILED to send results email.\n\n" +
+        "Check the Apps Script execution logs for errors.\n\n" +
+        "Last health check:\n" + checkDetails
+      );
+      Logger.log("✓ Fallback alert sent via GmailApp");
+      logAuditEntry(null, "HEALTH_CHECK_FALLBACK_ALERT_SENT", null, null, "Fallback email sent due to primary send failure");
+    } catch (fallbackError) {
+      Logger.log("CRITICAL: Both email send methods failed: " + fallbackError);
+      logAuditEntry(null, "HEALTH_CHECK_CRITICAL_FAILURE", null, null,
+                    "Email send failed completely: " + fallbackError.toString());
+    }
+  } else {
+    Logger.log("✓ Health check results sent successfully to board");
   }
 }
 

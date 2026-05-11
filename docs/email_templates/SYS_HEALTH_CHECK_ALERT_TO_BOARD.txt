@@ -1,5 +1,7 @@
 GEA System Health Check Alert
 
+Hello {{FIRST_NAME}},
+
 SYSTEM HEALTH CHECK FAILURE DETECTED
 
 A critical system health check has failed. Immediate investigation is required.

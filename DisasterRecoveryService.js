@@ -159,26 +159,23 @@ function _sendHealthCheckAlert(results, escalation) {
   });
 
   var variables = {
+    FIRST_NAME: "Board",
     TIMESTAMP: results.timestamp.toISOString(),
     CHECK_DETAILS: checkDetails
   };
 
-  try {
-    // Send only to the board address. The Treasurer receives board mail through
-    // that group, so a separate Treasurer copy would be a duplicate.
-    // Use the GmailApp template transport so this alert path does not depend on
-    // UrlFetchApp/service-account token exchange.
-    var boardSent = sendEmailFromTemplateWithGmailApp(
-      "SYS_HEALTH_CHECK_ALERT_TO_BOARD",
-      EMAIL_BOARD,
-      variables
-    );
+  // Send only to the board address. The Treasurer receives board mail through
+  // that group, so a separate Treasurer copy would be a duplicate.
+  // Use the GmailApp template transport so this alert path does not depend on
+  // UrlFetchApp/service-account token exchange.
+  var boardSent = sendEmailFromTemplateWithGmailApp(
+    "SYS_HEALTH_CHECK_ALERT_TO_BOARD",
+    EMAIL_BOARD,
+    variables
+  );
 
-    if (!boardSent) {
-      Logger.log("ERROR sending health check alert: board recipient failed");
-    }
-  } catch (e) {
-    Logger.log("ERROR sending health check alert: " + e);
+  if (!boardSent) {
+    Logger.log("ERROR sending health check alert: board recipient failed");
   }
 }
 

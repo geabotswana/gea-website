@@ -1059,12 +1059,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.85";
+var SYSTEM_VERSION          = "2.5.86";
 var SYSTEM_BUILD_DATE       = "2026-05-11";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Merge pull request #178 from geabotswana/codex/investigate-healthcheck-email-sending-method";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-11 09:53:26";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Compare email sending processes and add health check alert test (#179)";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-11 12:10:44";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

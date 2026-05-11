@@ -1086,6 +1086,78 @@ function _createSignedDomainDelegationJwt() {
   }
 }
 
+
+/**
+ * Sends a Drive-based email template using GmailApp instead of the service-account
+ * Gmail REST API transport used by sendEmailFromTemplate(). This keeps the same
+ * template lookup, variable substitution, footer, and HTML wrapping pipeline, but
+ * avoids UrlFetchApp.fetch() and the service-account OAuth token exchange.
+ *
+ * Use this for system-triggered operational alerts where the alert itself should
+ * not depend on the external HTTP/token-exchange path that may be under test.
+ *
+ * @param {string} templateName     Semantic name of template
+ * @param {string|Array} recipient  Email address(es)
+ * @param {Object} variables        Placeholder values
+ * @param {Object} options          Optional: { cc, bcc, replyTo }
+ * @returns {boolean}               true if sent successfully
+ */
+function sendEmailFromTemplateWithGmailApp(templateName, recipient, variables, options) {
+  try {
+    variables = variables || {};
+    options = options || {};
+
+    var template = getEmailTemplate(templateName);
+    if (!template) {
+      Logger.log("ERROR sendEmailFromTemplateWithGmailApp: Template not found: " + templateName);
+      logAuditEntry("system", AUDIT_EMAIL_SEND_FAILED, "EmailTemplate", templateName, "Template not found");
+      return false;
+    }
+
+    // Validate variables (warn but continue if missing), matching sendEmailFromTemplate().
+    var validation = validateTemplateVariables(templateName, variables);
+    if (!validation.valid) {
+      Logger.log("WARNING sendEmailFromTemplateWithGmailApp: Missing variables: " + validation.missing.join(", "));
+      logAuditEntry("system", AUDIT_EMAIL_MISSING_VARIABLES, "EmailTemplate", templateName,
+        "Missing: " + validation.missing.join(", "));
+    }
+
+    var subject = substituteTemplateVariables(template.subject, variables);
+    var plainBody = substituteTemplateVariables(template.body, variables);
+
+    // Keep the same footer/branding behavior as sendEmailFromTemplate().
+    plainBody = plainBody + "\n\n" + EMAIL_FOOTER;
+    var htmlBody = buildHtmlEmail(subject, plainBody);
+
+    subject = convertSpecialCharacters(subject);
+    htmlBody = convertSpecialCharacters(htmlBody);
+
+    var to = Array.isArray(recipient) ? recipient.join(",") : recipient;
+    var mailOptions = {
+      htmlBody: htmlBody,
+      name: EMAIL_SENDER_NAME,
+      replyTo: options.replyTo || EMAIL_BOARD,
+      charset: "UTF-8"
+    };
+
+    if (options.cc) mailOptions.cc = Array.isArray(options.cc) ? options.cc.join(",") : options.cc;
+    if (options.bcc) mailOptions.bcc = Array.isArray(options.bcc) ? options.bcc.join(",") : options.bcc;
+
+    GmailApp.sendEmail(to, subject, plainBody, mailOptions);
+
+    Logger.log("Email sent via GmailApp template transport: " + templateName + " → " + to);
+    logAuditEntry("system", AUDIT_EMAIL_SENT_FROM_TEMPLATE, "EmailTemplate", templateName,
+      "Sent to " + to + " via GmailApp");
+    return true;
+
+  } catch (e) {
+    Logger.log("ERROR sendEmailFromTemplateWithGmailApp(" + templateName + "): " + e);
+    logAuditEntry("system", AUDIT_EMAIL_SEND_FAILED, "EmailTemplate", templateName,
+      "Exception: " + e);
+    return false;
+  }
+}
+
 /**
  * Sends an email from a template with a file attachment.
  * Uses GmailApp.sendEmail() for simpler attachment support.

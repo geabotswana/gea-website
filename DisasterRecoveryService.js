@@ -7,7 +7,7 @@
  *
  * FUNCTIONS TO ATTACH AS TRIGGERS:
  *   healthCheck() — Daily at 4:00 AM (after backup at 2:00 AM)
- *     Alerts Treasurer + Board on ANY health check failure
+ *     Alerts Board on ANY health check failure
  *
  * MANUAL FUNCTIONS (run from Apps Script editor):
  *   runDiagnostics() — Comprehensive system health report (6 core tests)
@@ -149,7 +149,7 @@ function _countRecentHealthCheckFailures(minutesBack) {
 
 /**
  * Send alert email for health check failure.
- * Alerts both Treasurer and Board on any health check failure.
+ * Alerts the Board on any health check failure. Board delivery includes the Treasurer.
  */
 function _sendHealthCheckAlert(results, escalation) {
   var checkDetails = "";
@@ -159,15 +159,23 @@ function _sendHealthCheckAlert(results, escalation) {
   });
 
   var variables = {
+    FIRST_NAME: "Board",
     TIMESTAMP: results.timestamp.toISOString(),
     CHECK_DETAILS: checkDetails
   };
 
-  try {
-    sendEmailFromTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD", EMAIL_TREASURER, variables);
-    sendEmailFromTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD", EMAIL_BOARD, variables);
-  } catch (e) {
-    Logger.log("ERROR sending health check alert: " + e);
+  // Send only to the board address. The Treasurer receives board mail through
+  // that group, so a separate Treasurer copy would be a duplicate.
+  // Use the GmailApp template transport so this alert path does not depend on
+  // UrlFetchApp/service-account token exchange.
+  var boardSent = sendEmailFromTemplateWithGmailApp(
+    "SYS_HEALTH_CHECK_ALERT_TO_BOARD",
+    EMAIL_BOARD,
+    variables
+  );
+
+  if (!boardSent) {
+    Logger.log("ERROR sending health check alert: board recipient failed");
   }
 }
 

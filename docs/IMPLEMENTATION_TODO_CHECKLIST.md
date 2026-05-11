@@ -433,7 +433,7 @@ These are implementation details for Phase 3 guides (60% & 50% ready). Less crit
   - Method: Automated Apps Script function tests reading from Member Directory sheet
   - Frequency: Daily at 4:00 AM Botswana time (after backup completes)
   - What constitutes "down": Sheet read fails or returns error
-  - Alert: If health check fails 3+ times in 1 hour, email Treasurer + board@geabotswana.org
+  - Alert: If health check fails 3+ times in 1 hour, email board@geabotswana.org (Treasurer receives board mail)
   - Alternative: Monthly manual check (Treasurer clicks through each portal, verifies load)
   - Note: No traditional GET /health endpoint needed (portals are Apps Script web apps, not servers)
 

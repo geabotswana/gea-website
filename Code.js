@@ -5498,6 +5498,42 @@ function testSend14thBirthdayNotice() {
 }
 
 /**
+ * Test health check alert email using the proven sendEmailFromTemplate() method.
+ * This tests if SYS_HEALTH_CHECK_ALERT_TO_BOARD can be sent successfully using
+ * the service-account DWD transport (same as testSend14thBirthdayNotice).
+ */
+function testSendHealthCheckAlert() {
+  var recipientEmail = "michael@raneyworld.com";
+
+  // Simulate health check failure results
+  var checkDetails = "[FAIL] Sheets API\n  Detail: Read timeout\n\n[PASS] Gmail API\n  Detail: Gmail accessible\n\n[FAIL] Audit Log\n  Detail: Sheet not found\n\n";
+
+  var variables = {
+    FIRST_NAME: "Board",
+    TIMESTAMP: new Date().toISOString(),
+    CHECK_DETAILS: checkDetails
+  };
+
+  Logger.log("Sending health check alert to " + recipientEmail);
+  var success = sendEmailFromTemplate(
+    "SYS_HEALTH_CHECK_ALERT_TO_BOARD",
+    recipientEmail,
+    variables
+  );
+
+  if (success) {
+    Logger.log("✓ Health check alert sent successfully");
+    Logger.log("  Template: SYS_HEALTH_CHECK_ALERT_TO_BOARD");
+    Logger.log("  Transport: sendEmailFromTemplate (service-account DWD)");
+    Logger.log("  Recipient: " + recipientEmail);
+  } else {
+    Logger.log("✗ Failed to send health check alert");
+  }
+
+  return success;
+}
+
+/**
  * Test special character encoding in email templates.
  * Sends sample emails from key templates with special characters to verify
  * emoji and special characters render correctly (not as question marks).

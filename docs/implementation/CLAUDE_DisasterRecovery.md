@@ -98,7 +98,7 @@ Google automatically backs up:
    - Frequency: Daily at 4:00 AM Botswana time (after backup completes)
    - What: Test reading from Member Directory sheet
    - Failure: Sheet read fails or returns error
-   - Alert: If health check fails 3+ times in 1 hour, email Treasurer + board@geabotswana.org
+   - Alert: If health check fails 3+ times in 1 hour, email board@geabotswana.org (Treasurer receives board mail)
 
 2. **Manual Monitoring Option**
    - Alternative: Monthly manual check (Treasurer clicks through each portal, verifies load)

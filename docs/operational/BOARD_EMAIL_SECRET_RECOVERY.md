@@ -17,7 +17,7 @@
 
 ### ✅ In Git (For Reference Only)
 - `EmailService.js` — References `BOARD_SERVICE_ACCOUNT` and `BOARD_EMAIL_DELEGATED_USER`
-- `appsscript.json` — OAuth scope: `gmail.send`
+- `appsscript.json` — OAuth scopes: `gmail.send` and `script.external_request` (required for the normal service-account JWT token exchange and Gmail API send calls; health-check alerts use the GmailApp template transport to avoid depending on that exchange path)
 - `.claspignore` — Documents that `BoardEmailConfig.gs` is intentionally excluded
 
 ### Why Out-of-Band?
@@ -101,11 +101,15 @@ var BOARD_EMAIL_DELEGATED_USER = "treasurer@geabotswana.org";
 2. Navigate: **Security** → **Access and data control** → **API controls**
 3. Verify `gea-apps-script` service account has pre-consent for:
    - `https://www.googleapis.com/auth/gmail.send`
+4. Verify `appsscript.json` includes the Apps Script runtime scope used to call OAuth/Gmail endpoints:
+   - `https://www.googleapis.com/auth/script.external_request`
 
-If missing:
+If the service-account Gmail scope is missing:
 1. Click **Manage third-party & internal access**
 2. Find `gea-apps-script`
 3. Grant scope: `gmail.send`
+
+If the Apps Script external-request scope is missing, add it to `appsscript.json`, deploy, and re-authorize the Apps Script project. This scope is for the normal service-account/Gmail REST API template transport, not for the health-check alert path, which uses GmailApp.
 
 ### Step 5: Test Email Delivery
 
@@ -202,6 +206,10 @@ If rebuilding the entire Apps Script project from Git:
 - **Fix:**
   1. Check GCP: Service account has Domain-Wide Delegation enabled
   2. Check Workspace Admin: OAuth scope `gmail.send` is pre-consented
+
+### Error: "Specified permissions are not sufficient to call UrlFetchApp.fetch"
+- **Cause:** Apps Script manifest is missing `https://www.googleapis.com/auth/script.external_request`
+- **Fix:** Add the scope to `appsscript.json`, deploy it, and re-authorize the script so `sendEmailFromTemplate()` can exchange the service-account JWT and call the Gmail API. The health-check alert template should use `sendEmailFromTemplateWithGmailApp()` so it can still send without the UrlFetch/service-account transport.
 
 ### Email not arriving
 - **Cause:** `BOARD_EMAIL_DELEGATED_USER` incorrect or Send As delegation not configured

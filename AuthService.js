@@ -2070,3 +2070,24 @@ function _safePublicMember(member) {
     emergency_contact_relationship: member.emergency_contact_relationship || ""
   };
 }
+
+/**
+ * Generate a 6-digit verification code for email verification.
+ * @returns {string} 6-digit code (e.g., "123456")
+ */
+function _generateVerificationCode() {
+  var code = '';
+  for (var i = 0; i < 6; i++) {
+    code += Math.floor(Math.random() * 10);
+  }
+  return code;
+}
+
+/**
+ * Returns the expiry time for email verification tokens (24 hours from now).
+ * @returns {Date}
+ */
+function _verificationCodeExpiry() {
+  return new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+}
+

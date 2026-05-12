@@ -194,6 +194,8 @@ function _routeAction(action, params) {
     // ── MEMBER & APPLICANT ───────────────────────────────────
     case "dashboard":    return _handleDashboard(params);
     case "profile":      return _handleProfile(params);
+    case "verify_email": return _handleVerifyEmail(params);
+    case "resend_verification_code": return _handleResendVerificationCode(params);
     case "reservations": return _handleReservations(params);
     case "book":         return _handleBook(params);
     case "cancel":       return _handleCancel(params);
@@ -891,13 +893,38 @@ function _handleProfile(p) {
     }
     member = getMemberByEmail(auth.session.email); // re-fetch with old email (still in session)
 
-    // If email was changed, indicate this to frontend so it can show logout message
+    // If email was changed, generate verification code and send email
     if (emailChanged) {
+      var verificationCode = _generateVerificationCode();
+      var verificationExpires = _verificationCodeExpiry();
+
+      // Store verification code and mark email as unverified
+      updateMemberField(member.individual_id, "email_verification_code", verificationCode, auth.session.email);
+      updateMemberField(member.individual_id, "email_verification_expires", formatDateTime(verificationExpires), auth.session.email);
+      updateMemberField(member.individual_id, "email_verification_attempts", 0, auth.session.email);
+      updateMemberField(member.individual_id, "email_verified", false, auth.session.email);
+
+      // Send verification email to new address
+      try {
+        var emailBody = "Hello " + member.first_name + ",\n\n"
+          + "Your email address has been changed in your GEA account.\n\n"
+          + "To confirm this email address, enter the following verification code:\n\n"
+          + "Code: " + verificationCode + "\n\n"
+          + "This code expires in 24 hours.\n\n"
+          + "If you did not request this change, please contact board@geabotswana.org immediately.\n\n"
+          + "GEA Management System";
+
+        GmailApp.sendEmail(p.email_primary, "GEA Email Verification", emailBody);
+      } catch (e) {
+        Logger.log("WARNING: Could not send verification email to " + p.email_primary + ": " + e);
+      }
+
       return successResponse({
         member:    _safePublicMember(member),
         household: _safePublicHousehold(hh),
         email_changed: true,
-        new_email: p.email_primary
+        new_email: p.email_primary,
+        verification_required: true
       });
     }
   }
@@ -907,6 +934,112 @@ function _handleProfile(p) {
     member:    _safePublicMember(member),
     household: _safePublicHousehold(hh)
   });
+}
+
+/**
+ * HANDLER: _handleVerifyEmail
+ * PURPOSE: Verify email with provided verification code.
+ *
+ * @param {Object} p { token, verification_code }
+ * @returns {Object} Success/error response
+ */
+function _handleVerifyEmail(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    if (!p.verification_code) {
+      return errorResponse("Verification code is required.", "INVALID_PARAM");
+    }
+
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var code = String(p.verification_code).trim();
+    var storedCode = member.email_verification_code || "";
+    var expiresStr = member.email_verification_expires || "";
+    var attempts = parseInt(member.email_verification_attempts || 0);
+
+    // Check if code has expired
+    if (expiresStr) {
+      var expiryDate = new Date(expiresStr);
+      if (new Date() > expiryDate) {
+        return errorResponse("Verification code has expired. Request a new one.", "INVALID_PARAM");
+      }
+    }
+
+    // Check attempts (max 5 before requiring resend)
+    if (attempts >= 5) {
+      return errorResponse("Too many incorrect attempts. Request a new verification code.", "INVALID_PARAM");
+    }
+
+    // Verify code (constant-time comparison)
+    if (!_constantTimeCompare(code, storedCode)) {
+      var newAttempts = attempts + 1;
+      updateMemberField(member.individual_id, "email_verification_attempts", newAttempts, auth.session.email);
+      return errorResponse("Verification code is incorrect. " + (5 - newAttempts) + " attempts remaining.", "INVALID_PARAM");
+    }
+
+    // Code is valid - mark email as verified and clear verification data
+    updateMemberField(member.individual_id, "email_verified", true, auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_code", "", auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_expires", "", auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_attempts", 0, auth.session.email);
+
+    return successResponse({}, "Email verified successfully. You can now log in with your new email.");
+  } catch (e) {
+    Logger.log("ERROR _handleVerifyEmail: " + e);
+    return errorResponse("Could not verify email.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleResendVerificationCode
+ * PURPOSE: Resend verification code to user's email.
+ *
+ * @param {Object} p { token }
+ * @returns {Object} Success/error response
+ */
+function _handleResendVerificationCode(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    // Only allow resend if email is pending verification
+    if (member.email_verified) {
+      return errorResponse("Email is already verified.", "INVALID_PARAM");
+    }
+
+    // Generate new code and reset attempts
+    var verificationCode = _generateVerificationCode();
+    var verificationExpires = _verificationCodeExpiry();
+
+    updateMemberField(member.individual_id, "email_verification_code", verificationCode, auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_expires", formatDateTime(verificationExpires), auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_attempts", 0, auth.session.email);
+
+    // Send verification email to the email_primary (which should be the new unverified email)
+    try {
+      var emailAddress = member.email_primary || member.email;
+      var emailBody = "Hello " + member.first_name + ",\n\n"
+        + "Here is your email verification code:\n\n"
+        + "Code: " + verificationCode + "\n\n"
+        + "This code expires in 24 hours.\n\n"
+        + "GEA Management System";
+
+      GmailApp.sendEmail(emailAddress, "GEA Email Verification Code", emailBody);
+    } catch (e) {
+      Logger.log("WARNING: Could not send verification email: " + e);
+    }
+
+    return successResponse({}, "Verification code sent to your email.");
+  } catch (e) {
+    Logger.log("ERROR _handleResendVerificationCode: " + e);
+    return errorResponse("Could not resend verification code.", "SERVER_ERROR");
+  }
 }
 
 /**

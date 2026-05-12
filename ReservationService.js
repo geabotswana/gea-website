@@ -1663,3 +1663,143 @@ function _sendBumpNotification(bumpedRes, bumperRes) {
     });
   } catch (e) { Logger.log("WARN _sendBumpNotification: " + e); }
 }
+
+
+// ============================================================
+// NIGHTLY TRIGGER FUNCTIONS (called from runNightlyTasks)
+// ============================================================
+
+/**
+ * Runs nightly to cancel WAITLISTED reservations whose event date is within
+ * WAITLIST_HOLD_HOURS and no slot has opened. Called from runNightlyTasks().
+ */
+function expireWaitlistPositions() {
+  Logger.log("Waitlist expiry check starting...");
+  var cutoff = new Date();
+  cutoff.setTime(cutoff.getTime() + WAITLIST_HOLD_HOURS * 60 * 60 * 1000);
+
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    for (var i = 1; i < data.length; i++) {
+      var res = rowToObject(headers, data[i]);
+      if (res.status !== STATUS_WAITLISTED) continue;
+      if (!res.reservation_date) continue;
+
+      var eventDate = new Date(res.reservation_date);
+      if (eventDate > cutoff) continue;
+
+      _updateReservationField(res.reservation_id, "status",               STATUS_CANCELLED, "system");
+      _updateReservationField(res.reservation_id, "cancellation_reason",  "No slot became available before event date.", "system");
+      _updateReservationField(res.reservation_id, "cancelled_by",         "system", "system");
+      _updateReservationField(res.reservation_id, "cancellation_timestamp", new Date(), "system");
+
+      logAuditEntry("system", AUDIT_RESERVATION_CANCELLED, "Reservation", res.reservation_id,
+                    "Waitlist expired — no slot opened");
+
+      if (res.calendar_event_id) {
+        _updateCalendarEventStatus(res.calendar_event_id, STATUS_CANCELLED, res);
+      }
+
+      var primaryEmail = _getPrimaryEmail(res.household_id);
+      if (primaryEmail) {
+        sendEmailFromTemplate("RES_BOOKING_CANCELLED_TO_MEMBER", primaryEmail, {
+          FIRST_NAME:          _getPrimaryFirstName(res.household_id),
+          FACILITY_NAME:       res.facility,
+          RESERVATION_ID:      res.reservation_id,
+          ORIGINAL_DATE:       formatDate(eventDate),
+          CANCELLATION_REASON: "No slot became available before the event date. Your waitlist position has expired."
+        });
+      }
+      Logger.log("Waitlist expired: " + res.reservation_id);
+    }
+  } catch (e) { Logger.log("ERROR expireWaitlistPositions: " + e); }
+}
+
+
+/**
+ * Runs nightly to promote TENTATIVE reservations to CONFIRMED once their bump
+ * window deadline has passed. Called from runNightlyTasks().
+ */
+function processBumpWindowExpirations() {
+  Logger.log("Bump window check starting...");
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var idCol   = headers.indexOf("reservation_id");
+    var stCol   = headers.indexOf("status");
+    var bwCol   = headers.indexOf("bump_window_deadline");
+
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][stCol] !== STATUS_TENTATIVE) continue;
+      if (!data[i][bwCol]) continue;
+
+      var bwDeadline = new Date(data[i][bwCol]);
+      bwDeadline.setHours(0, 0, 0, 0);
+
+      if (today > bwDeadline) {
+        var resId = data[i][idCol];
+        sheet.getRange(i + 1, stCol + 1).setValue(STATUS_CONFIRMED);
+        logAuditEntry("system", AUDIT_RESERVATION_APPROVED, "Reservation", resId,
+                      "Auto-confirmed: bump window passed");
+        Logger.log("Auto-confirmed: " + resId);
+
+        var res = rowToObject(headers, data[i]);
+        if (res.calendar_event_id) {
+          _updateCalendarEventStatus(res.calendar_event_id, STATUS_CONFIRMED, res);
+        }
+      }
+    }
+  } catch (e) { Logger.log("ERROR processBumpWindowExpirations: " + e); }
+}
+
+
+/**
+ * Emails the board a daily digest of all reservations still awaiting approval
+ * (STATUS_PENDING). Called from runNightlyTasks().
+ */
+function sendReservationApprovalReminders() {
+  Logger.log("Approval reminder check starting...");
+  try {
+    var sheet   = SpreadsheetApp.openById(RESERVATIONS_ID).getSheetByName(TAB_RESERVATIONS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+
+    var pending = [];
+    for (var i = 1; i < data.length; i++) {
+      var res = rowToObject(headers, data[i]);
+      if (res.status === STATUS_PENDING) pending.push(res);
+    }
+
+    if (pending.length === 0) {
+      Logger.log("No pending reservations — approval reminder skipped.");
+      return;
+    }
+
+    pending.sort(function(a, b) {
+      return new Date(a.reservation_date) - new Date(b.reservation_date);
+    });
+
+    var lines = pending.map(function(res) {
+      var dateStr = res.reservation_date ? formatDate(new Date(res.reservation_date)) : "Unknown date";
+      var excess  = res.is_excess_reservation ? " [EXCESS]" : "";
+      return "• " + (res.facility || "?") + " — " + (res.household_name || res.household_id) +
+             " — " + dateStr + excess;
+    });
+
+    sendEmailFromTemplate("RES_APPROVAL_REMINDER_TO_BOARD", EMAIL_BOARD, {
+      PENDING_COUNT:    pending.length,
+      PENDING_LIST:     lines.join("\n"),
+      ADMIN_PORTAL_URL: URL_ADMIN_PORTAL
+    });
+
+    Logger.log("Approval reminder sent: " + pending.length + " pending reservation(s).");
+  } catch (e) {
+    Logger.log("ERROR sendReservationApprovalReminders: " + e);
+  }
+}

@@ -224,6 +224,7 @@ function _routeAction(action, params) {
     case "add_household_member":     return _handleAddHouseholdMember(params);
     case "remove_household_member":  return _handleRemoveHouseholdMember(params);
     case "edit_household_member":    return _handleEditHouseholdMember(params);
+    case "update_household_address": return _handleUpdateHouseholdAddress(params);
     case "update_household_type":    return _handleUpdateHouseholdType(params);
     case "submit_guest_list":        return _handleSubmitGuestList(params);
     case "get_guest_list":           return _handleGetGuestList(params);
@@ -3027,10 +3028,70 @@ function _handleEditHouseholdMember(p) {
     }
 
     if (updated === 0) return errorResponse("No valid fields provided.", "INVALID_PARAM");
+
+    // If primary member's primary phone is updated, sync to household phone
+    var hh = getHouseholdById(member.household_id);
+    if (hh && p.individual_id === hh.primary_member_id) {
+      if (p.country_code_primary !== undefined) {
+        updateHouseholdField(member.household_id, "country_code_primary", sanitizeInput(String(p.country_code_primary)), auth.session.email);
+      }
+      if (p.phone_primary !== undefined) {
+        updateHouseholdField(member.household_id, "phone_primary", sanitizeInput(String(p.phone_primary)), auth.session.email);
+      }
+      if (p.phone_primary_whatsapp !== undefined) {
+        var whatsAppVal = (p.phone_primary_whatsapp === true || p.phone_primary_whatsapp === "true");
+        updateHouseholdField(member.household_id, "phone_primary_whatsapp", whatsAppVal, auth.session.email);
+      }
+    }
+
     return successResponse({ updated_fields: updated }, "Member updated.");
   } catch (e) {
     Logger.log("ERROR _handleEditHouseholdMember: " + e);
     return errorResponse("Could not edit household member.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleUpdateHouseholdAddress
+ * PURPOSE: Update household address (street, city, country).
+ *          Only the primary member can update household address.
+ *
+ * @param {Object} p  { token, address_street, address_city, address_country }
+ * @returns {Object}  Success/error response
+ */
+function _handleUpdateHouseholdAddress(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var hh = getHouseholdById(member.household_id);
+    if (!hh) return errorResponse("Household not found.", "NOT_FOUND");
+
+    // Only primary member can update household address
+    if (member.individual_id !== hh.primary_member_id) {
+      return errorResponse("Only the primary household member can update the address.", "FORBIDDEN");
+    }
+
+    var updated = 0;
+    var allowed = ["address_street", "address_city", "address_country"];
+
+    for (var i = 0; i < allowed.length; i++) {
+      var field = allowed[i];
+      if (p[field] !== undefined) {
+        var val = sanitizeInput(String(p[field]));
+        updateHouseholdField(member.household_id, field, val, auth.session.email);
+        updated++;
+      }
+    }
+
+    if (updated === 0) return errorResponse("No valid fields provided.", "INVALID_PARAM");
+    return successResponse({ updated_fields: updated }, "Household address updated.");
+  } catch (e) {
+    Logger.log("ERROR _handleUpdateHouseholdAddress: " + e);
+    return errorResponse("Could not update household address.", "SERVER_ERROR");
   }
 }
 

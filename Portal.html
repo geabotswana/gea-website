@@ -8713,6 +8713,278 @@ function submitPasswordReset(event) {
     document.body.appendChild(parts.overlay);
   }
 
+  function _openHouseholdAddressModal(household) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Edit Household Address');
+    var modal = parts.modal;
+
+    var streetLbl = document.createElement('label');
+    streetLbl.textContent = 'Street Address';
+    streetLbl.style.display = 'block';
+    streetLbl.style.marginTop = '12px';
+    streetLbl.style.fontWeight = '600';
+    streetLbl.style.fontSize = '13px';
+    modal.appendChild(streetLbl);
+
+    var streetInput = document.createElement('input');
+    streetInput.type = 'text';
+    streetInput.className = 'form-input';
+    streetInput.value = household.address_street || '';
+    streetInput.placeholder = 'e.g. 123 Main Street';
+    modal.appendChild(streetInput);
+
+    var cityLbl = document.createElement('label');
+    cityLbl.textContent = 'City';
+    cityLbl.style.display = 'block';
+    cityLbl.style.marginTop = '12px';
+    cityLbl.style.fontWeight = '600';
+    cityLbl.style.fontSize = '13px';
+    modal.appendChild(cityLbl);
+
+    var cityInput = document.createElement('input');
+    cityInput.type = 'text';
+    cityInput.className = 'form-input';
+    cityInput.value = household.address_city || '';
+    cityInput.placeholder = 'e.g. Gaborone';
+    modal.appendChild(cityInput);
+
+    var countryLbl = document.createElement('label');
+    countryLbl.textContent = 'Country';
+    countryLbl.style.display = 'block';
+    countryLbl.style.marginTop = '12px';
+    countryLbl.style.fontWeight = '600';
+    countryLbl.style.fontSize = '13px';
+    modal.appendChild(countryLbl);
+
+    var countryInput = document.createElement('input');
+    countryInput.type = 'text';
+    countryInput.className = 'form-input';
+    countryInput.value = household.address_country || '';
+    countryInput.placeholder = 'e.g. Botswana';
+    modal.appendChild(countryInput);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Save Address', function() {
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Saving...';
+
+      apiCall('update_household_address', {
+        address_street: streetInput.value,
+        address_city: cityInput.value,
+        address_country: countryInput.value
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to update address.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Save Address';
+          return;
+        }
+        _closeHouseholdModal();
+        loadMyHousehold();
+        showToast('success', 'Household address updated');
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Save Address';
+      });
+    });
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
+  function _openEditPrimaryMemberModal(member) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Edit Contact Information');
+    var modal = parts.modal;
+
+    var firstNameLbl = document.createElement('label');
+    firstNameLbl.textContent = 'First Name';
+    firstNameLbl.style.display = 'block';
+    firstNameLbl.style.marginTop = '12px';
+    firstNameLbl.style.fontWeight = '600';
+    firstNameLbl.style.fontSize = '13px';
+    modal.appendChild(firstNameLbl);
+
+    var firstNameInput = document.createElement('input');
+    firstNameInput.type = 'text';
+    firstNameInput.className = 'form-input';
+    firstNameInput.value = member.first_name || '';
+    modal.appendChild(firstNameInput);
+
+    var lastNameLbl = document.createElement('label');
+    lastNameLbl.textContent = 'Last Name';
+    lastNameLbl.style.display = 'block';
+    lastNameLbl.style.marginTop = '12px';
+    lastNameLbl.style.fontWeight = '600';
+    lastNameLbl.style.fontSize = '13px';
+    modal.appendChild(lastNameLbl);
+
+    var lastNameInput = document.createElement('input');
+    lastNameInput.type = 'text';
+    lastNameInput.className = 'form-input';
+    lastNameInput.value = member.last_name || '';
+    modal.appendChild(lastNameInput);
+
+    var emailLbl = document.createElement('label');
+    emailLbl.textContent = 'Email';
+    emailLbl.style.display = 'block';
+    emailLbl.style.marginTop = '12px';
+    emailLbl.style.fontWeight = '600';
+    emailLbl.style.fontSize = '13px';
+    modal.appendChild(emailLbl);
+
+    var emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.className = 'form-input';
+    emailInput.value = member.email || '';
+    modal.appendChild(emailInput);
+
+    // Primary phone using three-field setup
+    var phonePrimaryFields = _buildPhoneFieldSet(member.country_code_primary, member.phone_primary, member.phone_primary_whatsapp, 'primaryCC', 'primaryPhone', 'primaryWhatsApp');
+    var phonePrimaryLabel = document.createElement('label');
+    phonePrimaryLabel.style.display = 'block';
+    phonePrimaryLabel.style.marginTop = '12px';
+    phonePrimaryLabel.style.fontWeight = '600';
+    phonePrimaryLabel.style.fontSize = '13px';
+    phonePrimaryLabel.textContent = 'Primary Phone';
+    modal.appendChild(phonePrimaryLabel);
+    modal.appendChild(phonePrimaryFields.container);
+
+    // Secondary phone using three-field setup
+    var phoneSecondaryFields = _buildPhoneFieldSet(member.country_code_secondary, member.phone_secondary, member.phone_secondary_whatsapp, 'secondaryCC', 'secondaryPhone', 'secondaryWhatsApp');
+    var phoneSecondaryLabel = document.createElement('label');
+    phoneSecondaryLabel.style.display = 'block';
+    phoneSecondaryLabel.style.marginTop = '12px';
+    phoneSecondaryLabel.style.fontWeight = '600';
+    phoneSecondaryLabel.style.fontSize = '13px';
+    phoneSecondaryLabel.textContent = 'Secondary Phone (Optional)';
+    modal.appendChild(phoneSecondaryLabel);
+    modal.appendChild(phoneSecondaryFields.container);
+
+    // Emergency contact section
+    var emergencyLabel = document.createElement('h3');
+    emergencyLabel.style.marginTop = '20px';
+    emergencyLabel.style.marginBottom = '12px';
+    emergencyLabel.style.fontSize = '14px';
+    emergencyLabel.style.fontWeight = '600';
+    emergencyLabel.style.color = '#333';
+    emergencyLabel.textContent = 'Emergency Contact';
+    modal.appendChild(emergencyLabel);
+
+    var emergencyNameLbl = document.createElement('label');
+    emergencyNameLbl.textContent = 'Emergency Contact Name';
+    emergencyNameLbl.style.display = 'block';
+    emergencyNameLbl.style.marginTop = '12px';
+    emergencyNameLbl.style.fontWeight = '600';
+    emergencyNameLbl.style.fontSize = '13px';
+    modal.appendChild(emergencyNameLbl);
+
+    var emergencyNameInput = document.createElement('input');
+    emergencyNameInput.type = 'text';
+    emergencyNameInput.className = 'form-input';
+    emergencyNameInput.value = member.emergency_contact_name || '';
+    emergencyNameInput.placeholder = 'Name';
+    modal.appendChild(emergencyNameInput);
+
+    var emergencyRelLbl = document.createElement('label');
+    emergencyRelLbl.textContent = 'Relationship';
+    emergencyRelLbl.style.display = 'block';
+    emergencyRelLbl.style.marginTop = '12px';
+    emergencyRelLbl.style.fontWeight = '600';
+    emergencyRelLbl.style.fontSize = '13px';
+    modal.appendChild(emergencyRelLbl);
+
+    var emergencyRelInput = document.createElement('input');
+    emergencyRelInput.type = 'text';
+    emergencyRelInput.className = 'form-input';
+    emergencyRelInput.value = member.emergency_contact_relationship || '';
+    emergencyRelInput.placeholder = 'e.g. Spouse, Parent, Sibling';
+    modal.appendChild(emergencyRelInput);
+
+    var emergencyEmailLbl = document.createElement('label');
+    emergencyEmailLbl.textContent = 'Emergency Contact Email';
+    emergencyEmailLbl.style.display = 'block';
+    emergencyEmailLbl.style.marginTop = '12px';
+    emergencyEmailLbl.style.fontWeight = '600';
+    emergencyEmailLbl.style.fontSize = '13px';
+    modal.appendChild(emergencyEmailLbl);
+
+    var emergencyEmailInput = document.createElement('input');
+    emergencyEmailInput.type = 'email';
+    emergencyEmailInput.className = 'form-input';
+    emergencyEmailInput.value = member.emergency_contact_email || '';
+    emergencyEmailInput.placeholder = 'Email';
+    modal.appendChild(emergencyEmailInput);
+
+    // Emergency phone using three-field setup
+    var phoneEmergencyFields = _buildPhoneFieldSet(member.country_code_emergency, member.phone_emergency, member.phone_emergency_whatsapp, 'emergencyCC', 'emergencyPhone', 'emergencyWhatsApp');
+    var phoneEmergencyLabel = document.createElement('label');
+    phoneEmergencyLabel.style.display = 'block';
+    phoneEmergencyLabel.style.marginTop = '12px';
+    phoneEmergencyLabel.style.fontWeight = '600';
+    phoneEmergencyLabel.style.fontSize = '13px';
+    phoneEmergencyLabel.textContent = 'Emergency Contact Phone';
+    modal.appendChild(phoneEmergencyLabel);
+    modal.appendChild(phoneEmergencyFields.container);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Save Changes', function() {
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Saving...';
+
+      apiCall('edit_household_member', {
+        individual_id: member.individual_id,
+        first_name: firstNameInput.value,
+        last_name: lastNameInput.value,
+        email: emailInput.value,
+        country_code_primary: phonePrimaryFields.countrySelect.value,
+        phone_primary: phonePrimaryFields.phoneInput.value,
+        phone_primary_whatsapp: phonePrimaryFields.whatsAppCheckbox.checked,
+        country_code_secondary: phoneSecondaryFields.countrySelect.value,
+        phone_secondary: phoneSecondaryFields.phoneInput.value,
+        phone_secondary_whatsapp: phoneSecondaryFields.whatsAppCheckbox.checked,
+        emergency_contact_name: emergencyNameInput.value,
+        emergency_contact_relationship: emergencyRelInput.value,
+        emergency_contact_email: emergencyEmailInput.value,
+        country_code_emergency: phoneEmergencyFields.countrySelect.value,
+        phone_emergency: phoneEmergencyFields.phoneInput.value,
+        phone_emergency_whatsapp: phoneEmergencyFields.whatsAppCheckbox.checked
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to update contact information.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Save Changes';
+          return;
+        }
+        _closeHouseholdModal();
+        loadMyHousehold();
+        showToast('success', 'Contact information updated');
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Save Changes';
+      });
+    });
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
   // ─── END NMP.6 ───────────────────────────────────────────────
 
   function getApplicantStatusBadgeColor(status) {
@@ -10983,6 +11255,7 @@ function submitPasswordReset(event) {
       }
 
       var members = res.data.members || [];
+      var household = res.data.household || {};
       var container = document.getElementById('householdMembersContainer');
       container.innerHTML = '';
 
@@ -10991,18 +11264,93 @@ function submitPasswordReset(event) {
         return;
       }
 
+      // Display household address section
+      var householdAddressCard = createHouseholdAddressCard(household);
+      container.appendChild(householdAddressCard);
+
       // Display each household member
       members.forEach(function(member) {
-        var memberCard = createHouseholdMemberCard(member);
+        var memberCard = createHouseholdMemberCard(member, household);
         container.appendChild(memberCard);
       });
     });
   }
 
   /**
+   * Create household address card with edit icon
+   */
+  function createHouseholdAddressCard(household) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '20px';
+
+    var header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.paddingBottom = '12px';
+    header.style.borderBottom = '1px solid #e0e0e0';
+    header.style.marginBottom = '12px';
+
+    var title = document.createElement('h3');
+    title.style.margin = '0';
+    title.style.fontSize = '14px';
+    title.style.fontWeight = '600';
+    title.style.color = '#333';
+    title.textContent = 'Household Address';
+    header.appendChild(title);
+
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.style.background = 'none';
+    editBtn.style.border = 'none';
+    editBtn.style.padding = '0';
+    editBtn.style.cursor = 'pointer';
+    editBtn.style.fontSize = '18px';
+    editBtn.innerHTML = '✎';
+    editBtn.title = 'Edit address';
+    editBtn.onclick = function() {
+      _openHouseholdAddressModal(household);
+    };
+    header.appendChild(editBtn);
+
+    card.appendChild(header);
+
+    var content = document.createElement('div');
+    content.style.padding = '0 12px';
+
+    var addressText = document.createElement('p');
+    addressText.style.margin = '0';
+    addressText.style.fontSize = '14px';
+    addressText.style.lineHeight = '1.5';
+    addressText.style.color = '#666';
+
+    var street = household.address_street || '';
+    var city = household.address_city || '';
+    var country = household.address_country || '';
+
+    if (street || city || country) {
+      var parts = [];
+      if (street) parts.push(street);
+      if (city) parts.push(city);
+      if (country) parts.push(country);
+      addressText.textContent = parts.join(', ');
+    } else {
+      addressText.textContent = 'No address on file';
+      addressText.style.color = '#999';
+      addressText.style.fontStyle = 'italic';
+    }
+
+    content.appendChild(addressText);
+    card.appendChild(content);
+
+    return card;
+  }
+
+  /**
    * Create HTML card for a single household member
    */
-  function createHouseholdMemberCard(member) {
+  function createHouseholdMemberCard(member, household) {
     var card = document.createElement('div');
     card.className = 'card';
     card.style.marginBottom = '20px';
@@ -11013,16 +11361,39 @@ function submitPasswordReset(event) {
     header.style.justifyContent = 'space-between';
     header.style.alignItems = 'center';
 
+    var titleDiv = document.createElement('div');
     var title = document.createElement('h2');
     title.className = 'card-title';
     title.textContent = member.first_name + ' ' + member.last_name;
-    if (member.relationship) {
-      title.textContent += ' (' + member.relationship + ')';
+    if (member.relationship_to_primary === 'Primary') {
+      title.textContent += ' (Primary Member)';
+    } else if (member.relationship_to_primary) {
+      title.textContent += ' (' + member.relationship_to_primary + ')';
     }
-    header.appendChild(title);
+    titleDiv.appendChild(title);
+    header.appendChild(titleDiv);
 
-    // Delete button (only for non-primary members, shown later)
-    if (member.individual_id !== currentUser.individual_id) {
+    // Buttons container
+    var btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '8px';
+
+    // Edit button for primary member
+    if (member.individual_id === currentUser.individual_id) {
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn btn-primary';
+      editBtn.style.padding = '6px 12px';
+      editBtn.style.fontSize = '12px';
+      editBtn.innerHTML = '✎ Edit';
+      editBtn.onclick = (function(m) {
+        return function() {
+          _openEditPrimaryMemberModal(m);
+        };
+      })(member);
+      btnContainer.appendChild(editBtn);
+    } else {
+      // Delete button for non-primary members
       var deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
       deleteBtn.className = 'btn btn-danger';
@@ -11041,8 +11412,10 @@ function submitPasswordReset(event) {
           });
         };
       })(member.individual_id, member.first_name + ' ' + member.last_name);
-      header.appendChild(deleteBtn);
+      btnContainer.appendChild(deleteBtn);
     }
+
+    header.appendChild(btnContainer);
 
     card.appendChild(header);
 

@@ -11306,8 +11306,9 @@ function submitPasswordReset(event) {
     editBtn.style.border = 'none';
     editBtn.style.padding = '0';
     editBtn.style.cursor = 'pointer';
-    editBtn.style.fontSize = '18px';
-    editBtn.innerHTML = '✎';
+    editBtn.style.fontSize = '16px';
+    editBtn.style.color = 'var(--color-primary)';
+    editBtn.innerHTML = '<i class="fas fa-pen" style="margin-right: 4px;"></i>';
     editBtn.title = 'Edit address';
     editBtn.onclick = function() {
       _openHouseholdAddressModal(household);
@@ -11385,7 +11386,7 @@ function submitPasswordReset(event) {
       editBtn.className = 'btn btn-primary';
       editBtn.style.padding = '6px 12px';
       editBtn.style.fontSize = '12px';
-      editBtn.innerHTML = '✎ Edit';
+      editBtn.innerHTML = '<i class="fas fa-pen" style="margin-right: 4px;"></i>Edit';
       editBtn.onclick = (function(m) {
         return function() {
           _openEditPrimaryMemberModal(m);

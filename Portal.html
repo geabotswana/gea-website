@@ -3478,17 +3478,20 @@ function submitPasswordChange(event, isFirstLogin) {
     // Password changed successfully
     if (isFirstLogin) {
       // For first login, show success message and redirect to login
-      showNotification('Password created successfully! Please log in again with your new password.');
+      showToast('Password created successfully! Please log in again with your new password.', 'success');
       document.getElementById('passwordChangeModal').style.display = 'none';
       currentToken = null;
       currentUser = null;
       sessionStorage.clear();
       showLoginScreen();
     } else {
-      // For voluntary change, close modal and show success
-      showNotification('Password changed successfully! You will be logged out for security. Please log in again.');
+      // For voluntary change, show success and logout after a brief delay
+      showToast('Password changed successfully! You will be logged out for security. Please log in again.', 'success');
       closePasswordChangeForm();
-      logout();
+      // Delay logout by 2 seconds to allow user to see the success message
+      setTimeout(function() {
+        logout();
+      }, 2000);
     }
   }).withFailureHandler(function(err) {
     submitBtn.disabled = false;

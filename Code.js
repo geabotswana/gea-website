@@ -2994,7 +2994,10 @@ function _handleEditHouseholdMember(p) {
 
     var rel = target.relationship_to_primary;
     var allowed = ["first_name", "last_name", "email",
-                   "country_code_primary", "phone_primary", "phone_primary_whatsapp", "citizenship_country"];
+                   "country_code_primary", "phone_primary", "phone_primary_whatsapp", "citizenship_country",
+                   "country_code_secondary", "phone_secondary", "phone_secondary_whatsapp",
+                   "country_code_emergency", "phone_emergency", "phone_emergency_whatsapp",
+                   "emergency_contact_name", "emergency_contact_relationship", "emergency_contact_email"];
     if (rel === RELATIONSHIP_CHILD) {
       allowed.push("date_of_birth");
     }
@@ -3006,7 +3009,7 @@ function _handleEditHouseholdMember(p) {
     for (var i = 0; i < allowed.length; i++) {
       var field = allowed[i];
       if (p[field] !== undefined) {
-        var val = (field === "phone_primary_whatsapp")
+        var val = (field === "phone_primary_whatsapp" || field === "phone_secondary_whatsapp" || field === "phone_emergency_whatsapp")
           ? (p[field] === true || p[field] === "true")
           : sanitizeInput(String(p[field]));
         updateMemberField(p.individual_id, field, val, auth.session.email);

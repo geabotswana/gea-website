@@ -2066,6 +2066,7 @@ function _safePublicMember(member) {
     emergency_contact_email:    member.emergency_contact_email || "",
     phone_emergency:            member.phone_emergency || "",
     country_code_emergency:     member.country_code_emergency || "",
+    phone_emergency_whatsapp:   member.phone_emergency_whatsapp || false,
     emergency_contact_relationship: member.emergency_contact_relationship || ""
   };
 }

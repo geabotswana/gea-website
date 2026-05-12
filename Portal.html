@@ -5595,8 +5595,37 @@ function submitPasswordReset(event) {
       return;
     }
 
-    // Show email verification modal - must verify before submission
-    _openApplicationEmailVerificationModal(email);
+    // Call backend to generate and send verification code
+    var submitBtn = document.getElementById('appSubmit');
+    submitBtn.disabled = true;
+    var originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Sending code...';
+
+    apiCall('submit_application', {
+      email: email
+    }).then(function(res) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+
+      if (!res.success) {
+        document.getElementById('applicationSubmitError').textContent = res.message || 'Failed to send verification code.';
+        document.getElementById('applicationSubmitError').style.display = 'block';
+        return;
+      }
+
+      if (res.data && res.data.verification_required) {
+        // Code was sent, show verification modal
+        _openApplicationEmailVerificationModal(email);
+      } else {
+        document.getElementById('applicationSubmitError').textContent = 'Unexpected response from server.';
+        document.getElementById('applicationSubmitError').style.display = 'block';
+      }
+    }).catch(function(err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+      document.getElementById('applicationSubmitError').textContent = 'Error: ' + (err.message || err);
+      document.getElementById('applicationSubmitError').style.display = 'block';
+    });
   }
 
   /**

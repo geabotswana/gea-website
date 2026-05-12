@@ -2452,23 +2452,23 @@ function _safePublicHousehold(hh) {
  */
 function _handleSubmitApplication(p) {
   try {
-    // Check if this is verified submission (email already verified)
-    var isVerified = p.email_verified_token !== undefined;
+    // Check if this is verified submission (with valid token)
+    var hasToken = p.email_verified_token !== undefined;
 
-    if (!isVerified && p.email) {
+    if (!hasToken && p.email) {
       // First submission - generate verification code and send email
       var verificationCode = _generateVerificationCode();
       var verificationExpires = _verificationCodeExpiry();
 
-      // Store verification code in session memory (won't persist between requests, but that's ok - user will verify immediately)
-      // For persistence, we'd need a temp sheet. For now, we'll store it in a module-level object
+      // Store verification code in session memory
       if (typeof _applicationVerificationCodes === 'undefined') {
         _applicationVerificationCodes = {};
       }
       _applicationVerificationCodes[p.email] = {
         code: verificationCode,
         expires: verificationExpires.getTime(),
-        attempts: 0
+        attempts: 0,
+        token: null  // No token assigned yet
       };
 
       // Send verification email
@@ -2493,7 +2493,29 @@ function _handleSubmitApplication(p) {
       });
     }
 
-    // If we get here, either this is a verified submission or verification_token wasn't provided
+    // If we get here, this should be a verified submission with a valid token
+    if (hasToken && p.email) {
+      // Validate the token - it must match what was issued by verify_application_email
+      var storedData = _applicationVerificationCodes && _applicationVerificationCodes[p.email];
+
+      if (!storedData) {
+        return errorResponse("Email verification expired. Please submit again.", "INVALID_PARAM");
+      }
+
+      if (!storedData.token) {
+        return errorResponse("Email not verified. Please verify your email first.", "INVALID_PARAM");
+      }
+
+      if (storedData.token !== p.email_verified_token) {
+        return errorResponse("Invalid verification token. Please verify your email again.", "INVALID_PARAM");
+      }
+    } else if (hasToken && !p.email) {
+      return errorResponse("Email is required for submission.", "INVALID_PARAM");
+    } else if (!hasToken && !p.email) {
+      return errorResponse("Email is required to submit application.", "INVALID_PARAM");
+    }
+
+    // Token is valid - proceed with creating application
     var result = createApplicationRecord(p, "applicant");
     if (result.success) {
       // Clear verification code after successful submission
@@ -2561,9 +2583,9 @@ function _handleVerifyApplicationEmail(p) {
       return errorResponse("Code is incorrect. " + remaining + " attempts remaining.", "INVALID_PARAM");
     }
 
-    // Code is valid! Return a token that the frontend can send with the next submit_application call
+    // Code is valid! Generate a token that the frontend must send with the next submit_application call
     var verificationToken = Utilities.getUuid();
-    delete _applicationVerificationCodes[p.email]; // Clear after successful verification
+    storedData.token = verificationToken; // Store token for validation in submit_application
 
     return successResponse({
       email_verified_token: verificationToken,

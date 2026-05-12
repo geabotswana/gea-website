@@ -8311,6 +8311,60 @@ function submitPasswordReset(event) {
     return select;
   }
 
+  /**
+   * Helper to build three-field phone input (country code dropdown, phone number, WhatsApp checkbox)
+   */
+  function _buildPhoneFieldSet(countryValue, phoneValue, whatsAppValue, countryCodeId, phoneId, whatsAppId) {
+    var container = document.createElement('div');
+    container.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+
+    // Country code dropdown
+    var countrySelect = document.createElement('select');
+    countrySelect.id = countryCodeId;
+    countrySelect.className = 'form-input';
+    countrySelect.style.flex = '0 0 100px';
+    getPhoneCountries().forEach(function(country) {
+      var opt = document.createElement('option');
+      opt.value = country.code;
+      opt.textContent = country.code;
+      countrySelect.appendChild(opt);
+    });
+    countrySelect.value = countryValue || 'US';
+    container.appendChild(countrySelect);
+
+    // Phone input
+    var phoneInput = document.createElement('input');
+    phoneInput.type = 'tel';
+    phoneInput.id = phoneId;
+    phoneInput.className = 'form-input';
+    phoneInput.placeholder = '71234567';
+    phoneInput.style.flex = '1';
+    phoneInput.value = phoneValue || '';
+    container.appendChild(phoneInput);
+
+    // WhatsApp checkbox
+    var checkboxWrapper = document.createElement('div');
+    checkboxWrapper.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:8px;white-space:nowrap;';
+    var whatsAppCheckbox = document.createElement('input');
+    whatsAppCheckbox.type = 'checkbox';
+    whatsAppCheckbox.id = whatsAppId;
+    whatsAppCheckbox.checked = whatsAppValue || false;
+    var whatsAppLabel = document.createElement('label');
+    whatsAppLabel.htmlFor = whatsAppId;
+    whatsAppLabel.style.cssText = 'font-size:13px;cursor:pointer;margin:0;';
+    whatsAppLabel.textContent = 'WhatsApp';
+    checkboxWrapper.appendChild(whatsAppCheckbox);
+    checkboxWrapper.appendChild(whatsAppLabel);
+    container.appendChild(checkboxWrapper);
+
+    return {
+      container: container,
+      countrySelect: countrySelect,
+      phoneInput: phoneInput,
+      whatsAppCheckbox: whatsAppCheckbox
+    };
+  }
+
   function _buildModalButtons(submitText, onSubmit) {
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;';
@@ -8423,7 +8477,6 @@ function submitPasswordReset(event) {
     var firstNameInput = _buildTextInput('First name', member.first_name);
     var lastNameInput  = _buildTextInput('Last name',  member.last_name);
     var emailInput     = _buildTextInput('Email',      member.email);
-    var phoneInput     = _buildTextInput('Phone',      member.phone_primary);
     var dobInput       = _buildDateInput(formatDateOfBirth(member.date_of_birth));
     var citizenshipInput = _buildCitizenshipSelect(member.citizenship_country);
 
@@ -8435,8 +8488,59 @@ function submitPasswordReset(event) {
       modal.appendChild(_buildLabeledInput('Email',      emailInput));
     }
 
-    modal.appendChild(_buildLabeledInput('Phone',      phoneInput));
     modal.appendChild(_buildLabeledInput('Citizenship', citizenshipInput));
+
+    // Primary Phone (three-field setup)
+    var phonePrimaryFields = _buildPhoneFieldSet(
+      member.country_code_primary || 'US',
+      member.phone_primary || '',
+      member.phone_primary_whatsapp || false,
+      'editPhonePrimaryCc_' + member.individual_id,
+      'editPhonePrimary_' + member.individual_id,
+      'editPhonePrimaryWhatsApp_' + member.individual_id
+    );
+    modal.appendChild(_buildLabeledInput('Primary Phone *', phonePrimaryFields.container));
+
+    // Secondary Phone (three-field setup)
+    var phoneSecondaryFields = _buildPhoneFieldSet(
+      member.country_code_secondary || 'US',
+      member.phone_secondary || '',
+      member.phone_secondary_whatsapp || false,
+      'editPhoneSecondaryCc_' + member.individual_id,
+      'editPhoneSecondary_' + member.individual_id,
+      'editPhoneSecondaryWhatsApp_' + member.individual_id
+    );
+    modal.appendChild(_buildLabeledInput('Secondary Phone (Optional)', phoneSecondaryFields.container));
+
+    // Emergency Contact Section
+    var emergencySection = document.createElement('div');
+    emergencySection.style.cssText = 'border-top:1px solid #eee;margin-top:16px;padding-top:16px;';
+
+    var emergencySectionTitle = document.createElement('h4');
+    emergencySectionTitle.style.cssText = 'font-size:13px;font-weight:600;margin-bottom:12px;color:#333;';
+    emergencySectionTitle.textContent = 'Emergency Contact (Optional)';
+    emergencySection.appendChild(emergencySectionTitle);
+
+    var emergencyContactNameInput = _buildTextInput('Name', member.emergency_contact_name || '');
+    var emergencyContactRelationshipInput = _buildTextInput('Relationship', member.emergency_contact_relationship || '');
+    var emergencyContactEmailInput = _buildTextInput('Email', member.emergency_contact_email || '');
+
+    emergencySection.appendChild(_buildLabeledInput('Name', emergencyContactNameInput));
+    emergencySection.appendChild(_buildLabeledInput('Relationship', emergencyContactRelationshipInput));
+
+    // Emergency Phone (three-field setup)
+    var phoneEmergencyFields = _buildPhoneFieldSet(
+      member.country_code_emergency || 'US',
+      member.phone_emergency || '',
+      member.phone_emergency_whatsapp || false,
+      'editPhoneEmergencyCc_' + member.individual_id,
+      'editPhoneEmergency_' + member.individual_id,
+      'editPhoneEmergencyWhatsApp_' + member.individual_id
+    );
+    emergencySection.appendChild(_buildLabeledInput('Phone', phoneEmergencyFields.container));
+    emergencySection.appendChild(_buildLabeledInput('Email', emergencyContactEmailInput));
+
+    modal.appendChild(emergencySection);
 
     var omangInput, startInput, endInput;
 
@@ -8461,7 +8565,18 @@ function submitPasswordReset(event) {
         individual_id: member.individual_id,
         first_name:    firstNameInput.value.trim(),
         last_name:     lastNameInput.value.trim(),
-        phone_primary: phoneInput.value.trim(),
+        country_code_primary: phonePrimaryFields.countrySelect.value || 'US',
+        phone_primary: phonePrimaryFields.phoneInput.value.trim(),
+        phone_primary_whatsapp: phonePrimaryFields.whatsAppCheckbox.checked,
+        country_code_secondary: phoneSecondaryFields.countrySelect.value || '',
+        phone_secondary: phoneSecondaryFields.phoneInput.value.trim(),
+        phone_secondary_whatsapp: phoneSecondaryFields.whatsAppCheckbox.checked,
+        country_code_emergency: phoneEmergencyFields.countrySelect.value || '',
+        phone_emergency: phoneEmergencyFields.phoneInput.value.trim(),
+        phone_emergency_whatsapp: phoneEmergencyFields.whatsAppCheckbox.checked,
+        emergency_contact_name: emergencyContactNameInput.value.trim(),
+        emergency_contact_relationship: emergencyContactRelationshipInput.value.trim(),
+        emergency_contact_email: emergencyContactEmailInput.value.trim(),
         citizenship_country: citizenshipInput.value.trim()
       };
 

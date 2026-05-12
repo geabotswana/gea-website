@@ -86,14 +86,6 @@ function login(email, password) {
     return { success: false, message: "Invalid email or password." };
   }
 
-  // Check if email has been verified (required for login if email was recently changed)
-  var emailVerified = member.email_verified;
-  if (emailVerified === false || String(emailVerified).toLowerCase() === "false") {
-    logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
-                  "Failed login attempt: email not verified");
-    return { success: false, message: "Please verify your email address before logging in. Check your email for the verification code.", requires_verification: true };
-  }
-
   // Check household status and membership application
   // Allow login for both active members AND applicants (pending application)
   // Only block if application was denied or withdrawn
@@ -176,6 +168,9 @@ function login(email, password) {
     memberData.household_name = household.household_name;
   }
 
+  // Check if email needs verification (allows login but requires verification to access portal)
+  var emailVerified = member.email_verified === true || String(member.email_verified).toLowerCase() === "true";
+
   // Return success with token, member data, and applicant flag if applicable
   var response = {
     success: true,
@@ -184,7 +179,8 @@ function login(email, password) {
     member:  memberData,
     is_applicant: isApplicant,
     is_lapsed: isLapsedMember,
-    membership_status: membershipStatusRaw
+    membership_status: membershipStatusRaw,
+    email_verified: emailVerified
   };
 
   // Include application status for backward compatibility
@@ -195,6 +191,11 @@ function login(email, password) {
   // Flag if user needs to change their temporary password on first login
   if (isFirstLogin) {
     response.require_password_change = true;
+  }
+
+  // Flag if email needs verification (user can log in but must verify before accessing portal)
+  if (!emailVerified) {
+    response.requires_email_verification = true;
   }
 
   return response;

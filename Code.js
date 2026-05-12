@@ -982,6 +982,9 @@ function _handleVerifyEmail(p) {
     }
 
     // Code is valid - mark email as verified and clear verification data
+    // Update BOTH email and email_primary so login works with the new address
+    var newEmail = member.email_primary || member.email;
+    updateMemberField(member.individual_id, "email", newEmail, auth.session.email);
     updateMemberField(member.individual_id, "email_verified", true, auth.session.email);
     updateMemberField(member.individual_id, "email_verification_code", "", auth.session.email);
     updateMemberField(member.individual_id, "email_verification_expires", "", auth.session.email);

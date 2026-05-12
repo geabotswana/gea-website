@@ -3328,8 +3328,19 @@ function submitLogin(event) {
       login_is_lapsed_flag: !!res.data.is_lapsed,
       login_application_status: res.data.application_status || '',
       login_membership_status: res.data.membership_status || '',
-      require_password_change: !!res.data.require_password_change
+      require_password_change: !!res.data.require_password_change,
+      requires_email_verification: !!res.data.requires_email_verification
     });
+
+    // Check if email needs verification before portal access
+    if (res.data.requires_email_verification) {
+      // Email is unverified - show verification modal before allowing portal access
+      document.getElementById('loginScreen').classList.remove('show');
+      showAuthenticatedUI();
+      showToast('info', 'Please verify your email to access the portal');
+      _openEmailVerificationModal(email);
+      return;
+    }
 
     // Check if user needs to change their password on first login
     if (res.data.require_password_change) {
@@ -5596,7 +5607,7 @@ function submitPasswordReset(event) {
     }
 
     // Call backend to generate and send verification code
-    var submitBtn = document.getElementById('appSubmit');
+    var submitBtn = document.getElementById('submitApplicationBtn');
     submitBtn.disabled = true;
     var originalText = submitBtn.textContent;
     submitBtn.textContent = 'Sending code...';

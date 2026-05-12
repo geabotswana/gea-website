@@ -2441,6 +2441,47 @@ function _safePublicHousehold(hh) {
   };
 }
 
+// ============================================================
+// APPLICATION VERIFICATION CODE STORAGE (persistent)
+// ============================================================
+
+/**
+ * Store application verification code data in PropertiesService
+ * @param {string} email - The applicant email
+ * @param {Object} data - Code data { code, expires, attempts, token }
+ */
+function _storeApplicationVerificationCode(email, data) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'app_verify_' + email;
+  props.setProperty(key, JSON.stringify(data));
+}
+
+/**
+ * Retrieve application verification code data from PropertiesService
+ * @param {string} email - The applicant email
+ * @returns {Object|null} Code data or null if not found/expired
+ */
+function _getApplicationVerificationCode(email) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'app_verify_' + email;
+  var json = props.getProperty(key);
+  if (!json) return null;
+  try {
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Clear application verification code data from PropertiesService
+ * @param {string} email - The applicant email
+ */
+function _clearApplicationVerificationCode(email) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'app_verify_' + email;
+  props.deleteProperty(key);
+}
 
 // ============================================================
 // MEMBERSHIP APPLICATION HANDLERS
@@ -2460,16 +2501,14 @@ function _handleSubmitApplication(p) {
       var verificationCode = _generateVerificationCode();
       var verificationExpires = _verificationCodeExpiry();
 
-      // Store verification code in session memory
-      if (typeof _applicationVerificationCodes === 'undefined') {
-        _applicationVerificationCodes = {};
-      }
-      _applicationVerificationCodes[p.email] = {
+      // Store verification code in PropertiesService
+      var storedData = {
         code: verificationCode,
         expires: verificationExpires.getTime(),
         attempts: 0,
         token: null  // No token assigned yet
       };
+      _storeApplicationVerificationCode(p.email, storedData);
 
       // Send verification email
       try {
@@ -2496,7 +2535,7 @@ function _handleSubmitApplication(p) {
     // If we get here, this should be a verified submission with a valid token
     if (hasToken && p.email) {
       // Validate the token - it must match what was issued by verify_application_email
-      var storedData = _applicationVerificationCodes && _applicationVerificationCodes[p.email];
+      var storedData = _getApplicationVerificationCode(p.email);
 
       if (!storedData) {
         return errorResponse("Email verification expired. Please submit again.", "INVALID_PARAM");
@@ -2519,9 +2558,7 @@ function _handleSubmitApplication(p) {
     var result = createApplicationRecord(p, "applicant");
     if (result.success) {
       // Clear verification code after successful submission
-      if (typeof _applicationVerificationCodes !== 'undefined' && p.email) {
-        delete _applicationVerificationCodes[p.email];
-      }
+      _clearApplicationVerificationCode(p.email);
 
       return successResponse({
         application_id: result.application_id,
@@ -2558,7 +2595,7 @@ function _handleVerifyApplicationEmail(p) {
     }
 
     var code = String(p.verification_code).trim();
-    var storedData = _applicationVerificationCodes && _applicationVerificationCodes[p.email];
+    var storedData = _getApplicationVerificationCode(p.email);
 
     if (!storedData) {
       return errorResponse("No verification code found for this email. Please submit again.", "INVALID_PARAM");
@@ -2566,19 +2603,20 @@ function _handleVerifyApplicationEmail(p) {
 
     // Check if code has expired
     if (new Date().getTime() > storedData.expires) {
-      delete _applicationVerificationCodes[p.email];
+      _clearApplicationVerificationCode(p.email);
       return errorResponse("Verification code has expired. Please submit again to get a new code.", "INVALID_PARAM");
     }
 
     // Check attempts (max 5)
     if (storedData.attempts >= 5) {
-      delete _applicationVerificationCodes[p.email];
+      _clearApplicationVerificationCode(p.email);
       return errorResponse("Too many incorrect attempts. Please submit again to get a new code.", "INVALID_PARAM");
     }
 
     // Verify code (constant-time comparison)
     if (!constantTimeCompare(code, storedData.code)) {
       storedData.attempts++;
+      _storeApplicationVerificationCode(p.email, storedData);
       var remaining = 5 - storedData.attempts;
       return errorResponse("Code is incorrect. " + remaining + " attempts remaining.", "INVALID_PARAM");
     }
@@ -2586,6 +2624,7 @@ function _handleVerifyApplicationEmail(p) {
     // Code is valid! Generate a token that the frontend must send with the next submit_application call
     var verificationToken = Utilities.getUuid();
     storedData.token = verificationToken; // Store token for validation in submit_application
+    _storeApplicationVerificationCode(p.email, storedData);
 
     return successResponse({
       email_verified_token: verificationToken,

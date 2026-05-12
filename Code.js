@@ -207,6 +207,7 @@ function _routeAction(action, params) {
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
 
     // Applicant routes (pending membership)
+    case "verify_application_email": return _handleVerifyApplicationEmail(params);
     case "application_status":  return _handleApplicationStatus(params);
     case "withdraw_application": return _handleWithdrawApplication(params);
     case "confirm_documents":   return _handleConfirmDocuments(params);
@@ -2448,8 +2449,55 @@ function _safePublicHousehold(hh) {
  */
 function _handleSubmitApplication(p) {
   try {
+    // Check if this is verified submission (email already verified)
+    var isVerified = p.email_verified_token !== undefined;
+
+    if (!isVerified && p.email) {
+      // First submission - generate verification code and send email
+      var verificationCode = _generateVerificationCode();
+      var verificationExpires = _verificationCodeExpiry();
+
+      // Store verification code in session memory (won't persist between requests, but that's ok - user will verify immediately)
+      // For persistence, we'd need a temp sheet. For now, we'll store it in a module-level object
+      if (typeof _applicationVerificationCodes === 'undefined') {
+        _applicationVerificationCodes = {};
+      }
+      _applicationVerificationCodes[p.email] = {
+        code: verificationCode,
+        expires: verificationExpires.getTime(),
+        attempts: 0
+      };
+
+      // Send verification email
+      try {
+        var emailBody = "Hello " + (p.first_name || 'Applicant') + ",\n\n"
+          + "Thank you for submitting your GEA membership application.\n\n"
+          + "To confirm your email address before we proceed, please enter this verification code:\n\n"
+          + "Code: " + verificationCode + "\n\n"
+          + "This code expires in 24 hours.\n\n"
+          + "If you did not submit this application, please contact board@geabotswana.org.\n\n"
+          + "GEA Management System";
+
+        GmailApp.sendEmail(p.email, "GEA Application Email Verification", emailBody);
+      } catch (e) {
+        Logger.log("WARNING: Could not send application verification email: " + e);
+      }
+
+      return successResponse({
+        verification_required: true,
+        email: p.email,
+        message: "Verification code sent to your email. Please enter it to continue."
+      });
+    }
+
+    // If we get here, either this is a verified submission or verification_token wasn't provided
     var result = createApplicationRecord(p, "applicant");
     if (result.success) {
+      // Clear verification code after successful submission
+      if (typeof _applicationVerificationCodes !== 'undefined' && p.email) {
+        delete _applicationVerificationCodes[p.email];
+      }
+
       return successResponse({
         application_id: result.application_id,
         household_id: result.household_id,
@@ -2465,6 +2513,62 @@ function _handleSubmitApplication(p) {
     var errorMsg = "Error: " + e.toString();
     logAuditEntry("applicant", "APPLICATION_ERROR", "Application", "", errorMsg);
     return errorResponse("Error submitting application.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleVerifyApplicationEmail
+ * PURPOSE: Verify email code for application submission
+ *
+ * @param {Object} p { email, verification_code }
+ * @returns {Object} Success/error response with email_verified_token if valid
+ */
+function _handleVerifyApplicationEmail(p) {
+  try {
+    if (!p.email) {
+      return errorResponse("Email is required.", "INVALID_PARAM");
+    }
+    if (!p.verification_code) {
+      return errorResponse("Verification code is required.", "INVALID_PARAM");
+    }
+
+    var code = String(p.verification_code).trim();
+    var storedData = _applicationVerificationCodes && _applicationVerificationCodes[p.email];
+
+    if (!storedData) {
+      return errorResponse("No verification code found for this email. Please submit again.", "INVALID_PARAM");
+    }
+
+    // Check if code has expired
+    if (new Date().getTime() > storedData.expires) {
+      delete _applicationVerificationCodes[p.email];
+      return errorResponse("Verification code has expired. Please submit again to get a new code.", "INVALID_PARAM");
+    }
+
+    // Check attempts (max 5)
+    if (storedData.attempts >= 5) {
+      delete _applicationVerificationCodes[p.email];
+      return errorResponse("Too many incorrect attempts. Please submit again to get a new code.", "INVALID_PARAM");
+    }
+
+    // Verify code (constant-time comparison)
+    if (!constantTimeCompare(code, storedData.code)) {
+      storedData.attempts++;
+      var remaining = 5 - storedData.attempts;
+      return errorResponse("Code is incorrect. " + remaining + " attempts remaining.", "INVALID_PARAM");
+    }
+
+    // Code is valid! Return a token that the frontend can send with the next submit_application call
+    var verificationToken = Utilities.getUuid();
+    delete _applicationVerificationCodes[p.email]; // Clear after successful verification
+
+    return successResponse({
+      email_verified_token: verificationToken,
+      message: "Email verified. You can now submit your application."
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleVerifyApplicationEmail: " + e);
+    return errorResponse("Could not verify email code.", "SERVER_ERROR");
   }
 }
 

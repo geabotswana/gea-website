@@ -9063,7 +9063,8 @@ function submitPasswordReset(event) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Verifying...';
 
-      apiCall('verify_email', {
+      apiCall('verify_application_email', {
+        email: applicationEmail,
         verification_code: codeInput.value.trim()
       }).then(function(res) {
         if (!res.success) {
@@ -9073,7 +9074,8 @@ function submitPasswordReset(event) {
           submitBtn.textContent = 'Verify & Submit Application';
           return;
         }
-        // Email verified - close modal and proceed with submission
+        // Email verified - save token and proceed with submission
+        applicationFormData.email_verified_token = res.data.email_verified_token;
         _closeHouseholdModal();
         _proceedWithApplicationSubmission();
       }).catch(function(err) {
@@ -9093,18 +9095,21 @@ function submitPasswordReset(event) {
       resendBtn.disabled = true;
       resendBtn.textContent = 'Sending...';
 
-      apiCall('resend_verification_code', {}).then(function(res) {
-        if (!res.success) {
-          showToast('error', res.message || 'Failed to resend code');
+      // For application verification, we need to re-submit to get a new code
+      apiCall('submit_application', {
+        email: applicationEmail
+      }).then(function(res) {
+        if (res.data && res.data.verification_required) {
+          showToast('success', 'New code sent to your email');
+          codeInput.value = '';
+          codeInput.focus();
           resendBtn.disabled = false;
           resendBtn.textContent = 'Resend Code';
-          return;
+        } else {
+          showToast('error', 'Failed to resend code');
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend Code';
         }
-        showToast('success', 'New code sent to your email');
-        codeInput.value = '';
-        codeInput.focus();
-        resendBtn.disabled = false;
-        resendBtn.textContent = 'Resend Code';
       }).catch(function(err) {
         showToast('error', err.message);
         resendBtn.disabled = false;

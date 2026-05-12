@@ -2825,10 +2825,15 @@
   window.addEventListener('load', function() {
     // Fetch document upload configuration from Config.js at page load
     // Single source of truth: APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES
-    google.script.run.withSuccessHandler(function(config) {
-      APPLICANT_UPLOAD_TYPES = config.applicant || {};
-      FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
-    }).getApplicantUploadConfiguration();
+    // Note: This call is optional; defaults are set at initialization
+    try {
+      google.script.run.withSuccessHandler(function(config) {
+        APPLICANT_UPLOAD_TYPES = config.applicant || {};
+        FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
+      }).getApplicantUploadConfiguration();
+    } catch (e) {
+      // Backend function may not exist; using default values
+    }
 
     // Check for password reset token in URL.
     // When loaded via member.html wrapper, GAS requires action=serve to serve this
@@ -4994,13 +4999,18 @@ function submitPasswordReset(event) {
     updateStep2FieldsForCategory(category);
 
     // Show document requirements (Config.js driven)
-    google.script.run.withSuccessHandler(function(requirementsText) {
-      var reqDiv = document.getElementById('documentRequirementsContainer');
-      if (reqDiv) {
-        document.getElementById('documentRequirementsText').innerHTML = requirementsText;
-        reqDiv.style.display = 'block';
-      }
-    }).getApplicantDocumentRequirements(category);
+    // Note: This call is optional; if the backend function doesn't exist, document requirements won't be shown
+    try {
+      google.script.run.withSuccessHandler(function(requirementsText) {
+        var reqDiv = document.getElementById('documentRequirementsContainer');
+        if (reqDiv) {
+          document.getElementById('documentRequirementsText').innerHTML = requirementsText;
+          reqDiv.style.display = 'block';
+        }
+      }).getApplicantDocumentRequirements(category);
+    } catch (e) {
+      // Backend function may not exist; skipping document requirements display
+    }
 
     // Display the determined category
     document.getElementById('categoryDisplayContainer').style.display = 'block';
@@ -5025,12 +5035,10 @@ function submitPasswordReset(event) {
     document.getElementById('departureDateContainer').style.display = 'none';
     document.getElementById('sponsorInStep2Container').style.display = 'none';
 
-    // Check if this category requires sponsor (read from Config.js server-side)
-    google.script.run.withSuccessHandler(function(requiresSponsor) {
-      if (requiresSponsor && document.getElementById('sponsorInStep2Container')) {
-        document.getElementById('sponsorInStep2Container').style.display = 'block';
-      }
-    }).categoryRequiresSponsor(category);
+    // Only Community membership requires sponsor info in Step 2
+    if (category === 'Community' && document.getElementById('sponsorInStep2Container')) {
+      document.getElementById('sponsorInStep2Container').style.display = 'block';
+    }
 
     // Show fields based on category
     switch(category) {

@@ -1059,12 +1059,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.87";
-var SYSTEM_BUILD_DATE       = "2026-05-11";
+var SYSTEM_VERSION          = "2.5.88";
+var SYSTEM_BUILD_DATE       = "2026-05-12";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Implement daily health check reporting with dual templates and fallback alert (#181)";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-11 15:13:58";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Restore nightly reservation tasks and fix backup export (#182)";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-12 10:51:42";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

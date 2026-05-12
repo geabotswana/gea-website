@@ -872,6 +872,9 @@ function _handleProfile(p) {
 
   // If method=update, apply changes
   if (p.method === "update") {
+    var emailChanged = false;
+    var oldEmail = member.email;
+
     var allowed = ["email_primary", "email_secondary", "phone_primary", "phone_secondary",
                    "country_code_primary", "country_code_secondary", "phone_primary_whatsapp",
                    "phone_secondary_whatsapp", "emergency_contact_name", "emergency_contact_phone",
@@ -879,11 +882,24 @@ function _handleProfile(p) {
     for (var i = 0; i < allowed.length; i++) {
       var field = allowed[i];
       if (p[field] !== undefined) {
-        updateMemberField(member.individual_id, field, sanitizeInput(p[field]),
-                          auth.session.email);
+        var newVal = sanitizeInput(String(p[field]));
+        if (field === "email_primary" && newVal !== oldEmail) {
+          emailChanged = true;
+        }
+        updateMemberField(member.individual_id, field, newVal, auth.session.email);
       }
     }
-    member = getMemberByEmail(auth.session.email); // re-fetch
+    member = getMemberByEmail(auth.session.email); // re-fetch with old email (still in session)
+
+    // If email was changed, indicate this to frontend so it can show logout message
+    if (emailChanged) {
+      return successResponse({
+        member:    _safePublicMember(member),
+        household: _safePublicHousehold(hh),
+        email_changed: true,
+        new_email: p.email_primary
+      });
+    }
   }
 
   var hh = getHouseholdById(member.household_id);

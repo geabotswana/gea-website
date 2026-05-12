@@ -10465,10 +10465,31 @@ function submitPasswordReset(event) {
         return;
       }
 
-      msgEl.textContent = 'Contact information saved successfully!';
-      msgEl.style.background = '#e8f5e9';
-      msgEl.style.color = '#2E7D32';
-      setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+      // Check if primary email was changed
+      if (res.data && res.data.email_changed) {
+        msgEl.textContent = '';
+        var strong1 = document.createElement('strong');
+        strong1.textContent = 'Email changed successfully!';
+        msgEl.appendChild(strong1);
+        var br = document.createElement('br');
+        msgEl.appendChild(br);
+        var text = document.createTextNode('You will be logged out in 2 seconds. Please log in again with your new email: ');
+        msgEl.appendChild(text);
+        var strong2 = document.createElement('strong');
+        strong2.textContent = res.data.new_email;
+        msgEl.appendChild(strong2);
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        showToast('success', 'Email changed. Logging out...');
+        setTimeout(function() {
+          logout();
+        }, 2000);
+      } else {
+        msgEl.textContent = 'Contact information saved successfully!';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+      }
     });
   }
 

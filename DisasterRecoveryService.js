@@ -415,14 +415,22 @@ function performDailyBackup() {
   ];
 
   // Export each sheet
+  var oauthToken = ScriptApp.getOAuthToken();
   sheetsToBackup.forEach(function(sheetDef) {
     try {
       var fileName = "GEA_" + sheetDef.name + "_" + dateStr + ".xlsx";
-      var ss = SpreadsheetApp.openById(sheetDef.id);
 
-      // Create backup file
-      var blob = ss.getAs("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      blob.setName(fileName);
+      // Export via Drive export URL — the only reliable way to get XLSX from a Google Sheet
+      var exportUrl = "https://docs.google.com/spreadsheets/d/" + sheetDef.id +
+                      "/export?format=xlsx";
+      var response = UrlFetchApp.fetch(exportUrl, {
+        headers: { Authorization: "Bearer " + oauthToken },
+        muteHttpExceptions: true
+      });
+      if (response.getResponseCode() !== 200) {
+        throw new Error("Export request failed with HTTP " + response.getResponseCode());
+      }
+      var blob = response.getBlob().setName(fileName);
       backupFolder.createFile(blob);
 
       results.exports.push({

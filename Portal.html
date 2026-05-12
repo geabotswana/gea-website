@@ -2372,7 +2372,12 @@
             <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Primary Email</h3>
             <div class="form-group">
               <label class="form-label">Email Address</label>
-              <input id="emailPrimary" type="email" class="form-input" placeholder="your.email@example.com">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input id="emailPrimary" type="email" class="form-input" placeholder="your.email@example.com" style="flex: 1;">
+                <div id="emailVerificationStatus" style="font-size: 12px; white-space: nowrap; padding: 6px 12px; border-radius: 4px; background: #f5f5f5; color: #666;">
+                  Loading...
+                </div>
+              </div>
             </div>
 
             <!-- Secondary Email (Optional) -->
@@ -3295,6 +3300,16 @@ function submitLogin(event) {
     console.log("LOGIN RESPONSE:", res);
     
     if (!res.success) {
+      // Login failed — check if it's due to unverified email
+      if (res.data && res.data.requires_verification) {
+        // Show email verification modal instead of generic error
+        errorDiv.textContent = '';
+        errorDiv.classList.remove('show');
+        document.getElementById('loginScreen').classList.add('show');
+        showToast('info', 'Please verify your email first');
+        _openEmailVerificationModal(email);
+        return;
+      }
       // Login failed — show error message
       // Generic message for security (don't reveal if email/password/status is wrong)
       errorDiv.textContent = res.message || 'Invalid email or password.';
@@ -5572,6 +5587,22 @@ function submitPasswordReset(event) {
     // Ensure all form data is collected before submission
     saveApplicationStepData(5);
 
+    // Require email verification before allowing submission
+    var email = applicationFormData.email || '';
+    if (!email) {
+      document.getElementById('applicationSubmitError').textContent = 'Email address is required.';
+      document.getElementById('applicationSubmitError').style.display = 'block';
+      return;
+    }
+
+    // Show email verification modal - must verify before submission
+    _openApplicationEmailVerificationModal(email);
+  }
+
+  /**
+   * Verify email and then actually submit the application
+   */
+  function _proceedWithApplicationSubmission() {
     // Disable button and show spinner while processing
     var btn = document.getElementById('submitApplicationBtn');
     btn.disabled = true;
@@ -8970,6 +9001,127 @@ function submitPasswordReset(event) {
     document.body.appendChild(parts.overlay);
   }
 
+  function _openApplicationEmailVerificationModal(applicationEmail) {
+    var parts = _buildModalOverlay('Verify Email Before Submission');
+    var modal = parts.modal;
+
+    var introText = document.createElement('p');
+    introText.style.color = '#555';
+    introText.style.marginBottom = '16px';
+    introText.textContent = 'Before we can submit your application, we need to verify your email address.';
+    modal.appendChild(introText);
+
+    var emailDisplay = document.createElement('p');
+    emailDisplay.style.color = '#333';
+    emailDisplay.style.fontWeight = 'bold';
+    emailDisplay.style.marginBottom = '16px';
+    emailDisplay.textContent = applicationEmail;
+    modal.appendChild(emailDisplay);
+
+    var instructionText = document.createElement('p');
+    instructionText.style.color = '#555';
+    instructionText.style.marginBottom = '12px';
+    instructionText.textContent = 'A verification code will be sent to this address. Enter it below:';
+    modal.appendChild(instructionText);
+
+    var codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.className = 'form-input';
+    codeInput.placeholder = '000000';
+    codeInput.maxLength = '6';
+    codeInput.style.fontSize = '18px';
+    codeInput.style.letterSpacing = '8px';
+    codeInput.style.textAlign = 'center';
+    codeInput.style.fontWeight = 'bold';
+    modal.appendChild(codeInput);
+
+    var attemptsP = document.createElement('p');
+    attemptsP.style.fontSize = '12px';
+    attemptsP.style.color = '#999';
+    attemptsP.style.marginTop = '12px';
+    attemptsP.textContent = 'Code expires in 24 hours';
+    modal.appendChild(attemptsP);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    errorP.style.fontSize = '13px';
+    modal.appendChild(errorP);
+
+    var btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '12px';
+    btnContainer.style.marginTop = '20px';
+
+    var submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.style.flex = '1';
+    submitBtn.textContent = 'Verify & Submit Application';
+    submitBtn.onclick = function() {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+
+      apiCall('verify_email', {
+        verification_code: codeInput.value.trim()
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Verification failed.';
+          errorP.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Verify & Submit Application';
+          return;
+        }
+        // Email verified - close modal and proceed with submission
+        _closeHouseholdModal();
+        _proceedWithApplicationSubmission();
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify & Submit Application';
+      });
+    };
+    btnContainer.appendChild(submitBtn);
+
+    var resendBtn = document.createElement('button');
+    resendBtn.type = 'button';
+    resendBtn.className = 'btn btn-secondary';
+    resendBtn.textContent = 'Resend Code';
+    resendBtn.onclick = function() {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending...';
+
+      apiCall('resend_verification_code', {}).then(function(res) {
+        if (!res.success) {
+          showToast('error', res.message || 'Failed to resend code');
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend Code';
+          return;
+        }
+        showToast('success', 'New code sent to your email');
+        codeInput.value = '';
+        codeInput.focus();
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Code';
+      }).catch(function(err) {
+        showToast('error', err.message);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Code';
+      });
+    };
+    btnContainer.appendChild(resendBtn);
+
+    modal.appendChild(btnContainer);
+    document.body.appendChild(parts.overlay);
+
+    // Focus code input
+    setTimeout(function() {
+      codeInput.focus();
+    }, 100);
+  }
+
   function _openEmailVerificationModal(newEmail) {
     _closeHouseholdModal();
     var parts = _buildModalOverlay('Verify Your Email');
@@ -10504,6 +10656,21 @@ function submitPasswordReset(event) {
         }
         if (member.email_secondary) {
           document.getElementById('emailSecondary').value = member.email_secondary;
+        }
+
+        // Update email verification status
+        var statusEl = document.getElementById('emailVerificationStatus');
+        if (statusEl) {
+          var isVerified = member.email_verified === true || String(member.email_verified).toLowerCase() === 'true';
+          if (isVerified) {
+            statusEl.textContent = '✓ Verified';
+            statusEl.style.background = '#e8f5e9';
+            statusEl.style.color = '#2E7D32';
+          } else {
+            statusEl.textContent = '⚠ Pending verification';
+            statusEl.style.background = '#fff3e0';
+            statusEl.style.color = '#E65100';
+          }
         }
 
         // Pre-populate emergency contact fields

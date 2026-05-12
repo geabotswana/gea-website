@@ -974,7 +974,7 @@ function _handleVerifyEmail(p) {
     }
 
     // Verify code (constant-time comparison)
-    if (!_constantTimeCompare(code, storedCode)) {
+    if (!constantTimeCompare(code, storedCode)) {
       var newAttempts = attempts + 1;
       updateMemberField(member.individual_id, "email_verification_attempts", newAttempts, auth.session.email);
       return errorResponse("Verification code is incorrect. " + (5 - newAttempts) + " attempts remaining.", "INVALID_PARAM");

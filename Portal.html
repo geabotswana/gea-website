@@ -5012,9 +5012,8 @@ function submitPasswordReset(event) {
       nextApplicationStep();
     } else {
       // For other categories, show household type selection
-      document.getElementById('householdTypeContainer').style.display = 'block';
-      document.getElementById('eligibilityButtonContainer').style.display = 'none';
-      document.getElementById('householdTypeButtonContainer').style.display = 'flex';
+      // Call updateApplicationStep to properly sync the UI state
+      updateApplicationStep();
     }
   }
 

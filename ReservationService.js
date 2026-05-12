@@ -1686,9 +1686,9 @@ function expireWaitlistPositions() {
     for (var i = 1; i < data.length; i++) {
       var res = rowToObject(headers, data[i]);
       if (res.status !== STATUS_WAITLISTED) continue;
-      if (!res.reservation_date) continue;
+      if (!res.reservation_start) continue;
 
-      var eventDate = new Date(res.reservation_date);
+      var eventDate = new Date(res.reservation_start);
       if (eventDate > cutoff) continue;
 
       _updateReservationField(res.reservation_id, "status",               STATUS_CANCELLED, "system");
@@ -1782,11 +1782,11 @@ function sendReservationApprovalReminders() {
     }
 
     pending.sort(function(a, b) {
-      return new Date(a.reservation_date) - new Date(b.reservation_date);
+      return new Date(a.reservation_start) - new Date(b.reservation_start);
     });
 
     var lines = pending.map(function(res) {
-      var dateStr = res.reservation_date ? formatDate(new Date(res.reservation_date)) : "Unknown date";
+      var dateStr = res.reservation_start ? formatDate(new Date(res.reservation_start)) : "Unknown date";
       var excess  = res.is_excess_reservation ? " [EXCESS]" : "";
       return "• " + (res.facility || "?") + " — " + (res.household_name || res.household_id) +
              " — " + dateStr + excess;

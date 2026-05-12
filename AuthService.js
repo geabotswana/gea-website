@@ -86,6 +86,14 @@ function login(email, password) {
     return { success: false, message: "Invalid email or password." };
   }
 
+  // Check if email has been verified (required for login if email was recently changed)
+  var emailVerified = member.email_verified;
+  if (emailVerified === false || String(emailVerified).toLowerCase() === "false") {
+    logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
+                  "Failed login attempt: email not verified");
+    return { success: false, message: "Please verify your email address before logging in. Check your email for the verification code.", requires_verification: true };
+  }
+
   // Check household status and membership application
   // Allow login for both active members AND applicants (pending application)
   // Only block if application was denied or withdrawn

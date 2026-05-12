@@ -8970,6 +8970,131 @@ function submitPasswordReset(event) {
     document.body.appendChild(parts.overlay);
   }
 
+  function _openEmailVerificationModal(newEmail) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Verify Your Email');
+    var modal = parts.modal;
+
+    var introText = document.createElement('p');
+    introText.style.color = '#555';
+    introText.style.marginBottom = '16px';
+    introText.textContent = 'A verification code has been sent to:';
+    modal.appendChild(introText);
+
+    var emailDisplay = document.createElement('p');
+    emailDisplay.style.color = '#333';
+    emailDisplay.style.fontWeight = 'bold';
+    emailDisplay.style.marginBottom = '16px';
+    emailDisplay.textContent = newEmail;
+    modal.appendChild(emailDisplay);
+
+    var instructionText = document.createElement('p');
+    instructionText.style.color = '#555';
+    instructionText.style.marginBottom = '12px';
+    instructionText.textContent = 'Enter the 6-digit code below:';
+    modal.appendChild(instructionText);
+
+    var codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.className = 'form-input';
+    codeInput.placeholder = '000000';
+    codeInput.maxLength = '6';
+    codeInput.style.fontSize = '18px';
+    codeInput.style.letterSpacing = '8px';
+    codeInput.style.textAlign = 'center';
+    codeInput.style.fontWeight = 'bold';
+    modal.appendChild(codeInput);
+
+    var attemptsP = document.createElement('p');
+    attemptsP.style.fontSize = '12px';
+    attemptsP.style.color = '#999';
+    attemptsP.style.marginTop = '12px';
+    attemptsP.textContent = 'Code expires in 24 hours';
+    modal.appendChild(attemptsP);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    errorP.style.fontSize = '13px';
+    modal.appendChild(errorP);
+
+    var btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '12px';
+    btnContainer.style.marginTop = '20px';
+
+    var submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.style.flex = '1';
+    submitBtn.textContent = 'Verify Email';
+    submitBtn.onclick = function() {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+
+      apiCall('verify_email', {
+        verification_code: codeInput.value.trim()
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Verification failed.';
+          errorP.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Verify Email';
+          return;
+        }
+        _closeHouseholdModal();
+        showToast('success', 'Email verified successfully!');
+        // Logout with message after verification
+        setTimeout(function() {
+          logout();
+        }, 1500);
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify Email';
+      });
+    };
+    btnContainer.appendChild(submitBtn);
+
+    var resendBtn = document.createElement('button');
+    resendBtn.type = 'button';
+    resendBtn.className = 'btn btn-secondary';
+    resendBtn.textContent = 'Resend Code';
+    resendBtn.onclick = function() {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending...';
+
+      apiCall('resend_verification_code', {}).then(function(res) {
+        if (!res.success) {
+          showToast('error', res.message || 'Failed to resend code');
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend Code';
+          return;
+        }
+        showToast('success', 'New code sent to your email');
+        codeInput.value = '';
+        codeInput.focus();
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Code';
+      }).catch(function(err) {
+        showToast('error', err.message);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Code';
+      });
+    };
+    btnContainer.appendChild(resendBtn);
+
+    modal.appendChild(btnContainer);
+    document.body.appendChild(parts.overlay);
+
+    // Focus code input
+    setTimeout(function() {
+      codeInput.focus();
+    }, 100);
+  }
+
   // ─── END NMP.6 ───────────────────────────────────────────────
 
   function getApplicantStatusBadgeColor(status) {
@@ -10465,25 +10590,20 @@ function submitPasswordReset(event) {
         return;
       }
 
-      // Check if primary email was changed
-      if (res.data && res.data.email_changed) {
-        msgEl.textContent = '';
-        var strong1 = document.createElement('strong');
-        strong1.textContent = 'Email changed successfully!';
-        msgEl.appendChild(strong1);
-        var br = document.createElement('br');
-        msgEl.appendChild(br);
-        var text = document.createTextNode('You will be logged out in 2 seconds. Please log in again with your new email: ');
-        msgEl.appendChild(text);
-        var strong2 = document.createElement('strong');
-        strong2.textContent = res.data.new_email;
-        msgEl.appendChild(strong2);
+      // Check if primary email was changed and verification is required
+      if (res.data && res.data.email_changed && res.data.verification_required) {
+        msgEl.textContent = 'Email changed! Check your email for a verification code.';
+        msgEl.style.background = '#e3f2fd';
+        msgEl.style.color = '#1565C0';
+        showToast('success', 'Email changed. Verification code sent.');
+        // Show verification modal
+        _openEmailVerificationModal(res.data.new_email);
+      } else if (res.data && res.data.email_changed) {
+        // Email changed without verification requirement (shouldn't happen with new code, but handle gracefully)
+        msgEl.textContent = 'Contact information saved successfully!';
         msgEl.style.background = '#e8f5e9';
         msgEl.style.color = '#2E7D32';
-        showToast('success', 'Email changed. Logging out...');
-        setTimeout(function() {
-          logout();
-        }, 2000);
+        setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
       } else {
         msgEl.textContent = 'Contact information saved successfully!';
         msgEl.style.background = '#e8f5e9';

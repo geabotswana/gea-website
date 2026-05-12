@@ -1059,12 +1059,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.88";
+var SYSTEM_VERSION          = "2.5.89";
 var SYSTEM_BUILD_DATE       = "2026-05-12";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Restore nightly reservation tasks and fix backup export (#182)";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-12 10:51:42";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Merge pull request #183 from geabotswana/claude/fix-household-type-question-9CIy1";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-12 21:05:45";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

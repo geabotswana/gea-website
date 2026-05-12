@@ -1299,8 +1299,8 @@
     <div class="login-error" id="loginError"></div>
     <form class="login-form" onsubmit="submitLogin(event)">
       <div class="form-group">
-        <label class="form-label">Email Address</label>
-        <input type="email" id="loginEmail" class="form-input" placeholder="you@state.gov" required autocomplete="username">
+        <label class="form-label">Username</label>
+        <input type="text" id="loginUsername" class="form-input" placeholder="yourname" required autocomplete="username">
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
@@ -1622,6 +1622,15 @@
       <div class="form-group">
         <label class="form-label">Email Address *</label>
         <input type="email" id="appEmail" class="form-input" placeholder="jane@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username *</label>
+        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">This will be your login username. Use 4-20 characters (letters, numbers, underscores only). Must be unique.</p>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <input type="text" id="appUsername" class="form-input" placeholder="jane_doe" required style="flex: 1;" oninput="validateUsernameAvailability()">
+          <span id="usernameStatus" style="margin-top: 8px; font-size: 12px; min-width: 60px; text-align: right;"></span>
+        </div>
+        <div id="usernameError" style="color: #c62828; font-size: 12px; margin-top: 4px; display: none;"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Phone Number *</label>
@@ -3267,32 +3276,32 @@ function showPhoneMessage(message, type) {
  */
 function submitLogin(event) {
   event.preventDefault();
-  
-  // Get email and password from the form
-  var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+
+  // Get username and password from the form
+  var username = document.getElementById('loginUsername').value.trim();
   var password = document.getElementById('loginPassword').value;
-  
+
   // Clear any previous error messages
   var errorDiv = document.getElementById('loginError');
   errorDiv.textContent = '';
   errorDiv.classList.remove('show');
-  
+
   // Validate password length on the frontend (user-friendly error)
   if (password.length < 12) {
     errorDiv.textContent = 'Password must be at least 12 characters.';
     errorDiv.classList.add('show');
     return;
   }
-  
+
   // Disable the submit button while the request is in progress
   var submitBtn = event.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Signing in...';
-  
-  // Call the backend login action with BOTH email and password
-  apiCall('login', { 
-    email: email,
-    password: password  // ← NEW: password is now sent
+
+  // Call the backend login action with username and password
+  apiCall('login', {
+    username: username,
+    password: password
   }).then(function(res) {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Sign In';
@@ -3307,7 +3316,7 @@ function submitLogin(event) {
         errorDiv.classList.remove('show');
         document.getElementById('loginScreen').classList.add('show');
         showToast('info', 'Please verify your email first');
-        _openEmailVerificationModal(email);
+        _openEmailVerificationModal(res.data.member.email);
         return;
       }
       // Login failed — show error message
@@ -3332,15 +3341,6 @@ function submitLogin(event) {
       requires_email_verification: !!res.data.requires_email_verification
     });
 
-    // Check if email needs verification before portal access
-    if (res.data.requires_email_verification) {
-      // Email is unverified - show verification modal before allowing portal access
-      document.getElementById('loginScreen').classList.remove('show');
-      showAuthenticatedUI();
-      showToast('info', 'Please verify your email to access the portal');
-      _openEmailVerificationModal(email);
-      return;
-    }
 
     // Check if user needs to change their password on first login
     if (res.data.require_password_change) {
@@ -3427,9 +3427,9 @@ function showLoginScreen() {
   document.getElementById('passwordResetConfirmScreen').classList.remove('show');
   document.getElementById('loginScreen').classList.add('show');
   document.getElementById('loginError').textContent = '';
-  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
-  document.getElementById('loginEmail').focus();
+  document.getElementById('loginUsername').focus();
 }
 
 /**
@@ -3799,7 +3799,7 @@ function submitPasswordReset(event) {
     
     // Show and reset login screen
     document.getElementById('loginScreen').classList.add('show');
-    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginUsername').value = '';
     document.getElementById('loginError').textContent = '';
     document.getElementById('loginError').classList.remove('show');
   }
@@ -5349,6 +5349,7 @@ function submitPasswordReset(event) {
         applicationFormData.first_name = capitalizeName(document.getElementById('appFirstName').value);
         applicationFormData.last_name = capitalizeName(document.getElementById('appLastName').value);
         applicationFormData.email = document.getElementById('appEmail').value;
+        applicationFormData.username = document.getElementById('appUsername').value.trim().toLowerCase();
         applicationFormData.country_code_primary = document.getElementById('appCountryCode').value || 'US';
         applicationFormData.phone_primary = document.getElementById('appPhone').value;
         applicationFormData.phone_primary_whatsapp = document.getElementById('appPhoneWhatsApp').checked;
@@ -5637,6 +5638,61 @@ function submitPasswordReset(event) {
       document.getElementById('applicationSubmitError').textContent = 'Error: ' + (err.message || err);
       document.getElementById('applicationSubmitError').style.display = 'block';
     });
+  }
+
+  /**
+   * Validate username format and check availability
+   */
+  function validateUsernameAvailability() {
+    var usernameInput = document.getElementById('appUsername');
+    var username = usernameInput.value.trim().toLowerCase();
+    var statusSpan = document.getElementById('usernameStatus');
+    var errorDiv = document.getElementById('usernameError');
+
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+
+    if (!username) {
+      statusSpan.textContent = '';
+      usernameInput.style.borderColor = '';
+      return;
+    }
+
+    // Validate format: 4-20 chars, alphanumeric + underscore only
+    var formatRegex = /^[a-z0-9_]{4,20}$/;
+    if (!formatRegex.test(username)) {
+      usernameInput.style.borderColor = '#c62828';
+      statusSpan.innerHTML = '❌ Invalid format';
+      statusSpan.style.color = '#c62828';
+      errorDiv.textContent = 'Username must be 4-20 characters (letters, numbers, underscores only)';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    // Check availability via API
+    statusSpan.innerHTML = '⏳ Checking...';
+    statusSpan.style.color = '#999';
+    usernameInput.style.borderColor = '';
+
+    apiCall('check_username_available', { username: username })
+      .then(function(res) {
+        if (res.success && res.data && res.data.available) {
+          usernameInput.style.borderColor = '#4caf50';
+          statusSpan.innerHTML = '✓ Available';
+          statusSpan.style.color = '#4caf50';
+        } else {
+          usernameInput.style.borderColor = '#c62828';
+          statusSpan.innerHTML = '✗ Taken';
+          statusSpan.style.color = '#c62828';
+          errorDiv.textContent = 'This username is already in use';
+          errorDiv.style.display = 'block';
+        }
+      })
+      .catch(function(err) {
+        usernameInput.style.borderColor = '#999';
+        statusSpan.innerHTML = '? Error';
+        statusSpan.style.color = '#999';
+      });
   }
 
   /**
@@ -8292,7 +8348,9 @@ function submitPasswordReset(event) {
     renderApplicantPortalSection('household');
   }
 
-  function _buildModalOverlay(titleText) {
+  function _buildModalOverlay(titleText, isDismissable) {
+    isDismissable = isDismissable !== false; // Default to dismissable unless explicitly false
+
     var overlay = document.createElement('div');
     overlay.id = 'hhModalOverlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;' +
@@ -8309,21 +8367,24 @@ function submitPasswordReset(event) {
 
     overlay.appendChild(modal);
 
-    // Close modal when clicking overlay background (outside the modal box)
-    overlay.onclick = function(e) {
-      if (e.target === overlay) {
-        _closeHouseholdModal();
-      }
-    };
+    // Only allow closing if dismissable
+    if (isDismissable) {
+      // Close modal when clicking overlay background (outside the modal box)
+      overlay.onclick = function(e) {
+        if (e.target === overlay) {
+          _closeHouseholdModal();
+        }
+      };
 
-    // Close modal on Esc key
-    var escHandler = function(e) {
-      if (e.key === 'Escape') {
-        _closeHouseholdModal();
-      }
-    };
-    overlay.escHandler = escHandler;
-    document.addEventListener('keydown', escHandler);
+      // Close modal on Esc key
+      var escHandler = function(e) {
+        if (e.key === 'Escape') {
+          _closeHouseholdModal();
+        }
+      };
+      overlay.escHandler = escHandler;
+      document.addEventListener('keydown', escHandler);
+    }
 
     return { overlay: overlay, modal: modal };
   }
@@ -9167,9 +9228,10 @@ function submitPasswordReset(event) {
     }, 100);
   }
 
-  function _openEmailVerificationModal(newEmail) {
+  function _openEmailVerificationModal(newEmail, isDismissable) {
+    isDismissable = isDismissable !== false; // Default to dismissable unless explicitly false
     _closeHouseholdModal();
-    var parts = _buildModalOverlay('Verify Your Email');
+    var parts = _buildModalOverlay('Verify Your Email', isDismissable);
     var modal = parts.modal;
 
     var introText = document.createElement('p');
@@ -11718,8 +11780,9 @@ function submitPasswordReset(event) {
     btnContainer.style.display = 'flex';
     btnContainer.style.gap = '8px';
 
-    // Edit button for primary member (use selfId from API response, not currentUser)
-    if (member.individual_id === selfId) {
+    // Edit button for primary member only (use selfId from API response AND verify primary)
+    var isPrimaryMember = member.relationship_to_primary === 'Primary' && member.individual_id === selfId;
+    if (isPrimaryMember) {
       var editBtn = document.createElement('button');
       editBtn.type = 'button';
       editBtn.className = 'btn btn-primary';

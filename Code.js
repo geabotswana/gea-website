@@ -206,6 +206,9 @@ function _routeAction(action, params) {
     case "get_applicant_dues_info": return _handleGetApplicantDuesInfo(params);
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
 
+    // Public routes (no auth required)
+    case "check_username_available": return _handleCheckUsernameAvailable(params);
+
     // Applicant routes (pending membership)
     case "verify_application_email": return _handleVerifyApplicationEmail(params);
     case "application_status":  return _handleApplicationStatus(params);
@@ -469,29 +472,38 @@ function _setupTestPasswords() {
  */
 function _handleLogin(p) {
   // Validate required parameters
-  if (!p.email) {
-    return errorResponse("Email is required.", "MISSING_PARAM");
+  if (!p.username) {
+    return errorResponse("Username is required.", "MISSING_PARAM");
   }
   if (!p.password) {
     return errorResponse("Password is required.", "MISSING_PARAM");
   }
 
-  // Call the login function with both email and password
-  var result = login(p.email, p.password);
-  
+  // Call the login function with username and password
+  var result = login(p.username, p.password);
+
   if (!result.success) {
     return errorResponse(result.message, "AUTH_FAILED");
   }
-  
+
   // Return success with token and member data
   var responseData = {
     token: result.token,
     role: result.role,
     member: result.member,
-    is_applicant: result.is_applicant || false
+    is_applicant: result.is_applicant || false,
+    is_lapsed: result.is_lapsed || false,
+    membership_status: result.membership_status || "",
+    email_verified: result.email_verified || false
   };
   if (result.application_status) {
     responseData.application_status = result.application_status;
+  }
+  if (result.require_password_change) {
+    responseData.require_password_change = true;
+  }
+  if (result.requires_email_verification) {
+    responseData.requires_email_verification = true;
   }
   return successResponse(responseData);
 }
@@ -875,9 +887,6 @@ function _handleProfile(p) {
 
   // If method=update, apply changes
   if (p.method === "update") {
-    var emailChanged = false;
-    var oldEmail = member.email;
-
     var allowed = ["email_primary", "email_secondary", "phone_primary", "phone_secondary",
                    "country_code_primary", "country_code_secondary", "phone_primary_whatsapp",
                    "phone_secondary_whatsapp", "emergency_contact_name", "emergency_contact_phone",
@@ -886,48 +895,10 @@ function _handleProfile(p) {
       var field = allowed[i];
       if (p[field] !== undefined) {
         var newVal = sanitizeInput(String(p[field]));
-        if (field === "email_primary" && newVal !== oldEmail) {
-          emailChanged = true;
-        }
         updateMemberField(member.individual_id, field, newVal, auth.session.email);
       }
     }
     member = getMemberByEmail(auth.session.email); // re-fetch with old email (still in session)
-
-    // If email was changed, generate verification code and send email
-    if (emailChanged) {
-      var verificationCode = _generateVerificationCode();
-      var verificationExpires = _verificationCodeExpiry();
-
-      // Store verification code and mark email as unverified
-      updateMemberField(member.individual_id, "email_verification_code", verificationCode, auth.session.email);
-      updateMemberField(member.individual_id, "email_verification_expires", formatDateTime(verificationExpires), auth.session.email);
-      updateMemberField(member.individual_id, "email_verification_attempts", 0, auth.session.email);
-      updateMemberField(member.individual_id, "email_verified", false, auth.session.email);
-
-      // Send verification email to new address
-      try {
-        var emailBody = "Hello " + member.first_name + ",\n\n"
-          + "Your email address has been changed in your GEA account.\n\n"
-          + "To confirm this email address, enter the following verification code:\n\n"
-          + "Code: " + verificationCode + "\n\n"
-          + "This code expires in 24 hours.\n\n"
-          + "If you did not request this change, please contact board@geabotswana.org immediately.\n\n"
-          + "GEA Management System";
-
-        GmailApp.sendEmail(p.email_primary, "GEA Email Verification", emailBody);
-      } catch (e) {
-        Logger.log("WARNING: Could not send verification email to " + p.email_primary + ": " + e);
-      }
-
-      return successResponse({
-        member:    _safePublicMember(member),
-        household: _safePublicHousehold(hh),
-        email_changed: true,
-        new_email: p.email_primary,
-        verification_required: true
-      });
-    }
   }
 
   var hh = getHouseholdById(member.household_id);
@@ -945,7 +916,7 @@ function _handleProfile(p) {
  * @returns {Object} Success/error response
  */
 function _handleVerifyEmail(p) {
-  var auth = requireAuth(p.token);
+  var auth = requireAuthForVerification(p.token);
   if (!auth.ok) return auth.response;
 
   try {
@@ -984,6 +955,14 @@ function _handleVerifyEmail(p) {
     // Code is valid - mark email as verified and clear verification data
     // Update BOTH email and email_primary so login works with the new address
     var newEmail = member.email_primary || member.email;
+
+    // Check for email uniqueness before updating
+    // Ensure no other individual already uses this email address
+    var existingMember = getMemberByEmail(newEmail);
+    if (existingMember && existingMember.individual_id !== member.individual_id) {
+      return errorResponse("Email address is already in use. Please choose a different email.", "INVALID_PARAM");
+    }
+
     updateMemberField(member.individual_id, "email", newEmail, auth.session.email);
     updateMemberField(member.individual_id, "email_verified", true, auth.session.email);
     updateMemberField(member.individual_id, "email_verification_code", "", auth.session.email);
@@ -1005,7 +984,7 @@ function _handleVerifyEmail(p) {
  * @returns {Object} Success/error response
  */
 function _handleResendVerificationCode(p) {
-  var auth = requireAuth(p.token);
+  var auth = requireAuthForVerification(p.token);
   if (!auth.ok) return auth.response;
 
   try {
@@ -2633,6 +2612,33 @@ function _handleVerifyApplicationEmail(p) {
   } catch (e) {
     Logger.log("ERROR _handleVerifyApplicationEmail: " + e);
     return errorResponse("Could not verify email code.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleCheckUsernameAvailable
+ * PURPOSE: Check if a username is available (public endpoint, no auth required)
+ * @param {Object} p { username }
+ * @returns {Object} { success, data: { available: boolean } }
+ */
+function _handleCheckUsernameAvailable(p) {
+  try {
+    if (!p.username) {
+      return errorResponse("Username is required.", "INVALID_PARAM");
+    }
+
+    var username = String(p.username).trim().toLowerCase();
+
+    // Check if username exists
+    var member = getMemberByUsername(username);
+    var available = !member;
+
+    return successResponse({
+      available: available
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleCheckUsernameAvailable: " + e);
+    return errorResponse("Could not check username availability.", "SERVER_ERROR");
   }
 }
 

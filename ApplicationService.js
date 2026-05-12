@@ -140,6 +140,8 @@ function createApplicationRecord(formData, createdBy) {
       first_name: capitalizeName(formData.first_name),
       last_name: capitalizeName(formData.last_name),
       email: formData.email,
+      username: formData.username || "",  // Username chosen during application
+      email_verified: true,  // Application email was verified before creating account
       relationship_to_primary: RELATIONSHIP_PRIMARY,
       active: false,
       date_of_birth: "",

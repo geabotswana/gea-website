@@ -57,22 +57,22 @@
  * Returns: { success: true, token: "a1b2c3...", role: "member", member: {...} }
  * Returns: { success: false, message: "Invalid email or password." }
  */
-function login(email, password) {
-  // Validate email format
-  if (!email || !isValidEmail(email)) {
-    return { success: false, message: "Please enter a valid email address." };
-  }
-  
-  // Validate password is provided and meets minimum length
-  if (!password || password.length < PASSWORD_MIN_LENGTH) {
-    return { success: false, message: "Invalid email or password." };
+function login(username, password) {
+  // Validate username is provided
+  if (!username || username.trim().length === 0) {
+    return { success: false, message: "Please enter your username." };
   }
 
-  // Find the member by email
-  var member = getMemberByEmail(email, true);
+  // Validate password is provided and meets minimum length
+  if (!password || password.length < PASSWORD_MIN_LENGTH) {
+    return { success: false, message: "Invalid username or password." };
+  }
+
+  // Find the member by username
+  var member = getMemberByUsername(username, true);
   if (!member || !member.password_hash) {
-    // Generic message: don't reveal if email exists or if password is not set
-    return { success: false, message: "Invalid email or password." };
+    // Generic message: don't reveal if username exists or if password is not set
+    return { success: false, message: "Invalid username or password." };
   }
 
   // Hash the plaintext password provided by the user
@@ -81,9 +81,9 @@ function login(email, password) {
   // Compare the provided password hash to the stored hash using constant-time comparison
   // This prevents timing attacks from revealing password patterns
   if (!constantTimeCompare(providedPasswordHash, member.password_hash)) {
-    logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
+    logAuditEntry(member.email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
                   "Failed login attempt: incorrect password");
-    return { success: false, message: "Invalid email or password." };
+    return { success: false, message: "Invalid username or password." };
   }
 
   // Check household status and membership application
@@ -93,9 +93,9 @@ function login(email, password) {
   var isApplicant = false;
 
   if (!household) {
-    logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
+    logAuditEntry(member.email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
                   "Failed login attempt: household not found");
-    return { success: false, message: "Invalid email or password." };
+    return { success: false, message: "Invalid username or password." };
   }
 
   // Check membership status and determine portal access
@@ -122,7 +122,7 @@ function login(email, password) {
   if (membershipStatus === "expelled" || membershipStatus === "resigned" ||
       applicationStatus === "expelled" || applicationStatus === "resigned") {
     var blockedStatus = applicationStatusRaw || membershipStatusRaw || "Inactive";
-    logAuditEntry(email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
+    logAuditEntry(member.email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
                   "Failed login attempt: membership " + blockedStatus);
     return { success: false, message: "Your membership is not active. Please contact board@geabotswana.org for details." };
   }
@@ -137,8 +137,9 @@ function login(email, password) {
   }
 
   // All checks passed — create a session token
-  var role   = _getRoleForEmail(email);
-  var token  = _createSession(email, role);
+  // Session uses member email as identifier (internal to session management)
+  var role   = _getRoleForEmail(member.email);
+  var token  = _createSession(member.email, role);
 
   // Check if this is first login BEFORE updating the field
   var isFirstLogin = !member.first_login_date;
@@ -160,7 +161,7 @@ function login(email, password) {
   if (isLapsedMember) {
     logMsg += " [Lapsed Member - Renewal Required]";
   }
-  logAuditEntry(email, AUDIT_LOGIN, "Individual", member.individual_id, logMsg);
+  logAuditEntry(member.email, AUDIT_LOGIN, "Individual", member.individual_id, logMsg);
 
   // Build member data to include household_name in response
   var memberData = _safePublicMember(member);
@@ -187,6 +188,11 @@ function login(email, password) {
   // Flag if user needs to change their temporary password on first login
   if (isFirstLogin) {
     response.require_password_change = true;
+  }
+
+  // Flag if email needs verification (user can log in but must verify before accessing portal)
+  if (!emailVerified) {
+    response.requires_email_verification = true;
   }
 
   return response;
@@ -1170,6 +1176,52 @@ function requireAuth(token, requiredRole) {
     return { ok: false, response: errorResponse(session.message, "AUTH_REQUIRED") };
   }
 
+  // Check if user's email has been verified (for users who changed/updated their email)
+  try {
+    var member = getMemberByEmail(session.email);
+    if (member && (member.email_verified === false || String(member.email_verified).toLowerCase() === "false")) {
+      return { ok: false, response: errorResponse("Please verify your email to access the portal.", "EMAIL_NOT_VERIFIED") };
+    }
+  } catch (e) {
+    Logger.log("WARNING: Could not check email verification status: " + e);
+    // If we can't check, allow access (don't block on error)
+  }
+
+  if (requiredRole) {
+    var allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    var role = session.role;
+    // board is always a superuser; normalize hyphenated/legacy role aliases
+    var normalizedRole = (role === "rso" || role === "rso-approve") ? "rso_approve"
+                       : (role === "rso-notify") ? "rso_notify"
+                       : role;
+    var isAllowed = normalizedRole === "board" ||
+                    allowed.indexOf(normalizedRole) !== -1;
+    if (!isAllowed) {
+      return { ok: false, response: errorResponse(ERR_NOT_AUTHORIZED, "FORBIDDEN") };
+    }
+  }
+
+  return { ok: true, session: session };
+}
+
+/**
+ * Require authentication for verification endpoints.
+ * Same as requireAuth but skips email_verified check, allowing unverified users to complete verification.
+ * Use only for verify_email and resend_verification_code endpoints.
+ *
+ * @param {string} token - Session token
+ * @param {string} requiredRole - Optional required role
+ * @returns {Object} { ok: boolean, session?: Object, response?: Object }
+ */
+function requireAuthForVerification(token, requiredRole) {
+  var session = validateSession(token);
+
+  if (!session.valid) {
+    return { ok: false, response: errorResponse(session.message, "AUTH_REQUIRED") };
+  }
+
+  // NOTE: Do NOT check email_verified here - this endpoint is called BY unverified users to complete verification
+
   if (requiredRole) {
     var allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
     var role = session.role;
@@ -2070,3 +2122,24 @@ function _safePublicMember(member) {
     emergency_contact_relationship: member.emergency_contact_relationship || ""
   };
 }
+
+/**
+ * Generate a 6-digit verification code for email verification.
+ * @returns {string} 6-digit code (e.g., "123456")
+ */
+function _generateVerificationCode() {
+  var code = '';
+  for (var i = 0; i < 6; i++) {
+    code += Math.floor(Math.random() * 10);
+  }
+  return code;
+}
+
+/**
+ * Returns the expiry time for email verification tokens (24 hours from now).
+ * @returns {Date}
+ */
+function _verificationCodeExpiry() {
+  return new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
+}
+

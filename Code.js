@@ -194,6 +194,8 @@ function _routeAction(action, params) {
     // ── MEMBER & APPLICANT ───────────────────────────────────
     case "dashboard":    return _handleDashboard(params);
     case "profile":      return _handleProfile(params);
+    case "verify_email": return _handleVerifyEmail(params);
+    case "resend_verification_code": return _handleResendVerificationCode(params);
     case "reservations": return _handleReservations(params);
     case "book":         return _handleBook(params);
     case "cancel":       return _handleCancel(params);
@@ -204,7 +206,11 @@ function _routeAction(action, params) {
     case "get_applicant_dues_info": return _handleGetApplicantDuesInfo(params);
     case "updatePhoneNumbers": return _handleUpdatePhoneNumbers(params);
 
+    // Public routes (no auth required)
+    case "check_username_available": return _handleCheckUsernameAvailable(params);
+
     // Applicant routes (pending membership)
+    case "verify_application_email": return _handleVerifyApplicationEmail(params);
     case "application_status":  return _handleApplicationStatus(params);
     case "withdraw_application": return _handleWithdrawApplication(params);
     case "confirm_documents":   return _handleConfirmDocuments(params);
@@ -224,6 +230,7 @@ function _routeAction(action, params) {
     case "add_household_member":     return _handleAddHouseholdMember(params);
     case "remove_household_member":  return _handleRemoveHouseholdMember(params);
     case "edit_household_member":    return _handleEditHouseholdMember(params);
+    case "update_household_address": return _handleUpdateHouseholdAddress(params);
     case "update_household_type":    return _handleUpdateHouseholdType(params);
     case "submit_guest_list":        return _handleSubmitGuestList(params);
     case "get_guest_list":           return _handleGetGuestList(params);
@@ -465,29 +472,38 @@ function _setupTestPasswords() {
  */
 function _handleLogin(p) {
   // Validate required parameters
-  if (!p.email) {
-    return errorResponse("Email is required.", "MISSING_PARAM");
+  if (!p.username) {
+    return errorResponse("Username is required.", "MISSING_PARAM");
   }
   if (!p.password) {
     return errorResponse("Password is required.", "MISSING_PARAM");
   }
 
-  // Call the login function with both email and password
-  var result = login(p.email, p.password);
-  
+  // Call the login function with username and password
+  var result = login(p.username, p.password);
+
   if (!result.success) {
     return errorResponse(result.message, "AUTH_FAILED");
   }
-  
+
   // Return success with token and member data
   var responseData = {
     token: result.token,
     role: result.role,
     member: result.member,
-    is_applicant: result.is_applicant || false
+    is_applicant: result.is_applicant || false,
+    is_lapsed: result.is_lapsed || false,
+    membership_status: result.membership_status || "",
+    email_verified: result.email_verified || false
   };
   if (result.application_status) {
     responseData.application_status = result.application_status;
+  }
+  if (result.require_password_change) {
+    responseData.require_password_change = true;
+  }
+  if (result.requires_email_verification) {
+    responseData.requires_email_verification = true;
   }
   return successResponse(responseData);
 }
@@ -878,11 +894,11 @@ function _handleProfile(p) {
     for (var i = 0; i < allowed.length; i++) {
       var field = allowed[i];
       if (p[field] !== undefined) {
-        updateMemberField(member.individual_id, field, sanitizeInput(p[field]),
-                          auth.session.email);
+        var newVal = sanitizeInput(String(p[field]));
+        updateMemberField(member.individual_id, field, newVal, auth.session.email);
       }
     }
-    member = getMemberByEmail(auth.session.email); // re-fetch
+    member = getMemberByEmail(auth.session.email); // re-fetch with old email (still in session)
   }
 
   var hh = getHouseholdById(member.household_id);
@@ -890,6 +906,123 @@ function _handleProfile(p) {
     member:    _safePublicMember(member),
     household: _safePublicHousehold(hh)
   });
+}
+
+/**
+ * HANDLER: _handleVerifyEmail
+ * PURPOSE: Verify email with provided verification code.
+ *
+ * @param {Object} p { token, verification_code }
+ * @returns {Object} Success/error response
+ */
+function _handleVerifyEmail(p) {
+  var auth = requireAuthForVerification(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    if (!p.verification_code) {
+      return errorResponse("Verification code is required.", "INVALID_PARAM");
+    }
+
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var code = String(p.verification_code).trim();
+    var storedCode = member.email_verification_code || "";
+    var expiresStr = member.email_verification_expires || "";
+    var attempts = parseInt(member.email_verification_attempts || 0);
+
+    // Check if code has expired
+    if (expiresStr) {
+      var expiryDate = new Date(expiresStr);
+      if (new Date() > expiryDate) {
+        return errorResponse("Verification code has expired. Request a new one.", "INVALID_PARAM");
+      }
+    }
+
+    // Check attempts (max 5 before requiring resend)
+    if (attempts >= 5) {
+      return errorResponse("Too many incorrect attempts. Request a new verification code.", "INVALID_PARAM");
+    }
+
+    // Verify code (constant-time comparison)
+    if (!constantTimeCompare(code, storedCode)) {
+      var newAttempts = attempts + 1;
+      updateMemberField(member.individual_id, "email_verification_attempts", newAttempts, auth.session.email);
+      return errorResponse("Verification code is incorrect. " + (5 - newAttempts) + " attempts remaining.", "INVALID_PARAM");
+    }
+
+    // Code is valid - mark email as verified and clear verification data
+    // Update BOTH email and email_primary so login works with the new address
+    var newEmail = member.email_primary || member.email;
+
+    // Check for email uniqueness before updating
+    // Ensure no other individual already uses this email address
+    var existingMember = getMemberByEmail(newEmail);
+    if (existingMember && existingMember.individual_id !== member.individual_id) {
+      return errorResponse("Email address is already in use. Please choose a different email.", "INVALID_PARAM");
+    }
+
+    updateMemberField(member.individual_id, "email", newEmail, auth.session.email);
+    updateMemberField(member.individual_id, "email_verified", true, auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_code", "", auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_expires", "", auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_attempts", 0, auth.session.email);
+
+    return successResponse({}, "Email verified successfully. You can now log in with your new email.");
+  } catch (e) {
+    Logger.log("ERROR _handleVerifyEmail: " + e);
+    return errorResponse("Could not verify email.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleResendVerificationCode
+ * PURPOSE: Resend verification code to user's email.
+ *
+ * @param {Object} p { token }
+ * @returns {Object} Success/error response
+ */
+function _handleResendVerificationCode(p) {
+  var auth = requireAuthForVerification(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    // Only allow resend if email is pending verification
+    if (member.email_verified) {
+      return errorResponse("Email is already verified.", "INVALID_PARAM");
+    }
+
+    // Generate new code and reset attempts
+    var verificationCode = _generateVerificationCode();
+    var verificationExpires = _verificationCodeExpiry();
+
+    updateMemberField(member.individual_id, "email_verification_code", verificationCode, auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_expires", formatDateTime(verificationExpires), auth.session.email);
+    updateMemberField(member.individual_id, "email_verification_attempts", 0, auth.session.email);
+
+    // Send verification email to the email_primary (which should be the new unverified email)
+    try {
+      var emailAddress = member.email_primary || member.email;
+      var emailBody = "Hello " + member.first_name + ",\n\n"
+        + "Here is your email verification code:\n\n"
+        + "Code: " + verificationCode + "\n\n"
+        + "This code expires in 24 hours.\n\n"
+        + "GEA Management System";
+
+      GmailApp.sendEmail(emailAddress, "GEA Email Verification Code", emailBody);
+    } catch (e) {
+      Logger.log("WARNING: Could not send verification email: " + e);
+    }
+
+    return successResponse({}, "Verification code sent to your email.");
+  } catch (e) {
+    Logger.log("ERROR _handleResendVerificationCode: " + e);
+    return errorResponse("Could not resend verification code.", "SERVER_ERROR");
+  }
 }
 
 /**
@@ -2287,6 +2420,47 @@ function _safePublicHousehold(hh) {
   };
 }
 
+// ============================================================
+// APPLICATION VERIFICATION CODE STORAGE (persistent)
+// ============================================================
+
+/**
+ * Store application verification code data in PropertiesService
+ * @param {string} email - The applicant email
+ * @param {Object} data - Code data { code, expires, attempts, token }
+ */
+function _storeApplicationVerificationCode(email, data) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'app_verify_' + email;
+  props.setProperty(key, JSON.stringify(data));
+}
+
+/**
+ * Retrieve application verification code data from PropertiesService
+ * @param {string} email - The applicant email
+ * @returns {Object|null} Code data or null if not found/expired
+ */
+function _getApplicationVerificationCode(email) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'app_verify_' + email;
+  var json = props.getProperty(key);
+  if (!json) return null;
+  try {
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Clear application verification code data from PropertiesService
+ * @param {string} email - The applicant email
+ */
+function _clearApplicationVerificationCode(email) {
+  var props = PropertiesService.getScriptProperties();
+  var key = 'app_verify_' + email;
+  props.deleteProperty(key);
+}
 
 // ============================================================
 // MEMBERSHIP APPLICATION HANDLERS
@@ -2298,8 +2472,73 @@ function _safePublicHousehold(hh) {
  */
 function _handleSubmitApplication(p) {
   try {
+    // Check if this is verified submission (with valid token)
+    var hasToken = p.email_verified_token !== undefined;
+
+    if (!hasToken && p.email) {
+      // First submission - generate verification code and send email
+      var verificationCode = _generateVerificationCode();
+      var verificationExpires = _verificationCodeExpiry();
+
+      // Store verification code in PropertiesService
+      var storedData = {
+        code: verificationCode,
+        expires: verificationExpires.getTime(),
+        attempts: 0,
+        token: null  // No token assigned yet
+      };
+      _storeApplicationVerificationCode(p.email, storedData);
+
+      // Send verification email
+      try {
+        var emailBody = "Hello " + (p.first_name || 'Applicant') + ",\n\n"
+          + "Thank you for submitting your GEA membership application.\n\n"
+          + "To confirm your email address before we proceed, please enter this verification code:\n\n"
+          + "Code: " + verificationCode + "\n\n"
+          + "This code expires in 24 hours.\n\n"
+          + "If you did not submit this application, please contact board@geabotswana.org.\n\n"
+          + "GEA Management System";
+
+        GmailApp.sendEmail(p.email, "GEA Application Email Verification", emailBody);
+      } catch (e) {
+        Logger.log("WARNING: Could not send application verification email: " + e);
+      }
+
+      return successResponse({
+        verification_required: true,
+        email: p.email,
+        message: "Verification code sent to your email. Please enter it to continue."
+      });
+    }
+
+    // If we get here, this should be a verified submission with a valid token
+    if (hasToken && p.email) {
+      // Validate the token - it must match what was issued by verify_application_email
+      var storedData = _getApplicationVerificationCode(p.email);
+
+      if (!storedData) {
+        return errorResponse("Email verification expired. Please submit again.", "INVALID_PARAM");
+      }
+
+      if (!storedData.token) {
+        return errorResponse("Email not verified. Please verify your email first.", "INVALID_PARAM");
+      }
+
+      if (storedData.token !== p.email_verified_token) {
+        return errorResponse("Invalid verification token. Please verify your email again.", "INVALID_PARAM");
+      }
+    } else if (hasToken && !p.email) {
+      return errorResponse("Email is required for submission.", "INVALID_PARAM");
+    } else if (!hasToken && !p.email) {
+      return errorResponse("Email is required to submit application.", "INVALID_PARAM");
+    }
+
+    // Token is valid - proceed with creating application
     var result = createApplicationRecord(p, "applicant");
     if (result.success) {
+      // Clear verification code after successful submission
+      _clearApplicationVerificationCode(p.email);
+
       return successResponse({
         application_id: result.application_id,
         household_id: result.household_id,
@@ -2315,6 +2554,91 @@ function _handleSubmitApplication(p) {
     var errorMsg = "Error: " + e.toString();
     logAuditEntry("applicant", "APPLICATION_ERROR", "Application", "", errorMsg);
     return errorResponse("Error submitting application.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleVerifyApplicationEmail
+ * PURPOSE: Verify email code for application submission
+ *
+ * @param {Object} p { email, verification_code }
+ * @returns {Object} Success/error response with email_verified_token if valid
+ */
+function _handleVerifyApplicationEmail(p) {
+  try {
+    if (!p.email) {
+      return errorResponse("Email is required.", "INVALID_PARAM");
+    }
+    if (!p.verification_code) {
+      return errorResponse("Verification code is required.", "INVALID_PARAM");
+    }
+
+    var code = String(p.verification_code).trim();
+    var storedData = _getApplicationVerificationCode(p.email);
+
+    if (!storedData) {
+      return errorResponse("No verification code found for this email. Please submit again.", "INVALID_PARAM");
+    }
+
+    // Check if code has expired
+    if (new Date().getTime() > storedData.expires) {
+      _clearApplicationVerificationCode(p.email);
+      return errorResponse("Verification code has expired. Please submit again to get a new code.", "INVALID_PARAM");
+    }
+
+    // Check attempts (max 5)
+    if (storedData.attempts >= 5) {
+      _clearApplicationVerificationCode(p.email);
+      return errorResponse("Too many incorrect attempts. Please submit again to get a new code.", "INVALID_PARAM");
+    }
+
+    // Verify code (constant-time comparison)
+    if (!constantTimeCompare(code, storedData.code)) {
+      storedData.attempts++;
+      _storeApplicationVerificationCode(p.email, storedData);
+      var remaining = 5 - storedData.attempts;
+      return errorResponse("Code is incorrect. " + remaining + " attempts remaining.", "INVALID_PARAM");
+    }
+
+    // Code is valid! Generate a token that the frontend must send with the next submit_application call
+    var verificationToken = Utilities.getUuid();
+    storedData.token = verificationToken; // Store token for validation in submit_application
+    _storeApplicationVerificationCode(p.email, storedData);
+
+    return successResponse({
+      email_verified_token: verificationToken,
+      message: "Email verified. You can now submit your application."
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleVerifyApplicationEmail: " + e);
+    return errorResponse("Could not verify email code.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleCheckUsernameAvailable
+ * PURPOSE: Check if a username is available (public endpoint, no auth required)
+ * @param {Object} p { username }
+ * @returns {Object} { success, data: { available: boolean } }
+ */
+function _handleCheckUsernameAvailable(p) {
+  try {
+    if (!p.username) {
+      return errorResponse("Username is required.", "INVALID_PARAM");
+    }
+
+    var username = String(p.username).trim().toLowerCase();
+
+    // Check if username exists
+    var member = getMemberByUsername(username);
+    var available = !member;
+
+    return successResponse({
+      available: available
+    });
+  } catch (e) {
+    Logger.log("ERROR _handleCheckUsernameAvailable: " + e);
+    return errorResponse("Could not check username availability.", "SERVER_ERROR");
   }
 }
 
@@ -3002,7 +3326,7 @@ function _handleEditHouseholdMember(p) {
     }
 
     var rel = target.relationship_to_primary;
-    var allowed = ["first_name", "last_name", "email",
+    var allowed = ["first_name", "last_name",
                    "country_code_primary", "phone_primary", "phone_primary_whatsapp", "citizenship_country",
                    "country_code_secondary", "phone_secondary", "phone_secondary_whatsapp",
                    "country_code_emergency", "phone_emergency", "phone_emergency_whatsapp",
@@ -3027,10 +3351,70 @@ function _handleEditHouseholdMember(p) {
     }
 
     if (updated === 0) return errorResponse("No valid fields provided.", "INVALID_PARAM");
+
+    // If primary member's primary phone is updated, sync to household phone
+    var hh = getHouseholdById(member.household_id);
+    if (hh && p.individual_id === hh.primary_member_id) {
+      if (p.country_code_primary !== undefined) {
+        updateHouseholdField(member.household_id, "country_code_primary", sanitizeInput(String(p.country_code_primary)), auth.session.email);
+      }
+      if (p.phone_primary !== undefined) {
+        updateHouseholdField(member.household_id, "phone_primary", sanitizeInput(String(p.phone_primary)), auth.session.email);
+      }
+      if (p.phone_primary_whatsapp !== undefined) {
+        var whatsAppVal = (p.phone_primary_whatsapp === true || p.phone_primary_whatsapp === "true");
+        updateHouseholdField(member.household_id, "phone_primary_whatsapp", whatsAppVal, auth.session.email);
+      }
+    }
+
     return successResponse({ updated_fields: updated }, "Member updated.");
   } catch (e) {
     Logger.log("ERROR _handleEditHouseholdMember: " + e);
     return errorResponse("Could not edit household member.", "SERVER_ERROR");
+  }
+}
+
+/**
+ * HANDLER: _handleUpdateHouseholdAddress
+ * PURPOSE: Update household address (street, city, country).
+ *          Only the primary member can update household address.
+ *
+ * @param {Object} p  { token, address_street, address_city, address_country }
+ * @returns {Object}  Success/error response
+ */
+function _handleUpdateHouseholdAddress(p) {
+  var auth = requireAuth(p.token);
+  if (!auth.ok) return auth.response;
+
+  try {
+    var member = getMemberByEmail(auth.session.email);
+    if (!member) return errorResponse(ERR_NOT_MEMBER, "NOT_FOUND");
+
+    var hh = getHouseholdById(member.household_id);
+    if (!hh) return errorResponse("Household not found.", "NOT_FOUND");
+
+    // Only primary member can update household address
+    if (member.individual_id !== hh.primary_member_id) {
+      return errorResponse("Only the primary household member can update the address.", "FORBIDDEN");
+    }
+
+    var updated = 0;
+    var allowed = ["address_street", "address_city", "address_country"];
+
+    for (var i = 0; i < allowed.length; i++) {
+      var field = allowed[i];
+      if (p[field] !== undefined) {
+        var val = sanitizeInput(String(p[field]));
+        updateHouseholdField(member.household_id, field, val, auth.session.email);
+        updated++;
+      }
+    }
+
+    if (updated === 0) return errorResponse("No valid fields provided.", "INVALID_PARAM");
+    return successResponse({ updated_fields: updated }, "Household address updated.");
+  } catch (e) {
+    Logger.log("ERROR _handleUpdateHouseholdAddress: " + e);
+    return errorResponse("Could not update household address.", "SERVER_ERROR");
   }
 }
 

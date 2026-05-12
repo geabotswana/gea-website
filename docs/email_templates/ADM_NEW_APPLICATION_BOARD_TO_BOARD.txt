@@ -8,7 +8,6 @@ APPLICATION DETAILS:
 Applicant: {{APPLICANT_NAME}}
 Application ID: {{APPLICATION_ID}}
 Submission Date: {{APPLICATION_DATE}}
-Board Review Deadline: {{BOARD_REVIEW_DEADLINE}}
 
 NEXT STEPS:
 The applicant has been notified and will now upload required documents

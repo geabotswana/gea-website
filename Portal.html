@@ -8833,20 +8833,6 @@ function submitPasswordReset(event) {
     lastNameInput.value = member.last_name || '';
     modal.appendChild(lastNameInput);
 
-    var emailLbl = document.createElement('label');
-    emailLbl.textContent = 'Email';
-    emailLbl.style.display = 'block';
-    emailLbl.style.marginTop = '12px';
-    emailLbl.style.fontWeight = '600';
-    emailLbl.style.fontSize = '13px';
-    modal.appendChild(emailLbl);
-
-    var emailInput = document.createElement('input');
-    emailInput.type = 'email';
-    emailInput.className = 'form-input';
-    emailInput.value = member.email || '';
-    modal.appendChild(emailInput);
-
     // Primary phone using three-field setup
     var phonePrimaryFields = _buildPhoneFieldSet(member.country_code_primary, member.phone_primary, member.phone_primary_whatsapp, 'primaryCC', 'primaryPhone', 'primaryWhatsApp');
     var phonePrimaryLabel = document.createElement('label');
@@ -8949,7 +8935,6 @@ function submitPasswordReset(event) {
         individual_id: member.individual_id,
         first_name: firstNameInput.value,
         last_name: lastNameInput.value,
-        email: emailInput.value,
         country_code_primary: phonePrimaryFields.countrySelect.value,
         phone_primary: phonePrimaryFields.phoneInput.value,
         phone_primary_whatsapp: phonePrimaryFields.whatsAppCheckbox.checked,
@@ -11256,6 +11241,7 @@ function submitPasswordReset(event) {
 
       var members = res.data.members || [];
       var household = res.data.household || {};
+      var selfId = res.data.self_id;
       var container = document.getElementById('householdMembersContainer');
       container.innerHTML = '';
 
@@ -11270,7 +11256,7 @@ function submitPasswordReset(event) {
 
       // Display each household member
       members.forEach(function(member) {
-        var memberCard = createHouseholdMemberCard(member, household);
+        var memberCard = createHouseholdMemberCard(member, household, selfId);
         container.appendChild(memberCard);
       });
     });
@@ -11351,7 +11337,7 @@ function submitPasswordReset(event) {
   /**
    * Create HTML card for a single household member
    */
-  function createHouseholdMemberCard(member, household) {
+  function createHouseholdMemberCard(member, household, selfId) {
     var card = document.createElement('div');
     card.className = 'card';
     card.style.marginBottom = '20px';
@@ -11379,8 +11365,8 @@ function submitPasswordReset(event) {
     btnContainer.style.display = 'flex';
     btnContainer.style.gap = '8px';
 
-    // Edit button for primary member
-    if (member.individual_id === currentUser.individual_id) {
+    // Edit button for primary member (use selfId from API response, not currentUser)
+    if (member.individual_id === selfId) {
       var editBtn = document.createElement('button');
       editBtn.type = 'button';
       editBtn.className = 'btn btn-primary';

@@ -3003,7 +3003,7 @@ function _handleEditHouseholdMember(p) {
     }
 
     var rel = target.relationship_to_primary;
-    var allowed = ["first_name", "last_name", "email",
+    var allowed = ["first_name", "last_name",
                    "country_code_primary", "phone_primary", "phone_primary_whatsapp", "citizenship_country",
                    "country_code_secondary", "phone_secondary", "phone_secondary_whatsapp",
                    "country_code_emergency", "phone_emergency", "phone_emergency_whatsapp",

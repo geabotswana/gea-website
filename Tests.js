@@ -1694,6 +1694,112 @@ function testExpiredRsoLinkCleanup() {
 }
 
 /**
+ * Tests the Drive-archive + GCS-path mechanism triggered when a board member
+ * approves a submitted photo.
+ *
+ * What it does:
+ *  1. Creates a minimal 1×1 PNG in the pending-photos Drive folder.
+ *  2. Inserts a synthetic "submitted" row in the File Submissions sheet.
+ *  3. Calls copyApprovedPhotoToCloudStorage() directly.
+ *  4. Asserts the return value, the GCS path format, and that the sheet row
+ *     was updated and an archived copy landed in FOLDER_FILE_SUBMISSION_ARCHIVE.
+ *  5. Cleans up all test artefacts (Drive files + sheet row) regardless of
+ *     assertion outcomes.
+ *
+ * Run this function from the GAS editor Functions dropdown.
+ */
+function testPhotoCloudTransfer() {
+  Logger.log("\n--- TEST: Photo Cloud Transfer ---");
+
+  // Smallest valid 1×1 PNG (white pixel), base64-encoded
+  var PNG_1X1_B64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8" +
+    "/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==";
+
+  // ── Step 1: create test file in the pending-photos folder ──────────────────
+  var testFile;
+  var testFileId;
+  try {
+    var pngBytes  = Utilities.base64Decode(PNG_1X1_B64);
+    var testBlob  = Utilities.newBlob(pngBytes, 'image/png', 'test_cloud_transfer.png');
+    var pendingFolder = DriveApp.getFolderById(FOLDER_PHOTOS_PENDING);
+    testFile   = pendingFolder.createFile(testBlob);
+    testFileId = testFile.getId();
+    Logger.log("  INFO: Test image created in Drive — " + testFileId);
+  } catch (e) {
+    Logger.log("  FAIL: Could not create test file in Drive: " + e);
+    return;
+  }
+
+  // ── Step 2: insert a synthetic submission row ──────────────────────────────
+  var testSubmissionId  = "FSB-TEST-CLOUD-" + new Date().getTime();
+  var testIndividualId  = "IND-TEST-CLOUD-001";
+  var sheet = _getFileSubmissionsSheet_();
+  var found;                  // populated after the transfer call
+  var archivedFile;           // populated during cleanup lookup
+
+  _appendRowByHeaders_(sheet, {
+    submission_id:   testSubmissionId,
+    individual_id:   testIndividualId,
+    document_type:   "photo",
+    status:          "submitted",
+    file_id:         testFileId,
+    submitted_date:  formatDate(new Date(), true),
+    is_current:      false
+  });
+  Logger.log("  INFO: Test submission row inserted — " + testSubmissionId);
+
+  // ── Step 3: invoke the cloud-transfer function ─────────────────────────────
+  var result = copyApprovedPhotoToCloudStorage(testSubmissionId, testIndividualId);
+
+  // ── Step 4: assertions ─────────────────────────────────────────────────────
+  _assert("Transfer returns ok:true", result.ok === true, JSON.stringify(result));
+
+  _assert("cloud_storage_path is a string",
+    typeof result.cloud_storage_path === 'string',
+    typeof result.cloud_storage_path);
+
+  var expectedPrefix = "gs://" + CLOUD_STORAGE_MEMBER_DATA_BUCKET +
+                       "/members/" + testIndividualId + "/photos/current/";
+  _assert("cloud_storage_path has correct gs:// prefix and path structure",
+    typeof result.cloud_storage_path === 'string' &&
+    result.cloud_storage_path.indexOf(expectedPrefix) === 0,
+    result.cloud_storage_path);
+
+  found = _findSubmissionById_(testSubmissionId);
+  _assert("Submission row still present in sheet after transfer", found !== null);
+  if (found) {
+    _assert("Sheet cloud_storage_path matches returned value",
+      found.obj.cloud_storage_path === result.cloud_storage_path,
+      found.obj.cloud_storage_path);
+  }
+
+  // Verify the archived copy landed in the archive folder
+  var archivedFileName = typeof result.cloud_storage_path === 'string'
+    ? result.cloud_storage_path.split("/").pop()
+    : null;
+  if (archivedFileName) {
+    var archiveFolder   = DriveApp.getFolderById(FOLDER_FILE_SUBMISSION_ARCHIVE);
+    var archiveIter     = archiveFolder.getFilesByName(archivedFileName);
+    var archiveCopyFound = archiveIter.hasNext();
+    _assert("Archived copy exists in FOLDER_FILE_SUBMISSION_ARCHIVE", archiveCopyFound, archivedFileName);
+    if (archiveCopyFound) archivedFile = archiveIter.next();
+  } else {
+    Logger.log("  SKIP: Cannot check archive — cloud_storage_path not returned");
+  }
+
+  // ── Step 5: cleanup ────────────────────────────────────────────────────────
+  try {
+    if (archivedFile)  archivedFile.setTrashed(true);
+    testFile.setTrashed(true);
+    if (found) sheet.deleteRow(found.rowIndex);
+    Logger.log("  INFO: Test artefacts cleaned up");
+  } catch (cleanupErr) {
+    Logger.log("  WARN: Cleanup error (manual removal may be needed): " + cleanupErr);
+  }
+}
+
+/**
  * Adds file upload tests to the main test runner
  */
 function runFileUploadTests() {
@@ -1708,6 +1814,7 @@ function runFileUploadTests() {
   testRsoApprovalLinkGeneration();
   testSubmissionHistory();
   testExpiredRsoLinkCleanup();
+  testPhotoCloudTransfer();
 
   Logger.log("========================================");
   Logger.log("FILE UPLOAD TESTS COMPLETE");

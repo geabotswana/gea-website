@@ -11170,7 +11170,6 @@ function submitPasswordReset(event) {
   function loadMemberAvatar(individualId, avatarElement) {
     if (!individualId) return;
 
-    // Handle string ID vs element
     var el = typeof avatarElement === 'string'
       ? document.getElementById(avatarElement)
       : avatarElement;
@@ -11178,41 +11177,28 @@ function submitPasswordReset(event) {
     if (!el) return;
 
     apiCall('get_member_photo', { individual_id: individualId }).then(function(res) {
-      if (!res.success || !res.data || !res.data.file_id) {
-        // No approved photo - keep element hidden
-        return;
-      }
+      if (!res.success || !res.data || !res.data.file_id) return;
 
-      var fileId = res.data.file_id;
-      var proxyUrl = buildImageProxyUrl(fileId);
+      apiCall('get_file_data', { file_id: res.data.file_id }).then(function(fileRes) {
+        if (!fileRes.success || !fileRes.data || !fileRes.data.base64) return;
 
-      if (el.tagName === 'IMG') {
-        el.src = proxyUrl;
-        el.style.display = 'block';
-      } else {
-        // Element is a container - add img inside
-        var img = document.createElement('img');
-        img.className = 'avatar-small';
-        img.src = proxyUrl;
-        img.alt = 'Member avatar';
-        img.onerror = function() { this.style.display = 'none'; };
-        el.appendChild(img);
-      }
-    }).catch(function(err) {
-      // Silently fail - no approved photo
+        var dataUrl = 'data:' + (fileRes.data.mime_type || 'image/jpeg') + ';base64,' + fileRes.data.base64;
+
+        if (el.tagName === 'IMG') {
+          el.src = dataUrl;
+          el.style.display = 'block';
+        } else {
+          var img = document.createElement('img');
+          img.className = 'avatar-small';
+          img.src = dataUrl;
+          img.alt = 'Member avatar';
+          img.onerror = function() { this.style.display = 'none'; };
+          el.appendChild(img);
+        }
+      });
+    }).catch(function() {
       console.log('No avatar available for individual: ' + individualId);
     });
-  }
-
-  /**
-   * Build image proxy URL for serving Drive files
-   * @param {string} fileId - Google Drive file ID
-   * @returns {string} - Proxy URL to load image from
-   */
-  function buildImageProxyUrl(fileId) {
-    if (!fileId) return '';
-    var base = window.location.href.split('?')[0];
-    return base + '?action=img&id=' + encodeURIComponent(fileId);
   }
 
   // ============================================================ //

@@ -1875,13 +1875,14 @@ function testAvatarDataUrlPipeline() {
     dataUrl.indexOf('data:image/png;base64,') === 0, dataUrl.substring(0, 30));
 
   // ── Step 6: assert PNG magic bytes survive the round-trip ─────────────────
+  // GAS base64Decode returns signed bytes (-128..127), so mask with & 0xFF
+  // before comparing against unsigned PNG magic: 0x89 0x50 0x4E 0x47
   var decoded = Utilities.base64Decode(base64);
-  // PNG header: 0x89 0x50 0x4E 0x47 (bytes 0-3)
   var validPng = decoded.length > 4
-    && decoded[0] === 0x89
-    && decoded[1] === 0x50  // 'P'
-    && decoded[2] === 0x4E  // 'N'
-    && decoded[3] === 0x47; // 'G'
+    && (decoded[0] & 0xFF) === 0x89
+    && (decoded[1] & 0xFF) === 0x50  // 'P'
+    && (decoded[2] & 0xFF) === 0x4E  // 'N'
+    && (decoded[3] & 0xFF) === 0x47; // 'G'
   _assert("Decoded base64 has valid PNG magic bytes", validPng);
 
   // ── Step 7: assert submission row is findable (simulates get_member_photo) ─

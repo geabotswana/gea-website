@@ -9,7 +9,7 @@
   <!-- FAVICON                                                      -->
   <!-- Display GEA logo in browser tab                              -->
   <!-- ============================================================ -->
-  <link rel="icon" type="image/png" href="https://storage.googleapis.com/gea-public-assets/gea-logo-round-32.png">
+  <link rel="icon" type="image/png" href="https://geabotswana.org/assets/gea-logo-round-32.png">
 
   <!-- ============================================================ -->
   <!-- FONTS: Source Sans 3 for UI, Roboto Mono for data display   -->
@@ -1292,15 +1292,15 @@
 <div id="loginScreen" class="show">
   <div class="login-card">
     <div class="login-logo">
-      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+      <img src="https://geabotswana.org/assets/gea-logo-round-120.png" alt="GEA Logo">
     </div>
     <h1 class="login-title">GEA Member Portal</h1>
     <p class="login-subtitle">Sign in with your GEA account</p>
     <div class="login-error" id="loginError"></div>
     <form class="login-form" onsubmit="submitLogin(event)">
       <div class="form-group">
-        <label class="form-label">Email Address</label>
-        <input type="email" id="loginEmail" class="form-input" placeholder="you@state.gov" required autocomplete="username">
+        <label class="form-label">Username</label>
+        <input type="text" id="loginUsername" class="form-input" placeholder="yourname" required autocomplete="username">
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
@@ -1428,7 +1428,7 @@
 <div id="passwordResetRequestScreen">
   <div class="login-card">
     <div class="login-logo">
-      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+      <img src="https://geabotswana.org/assets/gea-logo-round-120.png" alt="GEA Logo">
     </div>
     <h1 class="login-title">Reset Your Password</h1>
     <p class="login-subtitle">We'll send you an email with instructions</p>
@@ -1454,7 +1454,7 @@
 <div id="passwordResetConfirmScreen">
   <div class="login-card">
     <div class="login-logo">
-      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+      <img src="https://geabotswana.org/assets/gea-logo-round-120.png" alt="GEA Logo">
     </div>
     <h1 class="login-title">Create New Password</h1>
     <p class="login-subtitle">Enter your new password below</p>
@@ -1486,7 +1486,7 @@
 <div id="applicationFormScreen">
   <div class="login-card" style="max-width: 600px; width: 100%;">
     <div class="login-logo">
-      <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png" alt="GEA Logo">
+      <img src="https://geabotswana.org/assets/gea-logo-round-120.png" alt="GEA Logo">
     </div>
     <h1 class="login-title">Apply for Membership</h1>
     <p class="login-subtitle">Join the Gaborone Employee Association</p>
@@ -1622,6 +1622,15 @@
       <div class="form-group">
         <label class="form-label">Email Address *</label>
         <input type="email" id="appEmail" class="form-input" placeholder="jane@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username *</label>
+        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">This will be your login username. Use 4-20 characters (letters, numbers, underscores only). Must be unique.</p>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <input type="text" id="appUsername" class="form-input" placeholder="jane_doe" required style="flex: 1;" oninput="validateUsernameAvailability()">
+          <span id="usernameStatus" style="margin-top: 8px; font-size: 12px; min-width: 60px; text-align: right;"></span>
+        </div>
+        <div id="usernameError" style="color: #c62828; font-size: 12px; margin-top: 4px; display: none;"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Phone Number *</label>
@@ -2053,7 +2062,7 @@
   <header id="header" style="display: none;">
     <div class="header-left" onclick="showPage('dashboard'); return false;" title="Back to Dashboard">
       <div class="header-logo">
-        <img src="https://storage.googleapis.com/gea-public-assets/gea-logo-round-80.png" alt="GEA Logo">
+        <img src="https://geabotswana.org/assets/gea-logo-round-80.png" alt="GEA Logo">
       </div>
       <div class="header-title" id="headerTitle">Member Portal</div>
     </div>
@@ -2372,7 +2381,12 @@
             <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Primary Email</h3>
             <div class="form-group">
               <label class="form-label">Email Address</label>
-              <input id="emailPrimary" type="email" class="form-input" placeholder="your.email@example.com">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input id="emailPrimary" type="email" class="form-input" placeholder="your.email@example.com" style="flex: 1;">
+                <div id="emailVerificationStatus" style="font-size: 12px; white-space: nowrap; padding: 6px 12px; border-radius: 4px; background: #f5f5f5; color: #666;">
+                  Loading...
+                </div>
+              </div>
             </div>
 
             <!-- Secondary Email (Optional) -->
@@ -2825,10 +2839,15 @@
   window.addEventListener('load', function() {
     // Fetch document upload configuration from Config.js at page load
     // Single source of truth: APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES
-    google.script.run.withSuccessHandler(function(config) {
-      APPLICANT_UPLOAD_TYPES = config.applicant || {};
-      FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
-    }).getApplicantUploadConfiguration();
+    // Note: This call is optional; defaults are set at initialization
+    try {
+      google.script.run.withSuccessHandler(function(config) {
+        APPLICANT_UPLOAD_TYPES = config.applicant || {};
+        FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
+      }).getApplicantUploadConfiguration();
+    } catch (e) {
+      // Backend function may not exist; using default values
+    }
 
     // Check for password reset token in URL.
     // When loaded via member.html wrapper, GAS requires action=serve to serve this
@@ -3257,32 +3276,32 @@ function showPhoneMessage(message, type) {
  */
 function submitLogin(event) {
   event.preventDefault();
-  
-  // Get email and password from the form
-  var email = document.getElementById('loginEmail').value.trim().toLowerCase();
+
+  // Get username and password from the form
+  var username = document.getElementById('loginUsername').value.trim();
   var password = document.getElementById('loginPassword').value;
-  
+
   // Clear any previous error messages
   var errorDiv = document.getElementById('loginError');
   errorDiv.textContent = '';
   errorDiv.classList.remove('show');
-  
+
   // Validate password length on the frontend (user-friendly error)
   if (password.length < 12) {
     errorDiv.textContent = 'Password must be at least 12 characters.';
     errorDiv.classList.add('show');
     return;
   }
-  
+
   // Disable the submit button while the request is in progress
   var submitBtn = event.target.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
   submitBtn.textContent = 'Signing in...';
-  
-  // Call the backend login action with BOTH email and password
-  apiCall('login', { 
-    email: email,
-    password: password  // ← NEW: password is now sent
+
+  // Call the backend login action with username and password
+  apiCall('login', {
+    username: username,
+    password: password
   }).then(function(res) {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Sign In';
@@ -3290,6 +3309,16 @@ function submitLogin(event) {
     console.log("LOGIN RESPONSE:", res);
     
     if (!res.success) {
+      // Login failed — check if it's due to unverified email
+      if (res.data && res.data.requires_verification) {
+        // Show email verification modal instead of generic error
+        errorDiv.textContent = '';
+        errorDiv.classList.remove('show');
+        document.getElementById('loginScreen').classList.add('show');
+        showToast('info', 'Please verify your email first');
+        _openEmailVerificationModal(res.data.member.email);
+        return;
+      }
       // Login failed — show error message
       // Generic message for security (don't reveal if email/password/status is wrong)
       errorDiv.textContent = res.message || 'Invalid email or password.';
@@ -3308,8 +3337,10 @@ function submitLogin(event) {
       login_is_lapsed_flag: !!res.data.is_lapsed,
       login_application_status: res.data.application_status || '',
       login_membership_status: res.data.membership_status || '',
-      require_password_change: !!res.data.require_password_change
+      require_password_change: !!res.data.require_password_change,
+      requires_email_verification: !!res.data.requires_email_verification
     });
+
 
     // Check if user needs to change their password on first login
     if (res.data.require_password_change) {
@@ -3396,9 +3427,9 @@ function showLoginScreen() {
   document.getElementById('passwordResetConfirmScreen').classList.remove('show');
   document.getElementById('loginScreen').classList.add('show');
   document.getElementById('loginError').textContent = '';
-  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
-  document.getElementById('loginEmail').focus();
+  document.getElementById('loginUsername').focus();
 }
 
 /**
@@ -3473,17 +3504,20 @@ function submitPasswordChange(event, isFirstLogin) {
     // Password changed successfully
     if (isFirstLogin) {
       // For first login, show success message and redirect to login
-      showNotification('Password created successfully! Please log in again with your new password.');
+      showToast('Password created successfully! Please log in again with your new password.', 'success');
       document.getElementById('passwordChangeModal').style.display = 'none';
       currentToken = null;
       currentUser = null;
       sessionStorage.clear();
       showLoginScreen();
     } else {
-      // For voluntary change, close modal and show success
-      showNotification('Password changed successfully! You will be logged out for security. Please log in again.');
+      // For voluntary change, show success and logout after a brief delay
+      showToast('Password changed successfully! You will be logged out for security. Please log in again.', 'success');
       closePasswordChangeForm();
-      logout();
+      // Delay logout by 2 seconds to allow user to see the success message
+      setTimeout(function() {
+        logout();
+      }, 2000);
     }
   }).withFailureHandler(function(err) {
     submitBtn.disabled = false;
@@ -3765,7 +3799,7 @@ function submitPasswordReset(event) {
     
     // Show and reset login screen
     document.getElementById('loginScreen').classList.add('show');
-    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginUsername').value = '';
     document.getElementById('loginError').textContent = '';
     document.getElementById('loginError').classList.remove('show');
   }
@@ -4994,13 +5028,18 @@ function submitPasswordReset(event) {
     updateStep2FieldsForCategory(category);
 
     // Show document requirements (Config.js driven)
-    google.script.run.withSuccessHandler(function(requirementsText) {
-      var reqDiv = document.getElementById('documentRequirementsContainer');
-      if (reqDiv) {
-        document.getElementById('documentRequirementsText').innerHTML = requirementsText;
-        reqDiv.style.display = 'block';
-      }
-    }).getApplicantDocumentRequirements(category);
+    // Note: This call is optional; if the backend function doesn't exist, document requirements won't be shown
+    try {
+      google.script.run.withSuccessHandler(function(requirementsText) {
+        var reqDiv = document.getElementById('documentRequirementsContainer');
+        if (reqDiv) {
+          document.getElementById('documentRequirementsText').innerHTML = requirementsText;
+          reqDiv.style.display = 'block';
+        }
+      }).getApplicantDocumentRequirements(category);
+    } catch (e) {
+      // Backend function may not exist; skipping document requirements display
+    }
 
     // Display the determined category
     document.getElementById('categoryDisplayContainer').style.display = 'block';
@@ -5012,9 +5051,8 @@ function submitPasswordReset(event) {
       nextApplicationStep();
     } else {
       // For other categories, show household type selection
-      document.getElementById('householdTypeContainer').style.display = 'block';
-      document.getElementById('eligibilityButtonContainer').style.display = 'none';
-      document.getElementById('householdTypeButtonContainer').style.display = 'flex';
+      // Call updateApplicationStep to properly sync the UI state
+      updateApplicationStep();
     }
   }
 
@@ -5026,12 +5064,10 @@ function submitPasswordReset(event) {
     document.getElementById('departureDateContainer').style.display = 'none';
     document.getElementById('sponsorInStep2Container').style.display = 'none';
 
-    // Check if this category requires sponsor (read from Config.js server-side)
-    google.script.run.withSuccessHandler(function(requiresSponsor) {
-      if (requiresSponsor && document.getElementById('sponsorInStep2Container')) {
-        document.getElementById('sponsorInStep2Container').style.display = 'block';
-      }
-    }).categoryRequiresSponsor(category);
+    // Only Community membership requires sponsor info in Step 2
+    if (category === 'Community' && document.getElementById('sponsorInStep2Container')) {
+      document.getElementById('sponsorInStep2Container').style.display = 'block';
+    }
 
     // Show fields based on category
     switch(category) {
@@ -5313,6 +5349,7 @@ function submitPasswordReset(event) {
         applicationFormData.first_name = capitalizeName(document.getElementById('appFirstName').value);
         applicationFormData.last_name = capitalizeName(document.getElementById('appLastName').value);
         applicationFormData.email = document.getElementById('appEmail').value;
+        applicationFormData.username = document.getElementById('appUsername').value.trim().toLowerCase();
         applicationFormData.country_code_primary = document.getElementById('appCountryCode').value || 'US';
         applicationFormData.phone_primary = document.getElementById('appPhone').value;
         applicationFormData.phone_primary_whatsapp = document.getElementById('appPhoneWhatsApp').checked;
@@ -5562,6 +5599,106 @@ function submitPasswordReset(event) {
     // Ensure all form data is collected before submission
     saveApplicationStepData(5);
 
+    // Require email verification before allowing submission
+    var email = applicationFormData.email || '';
+    if (!email) {
+      document.getElementById('applicationSubmitError').textContent = 'Email address is required.';
+      document.getElementById('applicationSubmitError').style.display = 'block';
+      return;
+    }
+
+    // Call backend to generate and send verification code
+    var submitBtn = document.getElementById('submitApplicationBtn');
+    submitBtn.disabled = true;
+    var originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Sending code...';
+
+    apiCall('submit_application', {
+      email: email
+    }).then(function(res) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+
+      if (!res.success) {
+        document.getElementById('applicationSubmitError').textContent = res.message || 'Failed to send verification code.';
+        document.getElementById('applicationSubmitError').style.display = 'block';
+        return;
+      }
+
+      if (res.data && res.data.verification_required) {
+        // Code was sent, show verification modal
+        _openApplicationEmailVerificationModal(email);
+      } else {
+        document.getElementById('applicationSubmitError').textContent = 'Unexpected response from server.';
+        document.getElementById('applicationSubmitError').style.display = 'block';
+      }
+    }).catch(function(err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+      document.getElementById('applicationSubmitError').textContent = 'Error: ' + (err.message || err);
+      document.getElementById('applicationSubmitError').style.display = 'block';
+    });
+  }
+
+  /**
+   * Validate username format and check availability
+   */
+  function validateUsernameAvailability() {
+    var usernameInput = document.getElementById('appUsername');
+    var username = usernameInput.value.trim().toLowerCase();
+    var statusSpan = document.getElementById('usernameStatus');
+    var errorDiv = document.getElementById('usernameError');
+
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+
+    if (!username) {
+      statusSpan.textContent = '';
+      usernameInput.style.borderColor = '';
+      return;
+    }
+
+    // Validate format: 4-20 chars, alphanumeric + underscore only
+    var formatRegex = /^[a-z0-9_]{4,20}$/;
+    if (!formatRegex.test(username)) {
+      usernameInput.style.borderColor = '#c62828';
+      statusSpan.innerHTML = '❌ Invalid format';
+      statusSpan.style.color = '#c62828';
+      errorDiv.textContent = 'Username must be 4-20 characters (letters, numbers, underscores only)';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    // Check availability via API
+    statusSpan.innerHTML = '⏳ Checking...';
+    statusSpan.style.color = '#999';
+    usernameInput.style.borderColor = '';
+
+    apiCall('check_username_available', { username: username })
+      .then(function(res) {
+        if (res.success && res.data && res.data.available) {
+          usernameInput.style.borderColor = '#4caf50';
+          statusSpan.innerHTML = '✓ Available';
+          statusSpan.style.color = '#4caf50';
+        } else {
+          usernameInput.style.borderColor = '#c62828';
+          statusSpan.innerHTML = '✗ Taken';
+          statusSpan.style.color = '#c62828';
+          errorDiv.textContent = 'This username is already in use';
+          errorDiv.style.display = 'block';
+        }
+      })
+      .catch(function(err) {
+        usernameInput.style.borderColor = '#999';
+        statusSpan.innerHTML = '? Error';
+        statusSpan.style.color = '#999';
+      });
+  }
+
+  /**
+   * Verify email and then actually submit the application
+   */
+  function _proceedWithApplicationSubmission() {
     // Disable button and show spinner while processing
     var btn = document.getElementById('submitApplicationBtn');
     btn.disabled = true;
@@ -8211,7 +8348,9 @@ function submitPasswordReset(event) {
     renderApplicantPortalSection('household');
   }
 
-  function _buildModalOverlay(titleText) {
+  function _buildModalOverlay(titleText, isDismissable) {
+    isDismissable = isDismissable !== false; // Default to dismissable unless explicitly false
+
     var overlay = document.createElement('div');
     overlay.id = 'hhModalOverlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;' +
@@ -8228,21 +8367,24 @@ function submitPasswordReset(event) {
 
     overlay.appendChild(modal);
 
-    // Close modal when clicking overlay background (outside the modal box)
-    overlay.onclick = function(e) {
-      if (e.target === overlay) {
-        _closeHouseholdModal();
-      }
-    };
+    // Only allow closing if dismissable
+    if (isDismissable) {
+      // Close modal when clicking overlay background (outside the modal box)
+      overlay.onclick = function(e) {
+        if (e.target === overlay) {
+          _closeHouseholdModal();
+        }
+      };
 
-    // Close modal on Esc key
-    var escHandler = function(e) {
-      if (e.key === 'Escape') {
-        _closeHouseholdModal();
-      }
-    };
-    overlay.escHandler = escHandler;
-    document.addEventListener('keydown', escHandler);
+      // Close modal on Esc key
+      var escHandler = function(e) {
+        if (e.key === 'Escape') {
+          _closeHouseholdModal();
+        }
+      };
+      overlay.escHandler = escHandler;
+      document.addEventListener('keydown', escHandler);
+    }
 
     return { overlay: overlay, modal: modal };
   }
@@ -8299,6 +8441,60 @@ function submitPasswordReset(event) {
 
     select.value = value || '';
     return select;
+  }
+
+  /**
+   * Helper to build three-field phone input (country code dropdown, phone number, WhatsApp checkbox)
+   */
+  function _buildPhoneFieldSet(countryValue, phoneValue, whatsAppValue, countryCodeId, phoneId, whatsAppId) {
+    var container = document.createElement('div');
+    container.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+
+    // Country code dropdown
+    var countrySelect = document.createElement('select');
+    countrySelect.id = countryCodeId;
+    countrySelect.className = 'form-input';
+    countrySelect.style.flex = '0 0 100px';
+    getPhoneCountries().forEach(function(country) {
+      var opt = document.createElement('option');
+      opt.value = country.code;
+      opt.textContent = country.code;
+      countrySelect.appendChild(opt);
+    });
+    countrySelect.value = countryValue || 'US';
+    container.appendChild(countrySelect);
+
+    // Phone input
+    var phoneInput = document.createElement('input');
+    phoneInput.type = 'tel';
+    phoneInput.id = phoneId;
+    phoneInput.className = 'form-input';
+    phoneInput.placeholder = '71234567';
+    phoneInput.style.flex = '1';
+    phoneInput.value = phoneValue || '';
+    container.appendChild(phoneInput);
+
+    // WhatsApp checkbox
+    var checkboxWrapper = document.createElement('div');
+    checkboxWrapper.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:8px;white-space:nowrap;';
+    var whatsAppCheckbox = document.createElement('input');
+    whatsAppCheckbox.type = 'checkbox';
+    whatsAppCheckbox.id = whatsAppId;
+    whatsAppCheckbox.checked = whatsAppValue || false;
+    var whatsAppLabel = document.createElement('label');
+    whatsAppLabel.htmlFor = whatsAppId;
+    whatsAppLabel.style.cssText = 'font-size:13px;cursor:pointer;margin:0;';
+    whatsAppLabel.textContent = 'WhatsApp';
+    checkboxWrapper.appendChild(whatsAppCheckbox);
+    checkboxWrapper.appendChild(whatsAppLabel);
+    container.appendChild(checkboxWrapper);
+
+    return {
+      container: container,
+      countrySelect: countrySelect,
+      phoneInput: phoneInput,
+      whatsAppCheckbox: whatsAppCheckbox
+    };
   }
 
   function _buildModalButtons(submitText, onSubmit) {
@@ -8413,7 +8609,6 @@ function submitPasswordReset(event) {
     var firstNameInput = _buildTextInput('First name', member.first_name);
     var lastNameInput  = _buildTextInput('Last name',  member.last_name);
     var emailInput     = _buildTextInput('Email',      member.email);
-    var phoneInput     = _buildTextInput('Phone',      member.phone_primary);
     var dobInput       = _buildDateInput(formatDateOfBirth(member.date_of_birth));
     var citizenshipInput = _buildCitizenshipSelect(member.citizenship_country);
 
@@ -8425,8 +8620,59 @@ function submitPasswordReset(event) {
       modal.appendChild(_buildLabeledInput('Email',      emailInput));
     }
 
-    modal.appendChild(_buildLabeledInput('Phone',      phoneInput));
     modal.appendChild(_buildLabeledInput('Citizenship', citizenshipInput));
+
+    // Primary Phone (three-field setup)
+    var phonePrimaryFields = _buildPhoneFieldSet(
+      member.country_code_primary || 'US',
+      member.phone_primary || '',
+      member.phone_primary_whatsapp || false,
+      'editPhonePrimaryCc_' + member.individual_id,
+      'editPhonePrimary_' + member.individual_id,
+      'editPhonePrimaryWhatsApp_' + member.individual_id
+    );
+    modal.appendChild(_buildLabeledInput('Primary Phone *', phonePrimaryFields.container));
+
+    // Secondary Phone (three-field setup)
+    var phoneSecondaryFields = _buildPhoneFieldSet(
+      member.country_code_secondary || 'US',
+      member.phone_secondary || '',
+      member.phone_secondary_whatsapp || false,
+      'editPhoneSecondaryCc_' + member.individual_id,
+      'editPhoneSecondary_' + member.individual_id,
+      'editPhoneSecondaryWhatsApp_' + member.individual_id
+    );
+    modal.appendChild(_buildLabeledInput('Secondary Phone (Optional)', phoneSecondaryFields.container));
+
+    // Emergency Contact Section
+    var emergencySection = document.createElement('div');
+    emergencySection.style.cssText = 'border-top:1px solid #eee;margin-top:16px;padding-top:16px;';
+
+    var emergencySectionTitle = document.createElement('h4');
+    emergencySectionTitle.style.cssText = 'font-size:13px;font-weight:600;margin-bottom:12px;color:#333;';
+    emergencySectionTitle.textContent = 'Emergency Contact (Optional)';
+    emergencySection.appendChild(emergencySectionTitle);
+
+    var emergencyContactNameInput = _buildTextInput('Name', member.emergency_contact_name || '');
+    var emergencyContactRelationshipInput = _buildTextInput('Relationship', member.emergency_contact_relationship || '');
+    var emergencyContactEmailInput = _buildTextInput('Email', member.emergency_contact_email || '');
+
+    emergencySection.appendChild(_buildLabeledInput('Name', emergencyContactNameInput));
+    emergencySection.appendChild(_buildLabeledInput('Relationship', emergencyContactRelationshipInput));
+
+    // Emergency Phone (three-field setup)
+    var phoneEmergencyFields = _buildPhoneFieldSet(
+      member.country_code_emergency || 'US',
+      member.phone_emergency || '',
+      member.phone_emergency_whatsapp || false,
+      'editPhoneEmergencyCc_' + member.individual_id,
+      'editPhoneEmergency_' + member.individual_id,
+      'editPhoneEmergencyWhatsApp_' + member.individual_id
+    );
+    emergencySection.appendChild(_buildLabeledInput('Phone', phoneEmergencyFields.container));
+    emergencySection.appendChild(_buildLabeledInput('Email', emergencyContactEmailInput));
+
+    modal.appendChild(emergencySection);
 
     var omangInput, startInput, endInput;
 
@@ -8451,7 +8697,18 @@ function submitPasswordReset(event) {
         individual_id: member.individual_id,
         first_name:    firstNameInput.value.trim(),
         last_name:     lastNameInput.value.trim(),
-        phone_primary: phoneInput.value.trim(),
+        country_code_primary: phonePrimaryFields.countrySelect.value || 'US',
+        phone_primary: phonePrimaryFields.phoneInput.value.trim(),
+        phone_primary_whatsapp: phonePrimaryFields.whatsAppCheckbox.checked,
+        country_code_secondary: phoneSecondaryFields.countrySelect.value || '',
+        phone_secondary: phoneSecondaryFields.phoneInput.value.trim(),
+        phone_secondary_whatsapp: phoneSecondaryFields.whatsAppCheckbox.checked,
+        country_code_emergency: phoneEmergencyFields.countrySelect.value || '',
+        phone_emergency: phoneEmergencyFields.phoneInput.value.trim(),
+        phone_emergency_whatsapp: phoneEmergencyFields.whatsAppCheckbox.checked,
+        emergency_contact_name: emergencyContactNameInput.value.trim(),
+        emergency_contact_relationship: emergencyContactRelationshipInput.value.trim(),
+        emergency_contact_email: emergencyContactEmailInput.value.trim(),
         citizenship_country: citizenshipInput.value.trim()
       };
 
@@ -8586,6 +8843,515 @@ function submitPasswordReset(event) {
 
     modal.appendChild(btns.row);
     document.body.appendChild(parts.overlay);
+  }
+
+  function _openHouseholdAddressModal(household) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Edit Household Address');
+    var modal = parts.modal;
+
+    var streetLbl = document.createElement('label');
+    streetLbl.textContent = 'Street Address';
+    streetLbl.style.display = 'block';
+    streetLbl.style.marginTop = '12px';
+    streetLbl.style.fontWeight = '600';
+    streetLbl.style.fontSize = '13px';
+    modal.appendChild(streetLbl);
+
+    var streetInput = document.createElement('input');
+    streetInput.type = 'text';
+    streetInput.className = 'form-input';
+    streetInput.value = household.address_street || '';
+    streetInput.placeholder = 'e.g. 123 Main Street';
+    modal.appendChild(streetInput);
+
+    var cityLbl = document.createElement('label');
+    cityLbl.textContent = 'City';
+    cityLbl.style.display = 'block';
+    cityLbl.style.marginTop = '12px';
+    cityLbl.style.fontWeight = '600';
+    cityLbl.style.fontSize = '13px';
+    modal.appendChild(cityLbl);
+
+    var cityInput = document.createElement('input');
+    cityInput.type = 'text';
+    cityInput.className = 'form-input';
+    cityInput.value = household.address_city || '';
+    cityInput.placeholder = 'e.g. Gaborone';
+    modal.appendChild(cityInput);
+
+    var countryLbl = document.createElement('label');
+    countryLbl.textContent = 'Country';
+    countryLbl.style.display = 'block';
+    countryLbl.style.marginTop = '12px';
+    countryLbl.style.fontWeight = '600';
+    countryLbl.style.fontSize = '13px';
+    modal.appendChild(countryLbl);
+
+    var countryInput = document.createElement('input');
+    countryInput.type = 'text';
+    countryInput.className = 'form-input';
+    countryInput.value = household.address_country || '';
+    countryInput.placeholder = 'e.g. Botswana';
+    modal.appendChild(countryInput);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Save Address', function() {
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Saving...';
+
+      apiCall('update_household_address', {
+        address_street: streetInput.value,
+        address_city: cityInput.value,
+        address_country: countryInput.value
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to update address.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Save Address';
+          return;
+        }
+        _closeHouseholdModal();
+        loadMyHousehold();
+        showToast('success', 'Household address updated');
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Save Address';
+      });
+    });
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
+  function _openEditPrimaryMemberModal(member) {
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Edit Contact Information');
+    var modal = parts.modal;
+
+    var firstNameLbl = document.createElement('label');
+    firstNameLbl.textContent = 'First Name';
+    firstNameLbl.style.display = 'block';
+    firstNameLbl.style.marginTop = '12px';
+    firstNameLbl.style.fontWeight = '600';
+    firstNameLbl.style.fontSize = '13px';
+    modal.appendChild(firstNameLbl);
+
+    var firstNameInput = document.createElement('input');
+    firstNameInput.type = 'text';
+    firstNameInput.className = 'form-input';
+    firstNameInput.value = member.first_name || '';
+    modal.appendChild(firstNameInput);
+
+    var lastNameLbl = document.createElement('label');
+    lastNameLbl.textContent = 'Last Name';
+    lastNameLbl.style.display = 'block';
+    lastNameLbl.style.marginTop = '12px';
+    lastNameLbl.style.fontWeight = '600';
+    lastNameLbl.style.fontSize = '13px';
+    modal.appendChild(lastNameLbl);
+
+    var lastNameInput = document.createElement('input');
+    lastNameInput.type = 'text';
+    lastNameInput.className = 'form-input';
+    lastNameInput.value = member.last_name || '';
+    modal.appendChild(lastNameInput);
+
+    // Primary phone using three-field setup
+    var phonePrimaryFields = _buildPhoneFieldSet(member.country_code_primary, member.phone_primary, member.phone_primary_whatsapp, 'primaryCC', 'primaryPhone', 'primaryWhatsApp');
+    var phonePrimaryLabel = document.createElement('label');
+    phonePrimaryLabel.style.display = 'block';
+    phonePrimaryLabel.style.marginTop = '12px';
+    phonePrimaryLabel.style.fontWeight = '600';
+    phonePrimaryLabel.style.fontSize = '13px';
+    phonePrimaryLabel.textContent = 'Primary Phone';
+    modal.appendChild(phonePrimaryLabel);
+    modal.appendChild(phonePrimaryFields.container);
+
+    // Secondary phone using three-field setup
+    var phoneSecondaryFields = _buildPhoneFieldSet(member.country_code_secondary, member.phone_secondary, member.phone_secondary_whatsapp, 'secondaryCC', 'secondaryPhone', 'secondaryWhatsApp');
+    var phoneSecondaryLabel = document.createElement('label');
+    phoneSecondaryLabel.style.display = 'block';
+    phoneSecondaryLabel.style.marginTop = '12px';
+    phoneSecondaryLabel.style.fontWeight = '600';
+    phoneSecondaryLabel.style.fontSize = '13px';
+    phoneSecondaryLabel.textContent = 'Secondary Phone (Optional)';
+    modal.appendChild(phoneSecondaryLabel);
+    modal.appendChild(phoneSecondaryFields.container);
+
+    // Emergency contact section
+    var emergencyLabel = document.createElement('h3');
+    emergencyLabel.style.marginTop = '20px';
+    emergencyLabel.style.marginBottom = '12px';
+    emergencyLabel.style.fontSize = '14px';
+    emergencyLabel.style.fontWeight = '600';
+    emergencyLabel.style.color = '#333';
+    emergencyLabel.textContent = 'Emergency Contact';
+    modal.appendChild(emergencyLabel);
+
+    var emergencyNameLbl = document.createElement('label');
+    emergencyNameLbl.textContent = 'Emergency Contact Name';
+    emergencyNameLbl.style.display = 'block';
+    emergencyNameLbl.style.marginTop = '12px';
+    emergencyNameLbl.style.fontWeight = '600';
+    emergencyNameLbl.style.fontSize = '13px';
+    modal.appendChild(emergencyNameLbl);
+
+    var emergencyNameInput = document.createElement('input');
+    emergencyNameInput.type = 'text';
+    emergencyNameInput.className = 'form-input';
+    emergencyNameInput.value = member.emergency_contact_name || '';
+    emergencyNameInput.placeholder = 'Name';
+    modal.appendChild(emergencyNameInput);
+
+    var emergencyRelLbl = document.createElement('label');
+    emergencyRelLbl.textContent = 'Relationship';
+    emergencyRelLbl.style.display = 'block';
+    emergencyRelLbl.style.marginTop = '12px';
+    emergencyRelLbl.style.fontWeight = '600';
+    emergencyRelLbl.style.fontSize = '13px';
+    modal.appendChild(emergencyRelLbl);
+
+    var emergencyRelInput = document.createElement('input');
+    emergencyRelInput.type = 'text';
+    emergencyRelInput.className = 'form-input';
+    emergencyRelInput.value = member.emergency_contact_relationship || '';
+    emergencyRelInput.placeholder = 'e.g. Spouse, Parent, Sibling';
+    modal.appendChild(emergencyRelInput);
+
+    var emergencyEmailLbl = document.createElement('label');
+    emergencyEmailLbl.textContent = 'Emergency Contact Email';
+    emergencyEmailLbl.style.display = 'block';
+    emergencyEmailLbl.style.marginTop = '12px';
+    emergencyEmailLbl.style.fontWeight = '600';
+    emergencyEmailLbl.style.fontSize = '13px';
+    modal.appendChild(emergencyEmailLbl);
+
+    var emergencyEmailInput = document.createElement('input');
+    emergencyEmailInput.type = 'email';
+    emergencyEmailInput.className = 'form-input';
+    emergencyEmailInput.value = member.emergency_contact_email || '';
+    emergencyEmailInput.placeholder = 'Email';
+    modal.appendChild(emergencyEmailInput);
+
+    // Emergency phone using three-field setup
+    var phoneEmergencyFields = _buildPhoneFieldSet(member.country_code_emergency, member.phone_emergency, member.phone_emergency_whatsapp, 'emergencyCC', 'emergencyPhone', 'emergencyWhatsApp');
+    var phoneEmergencyLabel = document.createElement('label');
+    phoneEmergencyLabel.style.display = 'block';
+    phoneEmergencyLabel.style.marginTop = '12px';
+    phoneEmergencyLabel.style.fontWeight = '600';
+    phoneEmergencyLabel.style.fontSize = '13px';
+    phoneEmergencyLabel.textContent = 'Emergency Contact Phone';
+    modal.appendChild(phoneEmergencyLabel);
+    modal.appendChild(phoneEmergencyFields.container);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    modal.appendChild(errorP);
+
+    var btns = _buildModalButtons('Save Changes', function() {
+      btns.submitBtn.disabled = true;
+      btns.submitBtn.textContent = 'Saving...';
+
+      apiCall('edit_household_member', {
+        individual_id: member.individual_id,
+        first_name: firstNameInput.value,
+        last_name: lastNameInput.value,
+        country_code_primary: phonePrimaryFields.countrySelect.value,
+        phone_primary: phonePrimaryFields.phoneInput.value,
+        phone_primary_whatsapp: phonePrimaryFields.whatsAppCheckbox.checked,
+        country_code_secondary: phoneSecondaryFields.countrySelect.value,
+        phone_secondary: phoneSecondaryFields.phoneInput.value,
+        phone_secondary_whatsapp: phoneSecondaryFields.whatsAppCheckbox.checked,
+        emergency_contact_name: emergencyNameInput.value,
+        emergency_contact_relationship: emergencyRelInput.value,
+        emergency_contact_email: emergencyEmailInput.value,
+        country_code_emergency: phoneEmergencyFields.countrySelect.value,
+        phone_emergency: phoneEmergencyFields.phoneInput.value,
+        phone_emergency_whatsapp: phoneEmergencyFields.whatsAppCheckbox.checked
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Failed to update contact information.';
+          errorP.style.display = 'block';
+          btns.submitBtn.disabled = false;
+          btns.submitBtn.textContent = 'Save Changes';
+          return;
+        }
+        _closeHouseholdModal();
+        loadMyHousehold();
+        showToast('success', 'Contact information updated');
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        btns.submitBtn.disabled = false;
+        btns.submitBtn.textContent = 'Save Changes';
+      });
+    });
+
+    modal.appendChild(btns.row);
+    document.body.appendChild(parts.overlay);
+  }
+
+  function _openApplicationEmailVerificationModal(applicationEmail) {
+    var parts = _buildModalOverlay('Verify Email Before Submission');
+    var modal = parts.modal;
+
+    var introText = document.createElement('p');
+    introText.style.color = '#555';
+    introText.style.marginBottom = '16px';
+    introText.textContent = 'Before we can submit your application, we need to verify your email address.';
+    modal.appendChild(introText);
+
+    var emailDisplay = document.createElement('p');
+    emailDisplay.style.color = '#333';
+    emailDisplay.style.fontWeight = 'bold';
+    emailDisplay.style.marginBottom = '16px';
+    emailDisplay.textContent = applicationEmail;
+    modal.appendChild(emailDisplay);
+
+    var instructionText = document.createElement('p');
+    instructionText.style.color = '#555';
+    instructionText.style.marginBottom = '12px';
+    instructionText.textContent = 'A verification code will be sent to this address. Enter it below:';
+    modal.appendChild(instructionText);
+
+    var codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.className = 'form-input';
+    codeInput.placeholder = '000000';
+    codeInput.maxLength = '6';
+    codeInput.style.fontSize = '18px';
+    codeInput.style.letterSpacing = '8px';
+    codeInput.style.textAlign = 'center';
+    codeInput.style.fontWeight = 'bold';
+    modal.appendChild(codeInput);
+
+    var attemptsP = document.createElement('p');
+    attemptsP.style.fontSize = '12px';
+    attemptsP.style.color = '#999';
+    attemptsP.style.marginTop = '12px';
+    attemptsP.textContent = 'Code expires in 24 hours';
+    modal.appendChild(attemptsP);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    errorP.style.fontSize = '13px';
+    modal.appendChild(errorP);
+
+    var btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '12px';
+    btnContainer.style.marginTop = '20px';
+
+    var submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.style.flex = '1';
+    submitBtn.textContent = 'Verify & Submit Application';
+    submitBtn.onclick = function() {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+
+      apiCall('verify_application_email', {
+        email: applicationEmail,
+        verification_code: codeInput.value.trim()
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Verification failed.';
+          errorP.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Verify & Submit Application';
+          return;
+        }
+        // Email verified - save token and proceed with submission
+        applicationFormData.email_verified_token = res.data.email_verified_token;
+        _closeHouseholdModal();
+        _proceedWithApplicationSubmission();
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify & Submit Application';
+      });
+    };
+    btnContainer.appendChild(submitBtn);
+
+    var resendBtn = document.createElement('button');
+    resendBtn.type = 'button';
+    resendBtn.className = 'btn btn-secondary';
+    resendBtn.textContent = 'Resend Code';
+    resendBtn.onclick = function() {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending...';
+
+      // For application verification, we need to re-submit to get a new code
+      apiCall('submit_application', {
+        email: applicationEmail
+      }).then(function(res) {
+        if (res.data && res.data.verification_required) {
+          showToast('success', 'New code sent to your email');
+          codeInput.value = '';
+          codeInput.focus();
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend Code';
+        } else {
+          showToast('error', 'Failed to resend code');
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend Code';
+        }
+      }).catch(function(err) {
+        showToast('error', err.message);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Code';
+      });
+    };
+    btnContainer.appendChild(resendBtn);
+
+    modal.appendChild(btnContainer);
+    document.body.appendChild(parts.overlay);
+
+    // Focus code input
+    setTimeout(function() {
+      codeInput.focus();
+    }, 100);
+  }
+
+  function _openEmailVerificationModal(newEmail, isDismissable) {
+    isDismissable = isDismissable !== false; // Default to dismissable unless explicitly false
+    _closeHouseholdModal();
+    var parts = _buildModalOverlay('Verify Your Email', isDismissable);
+    var modal = parts.modal;
+
+    var introText = document.createElement('p');
+    introText.style.color = '#555';
+    introText.style.marginBottom = '16px';
+    introText.textContent = 'A verification code has been sent to:';
+    modal.appendChild(introText);
+
+    var emailDisplay = document.createElement('p');
+    emailDisplay.style.color = '#333';
+    emailDisplay.style.fontWeight = 'bold';
+    emailDisplay.style.marginBottom = '16px';
+    emailDisplay.textContent = newEmail;
+    modal.appendChild(emailDisplay);
+
+    var instructionText = document.createElement('p');
+    instructionText.style.color = '#555';
+    instructionText.style.marginBottom = '12px';
+    instructionText.textContent = 'Enter the 6-digit code below:';
+    modal.appendChild(instructionText);
+
+    var codeInput = document.createElement('input');
+    codeInput.type = 'text';
+    codeInput.className = 'form-input';
+    codeInput.placeholder = '000000';
+    codeInput.maxLength = '6';
+    codeInput.style.fontSize = '18px';
+    codeInput.style.letterSpacing = '8px';
+    codeInput.style.textAlign = 'center';
+    codeInput.style.fontWeight = 'bold';
+    modal.appendChild(codeInput);
+
+    var attemptsP = document.createElement('p');
+    attemptsP.style.fontSize = '12px';
+    attemptsP.style.color = '#999';
+    attemptsP.style.marginTop = '12px';
+    attemptsP.textContent = 'Code expires in 24 hours';
+    modal.appendChild(attemptsP);
+
+    var errorP = document.createElement('p');
+    errorP.style.color = '#c62828';
+    errorP.style.display = 'none';
+    errorP.style.marginTop = '12px';
+    errorP.style.fontSize = '13px';
+    modal.appendChild(errorP);
+
+    var btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '12px';
+    btnContainer.style.marginTop = '20px';
+
+    var submitBtn = document.createElement('button');
+    submitBtn.type = 'button';
+    submitBtn.className = 'btn btn-primary';
+    submitBtn.style.flex = '1';
+    submitBtn.textContent = 'Verify Email';
+    submitBtn.onclick = function() {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+
+      apiCall('verify_email', {
+        verification_code: codeInput.value.trim()
+      }).then(function(res) {
+        if (!res.success) {
+          errorP.textContent = res.message || 'Verification failed.';
+          errorP.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Verify Email';
+          return;
+        }
+        _closeHouseholdModal();
+        showToast('success', 'Email verified successfully!');
+        // Logout with message after verification
+        setTimeout(function() {
+          logout();
+        }, 1500);
+      }).catch(function(err) {
+        errorP.textContent = 'Error: ' + err.message;
+        errorP.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Verify Email';
+      });
+    };
+    btnContainer.appendChild(submitBtn);
+
+    var resendBtn = document.createElement('button');
+    resendBtn.type = 'button';
+    resendBtn.className = 'btn btn-secondary';
+    resendBtn.textContent = 'Resend Code';
+    resendBtn.onclick = function() {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending...';
+
+      apiCall('resend_verification_code', {}).then(function(res) {
+        if (!res.success) {
+          showToast('error', res.message || 'Failed to resend code');
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend Code';
+          return;
+        }
+        showToast('success', 'New code sent to your email');
+        codeInput.value = '';
+        codeInput.focus();
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Code';
+      }).catch(function(err) {
+        showToast('error', err.message);
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend Code';
+      });
+    };
+    btnContainer.appendChild(resendBtn);
+
+    modal.appendChild(btnContainer);
+    document.body.appendChild(parts.overlay);
+
+    // Focus code input
+    setTimeout(function() {
+      codeInput.focus();
+    }, 100);
   }
 
   // ─── END NMP.6 ───────────────────────────────────────────────
@@ -9999,6 +10765,21 @@ function submitPasswordReset(event) {
           document.getElementById('emailSecondary').value = member.email_secondary;
         }
 
+        // Update email verification status
+        var statusEl = document.getElementById('emailVerificationStatus');
+        if (statusEl) {
+          var isVerified = member.email_verified === true || String(member.email_verified).toLowerCase() === 'true';
+          if (isVerified) {
+            statusEl.textContent = '✓ Verified';
+            statusEl.style.background = '#e8f5e9';
+            statusEl.style.color = '#2E7D32';
+          } else {
+            statusEl.textContent = '⚠ Pending verification';
+            statusEl.style.background = '#fff3e0';
+            statusEl.style.color = '#E65100';
+          }
+        }
+
         // Pre-populate emergency contact fields
         if (member.emergency_contact_name) {
           document.getElementById('emergencyContactName').value = member.emergency_contact_name;
@@ -10083,10 +10864,26 @@ function submitPasswordReset(event) {
         return;
       }
 
-      msgEl.textContent = 'Contact information saved successfully!';
-      msgEl.style.background = '#e8f5e9';
-      msgEl.style.color = '#2E7D32';
-      setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+      // Check if primary email was changed and verification is required
+      if (res.data && res.data.email_changed && res.data.verification_required) {
+        msgEl.textContent = 'Email changed! Check your email for a verification code.';
+        msgEl.style.background = '#e3f2fd';
+        msgEl.style.color = '#1565C0';
+        showToast('success', 'Email changed. Verification code sent.');
+        // Show verification modal
+        _openEmailVerificationModal(res.data.new_email);
+      } else if (res.data && res.data.email_changed) {
+        // Email changed without verification requirement (shouldn't happen with new code, but handle gracefully)
+        msgEl.textContent = 'Contact information saved successfully!';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+      } else {
+        msgEl.textContent = 'Contact information saved successfully!';
+        msgEl.style.background = '#e8f5e9';
+        msgEl.style.color = '#2E7D32';
+        setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+      }
     });
   }
 
@@ -10373,7 +11170,6 @@ function submitPasswordReset(event) {
   function loadMemberAvatar(individualId, avatarElement) {
     if (!individualId) return;
 
-    // Handle string ID vs element
     var el = typeof avatarElement === 'string'
       ? document.getElementById(avatarElement)
       : avatarElement;
@@ -10381,41 +11177,28 @@ function submitPasswordReset(event) {
     if (!el) return;
 
     apiCall('get_member_photo', { individual_id: individualId }).then(function(res) {
-      if (!res.success || !res.data || !res.data.file_id) {
-        // No approved photo - keep element hidden
-        return;
-      }
+      if (!res.success || !res.data || !res.data.file_id) return;
 
-      var fileId = res.data.file_id;
-      var proxyUrl = buildImageProxyUrl(fileId);
+      apiCall('get_file_data', { file_id: res.data.file_id }).then(function(fileRes) {
+        if (!fileRes.success || !fileRes.data || !fileRes.data.base64) return;
 
-      if (el.tagName === 'IMG') {
-        el.src = proxyUrl;
-        el.style.display = 'block';
-      } else {
-        // Element is a container - add img inside
-        var img = document.createElement('img');
-        img.className = 'avatar-small';
-        img.src = proxyUrl;
-        img.alt = 'Member avatar';
-        img.onerror = function() { this.style.display = 'none'; };
-        el.appendChild(img);
-      }
-    }).catch(function(err) {
-      // Silently fail - no approved photo
+        var dataUrl = 'data:' + (fileRes.data.mime_type || 'image/jpeg') + ';base64,' + fileRes.data.base64;
+
+        if (el.tagName === 'IMG') {
+          el.src = dataUrl;
+          el.style.display = 'block';
+        } else {
+          var img = document.createElement('img');
+          img.className = 'avatar-small';
+          img.src = dataUrl;
+          img.alt = 'Member avatar';
+          img.onerror = function() { this.style.display = 'none'; };
+          el.appendChild(img);
+        }
+      });
+    }).catch(function() {
       console.log('No avatar available for individual: ' + individualId);
     });
-  }
-
-  /**
-   * Build image proxy URL for serving Drive files
-   * @param {string} fileId - Google Drive file ID
-   * @returns {string} - Proxy URL to load image from
-   */
-  function buildImageProxyUrl(fileId) {
-    if (!fileId) return '';
-    var base = window.location.href.split('?')[0];
-    return base + '?action=img&id=' + encodeURIComponent(fileId);
   }
 
   // ============================================================ //
@@ -10858,6 +11641,8 @@ function submitPasswordReset(event) {
       }
 
       var members = res.data.members || [];
+      var household = res.data.household || {};
+      var selfId = res.data.self_id;
       var container = document.getElementById('householdMembersContainer');
       container.innerHTML = '';
 
@@ -10866,18 +11651,94 @@ function submitPasswordReset(event) {
         return;
       }
 
+      // Display household address section
+      var householdAddressCard = createHouseholdAddressCard(household);
+      container.appendChild(householdAddressCard);
+
       // Display each household member
       members.forEach(function(member) {
-        var memberCard = createHouseholdMemberCard(member);
+        var memberCard = createHouseholdMemberCard(member, household, selfId);
         container.appendChild(memberCard);
       });
     });
   }
 
   /**
+   * Create household address card with edit icon
+   */
+  function createHouseholdAddressCard(household) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '20px';
+
+    var header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.paddingBottom = '12px';
+    header.style.borderBottom = '1px solid #e0e0e0';
+    header.style.marginBottom = '12px';
+
+    var title = document.createElement('h3');
+    title.style.margin = '0';
+    title.style.fontSize = '14px';
+    title.style.fontWeight = '600';
+    title.style.color = '#333';
+    title.textContent = 'Household Address';
+    header.appendChild(title);
+
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.style.background = 'none';
+    editBtn.style.border = 'none';
+    editBtn.style.padding = '0';
+    editBtn.style.cursor = 'pointer';
+    editBtn.style.fontSize = '16px';
+    editBtn.style.color = 'var(--color-primary)';
+    editBtn.innerHTML = '<i class="fas fa-pen" style="margin-right: 4px;"></i>';
+    editBtn.title = 'Edit address';
+    editBtn.onclick = function() {
+      _openHouseholdAddressModal(household);
+    };
+    header.appendChild(editBtn);
+
+    card.appendChild(header);
+
+    var content = document.createElement('div');
+    content.style.padding = '0 12px';
+
+    var addressText = document.createElement('p');
+    addressText.style.margin = '0';
+    addressText.style.fontSize = '14px';
+    addressText.style.lineHeight = '1.5';
+    addressText.style.color = '#666';
+
+    var street = household.address_street || '';
+    var city = household.address_city || '';
+    var country = household.address_country || '';
+
+    if (street || city || country) {
+      var parts = [];
+      if (street) parts.push(street);
+      if (city) parts.push(city);
+      if (country) parts.push(country);
+      addressText.textContent = parts.join(', ');
+    } else {
+      addressText.textContent = 'No address on file';
+      addressText.style.color = '#999';
+      addressText.style.fontStyle = 'italic';
+    }
+
+    content.appendChild(addressText);
+    card.appendChild(content);
+
+    return card;
+  }
+
+  /**
    * Create HTML card for a single household member
    */
-  function createHouseholdMemberCard(member) {
+  function createHouseholdMemberCard(member, household, selfId) {
     var card = document.createElement('div');
     card.className = 'card';
     card.style.marginBottom = '20px';
@@ -10888,16 +11749,40 @@ function submitPasswordReset(event) {
     header.style.justifyContent = 'space-between';
     header.style.alignItems = 'center';
 
+    var titleDiv = document.createElement('div');
     var title = document.createElement('h2');
     title.className = 'card-title';
     title.textContent = member.first_name + ' ' + member.last_name;
-    if (member.relationship) {
-      title.textContent += ' (' + member.relationship + ')';
+    if (member.relationship_to_primary === 'Primary') {
+      title.textContent += ' (Primary Member)';
+    } else if (member.relationship_to_primary) {
+      title.textContent += ' (' + member.relationship_to_primary + ')';
     }
-    header.appendChild(title);
+    titleDiv.appendChild(title);
+    header.appendChild(titleDiv);
 
-    // Delete button (only for non-primary members, shown later)
-    if (member.individual_id !== currentUser.individual_id) {
+    // Buttons container
+    var btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '8px';
+
+    // Edit button for primary member only (use selfId from API response AND verify primary)
+    var isPrimaryMember = member.relationship_to_primary === 'Primary' && member.individual_id === selfId;
+    if (isPrimaryMember) {
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn btn-primary';
+      editBtn.style.padding = '6px 12px';
+      editBtn.style.fontSize = '12px';
+      editBtn.innerHTML = '<i class="fas fa-pen" style="margin-right: 4px;"></i>Edit';
+      editBtn.onclick = (function(m) {
+        return function() {
+          _openEditPrimaryMemberModal(m);
+        };
+      })(member);
+      btnContainer.appendChild(editBtn);
+    } else {
+      // Delete button for non-primary members
       var deleteBtn = document.createElement('button');
       deleteBtn.type = 'button';
       deleteBtn.className = 'btn btn-danger';
@@ -10916,8 +11801,10 @@ function submitPasswordReset(event) {
           });
         };
       })(member.individual_id, member.first_name + ' ' + member.last_name);
-      header.appendChild(deleteBtn);
+      btnContainer.appendChild(deleteBtn);
     }
+
+    header.appendChild(btnContainer);
 
     card.appendChild(header);
 

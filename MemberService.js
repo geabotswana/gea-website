@@ -92,10 +92,42 @@ function getMemberByEmail(email, includeInactive) {
 }
 
 /**
- * Finds an individual record by individual_id.
- * @param {string} individualId
+ * Finds an individual record by username (unique identifier for login).
+ * @param {string} username
+ * @param {boolean} includeInactive
  * @returns {Object|null}
  */
+function getMemberByUsername(username, includeInactive) {
+  if (!username) return null;
+  includeInactive = includeInactive === true;
+  try {
+    var sheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID)
+                  .getSheetByName(TAB_INDIVIDUALS);
+    var data    = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var usernameCol = headers.indexOf("username");
+    var activeCol = headers.indexOf("active");
+
+    if (usernameCol === -1) {
+      Logger.log("ERROR: 'username' column not found in Individuals sheet");
+      return null;
+    }
+
+    var target = username.toLowerCase().trim();
+    for (var i = 1; i < data.length; i++) {
+      var rowUsername = String(data[i][usernameCol] || "").toLowerCase().trim();
+      var rowActive = data[i][activeCol];
+
+      if (rowUsername === target) {
+        return rowToObject(headers, data[i]);
+      }
+    }
+  } catch (e) { Logger.log("ERROR getMemberByUsername(" + username + "): " + e); }
+  return null;
+}
+
+/**
+ * Finds an individual record by email (for lookups, password resets, etc.).
 function getMemberById(individualId) {
   if (!individualId) return null;
   try {

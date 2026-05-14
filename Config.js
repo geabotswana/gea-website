@@ -105,32 +105,31 @@ var SHARED_DRIVE_BACKUPS_FOLDER_ID = "1w6xOjxuQb4LMY9YcyX4r2yEz4gcmVo-A";  // GE
 
 
 // ============================================================
-// SECTION 4: LOGO AND BRAND ASSET OBJECT PATHS (GCS)
+// SECTION 4: LOGO AND BRAND ASSET OBJECT PATHS (GitHub Pages)
 // ============================================================
-// Google Cloud Storage public bucket: gea-public-assets
-// Format: https://storage.googleapis.com/gea-public-assets/[object-name]
-// All images publicly readable (allUsers has Storage Object Viewer role)
+// Served from GitHub Pages via the geabotswana.org domain.
+// Files live in the /assets/ folder of this repository.
 // ============================================================
 
 // Favicon - displayed in browser tab
-var FAVICON_URL = "https://storage.googleapis.com/gea-public-assets/gea-logo-round-32.png";
+var FAVICON_URL = "https://geabotswana.org/assets/gea-logo-round-32.png";
 
 // Logos - Round (used in headers, cards, email)
-var LOGO_ROUND_80_URL = "https://storage.googleapis.com/gea-public-assets/gea-logo-round-80.png";     // 80px - email header
-var LOGO_ROUND_120_URL = "https://storage.googleapis.com/gea-public-assets/gea-logo-round-120.png";   // 120px - membership card
-var LOGO_ROUND_160_URL = "https://storage.googleapis.com/gea-public-assets/gea-logo-round-160.png";   // 160px - retina email
-var LOGO_ROUND_200_URL = "https://storage.googleapis.com/gea-public-assets/gea-logo-round-200.png";   // 200px - website
-var LOGO_ROUND_240_URL = "https://storage.googleapis.com/gea-public-assets/gea-logo-round-240.png";   // 240px - retina card
+var LOGO_ROUND_80_URL = "https://geabotswana.org/assets/gea-logo-round-80.png";     // 80px - email header
+var LOGO_ROUND_120_URL = "https://geabotswana.org/assets/gea-logo-round-120.png";   // 120px - membership card
+var LOGO_ROUND_160_URL = "https://geabotswana.org/assets/gea-logo-round-160.png";   // 160px - retina email
+var LOGO_ROUND_200_URL = "https://geabotswana.org/assets/gea-logo-round-200.png";   // 200px - website
+var LOGO_ROUND_240_URL = "https://geabotswana.org/assets/gea-logo-round-240.png";   // 240px - retina card
 
 // Logotype - Light version (dark text, for white/light backgrounds)
-var LOGO_TYPE_LIGHT_560_URL = "https://storage.googleapis.com/gea-public-assets/gea-logotype-light-560.png";   // email
-var LOGO_TYPE_LIGHT_800_URL = "https://storage.googleapis.com/gea-public-assets/gea-logotype-light-800.png";   // website/print
-var LOGO_TYPE_LIGHT_1120_URL = "https://storage.googleapis.com/gea-public-assets/gea-logotype-light-1120.png"; // retina email
+var LOGO_TYPE_LIGHT_560_URL = "https://geabotswana.org/assets/gea-logotype-light-560.png";   // email
+var LOGO_TYPE_LIGHT_800_URL = "https://geabotswana.org/assets/gea-logotype-light-800.png";   // website/print
+var LOGO_TYPE_LIGHT_1120_URL = "https://geabotswana.org/assets/gea-logotype-light-1120.png"; // retina email
 
 // Logotype - Dark version (white text, for dark backgrounds)
-var LOGO_TYPE_DARK_560_URL = "https://storage.googleapis.com/gea-public-assets/gea-logotype-dark-560.png";     // dark backgrounds
-var LOGO_TYPE_DARK_800_URL = "https://storage.googleapis.com/gea-public-assets/gea-logotype-dark-800.png";     // website header
-var LOGO_TYPE_DARK_1120_URL = "https://storage.googleapis.com/gea-public-assets/gea-logotype-dark-1120.png";   // dark retina
+var LOGO_TYPE_DARK_560_URL = "https://geabotswana.org/assets/gea-logotype-dark-560.png";     // dark backgrounds
+var LOGO_TYPE_DARK_800_URL = "https://geabotswana.org/assets/gea-logotype-dark-800.png";     // website header
+var LOGO_TYPE_DARK_1120_URL = "https://geabotswana.org/assets/gea-logotype-dark-1120.png";   // dark retina
 
 
 // ============================================================
@@ -1059,12 +1058,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.87";
-var SYSTEM_BUILD_DATE       = "2026-05-11";
+var SYSTEM_VERSION          = "2.5.98";
+var SYSTEM_BUILD_DATE       = "2026-05-14";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Implement daily health check reporting with dual templates and fallback alert (#181)";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-11 15:13:58";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Expand healthCheck() with 9 comprehensive system diagnostics (#193)";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-14 07:25:19";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

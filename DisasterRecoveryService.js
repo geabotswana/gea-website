@@ -61,7 +61,8 @@ function healthCheck() {
 
   // Check 2: Gmail API (verify email transport health)
   try {
-    var quota = MailApp.getRemainingDailyQuota();
+    // Use GmailApp with gmail.send scope (MailApp requires script.send_mail scope we don't have)
+    var quota = GmailApp.getRemainingDailyQuota();
     results.checks.push({
       name: "Gmail API",
       status: "PASS",
@@ -359,14 +360,15 @@ function _sendHealthCheckResults(results) {
                   "Failed to send health check results email to board");
 
     // Critical fallback: if the healthcheck email itself fails, send immediate alert
+    // Use GmailApp.sendEmail() which works with gmail.send scope (not MailApp which requires script.send_mail)
     try {
-      MailApp.sendEmail(EMAIL_BOARD,
+      GmailApp.sendEmail(EMAIL_BOARD,
         "🚨 CRITICAL: GEA Health Check Email Failed",
         "The daily health check ran but FAILED to send results email.\n\n" +
         "Check the Apps Script execution logs for errors.\n\n" +
         "Last health check:\n" + checkDetails
       );
-      Logger.log("✓ Fallback alert sent via MailApp");
+      Logger.log("✓ Fallback alert sent via GmailApp");
       logAuditEntry(null, "HEALTH_CHECK_FALLBACK_ALERT_SENT", null, null, "Fallback email sent due to primary send failure");
     } catch (fallbackError) {
       Logger.log("CRITICAL: Both email send methods failed: " + fallbackError);

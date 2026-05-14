@@ -195,6 +195,7 @@ function _routeAction(action, params) {
     case "password_reset_request": return _handlePasswordResetRequest(params);
     case "password_reset_complete": return _handlePasswordResetComplete(params);
     case "password_reset_confirm": return _handlePasswordResetConfirm(params);
+    case "verify_reset_token": return _handleVerifyResetToken(params);
     case "change_password": return _handleChangePassword(params);
     case "deployment_info": return _handleDeploymentInfo();
     case "get_config_value": return _handleGetConfigValue(params);
@@ -687,6 +688,31 @@ function _handlePasswordResetComplete(p) {
  * - Success: { success: true, message: "..." }
  * - Failure: { success: false, message: "Error reason" }
  */
+/**
+ * HANDLER: _handleVerifyResetToken
+ * PURPOSE: Lightweight pre-flight check called when Portal.html renders the
+ *          "Create New Password" screen. Lets the UI replace the form with a
+ *          friendly "this link is no longer valid" message instead of making
+ *          the user type a password just to discover the link is dead.
+ *
+ * SECURITY: Reuses _getEmailFromResetToken, which is read-only — no attempt
+ *           counters are incremented, no audit log entries are written. The
+ *           response only reveals whether *this specific token* is currently
+ *           usable; it does not leak the associated email or user existence.
+ *
+ * PARAMETERS:
+ *   - token (string): Password reset token from email link
+ *
+ * RETURNS: { success: true, valid: boolean }
+ */
+function _handleVerifyResetToken(p) {
+  if (!p || !p.token) {
+    return successResponse({ valid: false });
+  }
+  var email = _getEmailFromResetToken(p.token);
+  return successResponse({ valid: !!email });
+}
+
 function _handlePasswordResetConfirm(p) {
   if (!p.token || !p.new_password) {
     return errorResponse("Token and new password are required.", "MISSING_PARAM");

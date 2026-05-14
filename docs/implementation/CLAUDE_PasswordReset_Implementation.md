@@ -204,6 +204,7 @@ All four templates already exist in the Email Templates sheet and are active.
 | `password_reset_request` | `_handlePasswordResetRequest` | Request screen submit |
 | `password_reset_confirm` | `_handlePasswordResetConfirm` | Confirm screen submit (token-only; looks up email from token) |
 | `password_reset_complete` | `_handlePasswordResetComplete` | Alternate completion path that takes email explicitly |
+| `verify_reset_token` | `_handleVerifyResetToken` | Pre-flight from `verifyResetTokenAndRender` on the confirm screen mount. Read-only — does **not** increment the failed-attempt counter or write audit entries. Returns `{ success: true, data: { valid: boolean } }`. |
 
 `Portal.html`:
 
@@ -242,7 +243,7 @@ There is no automated test for this end-to-end path (it spans a browser, GitHub 
 6. Log in with the new password.
 7. Verify the confirmation email arrived.
 8. Verify the token row in Password Reset Tokens has `used_timestamp` populated.
-9. Click the link in the original email again — should fail (one-time use).
+9. Click the link in the original email again — the reset-confirm screen should immediately switch to its dead-link state ("Reset Link No Longer Valid", with a "Request New Reset Link" button) rather than letting the user type a password first. This is driven by the `verify_reset_token` pre-flight; if the pre-flight call fails (network), submit-time validation still catches it and shows the same UI.
 
 If step 4 lands on the login screen instead of the new-password screen, the iframe-param-passing chain is broken — see the iframe pattern section above and the pitfalls table.
 

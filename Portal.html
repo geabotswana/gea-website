@@ -29,6 +29,12 @@
     window.GEA_SYSTEM_VERSION = '<?= GEA_SYSTEM_VERSION ?>';
     window.GEA_DEPLOYMENT_ID = '<?= GEA_DEPLOYMENT_ID ?>';
     window.GEA_BUILD_ID = '<?= GEA_BUILD_ID ?>';
+    // Init params forwarded by doGet from the iframe wrapper (member.html).
+    // GAS sandbox iframes strip the query string from window.location.search,
+    // so this is the only reliable channel for parent-URL params.
+    // Both values are whitelisted/sanitized server-side (Code.js doGet).
+    window.GEA_PORTAL_ACTION = '<?= GEA_PORTAL_ACTION ?>';
+    window.GEA_RESET_TOKEN = '<?= GEA_RESET_TOKEN ?>';
 
     // Admin Portal Link Handler
     // Navigate to Admin portal using full GAS URL (fixes relative URL issue in iframe)
@@ -2849,12 +2855,15 @@
       // Backend function may not exist; using default values
     }
 
-    // Check for password reset token in URL.
-    // When loaded via member.html wrapper, GAS requires action=serve to serve this
-    // page, so the wrapper passes reset params as portal_action + token instead.
+    // Check for password reset token. When loaded via the member.html iframe
+    // wrapper, the GAS sandbox URL (script.googleusercontent.com) does not
+    // carry the parent's query string, so window.location.search is empty.
+    // doGet (Code.js) forwards whitelisted params via template variables —
+    // read those first, then fall back to URL params for direct (non-iframe)
+    // access during testing.
     var urlParams = new URLSearchParams(window.location.search);
-    var resetToken = urlParams.get('token');
-    var action = urlParams.get('portal_action') || urlParams.get('action');
+    var resetToken = window.GEA_RESET_TOKEN || urlParams.get('token') || '';
+    var action = window.GEA_PORTAL_ACTION || urlParams.get('portal_action') || urlParams.get('action') || '';
 
     if (action === 'reset_password' && resetToken) {
       // Show password reset form, hide login/auth UI
@@ -3420,11 +3429,16 @@ function showPasswordResetRequest() {
 }
 
 /**
- * Shows the login screen (called from password reset or other flows).
+ * Shows the login screen, hiding every other top-level auth screen.
+ * Single source of truth — there must be only one definition of this
+ * function in Portal.html (a second one shadows this and breaks the
+ * "Back to Login" links on the password-reset screens).
  */
 function showLoginScreen() {
   document.getElementById('passwordResetRequestScreen').classList.remove('show');
   document.getElementById('passwordResetConfirmScreen').classList.remove('show');
+  var appForm = document.getElementById('applicationFormScreen');
+  if (appForm) appForm.classList.remove('show');
   document.getElementById('loginScreen').classList.add('show');
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginUsername').value = '';
@@ -4687,11 +4701,6 @@ function submitPasswordReset(event) {
     updateApplicationStep();
     // Set initial button state for Q1
     updateQuestionButtonVisibility('Q1');
-  }
-
-  function showLoginScreen() {
-    document.getElementById('applicationFormScreen').classList.remove('show');
-    document.getElementById('loginScreen').classList.add('show');
   }
 
   function cancelApplication() {

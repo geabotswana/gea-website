@@ -3836,7 +3836,12 @@ function submitPasswordReset(event) {
   function apiCall(action, params) {
     params = params || {};
     params.action = action;
-    params.token = currentToken || '';
+    // Default token to the current session token, but let callers override —
+    // the password-reset flow passes a one-time reset token here while
+    // currentToken is still empty (user is not yet logged in).
+    if (!params.token) {
+      params.token = currentToken || '';
+    }
 
     // Return a promise that uses google.script.run
     return new Promise(function(resolve, reject) {

@@ -61,11 +61,13 @@ function healthCheck() {
 
   // Check 2: Gmail API (verify service is accessible)
   try {
-    var messageCount = GmailApp.getMessageCount();
+    // Use getInboxThreads to verify Gmail is accessible without additional scopes
+    // Reads first thread from inbox (limited to 1 to minimize API calls)
+    var threads = GmailApp.getInboxThreads(0, 1);
     results.checks.push({
       name: "Gmail API",
       status: "PASS",
-      detail: "Gmail service accessible, " + messageCount + " messages in inbox"
+      detail: "Gmail service accessible"
     });
   } catch (e) {
     results.checks.push({

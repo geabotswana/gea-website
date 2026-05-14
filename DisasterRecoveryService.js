@@ -116,14 +116,69 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 5: Configuration Values (verify critical configs are set)
+  // Check 5: Root Spreadsheets (verify access to all 4 core sheets)
+  try {
+    var sheetIssues = [];
+
+    // Verify Member Directory
+    try {
+      SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
+    } catch (e) {
+      sheetIssues.push("Member Directory");
+    }
+
+    // Verify Reservations
+    try {
+      SpreadsheetApp.openById(RESERVATIONS_ID);
+    } catch (e) {
+      sheetIssues.push("Reservations");
+    }
+
+    // Verify System Backend
+    try {
+      SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
+    } catch (e) {
+      sheetIssues.push("System Backend");
+    }
+
+    // Verify Payment Tracking
+    try {
+      SpreadsheetApp.openById(PAYMENT_TRACKING_ID);
+    } catch (e) {
+      sheetIssues.push("Payment Tracking");
+    }
+
+    if (sheetIssues.length === 0) {
+      results.checks.push({
+        name: "Root Spreadsheets",
+        status: "PASS",
+        detail: "All 4 core spreadsheets accessible"
+      });
+    } else {
+      results.checks.push({
+        name: "Root Spreadsheets",
+        status: "FAIL",
+        detail: "Cannot access: " + sheetIssues.join(", ")
+      });
+      results.allPassed = false;
+    }
+  } catch (e) {
+    results.checks.push({
+      name: "Root Spreadsheets",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 6: Configuration Values (verify critical configs are set)
   try {
     var configIssues = [];
     if (!EMAIL_BOARD) configIssues.push("EMAIL_BOARD");
     if (!EMAIL_TREASURER) configIssues.push("EMAIL_TREASURER");
     if (!MEMBER_DIRECTORY_ID) configIssues.push("MEMBER_DIRECTORY_ID");
     if (!SYSTEM_BACKEND_ID) configIssues.push("SYSTEM_BACKEND_ID");
-    if (!PAYMENT_TRACKER_ID) configIssues.push("PAYMENT_TRACKER_ID");
+    if (!PAYMENT_TRACKING_ID) configIssues.push("PAYMENT_TRACKING_ID");
     if (!RESERVATIONS_ID) configIssues.push("RESERVATIONS_ID");
 
     if (configIssues.length === 0) {
@@ -149,38 +204,19 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 6: Payment System (verify payments sheet accessible)
-  try {
-    var paymentSheet = SpreadsheetApp.openById(PAYMENT_TRACKER_ID);
-    var paymentsTab = paymentSheet.getSheetByName(TAB_PAYMENTS);
-    var paymentData = paymentsTab.getRange(1, 1, 1, 5).getValues();
-    results.checks.push({
-      name: "Payment System",
-      status: "PASS",
-      detail: "Payments sheet readable"
-    });
-  } catch (e) {
-    results.checks.push({
-      name: "Payment System",
-      status: "FAIL",
-      detail: e.toString()
-    });
-    results.allPassed = false;
-  }
-
   // Check 7: Reservation System (verify reservations data accessible)
   try {
     var reservationSheet = SpreadsheetApp.openById(RESERVATIONS_ID);
     var reservationsTab = reservationSheet.getSheetByName(TAB_RESERVATIONS);
     var reservationData = reservationsTab.getRange(1, 1, 1, 5).getValues();
     results.checks.push({
-      name: "Reservation System",
+      name: "Reservation Details",
       status: "PASS",
       detail: "Reservations sheet readable"
     });
   } catch (e) {
     results.checks.push({
-      name: "Reservation System",
+      name: "Reservation Details",
       status: "FAIL",
       detail: e.toString()
     });

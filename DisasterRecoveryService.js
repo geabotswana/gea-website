@@ -61,13 +61,11 @@ function healthCheck() {
 
   // Check 2: Gmail API (verify service is accessible)
   try {
-    // Check Gmail quota without requiring broad mail.google.com scope
-    // MailApp.getRemainingDailyQuota() requires only gmail.send scope
-    var quota = MailApp.getRemainingDailyQuota();
+    var messageCount = GmailApp.getMessageCount();
     results.checks.push({
       name: "Gmail API",
       status: "PASS",
-      detail: "Gmail service accessible, " + quota + " messages remaining today"
+      detail: "Gmail service accessible, " + messageCount + " messages in inbox"
     });
   } catch (e) {
     results.checks.push({
@@ -91,6 +89,184 @@ function healthCheck() {
   } catch (e) {
     results.checks.push({
       name: "Audit Log",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 4: Email Template System (verify Email Templates sheet and Drive access)
+  try {
+    // Verify Email Templates sheet is readable
+    var templateSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
+                                      .getSheetByName(TAB_EMAIL_TEMPLATES);
+    var templateData = templateSheet.getRange(1, 1, 1, 5).getValues();
+
+    // Try to load a test template to verify Drive file access
+    // This will fail if the Drive file ID is missing or inaccessible
+    var testTemplate = getEmailTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD");
+    if (!testTemplate) {
+      throw new Error("Failed to load SYS_HEALTH_CHECK_ALERT_TO_BOARD template");
+    }
+
+    // Verify the template has required fields
+    if (!testTemplate.subject || !testTemplate.body) {
+      throw new Error("Template missing subject or body content");
+    }
+
+    results.checks.push({
+      name: "Email Template System",
+      status: "PASS",
+      detail: "Email Templates sheet and Drive content accessible"
+    });
+  } catch (e) {
+    results.checks.push({
+      name: "Email Template System",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 5: Root Spreadsheets (verify access to all 4 core sheets)
+  try {
+    var sheetIssues = [];
+
+    // Verify Member Directory
+    try {
+      SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
+    } catch (e) {
+      sheetIssues.push("Member Directory");
+    }
+
+    // Verify Reservations
+    try {
+      SpreadsheetApp.openById(RESERVATIONS_ID);
+    } catch (e) {
+      sheetIssues.push("Reservations");
+    }
+
+    // Verify System Backend
+    try {
+      SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
+    } catch (e) {
+      sheetIssues.push("System Backend");
+    }
+
+    // Verify Payment Tracking
+    try {
+      SpreadsheetApp.openById(PAYMENT_TRACKING_ID);
+    } catch (e) {
+      sheetIssues.push("Payment Tracking");
+    }
+
+    if (sheetIssues.length === 0) {
+      results.checks.push({
+        name: "Root Spreadsheets",
+        status: "PASS",
+        detail: "All 4 core spreadsheets accessible"
+      });
+    } else {
+      results.checks.push({
+        name: "Root Spreadsheets",
+        status: "FAIL",
+        detail: "Cannot access: " + sheetIssues.join(", ")
+      });
+      results.allPassed = false;
+    }
+  } catch (e) {
+    results.checks.push({
+      name: "Root Spreadsheets",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 6: Configuration Values (verify critical configs are set)
+  try {
+    var configIssues = [];
+    if (!EMAIL_BOARD) configIssues.push("EMAIL_BOARD");
+    if (!EMAIL_TREASURER) configIssues.push("EMAIL_TREASURER");
+    if (!MEMBER_DIRECTORY_ID) configIssues.push("MEMBER_DIRECTORY_ID");
+    if (!SYSTEM_BACKEND_ID) configIssues.push("SYSTEM_BACKEND_ID");
+    if (!PAYMENT_TRACKING_ID) configIssues.push("PAYMENT_TRACKING_ID");
+    if (!RESERVATIONS_ID) configIssues.push("RESERVATIONS_ID");
+
+    if (configIssues.length === 0) {
+      results.checks.push({
+        name: "Configuration Values",
+        status: "PASS",
+        detail: "All critical config values set"
+      });
+    } else {
+      results.checks.push({
+        name: "Configuration Values",
+        status: "FAIL",
+        detail: "Missing: " + configIssues.join(", ")
+      });
+      results.allPassed = false;
+    }
+  } catch (e) {
+    results.checks.push({
+      name: "Configuration Values",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 7: Reservation System (verify reservations data accessible)
+  try {
+    var reservationSheet = SpreadsheetApp.openById(RESERVATIONS_ID);
+    var reservationsTab = reservationSheet.getSheetByName(TAB_RESERVATIONS);
+    var reservationData = reservationsTab.getRange(1, 1, 1, 5).getValues();
+    results.checks.push({
+      name: "Reservation Details",
+      status: "PASS",
+      detail: "Reservations sheet readable"
+    });
+  } catch (e) {
+    results.checks.push({
+      name: "Reservation Details",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 8: Member Applications (verify application pipeline data accessible)
+  try {
+    var memberDir = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
+    var appTab = memberDir.getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var appData = appTab.getRange(1, 1, 1, 5).getValues();
+    results.checks.push({
+      name: "Member Applications",
+      status: "PASS",
+      detail: "Membership Applications sheet readable"
+    });
+  } catch (e) {
+    results.checks.push({
+      name: "Member Applications",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 9: File Submissions (verify file upload system accessible)
+  try {
+    var memberDir = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
+    var filesTab = memberDir.getSheetByName(TAB_FILE_SUBMISSIONS);
+    var filesData = filesTab.getRange(1, 1, 1, 5).getValues();
+    results.checks.push({
+      name: "File Submissions",
+      status: "PASS",
+      detail: "File Submissions sheet readable"
+    });
+  } catch (e) {
+    results.checks.push({
+      name: "File Submissions",
       status: "FAIL",
       detail: e.toString()
     });

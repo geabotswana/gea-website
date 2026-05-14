@@ -59,7 +59,24 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 2: Audit Log accessible
+  // Check 2: Gmail API (verify email transport health)
+  try {
+    var quota = MailApp.getRemainingDailyQuota();
+    results.checks.push({
+      name: "Gmail API",
+      status: "PASS",
+      detail: "Gmail service accessible, " + quota + " messages remaining today"
+    });
+  } catch (e) {
+    results.checks.push({
+      name: "Gmail API",
+      status: "FAIL",
+      detail: e.toString()
+    });
+    results.allPassed = false;
+  }
+
+  // Check 3: Audit Log accessible
   try {
     var systemSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID);
     var auditSheet = systemSheet.getSheetByName(TAB_AUDIT_LOG);
@@ -78,7 +95,7 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 3: Email Template System (verify Email Templates sheet and Drive access)
+  // Check 4: Email Template System (verify Email Templates sheet and Drive access)
   try {
     // Verify Email Templates sheet is readable
     var templateSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
@@ -111,7 +128,7 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 4: Root Spreadsheets (verify access to all 4 core sheets)
+  // Check 5: Root Spreadsheets (verify access to all 4 core sheets)
   try {
     var sheetIssues = [];
 
@@ -166,7 +183,7 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 5: Configuration Values (verify critical configs are set)
+  // Check 6: Configuration Values (verify critical configs are set)
   try {
     var configIssues = [];
     if (!EMAIL_BOARD) configIssues.push("EMAIL_BOARD");
@@ -199,7 +216,7 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 6: Reservation Details (verify reservations data accessible)
+  // Check 7: Reservation Details (verify reservations data accessible)
   try {
     var reservationSheet = SpreadsheetApp.openById(RESERVATIONS_ID);
     var reservationsTab = reservationSheet.getSheetByName(TAB_RESERVATIONS);
@@ -218,7 +235,7 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 7: Member Applications (verify application pipeline data accessible)
+  // Check 8: Member Applications (verify application pipeline data accessible)
   try {
     var memberDir = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
     var appTab = memberDir.getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
@@ -237,7 +254,7 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 8: File Submissions (verify file upload system accessible)
+  // Check 9: File Submissions (verify file upload system accessible)
   try {
     var memberDir = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID);
     var filesTab = memberDir.getSheetByName(TAB_FILE_SUBMISSIONS);
@@ -343,13 +360,13 @@ function _sendHealthCheckResults(results) {
 
     // Critical fallback: if the healthcheck email itself fails, send immediate alert
     try {
-      GmailApp.sendEmail(EMAIL_BOARD,
+      MailApp.sendEmail(EMAIL_BOARD,
         "🚨 CRITICAL: GEA Health Check Email Failed",
         "The daily health check ran but FAILED to send results email.\n\n" +
         "Check the Apps Script execution logs for errors.\n\n" +
         "Last health check:\n" + checkDetails
       );
-      Logger.log("✓ Fallback alert sent via GmailApp");
+      Logger.log("✓ Fallback alert sent via MailApp");
       logAuditEntry(null, "HEALTH_CHECK_FALLBACK_ALERT_SENT", null, null, "Fallback email sent due to primary send failure");
     } catch (fallbackError) {
       Logger.log("CRITICAL: Both email send methods failed: " + fallbackError);

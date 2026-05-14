@@ -250,18 +250,29 @@
     localStorage.setItem('gea_env', env);
   }
 
+  // Whitelist of parent-URL actions we forward into Portal.html as
+  // portal_action. Add new entries here when wiring a new deep link
+  // (e.g. an "apply" or "renew" button on the public site).
+  // See docs/implementation/CLAUDE_PasswordReset_Implementation.md
+  // ("GAS Iframe Param-Passing Pattern") for the full chain.
+  var ALLOWED_PORTAL_ACTIONS = {
+    reset_password: true,
+    apply: true
+  };
+
   function buildIframeUrl(env) {
     var base = DEPLOYMENTS[env].execUrl;
     var url = new URL(base);
     var parentParams = new URLSearchParams(window.location.search);
     var parentAction = parentParams.get('action');
     var token = parentParams.get('token');
-    // Always request Portal.html via action=serve, but pass through
-    // any reset_password flow params so Portal.html can detect them.
+    // Always request Portal.html via action=serve, then forward any
+    // whitelisted parent action as portal_action so Code.js doGet can
+    // inject it into the Portal template.
     url.searchParams.set('action', 'serve');
-    if (parentAction === 'reset_password' && token) {
-      url.searchParams.set('portal_action', 'reset_password');
-      url.searchParams.set('token', token);
+    if (parentAction && ALLOWED_PORTAL_ACTIONS[parentAction]) {
+      url.searchParams.set('portal_action', parentAction);
+      if (token) url.searchParams.set('token', token);
     }
     return url.toString();
   }

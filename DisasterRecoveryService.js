@@ -95,17 +95,29 @@ function healthCheck() {
     results.allPassed = false;
   }
 
-  // Check 4: Email Template System (verify Drive templates accessible)
+  // Check 4: Email Template System (verify Email Templates sheet and Drive access)
   try {
-    var templates = sendEmailFromTemplate("SYS_HEALTH_CHECK_PASSED_TO_BOARD", "", {
-      FIRST_NAME: "Test",
-      TIMESTAMP: new Date().toISOString(),
-      CHECK_DETAILS: "Test"
-    }, { dryRun: true });
+    // Verify Email Templates sheet is readable
+    var templateSheet = SpreadsheetApp.openById(SYSTEM_BACKEND_ID)
+                                      .getSheetByName(TAB_EMAIL_TEMPLATES);
+    var templateData = templateSheet.getRange(1, 1, 1, 5).getValues();
+
+    // Try to load a test template to verify Drive file access
+    // This will fail if the Drive file ID is missing or inaccessible
+    var testTemplate = getEmailTemplate("SYS_HEALTH_CHECK_ALERT_TO_BOARD");
+    if (!testTemplate) {
+      throw new Error("Failed to load SYS_HEALTH_CHECK_ALERT_TO_BOARD template");
+    }
+
+    // Verify the template has required fields
+    if (!testTemplate.subject || !testTemplate.body) {
+      throw new Error("Template missing subject or body content");
+    }
+
     results.checks.push({
       name: "Email Template System",
       status: "PASS",
-      detail: "Drive email templates accessible"
+      detail: "Email Templates sheet and Drive content accessible"
     });
   } catch (e) {
     results.checks.push({

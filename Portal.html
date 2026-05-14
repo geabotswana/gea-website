@@ -2903,6 +2903,12 @@
       });
     } else {
       document.getElementById('loginScreen').classList.add('show');
+      // Deep-link from the public site's "Apply" button: skip the login
+      // screen and jump straight to the application form. See the GAS
+      // iframe param-passing pattern in CLAUDE_PasswordReset_Implementation.md.
+      if (action === 'apply') {
+        showApplicationForm();
+      }
     }
   });
 

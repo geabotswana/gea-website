@@ -75,9 +75,10 @@ function doGet(e) {
     // iframe src never appear in window.location.search client-side. Forward
     // them through the template instead. Whitelist values to prevent
     // JavaScript-string injection through the scriptlets in Portal.html.
+    var ALLOWED_PORTAL_ACTIONS = { reset_password: true, apply: true };
     var portalAction = (params.portal_action || "").toString();
     var resetToken = (params.token || "").toString();
-    t.GEA_PORTAL_ACTION = (portalAction === "reset_password") ? portalAction : "";
+    t.GEA_PORTAL_ACTION = ALLOWED_PORTAL_ACTIONS[portalAction] ? portalAction : "";
     t.GEA_RESET_TOKEN = /^[a-f0-9]{64}$/.test(resetToken) ? resetToken : "";
 
     return t.evaluate()

@@ -64,7 +64,7 @@ The same code path serves admins; the only difference is which sheet stores the 
 
 ## The GAS Iframe Param-Passing Pattern
 
-This is the non-obvious part. Read it before adding any new "deep-link" feature (e.g., an Apply button that should jump straight to the application form).
+This is the non-obvious part. The password-reset flow uses it; the public site's **Apply** button (`?action=apply`) also uses it to jump straight to the application form. Read this before adding any new deep-link feature.
 
 ### Why naive approaches fail
 
@@ -91,10 +91,17 @@ parent URL (member.html?foo=bar)
 
 ### Implementation checklist (when adding a new forwarded param)
 
-1. **`member.html` ▸ `buildIframeUrl(env)`** (around line 253): add the parent param to the whitelist that gets copied onto the iframe URL.
-2. **`Code.js` ▸ `doGet` `action === "serve"` branch** (around line 66): read `params.<name>`, validate against a strict whitelist or regex, assign to `t.GEA_<NAME>`. **Never** pass user input straight to a template var — the scriptlet `'<?= GEA_FOO ?>'` interpolates into a JS string literal and a single quote or backslash will break out.
-3. **`Portal.html` top scriptlet** (around line 27): add `window.GEA_<NAME> = '<?= GEA_<NAME> ?>';`.
-4. **`Portal.html` boot logic** (around line 2855): read `window.GEA_<NAME>` *first*, fall back to `URLSearchParams` only for direct (non-iframe) access during local testing.
+1. **`member.html` ▸ `ALLOWED_PORTAL_ACTIONS`** (top of script block, around line 243): add the new action name to the whitelist. Anything not in the whitelist is silently dropped — never forwarded.
+2. **`Code.js` ▸ `doGet` `action === "serve"` branch** (around line 66): add the same action to the local `ALLOWED_PORTAL_ACTIONS` map. **Never** pass raw user input to a template var — the scriptlet `'<?= GEA_FOO ?>'` interpolates into a JS string literal and a single quote or backslash will break out. Either whitelist against a fixed set (like action names) or validate with a strict regex (like the 64-char hex token).
+3. **`Portal.html` top scriptlet** (around line 27): if you're forwarding a new template variable (not just adding to `GEA_PORTAL_ACTION`), add `window.GEA_<NAME> = '<?= GEA_<NAME> ?>';`.
+4. **`Portal.html` boot logic** (around line 2855): branch on the new `action` value and call the appropriate handler. Read `window.GEA_PORTAL_ACTION` *first*, fall back to `URLSearchParams` only for direct (non-iframe) access during local testing.
+
+### Currently wired actions
+
+| `action=` value on parent URL | Effect |
+|---|---|
+| `reset_password` (with `token`) | Shows the **Create New Password** screen |
+| `apply` | Shows the multi-step **Apply for Membership** form, skipping the login screen |
 
 ### Security note on the scriptlet channel
 

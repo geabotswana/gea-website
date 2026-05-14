@@ -1058,12 +1058,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.99";
+var SYSTEM_VERSION          = "2.5.100";
 var SYSTEM_BUILD_DATE       = "2026-05-14";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Fix P1: Gmail health probe using non-existent method (#194)";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-14 07:31:48";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Remove redundant Gmail check - tested via Email Template System (#197)";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-14 07:47:58";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

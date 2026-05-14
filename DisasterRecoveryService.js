@@ -184,7 +184,7 @@ function _sendHealthCheckResults(results) {
 
     // Critical fallback: if the healthcheck email itself fails, send immediate alert
     try {
-      GmailApp.sendEmail(EMAIL_BOARD,
+      MailApp.sendEmail(EMAIL_BOARD,
         "🚨 CRITICAL: GEA Health Check Email Failed",
         "The daily health check ran but FAILED to send results email.\n\n" +
         "Check the Apps Script execution logs for errors.\n\n" +

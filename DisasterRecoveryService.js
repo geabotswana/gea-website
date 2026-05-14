@@ -577,11 +577,22 @@ function performDailyBackup() {
   sheetsToBackup.forEach(function(sheetDef) {
     try {
       var fileName = "GEA_" + sheetDef.name + "_" + dateStr + ".xlsx";
-      var ss = SpreadsheetApp.openById(sheetDef.id);
 
-      // Create backup file
-      var blob = ss.getAs("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      blob.setName(fileName);
+      // Use authenticated export URL (more reliable than Spreadsheet.getAs)
+      var exportUrl = "https://docs.google.com/spreadsheets/d/" + sheetDef.id + "/export?format=xlsx";
+      var options = {
+        headers: {
+          Authorization: "Bearer " + ScriptApp.getOAuthToken()
+        },
+        muteHttpExceptions: true
+      };
+
+      var response = UrlFetchApp.fetch(exportUrl, options);
+      if (response.getResponseCode() !== 200) {
+        throw new Error("Export failed with HTTP " + response.getResponseCode());
+      }
+
+      var blob = response.getBlob().setName(fileName);
       backupFolder.createFile(blob);
 
       results.exports.push({

@@ -1462,10 +1462,10 @@
     <div class="login-logo">
       <img src="https://geabotswana.org/assets/gea-logo-round-120.png" alt="GEA Logo">
     </div>
-    <h1 class="login-title">Create New Password</h1>
-    <p class="login-subtitle">Enter your new password below</p>
+    <h1 class="login-title" id="resetConfirmTitle">Create New Password</h1>
+    <p class="login-subtitle" id="resetConfirmSubtitle">Enter your new password below</p>
     <div class="login-error" id="resetConfirmError"></div>
-    <form class="login-form" onsubmit="submitPasswordReset(event)">
+    <form class="login-form" id="resetConfirmForm" onsubmit="submitPasswordReset(event)">
       <div class="form-group">
         <label class="form-label">New Password</label>
         <input type="password" id="resetNewPassword" class="form-input" placeholder="Enter new password" required autocomplete="new-password">
@@ -1477,6 +1477,8 @@
       </div>
       <button type="submit" class="btn btn-primary" style="width: 100%;">Reset Password</button>
     </form>
+    <!-- Shown only when verify_reset_token reports the link is no longer usable -->
+    <button type="button" id="resetConfirmRequestNew" onclick="showPasswordResetRequest();" class="btn btn-primary" style="width: 100%; display: none;">Request New Reset Link</button>
     <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
       <button type="button" class="btn btn-link" onclick="showLoginScreen();" style="font-size: 12px; color: #0A3161; text-decoration: none; background: none; border: none; cursor: pointer; padding: 0;">← Back to Login</button>
     </div>
@@ -2868,9 +2870,12 @@
     if (action === 'reset_password' && resetToken) {
       // Show password reset form, hide login/auth UI
       document.getElementById('passwordResetConfirmScreen').classList.add('show');
-      document.getElementById('resetNewPassword').focus();
       // Store token for submission
       window.resetToken = resetToken;
+      // Pre-flight validation: confirm the token is still usable before the
+      // user types anything. Avoids the "fill out the form, then learn it's
+      // dead" UX. The form is hidden during the check.
+      verifyResetTokenAndRender(resetToken);
       return;
     }
 
@@ -3428,6 +3433,8 @@ function submitLogin(event) {
  */
 function showPasswordResetRequest() {
   document.getElementById('loginScreen').classList.remove('show');
+  document.getElementById('passwordResetConfirmScreen').classList.remove('show');
+  resetConfirmScreenToDefault();
   document.getElementById('passwordResetRequestScreen').classList.add('show');
   document.getElementById('resetRequestError').textContent = '';
   document.getElementById('resetEmail').value = '';
@@ -3443,6 +3450,7 @@ function showPasswordResetRequest() {
 function showLoginScreen() {
   document.getElementById('passwordResetRequestScreen').classList.remove('show');
   document.getElementById('passwordResetConfirmScreen').classList.remove('show');
+  resetConfirmScreenToDefault();
   var appForm = document.getElementById('applicationFormScreen');
   if (appForm) appForm.classList.remove('show');
   document.getElementById('loginScreen').classList.add('show');
@@ -3450,6 +3458,78 @@ function showLoginScreen() {
   document.getElementById('loginUsername').value = '';
   document.getElementById('loginPassword').value = '';
   document.getElementById('loginUsername').focus();
+}
+
+/**
+ * Restores the password-reset-confirm screen to its default "ready to type
+ * a new password" state. Call this before navigating away or before
+ * verifyResetTokenAndRender flips it to an error state — keeps the dead-link
+ * UI from sticking around on subsequent visits.
+ */
+function resetConfirmScreenToDefault() {
+  var form = document.getElementById('resetConfirmForm');
+  var requestNewBtn = document.getElementById('resetConfirmRequestNew');
+  var title = document.getElementById('resetConfirmTitle');
+  var subtitle = document.getElementById('resetConfirmSubtitle');
+  var error = document.getElementById('resetConfirmError');
+  if (form) form.style.display = '';
+  if (requestNewBtn) requestNewBtn.style.display = 'none';
+  if (title) title.textContent = 'Create New Password';
+  if (subtitle) subtitle.textContent = 'Enter your new password below';
+  if (error) { error.textContent = ''; error.classList.remove('show'); }
+}
+
+/**
+ * Server-side pre-flight on the reset token. While the verify call is in
+ * flight, the form is hidden and a "Verifying..." subtitle is shown so the
+ * user doesn't start typing into a form that's about to be replaced.
+ * On valid: reveal the form and focus the password field.
+ * On invalid (used, expired, not found): hide the form, show a friendly
+ * message, and reveal the "Request New Reset Link" button.
+ */
+function verifyResetTokenAndRender(token) {
+  resetConfirmScreenToDefault();
+  var form = document.getElementById('resetConfirmForm');
+  var subtitle = document.getElementById('resetConfirmSubtitle');
+  if (form) form.style.display = 'none';
+  if (subtitle) subtitle.textContent = 'Verifying reset link…';
+
+  apiCall('verify_reset_token', { token: token }).then(function(res) {
+    var ok = res && res.success && res.data && res.data.valid;
+    if (ok) {
+      if (form) form.style.display = '';
+      if (subtitle) subtitle.textContent = 'Enter your new password below';
+      var pwd = document.getElementById('resetNewPassword');
+      if (pwd) pwd.focus();
+    } else {
+      renderDeadResetLink('This reset link is no longer valid. It may have already been used or expired.');
+    }
+  }).catch(function() {
+    // Network/server error — let the user try anyway; submit will reject
+    // if the link really is dead, and they'll see the same affordance there.
+    if (form) form.style.display = '';
+    if (subtitle) subtitle.textContent = 'Enter your new password below';
+    var pwd = document.getElementById('resetNewPassword');
+    if (pwd) pwd.focus();
+  });
+}
+
+/**
+ * Switches the reset-confirm screen into its "dead link" presentation.
+ * Used by both pre-flight (verifyResetTokenAndRender) and post-submit
+ * failure paths so the affordance is consistent.
+ */
+function renderDeadResetLink(message) {
+  var form = document.getElementById('resetConfirmForm');
+  var requestNewBtn = document.getElementById('resetConfirmRequestNew');
+  var title = document.getElementById('resetConfirmTitle');
+  var subtitle = document.getElementById('resetConfirmSubtitle');
+  var error = document.getElementById('resetConfirmError');
+  if (form) form.style.display = 'none';
+  if (requestNewBtn) requestNewBtn.style.display = '';
+  if (title) title.textContent = 'Reset Link No Longer Valid';
+  if (subtitle) subtitle.textContent = 'Request a new reset link to continue.';
+  if (error) { error.textContent = message; error.classList.add('show'); }
 }
 
 /**
@@ -3689,6 +3769,13 @@ function submitPasswordReset(event) {
     submitBtn.textContent = 'Reset Password';
 
     if (!res.success) {
+      // If the backend says the token is dead (used/expired/not found),
+      // flip to the dead-link UI so the user has a one-click path to
+      // request a fresh link instead of just seeing an error banner.
+      if (res.code === 'INVALID_TOKEN') {
+        renderDeadResetLink(res.message || 'This reset link is no longer valid.');
+        return;
+      }
       errorDiv.textContent = res.message || 'Error resetting password. Link may have expired.';
       errorDiv.classList.add('show');
       return;

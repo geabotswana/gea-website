@@ -191,7 +191,7 @@ function login(username, password) {
   }
 
   // Flag if email needs verification (user can log in but must verify before accessing portal)
-  if (!emailVerified) {
+  if (member.email_verified === false || String(member.email_verified).toLowerCase() === "false") {
     response.requires_email_verification = true;
   }
 

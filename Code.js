@@ -2776,7 +2776,7 @@ function _handleRemoveDocument(p) {
   var auth = requireAuth(p.token);
   if (!auth.ok) return auth.response;
   if (!p.individual_id || !p.document_type) return errorResponse("Missing individual_id or document_type.", "INVALID_PARAM");
-  var validTypes = ["passport", "omang", "photo"];
+  var validTypes = ["passport", "omang", "photo", "funding verification", "diplomatic accreditation"];
   if (validTypes.indexOf(p.document_type) === -1) return errorResponse("Invalid document type.", "INVALID_PARAM");
   return removeDocumentSubmission(p.individual_id, p.document_type, auth.email);
 }
@@ -2835,7 +2835,7 @@ function _handleUploadDocument(p) {
     }
 
     // Validate document type
-    var validTypes = ["passport", "omang", "photo"];
+    var validTypes = ["passport", "omang", "photo", "funding verification", "diplomatic accreditation"];
     if (validTypes.indexOf(p.document_type) === -1) {
       return errorResponse("Invalid document type.", "INVALID_PARAM");
     }

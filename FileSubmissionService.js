@@ -22,7 +22,7 @@ function uploadFileSubmission(params) {
     }
 
     var documentType = String(params.document_type).toLowerCase();
-    var validTypes = ["photo", "passport", "omang", "employment"];
+    var validTypes = ["photo", "passport", "omang", "employment", "funding verification", "diplomatic accreditation"];
     if (validTypes.indexOf(documentType) === -1) {
       return { ok: false, error: "Invalid document type", code: "INVALID_DOCUMENT_TYPE" };
     }
@@ -620,7 +620,9 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
 
 function _getSubmissionFolderId_(documentType) {
   if (documentType === "photo") return FOLDER_PHOTOS_PENDING;
-  if (documentType === "employment") return FOLDER_EMPLOYMENT_VERIFICATION;
+  if (documentType === "employment" || documentType === "funding verification" || documentType === "diplomatic accreditation") {
+    return FOLDER_EMPLOYMENT_VERIFICATION;
+  }
   return FOLDER_IDENTIFICATION_SCANS;  // passport, omang
 }
 

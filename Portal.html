@@ -3355,7 +3355,7 @@ function submitLogin(event) {
     sessionStorage.setItem('gea_token', currentToken);
     updatePortalDebug({
       login_timestamp: new Date().toISOString(),
-      login_email: email,
+      login_email: username,
       login_is_applicant_flag: !!res.data.is_applicant,
       login_is_lapsed_flag: !!res.data.is_lapsed,
       login_application_status: res.data.application_status || '',
@@ -3370,7 +3370,7 @@ function submitLogin(event) {
       // Hide login screen and show password change modal
       document.getElementById('loginScreen').classList.remove('show');
       document.getElementById('passwordChangeModal').style.display = 'flex';
-      document.getElementById('passwordChangeUsername').value = email;
+      document.getElementById('passwordChangeUsername').value = username;
       document.getElementById('currentPassword').focus();
       return;
     }

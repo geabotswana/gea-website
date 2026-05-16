@@ -301,7 +301,7 @@ var DOCUMENT_REQUIREMENTS = {
 // For the file submission UI - determines which upload buttons appear
 var APPLICANT_UPLOAD_TYPES = {
   "Full": ["Passport"],  // Full applicants only upload Passport
-  "Associate": ["Passport", "Funding Verification"],  // Passport + funding letter
+  "Associate": ["Passport", "Omang", "Funding Verification"],  // Passport or Omang (choice) + funding verification
   "Affiliate": ["Passport", "Omang"],  // Affiliate can upload either (choice)
   "Diplomatic": ["Passport", "Diplomatic Accreditation"],  // Passport + accreditation
   "Community": ["Passport", "Omang"],  // Community can upload either (choice)

@@ -3327,6 +3327,9 @@ function submitLogin(event) {
     submitBtn.textContent = 'Sign In';
     
     console.log("LOGIN RESPONSE:", res);
+    console.log("Member object:", res.data?.member);
+    console.log("Member first_name:", res.data?.member?.first_name);
+    console.log("Member last_name:", res.data?.member?.last_name);
     
     if (!res.success) {
       // Login failed — check if it's due to unverified email

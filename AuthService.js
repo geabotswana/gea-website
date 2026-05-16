@@ -181,6 +181,11 @@ function login(username, password) {
     memberData.household_name = household.household_name;
   }
 
+  Logger.log("Login successful for: " + member.email);
+  Logger.log("Member first_name: " + member.first_name);
+  Logger.log("Member last_name: " + member.last_name);
+  Logger.log("Member data keys: " + Object.keys(memberData).join(", "));
+
   // Return success with token, member data, and applicant flag if applicable
   var response = {
     success: true,

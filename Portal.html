@@ -7425,11 +7425,9 @@ function submitPasswordReset(event) {
         // Category-specific documents (applicants only)
         if (isApplicant && app.membership_category) {
           var categoryDocs = APPLICANT_UPLOAD_TYPES[app.membership_category] || [];
-          console.log("Rendering special docs for " + (ind.first_name + " " + ind.last_name) + ", category: " + app.membership_category + ", categoryDocs:", categoryDocs);
           var specialDocs = categoryDocs.filter(function(doc) {
             return doc !== 'Passport' && doc !== 'Omang' && doc !== 'Photo';
           });
-          console.log("specialDocs to render:", specialDocs);
 
           specialDocs.forEach(function(docType) {
             var docRow = document.createElement('div');

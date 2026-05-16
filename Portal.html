@@ -3889,6 +3889,14 @@ function submitPasswordReset(event) {
       // Display household name from Households table
       var householdName = memberData.household_name || 'Household';
       document.getElementById('headerHouseholdName').textContent = householdName;
+    } else if (currentUser && currentUser.email) {
+      // Fallback if member object is missing
+      document.getElementById('headerUserName').textContent = currentUser.email.split('@')[0];
+      document.getElementById('headerHouseholdName').textContent = 'Household';
+    } else {
+      // Last resort fallback
+      document.getElementById('headerUserName').textContent = 'User';
+      document.getElementById('headerHouseholdName').textContent = 'Household';
     }
 
   }

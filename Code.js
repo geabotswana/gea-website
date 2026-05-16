@@ -2834,6 +2834,9 @@ function _handleUploadDocument(p) {
       return errorResponse("Missing required document fields.", "INVALID_PARAM");
     }
 
+    // Normalize document type to lowercase (Config labels are title-cased; backend stores lowercase)
+    p.document_type = String(p.document_type).toLowerCase();
+
     // Validate document type
     var validTypes = ["passport", "omang", "photo", "funding verification", "diplomatic accreditation"];
     if (validTypes.indexOf(p.document_type) === -1) {

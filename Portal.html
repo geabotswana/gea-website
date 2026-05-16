@@ -7436,7 +7436,7 @@ function submitPasswordReset(event) {
             docRow.style.alignItems = 'center';
             docRow.style.marginTop = '8px';
 
-            var docSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
+            var docSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return String(s.document_type).toLowerCase() === String(docType).toLowerCase(); });
             var docStatus = getDocumentStatusInfo(docSubs);
 
             var docLabel = document.createElement('span');

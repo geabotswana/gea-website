@@ -146,12 +146,24 @@ function login(username, password) {
 
   // Send first-login welcome email if this is their first portal login
   if (isFirstLogin) {
-    _sendFirstLoginWelcome(member);
-    updateMemberField(member.individual_id, "first_login_date", new Date(), "system");
+    try {
+      _sendFirstLoginWelcome(member);
+    } catch (e) {
+      Logger.log("Error sending first login welcome: " + e.toString());
+    }
+    try {
+      updateMemberField(member.individual_id, "first_login_date", new Date(), "system");
+    } catch (e) {
+      Logger.log("Error updating first login date: " + e.toString());
+    }
   }
 
   // Update last login timestamp
-  updateMemberField(member.individual_id, "last_login_date", new Date(), "system");
+  try {
+    updateMemberField(member.individual_id, "last_login_date", new Date(), "system");
+  } catch (e) {
+    Logger.log("Error updating last login date: " + e.toString());
+  }
 
   // Log the successful login
   var logMsg = "Login successful (role: " + role + ")";

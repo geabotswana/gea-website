@@ -492,32 +492,45 @@ function _handleLogin(p) {
   }
 
   // Call the login function with username and password
-  var result = login(p.username, p.password);
+  var result;
+  try {
+    result = login(p.username, p.password);
+  } catch (e) {
+    Logger.log("Login error caught: " + e.toString());
+    Logger.log("Stack: " + e.stack);
+    return errorResponse("An error occurred during login. Please try again.", "LOGIN_ERROR");
+  }
 
   if (!result.success) {
     return errorResponse(result.message, "AUTH_FAILED");
   }
 
-  // Return success with token and member data
-  var responseData = {
-    token: result.token,
-    role: result.role,
-    member: result.member,
-    is_applicant: result.is_applicant || false,
-    is_lapsed: result.is_lapsed || false,
-    membership_status: result.membership_status || "",
-    email_verified: result.email_verified || false
-  };
-  if (result.application_status) {
-    responseData.application_status = result.application_status;
+  try {
+    // Return success with token and member data
+    var responseData = {
+      token: result.token,
+      role: result.role,
+      member: result.member,
+      is_applicant: result.is_applicant || false,
+      is_lapsed: result.is_lapsed || false,
+      membership_status: result.membership_status || "",
+      email_verified: result.email_verified || false
+    };
+    if (result.application_status) {
+      responseData.application_status = result.application_status;
+    }
+    if (result.require_password_change) {
+      responseData.require_password_change = true;
+    }
+    if (result.requires_email_verification) {
+      responseData.requires_email_verification = true;
+    }
+    return successResponse(responseData);
+  } catch (e) {
+    Logger.log("Login response error: " + e.toString());
+    Logger.log("Stack: " + e.stack);
+    return errorResponse("An error occurred while processing login. Please try again.", "LOGIN_RESPONSE_ERROR");
   }
-  if (result.require_password_change) {
-    responseData.require_password_change = true;
-  }
-  if (result.requires_email_verification) {
-    responseData.requires_email_verification = true;
-  }
-  return successResponse(responseData);
 }
 
 function _handleLogout(p) {

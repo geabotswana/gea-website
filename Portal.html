@@ -4260,7 +4260,7 @@ function submitPasswordReset(event) {
   // Populated at page load from Config.js via getApplicantUploadConfiguration()
   // Single source of truth: Config.js (APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES)
   var APPLICANT_UPLOAD_TYPES = {};      // Applicant-specific document restrictions by category
-  var FAMILY_STAFF_UPLOAD_TYPES = [];   // Documents available for family members and staff
+  var FAMILY_STAFF_UPLOAD_TYPES = ["Passport", "Omang"];   // Documents available for family members and staff (default)
 
   var applicationFormData = {
     membership_category: '',

@@ -1058,12 +1058,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.106";
-var SYSTEM_BUILD_DATE       = "2026-05-15";
+var SYSTEM_VERSION          = "2.5.107";
+var SYSTEM_BUILD_DATE       = "2026-05-16";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Merge pull request #204 from geabotswana/claude/fix-iframe-data-passing-Jrd3j";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-15 08:49:12";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Merge pull request #205 from geabotswana/claude/fix-applicant-portal-docs-W9NHZ";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-16 22:06:44";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

@@ -4259,8 +4259,16 @@ function submitPasswordReset(event) {
   // Document upload types by membership category
   // Populated at page load from Config.js via getApplicantUploadConfiguration()
   // Single source of truth: Config.js (APPLICANT_UPLOAD_TYPES and FAMILY_STAFF_UPLOAD_TYPES)
-  var APPLICANT_UPLOAD_TYPES = {};      // Applicant-specific document restrictions by category
-  var FAMILY_STAFF_UPLOAD_TYPES = ["Passport", "Omang"];   // Documents available for family members and staff (default)
+  // Category-specific defaults (must match Config.js) - used when backend config fetch fails
+  var APPLICANT_UPLOAD_TYPES = {
+    "Full": ["Passport"],
+    "Associate": ["Passport", "Omang", "Funding Verification"],
+    "Affiliate": ["Passport", "Omang"],
+    "Diplomatic": ["Passport", "Diplomatic Accreditation"],
+    "Community": ["Passport", "Omang"],
+    "Temporary": ["Passport"]
+  };
+  var FAMILY_STAFF_UPLOAD_TYPES = ["Passport", "Omang"];   // Documents available for family members and staff
 
   var applicationFormData = {
     membership_category: '',

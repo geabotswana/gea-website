@@ -127,7 +127,10 @@ function getMemberByUsername(username, includeInactive) {
 }
 
 /**
- * Finds an individual record by email (for lookups, password resets, etc.).
+ * Finds an individual record by individual_id.
+ * @param {string} individualId
+ * @returns {Object|null}
+ */
 function getMemberById(individualId) {
   if (!individualId) return null;
   try {

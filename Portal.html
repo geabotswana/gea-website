@@ -11917,6 +11917,11 @@ function submitPasswordReset(event) {
 
     // Edit button for primary member only (use selfId from API response AND verify primary)
     var isPrimaryMember = member.relationship_to_primary === 'Primary' && member.individual_id === selfId;
+    console.log("Household member:", member.first_name + ' ' + member.last_name,
+                "isPrimary:", member.relationship_to_primary === 'Primary',
+                "selfId:", selfId,
+                "member.individual_id:", member.individual_id,
+                "isPrimaryMember:", isPrimaryMember);
     if (isPrimaryMember) {
       var editBtn = document.createElement('button');
       editBtn.type = 'button';

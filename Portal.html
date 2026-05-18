@@ -2850,18 +2850,14 @@
     // Note: This call is optional; defaults are set at initialization
     try {
       google.script.run.withSuccessHandler(function(config) {
-        console.log("Backend config received:", config);
         APPLICANT_UPLOAD_TYPES = config.applicant || {};
         FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
-        console.log("Updated APPLICANT_UPLOAD_TYPES:", APPLICANT_UPLOAD_TYPES);
       }).withFailureHandler(function(error) {
-        console.error("Failed to fetch config:", error);
+        // Backend function may not exist; using default values
       }).getApplicantUploadConfiguration();
     } catch (e) {
-      console.error("Config fetch exception:", e);
       // Backend function may not exist; using default values
     }
-    console.log("Default APPLICANT_UPLOAD_TYPES at page load:", APPLICANT_UPLOAD_TYPES);
 
     // Check for password reset token. When loaded via the member.html iframe
     // wrapper, the GAS sandbox URL (script.googleusercontent.com) does not
@@ -7310,12 +7306,6 @@ function submitPasswordReset(event) {
       var allowedIdTypes = isApplicant && app.membership_category
         ? APPLICANT_UPLOAD_TYPES[app.membership_category] || FAMILY_STAFF_UPLOAD_TYPES
         : FAMILY_STAFF_UPLOAD_TYPES;
-      if (isApplicant) {
-        console.log("Building documents for applicant:", ind.first_name + ' ' + ind.last_name,
-                    "Category:", app.membership_category,
-                    "APPLICANT_UPLOAD_TYPES:", APPLICANT_UPLOAD_TYPES,
-                    "allowedIdTypes:", allowedIdTypes);
-      }
 
       if (isAdult) {
         // Adults: ID documents (passport/omang) + photo
@@ -7437,11 +7427,9 @@ function submitPasswordReset(event) {
         // Category-specific documents (applicants only)
         if (isApplicant && app.membership_category) {
           var categoryDocs = APPLICANT_UPLOAD_TYPES[app.membership_category] || [];
-          console.log("Rendering special docs for " + (ind.first_name + " " + ind.last_name) + ", category: " + app.membership_category + ", categoryDocs:", categoryDocs);
           var specialDocs = categoryDocs.filter(function(doc) {
             return doc !== 'Passport' && doc !== 'Omang' && doc !== 'Photo';
           });
-          console.log("specialDocs to render:", specialDocs);
 
           specialDocs.forEach(function(docType) {
             var docRow = document.createElement('div');
@@ -11917,11 +11905,6 @@ function submitPasswordReset(event) {
 
     // Edit button for primary member only (use selfId from API response AND verify primary)
     var isPrimaryMember = member.relationship_to_primary === 'Primary' && member.individual_id === selfId;
-    console.log("Household member:", member.first_name + ' ' + member.last_name,
-                "isPrimary:", member.relationship_to_primary === 'Primary',
-                "selfId:", selfId,
-                "member.individual_id:", member.individual_id,
-                "isPrimaryMember:", isPrimaryMember);
     if (isPrimaryMember) {
       var editBtn = document.createElement('button');
       editBtn.type = 'button';

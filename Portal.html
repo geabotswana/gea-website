@@ -7285,6 +7285,27 @@ function submitPasswordReset(event) {
 
     var rejectedDocuments = {};
 
+    // Diagnostic: Check if category is present and has config
+    if (!app.membership_category) {
+      var notice = document.createElement('div');
+      notice.style.padding = '12px';
+      notice.style.backgroundColor = '#fff3cd';
+      notice.style.color = '#856404';
+      notice.style.borderRadius = '4px';
+      notice.style.marginBottom = '12px';
+      notice.textContent = 'Note: Membership category not set for this application.';
+      card.appendChild(notice);
+    } else if (!APPLICANT_UPLOAD_TYPES[app.membership_category]) {
+      var notice = document.createElement('div');
+      notice.style.padding = '12px';
+      notice.style.backgroundColor = '#fff3cd';
+      notice.style.color = '#856404';
+      notice.style.borderRadius = '4px';
+      notice.style.marginBottom = '12px';
+      notice.textContent = 'Note: Document configuration not found for category.';
+      card.appendChild(notice);
+    }
+
     (app.individuals || []).forEach(function(ind) {
       var age = _calculateAge(ind.date_of_birth);
       var isAdult = age === null || age >= 18;

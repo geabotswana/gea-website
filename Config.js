@@ -1058,12 +1058,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.112";
-var SYSTEM_BUILD_DATE       = "2026-05-16";
+var SYSTEM_VERSION          = "2.5.113";
+var SYSTEM_BUILD_DATE       = "2026-05-18";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Add missing Funding Verification document rendering and debug logging";
-var DEPLOYMENT_TIMESTAMP    = "2026-05-16 22:49:00";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Merge pull request #211 from geabotswana/claude/fix-header-user-info";
+var DEPLOYMENT_TIMESTAMP    = "2026-05-18 21:45:52";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

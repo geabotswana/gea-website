@@ -22,7 +22,7 @@ function uploadFileSubmission(params) {
     }
 
     var documentType = String(params.document_type).toLowerCase();
-    var validTypes = ["photo", "passport", "omang", "employment"];
+    var validTypes = ["photo", "passport", "omang", "employment", "funding verification", "diplomatic accreditation"];
     if (validTypes.indexOf(documentType) === -1) {
       return { ok: false, error: "Invalid document type", code: "INVALID_DOCUMENT_TYPE" };
     }
@@ -258,6 +258,13 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
  */
 function checkApplicationDocumentReadiness(applicationId) {
   try {
+    // Get application to determine membership category and required documents
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { ok: false, error: "Application not found" };
+    }
+
+    var category = application.membership_category || "";
     var allSubmissions = _getAllSubmissions_();
     var submissions = [];
 
@@ -267,35 +274,42 @@ function checkApplicationDocumentReadiness(applicationId) {
       }
     }
 
-    var photoApproved = false;
-    var passportReady = false;
-    var omangReady = false;
+    // Determine required documents by category (from Config.js)
+    var requiredDocs = APPLICANT_UPLOAD_TYPES[category] || [];
+    var submittedDocs = {};
     var missingDocs = [];
 
+    // Track which documents have been submitted with acceptable status
     for (var j = 0; j < submissions.length; j++) {
       var s = submissions[j];
       var status = String(s.status || "").toLowerCase();
       var docType = String(s.document_type || "").toLowerCase();
 
-      if (docType === "photo" && (status === "approved" || status === "verified")) {
-        photoApproved = true;
-      } else if (docType === "passport" && (status === "gea_pending" || status === "verified")) {
-        passportReady = true;
-      } else if (docType === "omang" && (status === "gea_pending" || status === "verified")) {
-        omangReady = true;
+      // Accept documents in gea_pending or verified status (submitted but not yet approved is OK for RSO)
+      var isAcceptableStatus = (status === "gea_pending" || status === "verified" || status === "approved");
+
+      if (isAcceptableStatus) {
+        submittedDocs[docType] = true;
       }
     }
 
-    if (!photoApproved) missingDocs.push("photo");
-    if (!passportReady && !omangReady) missingDocs.push("passport or omang");
+    // Check each required document (case-insensitive)
+    for (var k = 0; k < requiredDocs.length; k++) {
+      var requiredType = String(requiredDocs[k]).toLowerCase();
+      if (!submittedDocs[requiredType]) {
+        missingDocs.push(requiredDocs[k]);  // Store original case for display
+      }
+    }
 
-    var allApproved = photoApproved && (passportReady || omangReady);
+    var allDocumentsReady = missingDocs.length === 0;
 
     return {
       ok: true,
-      allApproved: allApproved,
+      allApproved: allDocumentsReady,
       missingDocs: missingDocs,
-      readyForApproval: allApproved // RSO can approve application when all docs ready
+      readyForApproval: allDocumentsReady,
+      category: category,
+      requiredDocuments: requiredDocs
     };
   } catch (e) {
     Logger.log("ERROR checkApplicationDocumentReadiness: " + e);
@@ -620,7 +634,9 @@ function _reviewFileSubmission_(submission_id, decision, rejectionReason, userEm
 
 function _getSubmissionFolderId_(documentType) {
   if (documentType === "photo") return FOLDER_PHOTOS_PENDING;
-  if (documentType === "employment") return FOLDER_EMPLOYMENT_VERIFICATION;
+  if (documentType === "employment" || documentType === "funding verification" || documentType === "diplomatic accreditation") {
+    return FOLDER_EMPLOYMENT_VERIFICATION;
+  }
   return FOLDER_IDENTIFICATION_SCANS;  // passport, omang
 }
 

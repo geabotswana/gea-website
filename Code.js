@@ -152,6 +152,18 @@ function getDeploymentInfo() {
 }
 
 /**
+ * Exposes applicant document upload configuration to Portal.html
+ * Returns the single source of truth from Config.js for document type requirements
+ * @returns {Object} { applicant: APPLICANT_UPLOAD_TYPES, family: FAMILY_STAFF_UPLOAD_TYPES }
+ */
+function getApplicantUploadConfiguration() {
+  return {
+    applicant: APPLICANT_UPLOAD_TYPES,
+    family: FAMILY_STAFF_UPLOAD_TYPES
+  };
+}
+
+/**
  * Called from Portal.html via google.script.run to avoid CORS issues.
  * @param {string} action - The API action
  * @param {Object} params - Request parameters
@@ -2764,7 +2776,7 @@ function _handleRemoveDocument(p) {
   var auth = requireAuth(p.token);
   if (!auth.ok) return auth.response;
   if (!p.individual_id || !p.document_type) return errorResponse("Missing individual_id or document_type.", "INVALID_PARAM");
-  var validTypes = ["passport", "omang", "photo"];
+  var validTypes = ["passport", "omang", "photo", "funding verification", "diplomatic accreditation"];
   if (validTypes.indexOf(p.document_type) === -1) return errorResponse("Invalid document type.", "INVALID_PARAM");
   return removeDocumentSubmission(p.individual_id, p.document_type, auth.email);
 }
@@ -2822,8 +2834,11 @@ function _handleUploadDocument(p) {
       return errorResponse("Missing required document fields.", "INVALID_PARAM");
     }
 
+    // Normalize document type to lowercase (Config labels are title-cased; backend stores lowercase)
+    p.document_type = String(p.document_type).toLowerCase();
+
     // Validate document type
-    var validTypes = ["passport", "omang", "photo"];
+    var validTypes = ["passport", "omang", "photo", "funding verification", "diplomatic accreditation"];
     if (validTypes.indexOf(p.document_type) === -1) {
       return errorResponse("Invalid document type.", "INVALID_PARAM");
     }

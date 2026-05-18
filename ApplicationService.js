@@ -445,6 +445,16 @@ function confirmDocumentsUploaded(applicationId, email) {
       return { success: false, message: "Unauthorized." };
     }
 
+    // P1: Check that all required documents for this category are actually uploaded
+    var readiness = checkApplicationDocumentReadiness(applicationId);
+    if (!readiness.ok) {
+      return { success: false, message: "Could not verify documents: " + (readiness.error || "Unknown error") };
+    }
+    if (readiness.missingDocs && readiness.missingDocs.length > 0) {
+      var docList = readiness.missingDocs.join(", ");
+      return { success: false, message: "Missing required documents: " + docList };
+    }
+
     // Update application status to board_initial_review (board must review before RSO)
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
@@ -453,25 +463,26 @@ function confirmDocumentsUploaded(applicationId, email) {
     }
 
     logAuditEntry(email, AUDIT_APPLICATION_BOARD_INITIAL, "Application", applicationId,
-                  "Documents submitted and ready for board review");
+                  "Documents submitted and ready for board review: " + (readiness.requiredDocuments ? readiness.requiredDocuments.join(", ") : ""));
 
     var applicantName      = application.primary_applicant_name || "";
     var applicantFirstName = applicantName.split(" ")[0] || "Applicant";
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
+    var documentTypes = readiness.requiredDocuments ? readiness.requiredDocuments.join(" / ") : "Passport / Omang / Photo";
 
     // Notify board that documents are ready for their review (board reviews BEFORE RSO)
     sendEmailFromTemplate("ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_BOARD", boardEmail, {
       FIRST_NAME:      "Board",
       APPLICANT_NAME:  applicantName,
       APPLICATION_ID:  applicationId,
-      DOCUMENT_TYPES:  "Passport / Omang / Photo",
+      DOCUMENT_TYPES:  documentTypes,
       SUBMISSION_DATE: formatDate(new Date())
     });
 
     // Notify applicant that documents have been confirmed and are under board review
     sendEmailFromTemplate("ADM_DOCS_SENT_TO_BOARD_FOR_REVIEW_TO_MEMBER", application.primary_applicant_email, {
       FIRST_NAME:      applicantFirstName,
-      DOCUMENT_TYPES:  "Passport / Omang / Photo",
+      DOCUMENT_TYPES:  documentTypes,
       SUBMISSION_DATE: formatDate(new Date())
     });
 

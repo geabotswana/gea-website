@@ -2852,12 +2852,17 @@
       google.script.run.withSuccessHandler(function(config) {
         APPLICANT_UPLOAD_TYPES = config.applicant || {};
         FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
+        console.log("CONFIG_LOADED: applicant_categories=" + Object.keys(APPLICANT_UPLOAD_TYPES).length + ", family_types=" + FAMILY_STAFF_UPLOAD_TYPES.length);
+        if (APPLICANT_UPLOAD_TYPES.Associate) {
+          console.log("Associate_docs_count=" + APPLICANT_UPLOAD_TYPES.Associate.length);
+        }
       }).withFailureHandler(function(error) {
-        // Backend function may not exist; using default values
+        console.log("CONFIG_FETCH_FAILED");
       }).getApplicantUploadConfiguration();
     } catch (e) {
-      // Backend function may not exist; using default values
+      console.log("CONFIG_EXCEPTION");
     }
+    console.log("DEFAULTS_AT_LOAD: applicant_categories=" + Object.keys(APPLICANT_UPLOAD_TYPES).length);
 
     // Check for password reset token. When loaded via the member.html iframe
     // wrapper, the GAS sandbox URL (script.googleusercontent.com) does not
@@ -6804,6 +6809,12 @@ function submitPasswordReset(event) {
         });
         showError('Failed to load application status: ' + res.message);
         return;
+      }
+      console.log("APP_STATUS_LOADED: category_set=" + !!res.data.membership_category + ", individuals_count=" + (res.data.individuals ? res.data.individuals.length : 0));
+      if (res.data.membership_category && APPLICANT_UPLOAD_TYPES[res.data.membership_category]) {
+        console.log("Category_config_found: " + res.data.membership_category);
+      } else if (res.data.membership_category) {
+        console.log("Category_config_missing: " + res.data.membership_category);
       }
       updatePortalDebug({
         last_applicant_success: true,
@@ -11803,6 +11814,10 @@ function submitPasswordReset(event) {
       var selfId = res.data.self_id;
       var container = document.getElementById('householdMembersContainer');
       container.innerHTML = '';
+
+      console.log("HOUSEHOLD_LOADED: members_count=" + members.length + ", selfId_set=" + !!selfId);
+      var primaryCount = members.filter(function(m) { return m.relationship_to_primary === 'Primary'; }).length;
+      console.log("Primary_members: " + primaryCount);
 
       if (members.length === 0) {
         container.innerHTML = '<p style="color: #999; padding: 20px;">No household members found</p>';

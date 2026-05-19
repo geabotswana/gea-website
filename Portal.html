@@ -8346,26 +8346,26 @@ function submitPasswordReset(event) {
       btns.style.display = 'flex';
       btns.style.gap = '6px';
 
-      if (m.relationship_to_primary !== 'Primary') {
-        var editBtn = document.createElement('button');
-        editBtn.className = 'btn btn-small';
-        editBtn.style.minHeight = '36px';
-        editBtn.textContent = 'Edit';
-        editBtn.onclick = (function(ind) {
-          return function() { _openEditMemberModal(ind); };
-        })(m);
-        btns.appendChild(editBtn);
+      // Edit button for all family members
+      var editBtn = document.createElement('button');
+      editBtn.className = 'btn btn-small';
+      editBtn.style.minHeight = '36px';
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = (function(ind) {
+        return function() { _openEditMemberModal(ind); };
+      })(m);
+      btns.appendChild(editBtn);
 
-        if (m.individual_id !== selfId) {
-          var removeBtn = document.createElement('button');
-          removeBtn.className = 'btn btn-small btn-danger';
-          removeBtn.style.minHeight = '36px';
-          removeBtn.textContent = 'Remove';
-          removeBtn.onclick = (function(ind) {
-            return function() { _openRemoveMemberModal(ind); };
-          })(m);
-          btns.appendChild(removeBtn);
-        }
+      // Remove button for non-primary members (except self)
+      if (m.relationship_to_primary !== 'Primary' && m.individual_id !== selfId) {
+        var removeBtn = document.createElement('button');
+        removeBtn.className = 'btn btn-small btn-danger';
+        removeBtn.style.minHeight = '36px';
+        removeBtn.textContent = 'Remove';
+        removeBtn.onclick = (function(ind) {
+          return function() { _openRemoveMemberModal(ind); };
+        })(m);
+        btns.appendChild(removeBtn);
       }
 
       row.appendChild(btns);

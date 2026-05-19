@@ -7376,7 +7376,7 @@ function submitPasswordReset(event) {
 
         var idDisplayType = showPassport && showOmang ? 'PASSPORT or OMANG' : showPassport ? 'PASSPORT' : 'OMANG';
         if (isApplicant && app.membership_category) {
-          idDisplayType = getDocumentDisplayLabel('Passport', app.membership_category, true).replace(': Required', '');
+          idDisplayType = getDocumentDisplayLabel('Passport', app.membership_category, true).replace(': Required', '').toUpperCase();
         }
 
         var labelText = document.createElement('span');
@@ -7388,25 +7388,41 @@ function submitPasswordReset(event) {
         uploadDiv.style.display = 'flex';
         uploadDiv.style.gap = '6px';
 
-        if (showPassport && (passportSubs.length === 0 || idStatus.status === 'rejected')) {
+        if (showPassport) {
           var uploadPass = document.createElement('button');
           uploadPass.className = 'btn btn-small';
           uploadPass.style.fontSize = '14px';
           uploadPass.innerHTML = '<i class="fas fa-passport" style="margin-right: 6px;"></i>' + (passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport');
           uploadPass.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'passport', btn); }; })(ind.individual_id, uploadPass);
           uploadDiv.appendChild(uploadPass);
+          if (passportSubs.length > 0 && idStatus.status !== 'rejected') {
+            var removePass = document.createElement('button');
+            removePass.className = 'btn btn-small btn-danger';
+            removePass.style.fontSize = '14px';
+            removePass.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
+            removePass.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'passport');
+            uploadDiv.appendChild(removePass);
+          }
           if (idStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_passport'] = true;
           }
         }
 
-        if (showOmang && (omangSubs.length === 0 || idStatus.status === 'rejected')) {
+        if (showOmang) {
           var uploadOmang = document.createElement('button');
           uploadOmang.className = 'btn btn-small';
           uploadOmang.style.fontSize = '14px';
           uploadOmang.innerHTML = '<i class="fas fa-id-card" style="margin-right: 6px;"></i>' + (omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang');
           uploadOmang.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'omang', btn); }; })(ind.individual_id, uploadOmang);
           uploadDiv.appendChild(uploadOmang);
+          if (omangSubs.length > 0 && idStatus.status !== 'rejected') {
+            var removeOmang = document.createElement('button');
+            removeOmang.className = 'btn btn-small btn-danger';
+            removeOmang.style.fontSize = '14px';
+            removeOmang.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
+            removeOmang.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'omang');
+            uploadDiv.appendChild(removeOmang);
+          }
           if (idStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_omang'] = true;
           }
@@ -7446,16 +7462,22 @@ function submitPasswordReset(event) {
         photoUploadDiv.style.display = 'flex';
         photoUploadDiv.style.gap = '6px';
 
-        if (photoSubs.length === 0 || photoStatus.status === 'rejected') {
-          var photoUpload = document.createElement('button');
-          photoUpload.className = 'btn btn-small';
-          photoUpload.style.fontSize = '14px';
-          photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
-          photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
-          photoUploadDiv.appendChild(photoUpload);
-          if (photoStatus.status === 'rejected') {
-            rejectedDocuments[ind.individual_id + '_photo'] = true;
-          }
+        var photoUpload = document.createElement('button');
+        photoUpload.className = 'btn btn-small';
+        photoUpload.style.fontSize = '14px';
+        photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
+        photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
+        photoUploadDiv.appendChild(photoUpload);
+        if (photoSubs.length > 0 && photoStatus.status !== 'rejected') {
+          var removePhoto = document.createElement('button');
+          removePhoto.className = 'btn btn-small btn-danger';
+          removePhoto.style.fontSize = '14px';
+          removePhoto.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
+          removePhoto.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'photo');
+          photoUploadDiv.appendChild(removePhoto);
+        }
+        if (photoStatus.status === 'rejected') {
+          rejectedDocuments[ind.individual_id + '_photo'] = true;
         }
 
         photoRow.appendChild(photoUploadDiv);
@@ -7492,7 +7514,7 @@ function submitPasswordReset(event) {
             docIcon.style.width = '20px';
             docLabel.appendChild(docIcon);
 
-            var displayLabel = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
+            var displayLabel = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '').toUpperCase();
             var docLabelText = document.createElement('span');
             docLabelText.textContent = displayLabel + ': ' + docStatus.text;
             docLabel.appendChild(docLabelText);
@@ -7502,17 +7524,23 @@ function submitPasswordReset(event) {
             docUploadDiv.style.display = 'flex';
             docUploadDiv.style.gap = '6px';
 
-            if (docSubs.length === 0 || docStatus.status === 'rejected') {
-              var docUpload = document.createElement('button');
-              docUpload.className = 'btn btn-small';
-              docUpload.style.fontSize = '14px';
-              var displayName = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
-              docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace ' : 'Upload ') + displayName;
-              docUpload.onclick = (function(id, dt, btn) { return function() { triggerDocumentUpload(id, dt, btn); }; })(ind.individual_id, docType, docUpload);
-              docUploadDiv.appendChild(docUpload);
-              if (docStatus.status === 'rejected') {
-                rejectedDocuments[ind.individual_id + '_' + docType] = true;
-              }
+            var docUpload = document.createElement('button');
+            docUpload.className = 'btn btn-small';
+            docUpload.style.fontSize = '14px';
+            var displayName = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
+            docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace ' : 'Upload ') + displayName;
+            docUpload.onclick = (function(id, dt, btn) { return function() { triggerDocumentUpload(id, dt, btn); }; })(ind.individual_id, docType, docUpload);
+            docUploadDiv.appendChild(docUpload);
+            if (docSubs.length > 0 && docStatus.status !== 'rejected') {
+              var docRemove = document.createElement('button');
+              docRemove.className = 'btn btn-small btn-danger';
+              docRemove.style.fontSize = '14px';
+              docRemove.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
+              docRemove.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, docType);
+              docUploadDiv.appendChild(docRemove);
+            }
+            if (docStatus.status === 'rejected') {
+              rejectedDocuments[ind.individual_id + '_' + docType] = true;
             }
 
             docRow.appendChild(docUploadDiv);
@@ -7551,16 +7579,22 @@ function submitPasswordReset(event) {
         photoUploadDiv.style.display = 'flex';
         photoUploadDiv.style.gap = '6px';
 
-        if (photoSubs.length === 0 || photoStatus.status === 'rejected') {
-          var photoUpload = document.createElement('button');
-          photoUpload.className = 'btn btn-small';
-          photoUpload.style.fontSize = '14px';
-          photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
-          photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
-          photoUploadDiv.appendChild(photoUpload);
-          if (photoStatus.status === 'rejected') {
-            rejectedDocuments[ind.individual_id + '_photo'] = true;
-          }
+        var photoUpload = document.createElement('button');
+        photoUpload.className = 'btn btn-small';
+        photoUpload.style.fontSize = '14px';
+        photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
+        photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
+        photoUploadDiv.appendChild(photoUpload);
+        if (photoSubs.length > 0 && photoStatus.status !== 'rejected') {
+          var removePhoto = document.createElement('button');
+          removePhoto.className = 'btn btn-small btn-danger';
+          removePhoto.style.fontSize = '14px';
+          removePhoto.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
+          removePhoto.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'photo');
+          photoUploadDiv.appendChild(removePhoto);
+        }
+        if (photoStatus.status === 'rejected') {
+          rejectedDocuments[ind.individual_id + '_photo'] = true;
         }
 
         photoRow.appendChild(photoUploadDiv);

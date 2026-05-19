@@ -7260,7 +7260,7 @@ function submitPasswordReset(event) {
     return label + suffix;
   }
 
-  function getDocumentStatusInfo(submissions) {
+  function getDocumentStatusInfo(submissions, appStatus) {
     if (!submissions || submissions.length === 0) {
       return { icon: 'fa-hand', color: '#E65100', status: 'not_uploaded', text: 'Required' };
     }
@@ -7273,7 +7273,9 @@ function submitPasswordReset(event) {
     } else if (status === 'rejected' || status === 'rso_rejected' || status === 'gea_rejected' || status === 'board_rejection' || status === 'board_rejected_member_notified') {
       return { icon: 'fa-circle-xmark', color: '#C62828', status: 'rejected', text: 'Rejected - Replace Required', showButtons: true, showReplace: true };
     } else if (status === 'submitted' || status === 'submitted_for_board' || status === 'rso_approved' || status === 'gea_pending') {
-      var isUnderReview = status === 'submitted' || status === 'submitted_for_board' || status === 'gea_pending';
+      // During awaiting_docs phase, show as "Uploaded" even though internal status is "submitted"
+      var isAwaitingDocs = appStatus === 'awaiting_docs';
+      var isUnderReview = !isAwaitingDocs && (status === 'submitted' || status === 'submitted_for_board' || status === 'gea_pending');
       return {
         icon: isUnderReview ? 'fa-hourglass-end' : 'fa-thumbs-up',
         color: isUnderReview ? '#1565C0' : '#FF9800',
@@ -7356,9 +7358,9 @@ function submitPasswordReset(event) {
         row.style.alignItems = 'center';
         row.style.marginTop = '8px';
 
-        var passportStatus = passportSubs.length > 0 ? getDocumentStatusInfo(passportSubs) : null;
-        var omangStatus = omangSubs.length > 0 ? getDocumentStatusInfo(omangSubs) : null;
-        var idStatus = passportStatus || omangStatus || getDocumentStatusInfo([]);
+        var passportStatus = passportSubs.length > 0 ? getDocumentStatusInfo(passportSubs, app.status) : null;
+        var omangStatus = omangSubs.length > 0 ? getDocumentStatusInfo(omangSubs, app.status) : null;
+        var idStatus = passportStatus || omangStatus || getDocumentStatusInfo([], app.status);
 
         var label = document.createElement('span');
         label.style.fontWeight = '600';
@@ -7421,7 +7423,7 @@ function submitPasswordReset(event) {
         photoRow.style.marginTop = '8px';
 
         var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
-        var photoStatus = getDocumentStatusInfo(photoSubs);
+        var photoStatus = getDocumentStatusInfo(photoSubs, app.status);
 
         var photoLabel = document.createElement('span');
         photoLabel.style.fontWeight = '600';
@@ -7476,7 +7478,7 @@ function submitPasswordReset(event) {
             docRow.style.marginTop = '8px';
 
             var docSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return String(s.document_type).toLowerCase() === String(docType).toLowerCase(); });
-            var docStatus = getDocumentStatusInfo(docSubs);
+            var docStatus = getDocumentStatusInfo(docSubs, app.status);
 
             var docLabel = document.createElement('span');
             docLabel.style.fontWeight = '600';
@@ -7520,7 +7522,7 @@ function submitPasswordReset(event) {
       } else {
         // Minors: photo required + optional ID docs
         var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
-        var photoStatus = getDocumentStatusInfo(photoSubs);
+        var photoStatus = getDocumentStatusInfo(photoSubs, app.status);
 
         var photoRow = document.createElement('div');
         photoRow.style.display = 'flex';
@@ -7573,7 +7575,7 @@ function submitPasswordReset(event) {
           row.style.marginTop = '8px';
 
           var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
-          var docStatus = getDocumentStatusInfo(submissions);
+          var docStatus = getDocumentStatusInfo(submissions, app.status);
 
           var label = document.createElement('span');
           label.style.fontWeight = '600';

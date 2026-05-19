@@ -60,7 +60,7 @@ function uploadFileSubmission(params) {
       submission_id: generateId("FSB"),
       individual_id: params.individual_id,
       document_type: documentType,
-      status: "",
+      status: "submitted",
       file_id: file.getId(),
       file_name: params.file_name,
       file_size_bytes: sizeBytes,

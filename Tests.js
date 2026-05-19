@@ -3338,3 +3338,208 @@ function testPaymentFieldMapping() {
     Logger.log("Stack: " + e.stack);
   }
 }
+
+
+/**
+ * TEST: Associate Category Document Configuration
+ * Verifies that Associate members have Funding Verification in their config
+ */
+function testAssociateCategoryConfig() {
+  Logger.log("\n========== TEST: Associate Category Config ==========");
+
+  try {
+    // Test 1: Check Config.js has Funding Verification
+    Logger.log("\n1. Checking APPLICANT_UPLOAD_TYPES in Config.js:");
+    var associateDocs = APPLICANT_UPLOAD_TYPES["Associate"];
+    if (associateDocs) {
+      Logger.log("   ✓ Associate category found");
+      Logger.log("   Documents: " + JSON.stringify(associateDocs));
+      if (associateDocs.indexOf("Funding Verification") !== -1) {
+        Logger.log("   ✓ PASS: Funding Verification is in Associate config");
+      } else {
+        Logger.log("   ❌ FAIL: Funding Verification NOT in Associate config");
+      }
+    } else {
+      Logger.log("   ❌ FAIL: Associate category not found in APPLICANT_UPLOAD_TYPES");
+    }
+
+    // Test 2: Check backend returns correct config
+    Logger.log("\n2. Checking backend getApplicantUploadConfiguration():");
+    var backendConfig = getApplicantUploadConfiguration();
+    if (backendConfig.applicant && backendConfig.applicant["Associate"]) {
+      Logger.log("   ✓ Backend returns Associate config");
+      Logger.log("   Documents: " + JSON.stringify(backendConfig.applicant["Associate"]));
+      if (backendConfig.applicant["Associate"].indexOf("Funding Verification") !== -1) {
+        Logger.log("   ✓ PASS: Backend config includes Funding Verification");
+      } else {
+        Logger.log("   ❌ FAIL: Backend does not include Funding Verification");
+      }
+    } else {
+      Logger.log("   ❌ FAIL: Backend config doesn't have Associate");
+    }
+
+  } catch (e) {
+    Logger.log("ERROR: " + e);
+  }
+}
+
+
+/**
+ * TEST: Application Status for Associate Applicant
+ * Verifies that Associate applications return correct membership_category
+ */
+function testAssociateApplicationData() {
+  Logger.log("\n========== TEST: Associate Application Data ==========");
+
+  try {
+    // Find test Associate application (APP-2026-00021)
+    var memberSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+    var data = memberSheet.getDataRange().getValues();
+    var headers = data[0];
+    var appIndex = headers.indexOf("application_id");
+    var categoryIndex = headers.indexOf("membership_category");
+    var statusIndex = headers.indexOf("status");
+
+    Logger.log("\n1. Searching for APP-2026-00021 (test Associate application):");
+    var testApp = null;
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][appIndex] === "APP-2026-00021") {
+        testApp = rowToObject(headers, data[i]);
+        break;
+      }
+    }
+
+    if (testApp) {
+      Logger.log("   ✓ Found test application");
+      Logger.log("   Status: " + testApp.status);
+      Logger.log("   Category: " + testApp.membership_category);
+      if (testApp.membership_category === "Associate") {
+        Logger.log("   ✓ PASS: Category is Associate");
+      } else {
+        Logger.log("   ❌ FAIL: Category is not Associate, it's: " + testApp.membership_category);
+      }
+    } else {
+      Logger.log("   ❌ FAIL: Could not find APP-2026-00021");
+    }
+
+    // Test 2: Check that getApplicationForApplicant returns the data correctly
+    Logger.log("\n2. Testing getApplicationForApplicant() for test user:");
+    var testEmail = "michael+obanubi@raneyworld.com";  // From the test data
+    var appResult = getApplicationForApplicant(testEmail);
+    if (appResult.success) {
+      Logger.log("   ✓ getApplicationForApplicant succeeded");
+      Logger.log("   Membership category: " + appResult.membership_category);
+      Logger.log("   Individuals count: " + (appResult.individuals ? appResult.individuals.length : 0));
+      if (appResult.membership_category === "Associate") {
+        Logger.log("   ✓ PASS: Backend returns Associate category");
+      } else {
+        Logger.log("   ❌ FAIL: Backend returned: " + appResult.membership_category);
+      }
+    } else {
+      Logger.log("   ❌ FAIL: " + appResult.message);
+    }
+
+  } catch (e) {
+    Logger.log("ERROR: " + e);
+  }
+}
+
+
+/**
+ * TEST: Household Members and Primary Member Detection
+ * Verifies that primary member relationship is set correctly
+ */
+function testHouseholdPrimaryMember() {
+  Logger.log("\n========== TEST: Household Primary Member ==========");
+
+  try {
+    // Get test household (HSH-2026-00021)
+    Logger.log("\n1. Looking up household HSH-2026-00021:");
+    var household = _getHouseholdById("HSH-2026-00021");
+    if (household) {
+      Logger.log("   ✓ Household found");
+      Logger.log("   Primary member ID: " + household.primary_member_id);
+
+      // Get individuals for this household
+      var individuals = _getIndividualsByHouseholdId("HSH-2026-00021");
+      Logger.log("   Total individuals: " + individuals.length);
+
+      Logger.log("\n2. Checking individual relationship_to_primary values:");
+      var primaryFound = false;
+      for (var i = 0; i < individuals.length; i++) {
+        var ind = individuals[i];
+        Logger.log("   - " + ind.individual_id + ": relationship=" + ind.relationship_to_primary);
+        if (ind.relationship_to_primary === "Primary") {
+          primaryFound = true;
+        }
+      }
+
+      if (primaryFound) {
+        Logger.log("   ✓ PASS: Found member with relationship_to_primary='Primary'");
+      } else {
+        Logger.log("   ❌ FAIL: No member has relationship_to_primary='Primary'");
+      }
+    } else {
+      Logger.log("   ❌ FAIL: Household not found");
+    }
+
+  } catch (e) {
+    Logger.log("ERROR: " + e);
+  }
+}
+
+
+/**
+ * TEST: Document Submission Status
+ * Verifies that Funding Verification documents are being tracked
+ */
+function testFundingVerificationDocuments() {
+  Logger.log("\n========== TEST: Funding Verification Documents ==========");
+
+  try {
+    // Get test individual (IND-2026-00028 - Christopher Obanubi)
+    Logger.log("\n1. Getting file submissions for IND-2026-00028:");
+    var submissions = _getFileSubmissionsForIndividual("IND-2026-00028");
+    if (submissions && submissions.length > 0) {
+      Logger.log("   ✓ Found " + submissions.length + " file submissions");
+      Logger.log("\n2. Document types submitted:");
+      var docTypes = {};
+      for (var i = 0; i < submissions.length; i++) {
+        var doc = submissions[i];
+        docTypes[doc.document_type] = (docTypes[doc.document_type] || 0) + 1;
+        Logger.log("   - " + doc.document_type + " (status: " + doc.approval_status + ")");
+      }
+      if (docTypes["funding verification"]) {
+        Logger.log("   ✓ PASS: Funding Verification document found");
+      } else {
+        Logger.log("   ⚠️  No Funding Verification documents yet (may not be uploaded)");
+      }
+    } else {
+      Logger.log("   ⚠️  No file submissions found (may not have uploaded anything yet)");
+    }
+
+  } catch (e) {
+    Logger.log("ERROR: " + e);
+  }
+}
+
+
+/**
+ * MASTER DIAGNOSTIC: Run all Associate/Edit button tests
+ */
+function testAssociateCategoryIssue() {
+  Logger.log("\n\n");
+  Logger.log("╔════════════════════════════════════════════════════════════╗");
+  Logger.log("║  MASTER DIAGNOSTIC: Associate Category & Edit Button Issue ║");
+  Logger.log("╚════════════════════════════════════════════════════════════╝");
+
+  testAssociateCategoryConfig();
+  testAssociateApplicationData();
+  testHouseholdPrimaryMember();
+  testFundingVerificationDocuments();
+
+  Logger.log("\n╔════════════════════════════════════════════════════════════╗");
+  Logger.log("║  DIAGNOSTIC COMPLETE                                       ║");
+  Logger.log("║  Check the logs above for PASS/FAIL results                ║");
+  Logger.log("╚════════════════════════════════════════════════════════════╝\n");
+}

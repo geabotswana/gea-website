@@ -12505,6 +12505,94 @@ function submitPasswordReset(event) {
       }).getDeploymentInfo();
     }
   });
+
+  // ============================================================
+  // DIAGNOSTIC TEST FUNCTIONS (call from console)
+  // ============================================================
+
+  window.GEA_DIAGNOSTICS = {
+    checkConfig: function() {
+      console.log("=== CONFIGURATION CHECK ===");
+      console.log("APPLICANT_UPLOAD_TYPES categories:", Object.keys(APPLICANT_UPLOAD_TYPES));
+      console.log("Associate docs:", APPLICANT_UPLOAD_TYPES["Associate"]);
+      console.log("FAMILY_STAFF_UPLOAD_TYPES:", FAMILY_STAFF_UPLOAD_TYPES);
+      console.log("Has Funding Verification for Associate?",
+        APPLICANT_UPLOAD_TYPES["Associate"] && APPLICANT_UPLOAD_TYPES["Associate"].indexOf("Funding Verification") !== -1);
+    },
+
+    checkApplicantData: function() {
+      console.log("=== APPLICANT DATA CHECK ===");
+      if (applicantPortalState && applicantPortalState.application) {
+        var app = applicantPortalState.application;
+        console.log("Membership category:", app.membership_category);
+        console.log("Individuals count:", app.individuals ? app.individuals.length : 0);
+        console.log("Documents available:", Object.keys(app.documents || {}).length);
+
+        if (app.individuals && app.individuals.length > 0) {
+          var primary = app.individuals.find(function(ind) { return ind.individual_id === app.primary_individual_id; });
+          console.log("Primary applicant ID:", app.primary_individual_id);
+          console.log("Primary applicant found?", !!primary);
+          if (primary) {
+            console.log("Primary applicant has docs?", (app.documents && app.documents[primary.individual_id]) ? app.documents[primary.individual_id].length : 0);
+          }
+        }
+      } else {
+        console.log("❌ Applicant portal state not loaded");
+      }
+    },
+
+    checkHouseholdData: function() {
+      console.log("=== HOUSEHOLD DATA CHECK ===");
+      console.log("Checking householdMembersContainer content...");
+      var container = document.getElementById('householdMembersContainer');
+      if (container) {
+        var members = container.querySelectorAll('.card');
+        console.log("Member cards found:", members.length);
+        var editButtons = container.querySelectorAll('button');
+        var editCount = 0;
+        editButtons.forEach(function(b) { if (b.textContent.indexOf("Edit") !== -1) editCount++; });
+        console.log("Edit buttons visible:", editCount);
+      } else {
+        console.log("❌ householdMembersContainer not found");
+      }
+    },
+
+    checkDocumentSection: function() {
+      console.log("=== DOCUMENT SECTION CHECK ===");
+      var allButtons = document.querySelectorAll('button');
+      var uploadCount = 0;
+      var fundingCount = 0;
+      allButtons.forEach(function(b) {
+        if (b.textContent.indexOf("Upload") !== -1) uploadCount++;
+        if (b.textContent.indexOf("FUNDING") !== -1) fundingCount++;
+      });
+      console.log("Total upload buttons found:", uploadCount);
+      console.log("Funding Verification buttons:", fundingCount);
+      if (fundingCount === 0) {
+        console.log("⚠️  No Funding Verification buttons - check if you're on applicant documents tab");
+      }
+    },
+
+    runFullDiagnostic: function() {
+      console.log("\n╔════════════════════════════════════════════════════════════╗");
+      console.log("║        FULL DIAGNOSTIC (Run from Browser Console)         ║");
+      console.log("╚════════════════════════════════════════════════════════════╝\n");
+      this.checkConfig();
+      console.log("");
+      this.checkApplicantData();
+      console.log("");
+      this.checkHouseholdData();
+      console.log("");
+      this.checkDocumentSection();
+      console.log("\n╔════════════════════════════════════════════════════════════╗");
+      console.log("║  Run these commands individually for more detail:         ║");
+      console.log("║  - GEA_DIAGNOSTICS.checkConfig()                          ║");
+      console.log("║  - GEA_DIAGNOSTICS.checkApplicantData()                   ║");
+      console.log("║  - GEA_DIAGNOSTICS.checkHouseholdData()                   ║");
+      console.log("║  - GEA_DIAGNOSTICS.checkDocumentSection()                 ║");
+      console.log("╚════════════════════════════════════════════════════════════╝\n");
+    }
+  };
 </script>
 
 </body>

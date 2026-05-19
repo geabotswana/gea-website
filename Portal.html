@@ -7323,6 +7323,7 @@ function submitPasswordReset(event) {
       var age = _calculateAge(ind.date_of_birth);
       var isAdult = age === null || age >= 18;
       var isApplicant = ind.individual_id === app.primary_individual_id;
+      console.log("INDIVIDUAL_CHECK: id=" + ind.individual_id + ", isPrimary=" + isApplicant + ", appPrimaryId=" + app.primary_individual_id);
 
       var member = document.createElement('div');
       member.style.padding = '12px 0';

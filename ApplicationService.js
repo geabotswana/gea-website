@@ -407,6 +407,7 @@ function getApplicationForApplicant(email) {
     return {
       success: true,
       application_id: application.application_id,
+      primary_individual_id: application.primary_individual_id,
       status: application.status,
       household_type: application.household_type,
       membership_category: application.membership_category,

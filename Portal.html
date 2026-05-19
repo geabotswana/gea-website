@@ -7227,9 +7227,9 @@ function submitPasswordReset(event) {
       },
       // Associate Member
       'Associate': {
-        'Passport': 'PASSPORT',
-        'Omang': 'OMANG',
-        'Funding Verification': 'FUNDING VERIFICATION LETTER'
+        'Passport': 'Passport',
+        'Omang': 'Omang',
+        'Funding Verification': 'Funding Verification Letter'
       },
       // Community Member
       'Community': {
@@ -7504,7 +7504,7 @@ function submitPasswordReset(event) {
               var docUpload = document.createElement('button');
               docUpload.className = 'btn btn-small';
               docUpload.style.fontSize = '14px';
-              var displayName = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '').toUpperCase();
+              var displayName = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
               docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace ' : 'Upload ') + displayName;
               docUpload.onclick = (function(id, dt) { return function() { triggerDocumentUpload(id, dt); }; })(ind.individual_id, docType);
               docUploadDiv.appendChild(docUpload);
@@ -11946,6 +11946,7 @@ function submitPasswordReset(event) {
 
     // Edit button for primary member only (use selfId from API response AND verify primary)
     var isPrimaryMember = member.relationship_to_primary === 'Primary' && member.individual_id === selfId;
+    console.log("HOUSEHOLD_EDIT_DEBUG: name=" + member.first_name + " " + member.last_name + ", relationship=" + member.relationship_to_primary + ", memberId=" + member.individual_id + ", selfId=" + selfId + ", showEdit=" + isPrimaryMember);
     if (isPrimaryMember) {
       var editBtn = document.createElement('button');
       editBtn.type = 'button';

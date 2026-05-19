@@ -7260,7 +7260,7 @@ function submitPasswordReset(event) {
     return label + suffix;
   }
 
-  function getDocumentStatusInfo(submissions) {
+  function getDocumentStatusInfo(submissions, appStatus) {
     if (!submissions || submissions.length === 0) {
       return { icon: 'fa-hand', color: '#E65100', status: 'not_uploaded', text: 'Required' };
     }
@@ -7273,7 +7273,9 @@ function submitPasswordReset(event) {
     } else if (status === 'rejected' || status === 'rso_rejected' || status === 'gea_rejected' || status === 'board_rejection' || status === 'board_rejected_member_notified') {
       return { icon: 'fa-circle-xmark', color: '#C62828', status: 'rejected', text: 'Rejected - Replace Required', showButtons: true, showReplace: true };
     } else if (status === 'submitted' || status === 'submitted_for_board' || status === 'rso_approved' || status === 'gea_pending') {
-      var isUnderReview = status === 'submitted' || status === 'submitted_for_board' || status === 'gea_pending';
+      // During awaiting_docs phase, show as "Uploaded" even though internal status is "submitted"
+      var isAwaitingDocs = appStatus === 'awaiting_docs';
+      var isUnderReview = !isAwaitingDocs && (status === 'submitted' || status === 'submitted_for_board' || status === 'gea_pending');
       return {
         icon: isUnderReview ? 'fa-hourglass-end' : 'fa-thumbs-up',
         color: isUnderReview ? '#1565C0' : '#FF9800',
@@ -7356,9 +7358,9 @@ function submitPasswordReset(event) {
         row.style.alignItems = 'center';
         row.style.marginTop = '8px';
 
-        var passportStatus = passportSubs.length > 0 ? getDocumentStatusInfo(passportSubs) : null;
-        var omangStatus = omangSubs.length > 0 ? getDocumentStatusInfo(omangSubs) : null;
-        var idStatus = passportStatus || omangStatus || getDocumentStatusInfo([]);
+        var passportStatus = passportSubs.length > 0 ? getDocumentStatusInfo(passportSubs, app.status) : null;
+        var omangStatus = omangSubs.length > 0 ? getDocumentStatusInfo(omangSubs, app.status) : null;
+        var idStatus = passportStatus || omangStatus || getDocumentStatusInfo([], app.status);
 
         var label = document.createElement('span');
         label.style.fontWeight = '600';
@@ -7391,7 +7393,7 @@ function submitPasswordReset(event) {
           uploadPass.className = 'btn btn-small';
           uploadPass.style.fontSize = '14px';
           uploadPass.innerHTML = '<i class="fas fa-passport" style="margin-right: 6px;"></i>' + (passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport');
-          uploadPass.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'passport'); }; })(ind.individual_id);
+          uploadPass.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'passport', btn); }; })(ind.individual_id, uploadPass);
           uploadDiv.appendChild(uploadPass);
           if (idStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_passport'] = true;
@@ -7403,7 +7405,7 @@ function submitPasswordReset(event) {
           uploadOmang.className = 'btn btn-small';
           uploadOmang.style.fontSize = '14px';
           uploadOmang.innerHTML = '<i class="fas fa-id-card" style="margin-right: 6px;"></i>' + (omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang');
-          uploadOmang.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'omang'); }; })(ind.individual_id);
+          uploadOmang.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'omang', btn); }; })(ind.individual_id, uploadOmang);
           uploadDiv.appendChild(uploadOmang);
           if (idStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_omang'] = true;
@@ -7421,7 +7423,7 @@ function submitPasswordReset(event) {
         photoRow.style.marginTop = '8px';
 
         var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
-        var photoStatus = getDocumentStatusInfo(photoSubs);
+        var photoStatus = getDocumentStatusInfo(photoSubs, app.status);
 
         var photoLabel = document.createElement('span');
         photoLabel.style.fontWeight = '600';
@@ -7449,7 +7451,7 @@ function submitPasswordReset(event) {
           photoUpload.className = 'btn btn-small';
           photoUpload.style.fontSize = '14px';
           photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
-          photoUpload.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'photo'); }; })(ind.individual_id);
+          photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
           photoUploadDiv.appendChild(photoUpload);
           if (photoStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_photo'] = true;
@@ -7476,7 +7478,7 @@ function submitPasswordReset(event) {
             docRow.style.marginTop = '8px';
 
             var docSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return String(s.document_type).toLowerCase() === String(docType).toLowerCase(); });
-            var docStatus = getDocumentStatusInfo(docSubs);
+            var docStatus = getDocumentStatusInfo(docSubs, app.status);
 
             var docLabel = document.createElement('span');
             docLabel.style.fontWeight = '600';
@@ -7506,7 +7508,7 @@ function submitPasswordReset(event) {
               docUpload.style.fontSize = '14px';
               var displayName = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
               docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace ' : 'Upload ') + displayName;
-              docUpload.onclick = (function(id, dt) { return function() { triggerDocumentUpload(id, dt); }; })(ind.individual_id, docType);
+              docUpload.onclick = (function(id, dt, btn) { return function() { triggerDocumentUpload(id, dt, btn); }; })(ind.individual_id, docType, docUpload);
               docUploadDiv.appendChild(docUpload);
               if (docStatus.status === 'rejected') {
                 rejectedDocuments[ind.individual_id + '_' + docType] = true;
@@ -7520,7 +7522,7 @@ function submitPasswordReset(event) {
       } else {
         // Minors: photo required + optional ID docs
         var photoSubs = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === 'photo'; });
-        var photoStatus = getDocumentStatusInfo(photoSubs);
+        var photoStatus = getDocumentStatusInfo(photoSubs, app.status);
 
         var photoRow = document.createElement('div');
         photoRow.style.display = 'flex';
@@ -7554,7 +7556,7 @@ function submitPasswordReset(event) {
           photoUpload.className = 'btn btn-small';
           photoUpload.style.fontSize = '14px';
           photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
-          photoUpload.onclick = (function(id) { return function() { triggerDocumentUpload(id, 'photo'); }; })(ind.individual_id);
+          photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
           photoUploadDiv.appendChild(photoUpload);
           if (photoStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_photo'] = true;
@@ -7573,7 +7575,7 @@ function submitPasswordReset(event) {
           row.style.marginTop = '8px';
 
           var submissions = (app.documents && app.documents[ind.individual_id] || []).filter(function(s) { return s.document_type === docType; });
-          var docStatus = getDocumentStatusInfo(submissions);
+          var docStatus = getDocumentStatusInfo(submissions, app.status);
 
           var label = document.createElement('span');
           label.style.fontWeight = '600';
@@ -7603,7 +7605,7 @@ function submitPasswordReset(event) {
             var iconClass = docType === 'passport' ? 'fa-passport' : 'fa-id-card';
             var docTypeName = docType === 'passport' ? 'Passport' : 'Omang';
             upload.innerHTML = '<i class="fas ' + iconClass + '" style="margin-right: 6px;"></i>' + (submissions.length > 0 ? 'Replace ' : 'Upload ') + docTypeName;
-            upload.onclick = (function(id, dt) { return function() { triggerDocumentUpload(id, dt); }; })(ind.individual_id, docType);
+            upload.onclick = (function(id, dt, btn) { return function() { triggerDocumentUpload(id, dt, btn); }; })(ind.individual_id, docType, upload);
             btnDiv.appendChild(upload);
             if (docStatus.status === 'rejected') {
               rejectedDocuments[ind.individual_id + '_' + docType] = true;

@@ -6810,11 +6810,13 @@ function submitPasswordReset(event) {
         showError('Failed to load application status: ' + res.message);
         return;
       }
-      console.log("APP_STATUS_LOADED: category_set=" + !!res.data.membership_category + ", individuals_count=" + (res.data.individuals ? res.data.individuals.length : 0));
-      if (res.data.membership_category && APPLICANT_UPLOAD_TYPES[res.data.membership_category]) {
-        console.log("Category_config_found: " + res.data.membership_category);
-      } else if (res.data.membership_category) {
-        console.log("Category_config_missing: " + res.data.membership_category);
+      if (res.data) {
+        console.log("APP_STATUS_LOADED: category_set=" + !!res.data.membership_category + ", individuals_count=" + (res.data.individuals ? res.data.individuals.length : 0));
+        if (res.data.membership_category && APPLICANT_UPLOAD_TYPES[res.data.membership_category]) {
+          console.log("Category_config_found: " + res.data.membership_category);
+        } else if (res.data.membership_category) {
+          console.log("Category_config_missing: " + res.data.membership_category);
+        }
       }
       updatePortalDebug({
         last_applicant_success: true,

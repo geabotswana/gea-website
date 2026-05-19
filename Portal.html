@@ -2852,6 +2852,8 @@
       google.script.run.withSuccessHandler(function(config) {
         APPLICANT_UPLOAD_TYPES = config.applicant || {};
         FAMILY_STAFF_UPLOAD_TYPES = config.family || [];
+      }).withFailureHandler(function(error) {
+        // Backend function may not exist; using default values
       }).getApplicantUploadConfiguration();
     } catch (e) {
       // Backend function may not exist; using default values
@@ -7283,6 +7285,27 @@ function submitPasswordReset(event) {
 
     var rejectedDocuments = {};
 
+    // Diagnostic: Check if category is present and has config
+    if (!app.membership_category) {
+      var notice = document.createElement('div');
+      notice.style.padding = '12px';
+      notice.style.backgroundColor = '#fff3cd';
+      notice.style.color = '#856404';
+      notice.style.borderRadius = '4px';
+      notice.style.marginBottom = '12px';
+      notice.textContent = 'Note: Membership category not set for this application.';
+      card.appendChild(notice);
+    } else if (!APPLICANT_UPLOAD_TYPES[app.membership_category]) {
+      var notice = document.createElement('div');
+      notice.style.padding = '12px';
+      notice.style.backgroundColor = '#fff3cd';
+      notice.style.color = '#856404';
+      notice.style.borderRadius = '4px';
+      notice.style.marginBottom = '12px';
+      notice.textContent = 'Note: Document configuration not found for category.';
+      card.appendChild(notice);
+    }
+
     (app.individuals || []).forEach(function(ind) {
       var age = _calculateAge(ind.date_of_birth);
       var isAdult = age === null || age >= 18;
@@ -7425,11 +7448,9 @@ function submitPasswordReset(event) {
         // Category-specific documents (applicants only)
         if (isApplicant && app.membership_category) {
           var categoryDocs = APPLICANT_UPLOAD_TYPES[app.membership_category] || [];
-          console.log("Rendering special docs for " + (ind.first_name + " " + ind.last_name) + ", category: " + app.membership_category + ", categoryDocs:", categoryDocs);
           var specialDocs = categoryDocs.filter(function(doc) {
             return doc !== 'Passport' && doc !== 'Omang' && doc !== 'Photo';
           });
-          console.log("specialDocs to render:", specialDocs);
 
           specialDocs.forEach(function(docType) {
             var docRow = document.createElement('div');

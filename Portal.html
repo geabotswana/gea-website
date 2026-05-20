@@ -7524,19 +7524,22 @@ function submitPasswordReset(event) {
             docUploadDiv.style.display = 'flex';
             docUploadDiv.style.gap = '6px';
 
+            // Normalize special document type for API calls (e.g., "Funding Verification" → "funding_verification")
+            var normalizedDocType = docType.toLowerCase().replace(/\s+/g, '_');
+
             var docUpload = document.createElement('button');
             docUpload.className = 'btn btn-small';
             docUpload.style.fontSize = '14px';
             var displayName = getDocumentDisplayLabel(docType, app.membership_category, true).replace(': Required', '');
             docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace ' : 'Upload ') + displayName;
-            docUpload.onclick = (function(id, dt, btn) { return function() { triggerDocumentUpload(id, dt, btn); }; })(ind.individual_id, docType, docUpload);
+            docUpload.onclick = (function(id, dt, btn) { return function() { triggerDocumentUpload(id, dt, btn); }; })(ind.individual_id, normalizedDocType, docUpload);
             docUploadDiv.appendChild(docUpload);
             if (docSubs.length > 0 && docStatus.status !== 'rejected') {
               var docRemove = document.createElement('button');
               docRemove.className = 'btn btn-small btn-danger';
               docRemove.style.fontSize = '14px';
               docRemove.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
-              docRemove.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, docType, docRemove);
+              docRemove.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, normalizedDocType, docRemove);
               docUploadDiv.appendChild(docRemove);
             }
             if (docStatus.status === 'rejected') {

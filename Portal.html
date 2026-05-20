@@ -7524,8 +7524,8 @@ function submitPasswordReset(event) {
             docUploadDiv.style.display = 'flex';
             docUploadDiv.style.gap = '6px';
 
-            // Normalize special document type for API calls (e.g., "Funding Verification" → "funding_verification")
-            var normalizedDocType = docType.toLowerCase().replace(/\s+/g, '_');
+            // Normalize special document type for API calls (e.g., "Funding Verification" → "funding verification")
+            var normalizedDocType = docType.toLowerCase();
 
             var docUpload = document.createElement('button');
             docUpload.className = 'btn btn-small';

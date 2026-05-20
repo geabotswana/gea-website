@@ -9793,7 +9793,7 @@ function submitPasswordReset(event) {
       yesBtn.textContent = 'Removing...';
       apiCall('remove_document', { individual_id: individualId, document_type: docType })
         .then(function(res) {
-          if (res.ok) {
+          if (res.success) {
             showToast(label + ' removed.', 'success');
             loadApplicantPortal();
           } else {

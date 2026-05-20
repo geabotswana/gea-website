@@ -7400,7 +7400,7 @@ function submitPasswordReset(event) {
             removePass.className = 'btn btn-small btn-danger';
             removePass.style.fontSize = '14px';
             removePass.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
-            removePass.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'passport');
+            removePass.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, 'passport', removePass);
             uploadDiv.appendChild(removePass);
           }
           if (idStatus.status === 'rejected') {
@@ -7420,7 +7420,7 @@ function submitPasswordReset(event) {
             removeOmang.className = 'btn btn-small btn-danger';
             removeOmang.style.fontSize = '14px';
             removeOmang.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
-            removeOmang.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'omang');
+            removeOmang.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, 'omang', removeOmang);
             uploadDiv.appendChild(removeOmang);
           }
           if (idStatus.status === 'rejected') {
@@ -7473,7 +7473,7 @@ function submitPasswordReset(event) {
           removePhoto.className = 'btn btn-small btn-danger';
           removePhoto.style.fontSize = '14px';
           removePhoto.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
-          removePhoto.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'photo');
+          removePhoto.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, 'photo', removePhoto);
           photoUploadDiv.appendChild(removePhoto);
         }
         if (photoStatus.status === 'rejected') {
@@ -7536,7 +7536,7 @@ function submitPasswordReset(event) {
               docRemove.className = 'btn btn-small btn-danger';
               docRemove.style.fontSize = '14px';
               docRemove.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
-              docRemove.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, docType);
+              docRemove.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, docType, docRemove);
               docUploadDiv.appendChild(docRemove);
             }
             if (docStatus.status === 'rejected') {
@@ -7590,7 +7590,7 @@ function submitPasswordReset(event) {
           removePhoto.className = 'btn btn-small btn-danger';
           removePhoto.style.fontSize = '14px';
           removePhoto.innerHTML = '<i class="fas fa-trash" style="margin-right: 6px;"></i>Remove';
-          removePhoto.onclick = (function(id, dt) { return function() { removeDocumentSubmission(id, dt); }; })(ind.individual_id, 'photo');
+          removePhoto.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, 'photo', removePhoto);
           photoUploadDiv.appendChild(removePhoto);
         }
         if (photoStatus.status === 'rejected') {

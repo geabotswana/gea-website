@@ -82,23 +82,26 @@ function uploadFileSubmission(params) {
     _appendRowByHeaders_(submissionSheet, payload);
 
     if (documentType === "passport" || documentType === "omang") {
-      // RSO now reviews documents via portal login (RSO links discontinued)
-      sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
-        APPLICANT_NAME:    payload.submission_id,
-        APPLICATION_ID:    payload.submission_id,
-        DOCUMENT_TYPES:    documentType.charAt(0).toUpperCase() + documentType.slice(1),
-        APPROVAL_DEADLINE: formatDate(addBusinessDays(new Date(), 5))
-      });
-
-      // Notify board for awareness (background notification, no action needed)
-      var individual = getMemberById(payload.individual_id);
-      if (individual) {
-        sendEmailFromTemplate("DOC_DOCUMENT_RECEIVED_TO_BOARD", EMAIL_BOARD, {
-          MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
-          DOCUMENT_TYPE: documentType.charAt(0).toUpperCase() + documentType.slice(1),
-          SUBMISSION_DATE: formatDate(payload.submitted_date),
-          SUBMISSION_ID: payload.submission_id
+      if (!applicationId) {
+        // Member document upload: notify RSO immediately. For applicant uploads, RSO is
+        // notified only after board approval via the application workflow (ApplicationService).
+        sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", EMAIL_RSO_APPROVE, {
+          APPLICANT_NAME:    payload.submission_id,
+          APPLICATION_ID:    payload.submission_id,
+          DOCUMENT_TYPES:    documentType.charAt(0).toUpperCase() + documentType.slice(1),
+          APPROVAL_DEADLINE: formatDate(addBusinessDays(new Date(), 5))
         });
+
+        // Notify board for awareness (background notification, no action needed)
+        var individual = getMemberById(payload.individual_id);
+        if (individual) {
+          sendEmailFromTemplate("DOC_DOCUMENT_RECEIVED_TO_BOARD", EMAIL_BOARD, {
+            MEMBER_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
+            DOCUMENT_TYPE: documentType.charAt(0).toUpperCase() + documentType.slice(1),
+            SUBMISSION_DATE: formatDate(payload.submitted_date),
+            SUBMISSION_ID: payload.submission_id
+          });
+        }
       }
     } else if (documentType === "photo") {
       // Send notifications for photo submission to GEA Board (not RSO)

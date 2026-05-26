@@ -7389,7 +7389,7 @@ function submitPasswordReset(event) {
         uploadDiv.style.gap = '6px';
 
         if (showPassport) {
-          var canUploadPassport = (app.status === 'awaiting_docs') || (idStatus && idStatus.status === 'rejected');
+          var canUploadPassport = (app.status === 'awaiting_docs') || (passportStatus && passportStatus.status === 'rejected');
           if (canUploadPassport) {
             var uploadPass = document.createElement('button');
             uploadPass.className = 'btn btn-small';
@@ -7406,13 +7406,13 @@ function submitPasswordReset(event) {
             removePass.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, 'passport', removePass);
             uploadDiv.appendChild(removePass);
           }
-          if (idStatus.status === 'rejected') {
+          if (passportStatus && passportStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_passport'] = true;
           }
         }
 
         if (showOmang) {
-          var canUploadOmang = (app.status === 'awaiting_docs') || (idStatus && idStatus.status === 'rejected');
+          var canUploadOmang = (app.status === 'awaiting_docs') || (omangStatus && omangStatus.status === 'rejected');
           if (canUploadOmang) {
             var uploadOmang = document.createElement('button');
             uploadOmang.className = 'btn btn-small';
@@ -7429,7 +7429,7 @@ function submitPasswordReset(event) {
             removeOmang.onclick = (function(id, dt, btn) { return function() { removeDocument(id, dt, btn); }; })(ind.individual_id, 'omang', removeOmang);
             uploadDiv.appendChild(removeOmang);
           }
-          if (idStatus.status === 'rejected') {
+          if (omangStatus && omangStatus.status === 'rejected') {
             rejectedDocuments[ind.individual_id + '_omang'] = true;
           }
         }

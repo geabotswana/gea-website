@@ -451,10 +451,6 @@ function confirmDocumentsUploaded(applicationId, email) {
     if (!readiness.ok) {
       return { success: false, message: "Could not verify documents: " + (readiness.error || "Unknown error") };
     }
-    if (readiness.missingDocs && readiness.missingDocs.length > 0) {
-      var docList = readiness.missingDocs.join(", ");
-      return { success: false, message: "Missing required documents: " + docList };
-    }
 
     // Update application status to board_initial_review (board must review before RSO)
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);

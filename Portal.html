@@ -7351,8 +7351,6 @@ function submitPasswordReset(event) {
         var showPassport = allowedIdTypes.indexOf('Passport') !== -1;
         var showOmang = allowedIdTypes.indexOf('Omang') !== -1;
 
-        console.log("DEBUG_DOCS: ind=" + ind.individual_id + ", app.status=" + app.status + ", passportSubs=" + JSON.stringify(passportSubs) + ", omangSubs=" + JSON.stringify(omangSubs));
-
         // ID row (passport or omang)
         var row = document.createElement('div');
         row.style.display = 'flex';

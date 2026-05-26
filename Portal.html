@@ -7351,6 +7351,8 @@ function submitPasswordReset(event) {
         var showPassport = allowedIdTypes.indexOf('Passport') !== -1;
         var showOmang = allowedIdTypes.indexOf('Omang') !== -1;
 
+        console.log("DEBUG_DOCS: ind=" + ind.individual_id + ", app.status=" + app.status + ", passportSubs=" + JSON.stringify(passportSubs) + ", omangSubs=" + JSON.stringify(omangSubs));
+
         // ID row (passport or omang)
         var row = document.createElement('div');
         row.style.display = 'flex';
@@ -7395,7 +7397,7 @@ function submitPasswordReset(event) {
           uploadPass.innerHTML = '<i class="fas fa-passport" style="margin-right: 6px;"></i>' + (passportSubs.length > 0 ? 'Replace Passport' : 'Upload Passport');
           uploadPass.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'passport', btn); }; })(ind.individual_id, uploadPass);
           uploadDiv.appendChild(uploadPass);
-          if (passportSubs.length > 0 && passportSubs.some(function(s) { return s.status === 'submitted'; })) {
+          if (passportSubs.length > 0 && app.status === 'awaiting_docs' && passportSubs.some(function(s) { return s.status === 'submitted'; })) {
             var removePass = document.createElement('button');
             removePass.className = 'btn btn-small btn-danger';
             removePass.style.fontSize = '14px';
@@ -7415,7 +7417,7 @@ function submitPasswordReset(event) {
           uploadOmang.innerHTML = '<i class="fas fa-id-card" style="margin-right: 6px;"></i>' + (omangSubs.length > 0 ? 'Replace Omang' : 'Upload Omang');
           uploadOmang.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'omang', btn); }; })(ind.individual_id, uploadOmang);
           uploadDiv.appendChild(uploadOmang);
-          if (omangSubs.length > 0 && omangSubs.some(function(s) { return s.status === 'submitted'; })) {
+          if (omangSubs.length > 0 && app.status === 'awaiting_docs' && omangSubs.some(function(s) { return s.status === 'submitted'; })) {
             var removeOmang = document.createElement('button');
             removeOmang.className = 'btn btn-small btn-danger';
             removeOmang.style.fontSize = '14px';
@@ -7468,7 +7470,7 @@ function submitPasswordReset(event) {
         photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
         photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
         photoUploadDiv.appendChild(photoUpload);
-        if (photoSubs.length > 0 && photoSubs.some(function(s) { return s.status === 'submitted'; })) {
+        if (photoSubs.length > 0 && app.status === 'awaiting_docs' && photoSubs.some(function(s) { return s.status === 'submitted'; })) {
           var removePhoto = document.createElement('button');
           removePhoto.className = 'btn btn-small btn-danger';
           removePhoto.style.fontSize = '14px';
@@ -7534,7 +7536,7 @@ function submitPasswordReset(event) {
             docUpload.innerHTML = '<i class="fas fa-file-lines" style="margin-right: 6px;"></i>' + (docSubs.length > 0 ? 'Replace ' : 'Upload ') + displayName;
             docUpload.onclick = (function(id, dt, btn) { return function() { triggerDocumentUpload(id, dt, btn); }; })(ind.individual_id, normalizedDocType, docUpload);
             docUploadDiv.appendChild(docUpload);
-            if (docSubs.length > 0 && docSubs.some(function(s) { return s.status === 'submitted'; })) {
+            if (docSubs.length > 0 && app.status === 'awaiting_docs' && docSubs.some(function(s) { return s.status === 'submitted'; })) {
               var docRemove = document.createElement('button');
               docRemove.className = 'btn btn-small btn-danger';
               docRemove.style.fontSize = '14px';
@@ -7588,7 +7590,7 @@ function submitPasswordReset(event) {
         photoUpload.innerHTML = '<i class="fas fa-image-portrait" style="margin-right: 6px;"></i>' + (photoSubs.length > 0 ? 'Replace Photo' : 'Upload Photo');
         photoUpload.onclick = (function(id, btn) { return function() { triggerDocumentUpload(id, 'photo', btn); }; })(ind.individual_id, photoUpload);
         photoUploadDiv.appendChild(photoUpload);
-        if (photoSubs.length > 0 && photoSubs.some(function(s) { return s.status === 'submitted'; })) {
+        if (photoSubs.length > 0 && app.status === 'awaiting_docs' && photoSubs.some(function(s) { return s.status === 'submitted'; })) {
           var removePhoto = document.createElement('button');
           removePhoto.className = 'btn btn-small btn-danger';
           removePhoto.style.fontSize = '14px';

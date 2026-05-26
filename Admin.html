@@ -7896,7 +7896,8 @@
         showError(res.message || 'Error approving application');
       }
     }).catch(function(err) {
-      showError('Error: ' + err.message);
+      var errMsg = (err && err.message) ? err.message : String(err);
+      showError(errMsg || 'Error approving application');
     });
   }
 
@@ -8000,6 +8001,10 @@
     type = type || 'info';
     if (type === 'error') console.error(message);
     var container = document.getElementById('toast-container');
+    if (!container) {
+      console.warn('Toast container not found');
+      return;
+    }
     var toast = document.createElement('div');
     toast.className = 'toast toast-' + type;
     toast.textContent = message;

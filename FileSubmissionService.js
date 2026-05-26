@@ -288,8 +288,8 @@ function checkApplicationDocumentReadiness(applicationId) {
       var status = String(s.status || "").toLowerCase();
       var docType = String(s.document_type || "").toLowerCase();
 
-      // Accept documents in gea_pending or verified status (submitted but not yet approved is OK for RSO)
-      var isAcceptableStatus = (status === "gea_pending" || status === "verified" || status === "approved");
+      // Accept documents in submitted or later status (gea_pending, verified, approved)
+      var isAcceptableStatus = (status === "submitted" || status === "gea_pending" || status === "verified" || status === "approved");
 
       if (isAcceptableStatus) {
         submittedDocs[docType] = true;

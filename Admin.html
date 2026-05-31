@@ -7794,12 +7794,19 @@
       }
       var blob = new Blob([bytes], { type: res.data.mime_type });
       var blobUrl = URL.createObjectURL(blob);
+      var isPdf = res.data.mime_type.indexOf('pdf') >= 0;
 
       newTabBtn.onclick = function() { window.open(blobUrl, '_blank'); };
 
-      // Display image (PDFs converted to images server-side, fallback for other formats)
-      imgEl.src = blobUrl;
-      imgEl.style.display = 'block';
+      if (isPdf) {
+        // PDF not yet converted to images; show message to try again
+        errorEl.innerHTML = '<p style="margin:0; line-height:1.5;">This document is being converted to an image format.</p><p style="margin:10px 0 0 0; font-size:13px; opacity:0.8;">Please try again in a moment.</p>';
+        errorEl.style.display = 'block';
+      } else {
+        // Display image (PDFs converted to images, or native image uploads)
+        imgEl.src = blobUrl;
+        imgEl.style.display = 'block';
+      }
     }).catch(function(err) {
       loading.style.display = 'none';
       errorEl.textContent = 'Error loading document: ' + (err && err.message ? err.message : String(err));

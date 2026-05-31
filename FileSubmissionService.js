@@ -1391,6 +1391,34 @@ function migrateSubmissionTypeField() {
 }
 
 /**
+ * FUNCTION: _ensureSubmissionColumns_
+ * PURPOSE: Add missing columns to File Submissions sheet
+ * @param {Array} requiredColumns Column names to ensure exist
+ * @returns {Object} { ok, added: [] }
+ */
+function _ensureSubmissionColumns_(requiredColumns) {
+  try {
+    var sheet = _getFileSubmissionsSheet_();
+    var headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var added = [];
+
+    for (var i = 0; i < requiredColumns.length; i++) {
+      var col = requiredColumns[i];
+      if (headerRow.indexOf(col) === -1) {
+        var nextCol = headerRow.length + 1;
+        sheet.getRange(1, nextCol).setValue(col);
+        added.push(col);
+      }
+    }
+
+    return { ok: true, added: added };
+  } catch (e) {
+    Logger.log("Warning: Could not ensure columns: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
  * FUNCTION: convertPdfToImages
  * PURPOSE: Convert PDF to PNG images (one per page) using Google Docs API.
  * Stores image file IDs in spreadsheet, then deletes original PDF and temp Google Doc.
@@ -1403,6 +1431,9 @@ function convertPdfToImages(pdfFileId, submissionId) {
     if (!pdfFileId) {
       return { ok: false, error: "PDF file ID required" };
     }
+
+    // Ensure required columns exist in File Submissions sheet
+    _ensureSubmissionColumns_(["image_file_ids", "pdf_conversion_date", "image_count"]);
 
     var pdfFile = DriveApp.getFileById(pdfFileId);
     var pdfBlob = pdfFile.getBlob();

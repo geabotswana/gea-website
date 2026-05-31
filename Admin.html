@@ -7769,29 +7769,45 @@
       pdfEl.style.display = 'block';
       pdfEl.innerHTML = '';
 
-      // Render first page (for single-page or preview)
-      pdf.getPage(1).then(function(page) {
-        var scale = 1.5;
-        var viewport = page.getViewport({ scale: scale });
-        var canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        canvas.style.maxWidth = '100%';
-        canvas.style.height = 'auto';
-        canvas.style.display = 'block';
+      // Render all pages
+      var numPages = pdf.numPages;
+      var pagePromises = [];
 
-        var renderContext = {
-          canvasContext: canvas.getContext('2d'),
-          viewport: viewport
-        };
+      for (var pageNum = 1; pageNum <= numPages; pageNum++) {
+        pagePromises.push(
+          pdf.getPage(pageNum).then((function(pNum) {
+            return function(page) {
+              var scale = 1.5;
+              var viewport = page.getViewport({ scale: scale });
+              var canvas = document.createElement('canvas');
+              canvas.width = viewport.width;
+              canvas.height = viewport.height;
+              canvas.style.display = 'block';
+              canvas.style.marginBottom = '10px';
+              canvas.style.maxWidth = '100%';
+              canvas.style.height = 'auto';
 
-        page.render(renderContext).promise.then(function() {
+              var renderContext = {
+                canvasContext: canvas.getContext('2d'),
+                viewport: viewport
+              };
+
+              return page.render(renderContext).promise.then(function() {
+                return canvas;
+              });
+            };
+          })(pageNum))
+        );
+      }
+
+      Promise.all(pagePromises).then(function(canvases) {
+        canvases.forEach(function(canvas) {
           pdfEl.appendChild(canvas);
-        }).catch(function(err) {
-          errorEl.textContent = 'Error rendering PDF: ' + err;
-          errorEl.style.display = 'block';
-          pdfEl.style.display = 'none';
         });
+      }).catch(function(err) {
+        errorEl.textContent = 'Error rendering PDF pages: ' + err;
+        errorEl.style.display = 'block';
+        pdfEl.style.display = 'none';
       });
     }).catch(function(err) {
       errorEl.textContent = 'Error loading PDF: ' + err;

@@ -1401,13 +1401,14 @@ function _ensureSubmissionColumns_(requiredColumns) {
     var sheet = _getFileSubmissionsSheet_();
     var headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     var added = [];
+    var nextCol = headerRow.length + 1;
 
     for (var i = 0; i < requiredColumns.length; i++) {
       var col = requiredColumns[i];
       if (headerRow.indexOf(col) === -1) {
-        var nextCol = headerRow.length + 1;
         sheet.getRange(1, nextCol).setValue(col);
         added.push(col);
+        nextCol++;
       }
     }
 

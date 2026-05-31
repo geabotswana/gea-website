@@ -392,7 +392,7 @@ function _routeAction(action, params) {
    * HANDLER: get_file_data
    * Returns base64-encoded file data + MIME type for authenticated document viewing.
    * Used by the Admin document viewer to display files inline without an iframe.
-   * If the file is a PDF that has been converted to images, returns the first image instead.
+   * If the file is a PDF that has been converted to images, returns all images.
    */
   function _handleGetFileData(p) {
     var auth = requireAuth(p.token);
@@ -406,12 +406,30 @@ function _routeAction(action, params) {
       // Check if this file has been converted to images (PII security: serve images instead of PDFs)
       var submission = _findSubmissionByFileId(fileIdToFetch);
       if (submission && submission.obj.image_file_ids) {
-        var imageIds = String(submission.obj.image_file_ids || '').split(',');
-        if (imageIds.length > 0 && imageIds[0].trim()) {
-          fileIdToFetch = imageIds[0].trim();
+        var imageIds = String(submission.obj.image_file_ids || '').split(',').map(function(id) { return id.trim(); }).filter(function(id) { return id.length > 0; });
+
+        if (imageIds.length > 0) {
+          // Return all converted images as array
+          var images = [];
+          for (var i = 0; i < imageIds.length; i++) {
+            try {
+              var imgFile = DriveApp.getFileById(imageIds[i]);
+              var imgBlob = imgFile.getBlob();
+              var imgBase64 = Utilities.base64Encode(imgBlob.getBytes());
+              var imgMimeType = imgBlob.getContentType() || 'image/jpeg';
+              images.push({ base64: imgBase64, mime_type: imgMimeType, file_name: imgFile.getName() });
+            } catch (imgErr) {
+              Logger.log("Warning: Could not load image " + imageIds[i] + ": " + imgErr);
+            }
+          }
+
+          if (images.length > 0) {
+            return successResponse({ images: images, is_multi_page: images.length > 1 });
+          }
         }
       }
 
+      // Fallback: return original file (used for non-converted PDFs and other formats)
       var file = DriveApp.getFileById(fileIdToFetch);
       var blob = file.getBlob();
       var base64 = Utilities.base64Encode(blob.getBytes());

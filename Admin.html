@@ -7786,7 +7786,56 @@
         return;
       }
 
-      // Convert base64 to blob
+      // Handle multi-page converted images
+      if (res.data.images && res.data.images.length > 0) {
+        imgEl.style.display = 'block';
+        imgEl.style.marginBottom = '10px';
+
+        // Display all converted image pages
+        var container = imgEl.parentElement;
+        var existingImages = container.querySelectorAll('[data-page-image]');
+        for (var j = 0; j < existingImages.length; j++) {
+          existingImages[j].remove();
+        }
+
+        var blobUrls = [];
+        for (var i = 0; i < res.data.images.length; i++) {
+          var imageData = res.data.images[i];
+          var binaryString = atob(imageData.base64);
+          var bytes = new Uint8Array(binaryString.length);
+          for (var k = 0; k < binaryString.length; k++) {
+            bytes[k] = binaryString.charCodeAt(k);
+          }
+          var blob = new Blob([bytes], { type: imageData.mime_type });
+          var blobUrl = URL.createObjectURL(blob);
+          blobUrls.push(blobUrl);
+
+          if (i === 0) {
+            imgEl.src = blobUrl;
+          } else {
+            var pageImg = document.createElement('img');
+            pageImg.src = blobUrl;
+            pageImg.setAttribute('data-page-image', i);
+            pageImg.style.display = 'block';
+            pageImg.style.maxWidth = '100%';
+            pageImg.style.maxHeight = '100%';
+            pageImg.style.objectFit = 'contain';
+            pageImg.style.borderRadius = '4px';
+            pageImg.style.marginTop = '10px';
+            container.appendChild(pageImg);
+          }
+        }
+
+        newTabBtn.onclick = function() { window.open(blobUrls[0], '_blank'); };
+
+        if (res.data.is_multi_page) {
+          errorEl.innerHTML = '<p style="margin:0; font-size:13px; opacity:0.8;">Showing ' + res.data.images.length + ' page(s)</p>';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      // Single file fallback (original PDF or other format)
       var binaryString = atob(res.data.base64);
       var bytes = new Uint8Array(binaryString.length);
       for (var i = 0; i < binaryString.length; i++) {
@@ -7799,11 +7848,11 @@
       newTabBtn.onclick = function() { window.open(blobUrl, '_blank'); };
 
       if (isPdf) {
-        // PDF not yet converted to images; show message to try again
-        errorEl.innerHTML = '<p style="margin:0; line-height:1.5;">This document is being converted to an image format.</p><p style="margin:10px 0 0 0; font-size:13px; opacity:0.8;">Please try again in a moment.</p>';
+        // PDF not yet converted; show message but allow download
+        errorEl.innerHTML = '<p style="margin:0; line-height:1.5;">This PDF is still being converted to images.</p><p style="margin:10px 0 0 0; font-size:13px; opacity:0.8;">Use "Open in New Tab" to download and view it now.</p>';
         errorEl.style.display = 'block';
       } else {
-        // Display image (PDFs converted to images, or native image uploads)
+        // Display image (native image uploads)
         imgEl.src = blobUrl;
         imgEl.style.display = 'block';
       }
@@ -7818,9 +7867,17 @@
     var modal = document.getElementById('docViewerModal');
     var imgEl = document.getElementById('docViewerImg');
 
-    // Revoke blob URLs to free memory
+    // Revoke all blob URLs to free memory (single + multi-page)
     if (imgEl.src && imgEl.src.startsWith('blob:')) {
       URL.revokeObjectURL(imgEl.src);
+    }
+
+    var pageImages = modal.querySelectorAll('[data-page-image]');
+    for (var i = 0; i < pageImages.length; i++) {
+      if (pageImages[i].src && pageImages[i].src.startsWith('blob:')) {
+        URL.revokeObjectURL(pageImages[i].src);
+      }
+      pageImages[i].remove();
     }
 
     imgEl.src = '';

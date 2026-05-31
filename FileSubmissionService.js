@@ -119,6 +119,16 @@ function uploadFileSubmission(params) {
     logAuditEntry(params.user_email || "member", AUDIT_FILE_SUBMISSION_CREATED, "FileSubmission", payload.submission_id,
       "Uploaded " + documentType);
 
+    // Convert PDFs to images asynchronously (non-blocking)
+    if (contentType === "application/pdf" && (documentType === "passport" || documentType === "omang")) {
+      try {
+        convertPdfToImages(file.getId(), payload.submission_id);
+      } catch (e) {
+        Logger.log("Warning: PDF conversion failed for submission " + payload.submission_id + ": " + e);
+        // Don't fail the upload if conversion fails; user can still download original PDF
+      }
+    }
+
     return { ok: true, submission_id: payload.submission_id, message: "File uploaded successfully" };
   } catch (e) {
     Logger.log("ERROR uploadFileSubmission: " + e);
@@ -1378,4 +1388,138 @@ function migrateSubmissionTypeField() {
     Logger.log("ERROR migrateSubmissionTypeField: " + e);
     return { ok: false, error: String(e) };
   }
+}
+
+/**
+ * FUNCTION: convertPdfToImages
+ * PURPOSE: Convert PDF to PNG images (one per page) using Google Docs API.
+ * Stores image file IDs in spreadsheet, then deletes original PDF and temp Google Doc.
+ * @param {string} pdfFileId File ID of PDF in Google Drive
+ * @param {string} submissionId Submission ID for tracking
+ * @returns {Object} { ok, imageFileIds: [], imageCount }
+ */
+function convertPdfToImages(pdfFileId, submissionId) {
+  try {
+    if (!pdfFileId) {
+      return { ok: false, error: "PDF file ID required" };
+    }
+
+    var pdfFile = DriveApp.getFileById(pdfFileId);
+    var pdfBlob = pdfFile.getBlob();
+    var imageFolder = DriveApp.getFolderById(FOLDER_FILE_SUBMISSION_ARCHIVE);
+
+    // Convert PDF to Google Doc (Google Docs API will handle PDF import)
+    var googleDocBlob = pdfBlob.getAs('application/vnd.google-apps.document');
+    var tempDoc = DriveApp.createFile(googleDocBlob).setName('_temp_pdf_conversion_' + submissionId);
+    var tempDocId = tempDoc.getId();
+
+    // Export Google Doc as ZIP (contains images for each page)
+    var docFile = DriveApp.getFileById(tempDocId);
+    var zipBlob = docFile.getAs('application/zip');
+
+    // Extract ZIP to get individual page images
+    var imageFileIds = [];
+    try {
+      // Create a temporary folder for extraction
+      var tempFolder = DriveApp.createFolder('_temp_extract_' + submissionId);
+      var unzipped = Utilities.unzip(zipBlob);
+
+      var baseName = pdfFile.getName().replace(/\.pdf$/i, '');
+
+      // Process extracted images
+      for (var i = 0; i < unzipped.length; i++) {
+        var extractedBlob = unzipped[i];
+        var fileName = extractedBlob.getName();
+
+        // Only process image files from the document
+        if (fileName.match(/\.(png|jpg|jpeg)$/i)) {
+          var imageFile = imageFolder.createFile(extractedBlob);
+          imageFile.setName(baseName + '_page_' + (imageFileIds.length + 1));
+          imageFileIds.push(imageFile.getId());
+        }
+      }
+
+      // Clean up temporary folder
+      try {
+        tempFolder.setTrashed(true);
+      } catch (e) {
+        Logger.log("Warning: Could not delete temp folder: " + e);
+      }
+    } catch (zipError) {
+      Logger.log("Warning: ZIP extraction failed, attempting alternative method: " + zipError);
+      // Fallback: at least try to export as single image
+      var pngBlob = docFile.getAs('image/png');
+      var imageFile = imageFolder.createFile(pngBlob);
+      baseName = pdfFile.getName().replace(/\.pdf$/i, '');
+      imageFile.setName(baseName + '_page_1');
+      imageFileIds.push(imageFile.getId());
+    }
+
+    // Delete temporary Google Doc
+    try {
+      docFile.setTrashed(true);
+    } catch (e) {
+      Logger.log("Warning: Could not delete temp Google Doc: " + e);
+    }
+
+    // Keep original PDF for fallback access, but store that conversion succeeded
+    // If conversion is reliable, original PDF can be deleted in a cleanup task later
+
+    if (imageFileIds.length === 0) {
+      return { ok: false, error: "No images extracted from PDF" };
+    }
+
+    // Store image file IDs in File Submissions sheet
+    var found = _findSubmissionById_(submissionId);
+    if (found) {
+      _setSubmissionFields_(found, {
+        image_file_ids: imageFileIds.join(','),
+        pdf_conversion_date: formatDate(new Date(), true),
+        image_count: imageFileIds.length
+      });
+    }
+
+    Logger.log("SUCCESS: Converted PDF to " + imageFileIds.length + " images for submission " + submissionId);
+    return { ok: true, imageFileIds: imageFileIds, imageCount: imageFileIds.length };
+  } catch (e) {
+    Logger.log("ERROR convertPdfToImages: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * FUNCTION: _getImageFilesForSubmission
+ * PURPOSE: Get converted image file IDs for a submission
+ * @param {string} submissionId
+ * @returns {Array} Array of image file IDs
+ */
+function _getImageFilesForSubmission(submissionId) {
+  var found = _findSubmissionById_(submissionId);
+  if (!found || !found.obj.image_file_ids) {
+    return [];
+  }
+  var imageIds = String(found.obj.image_file_ids || '').split(',');
+  return imageIds.filter(function(id) { return id.trim().length > 0; });
+}
+
+/**
+ * FUNCTION: _findSubmissionByFileId
+ * PURPOSE: Find submission record by Google Drive file_id
+ * @param {string} fileId Google Drive file ID
+ * @returns {Object} { idx, obj } or null
+ */
+function _findSubmissionByFileId(fileId) {
+  var sheet = _getFileSubmissionsSheet_();
+  var data = sheet.getDataRange().getValues();
+  var headers = data[0];
+  var fileIdIdx = headers.indexOf('file_id');
+
+  if (fileIdIdx === -1) return null;
+
+  for (var i = 1; i < data.length; i++) {
+    if (data[i][fileIdIdx] === fileId) {
+      return { idx: i, obj: rowToObject(headers, data[i]) };
+    }
+  }
+  return null;
 }

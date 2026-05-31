@@ -392,6 +392,7 @@ function _routeAction(action, params) {
    * HANDLER: get_file_data
    * Returns base64-encoded file data + MIME type for authenticated document viewing.
    * Used by the Admin document viewer to display files inline without an iframe.
+   * If the file is a PDF that has been converted to images, returns the first image instead.
    */
   function _handleGetFileData(p) {
     var auth = requireAuth(p.token);
@@ -400,7 +401,18 @@ function _routeAction(action, params) {
     if (!p.file_id) return errorResponse("Missing file_id", "INVALID_PARAM");
 
     try {
-      var file = DriveApp.getFileById(String(p.file_id).trim());
+      var fileIdToFetch = String(p.file_id).trim();
+
+      // Check if this file has been converted to images (PII security: serve images instead of PDFs)
+      var submission = _findSubmissionByFileId(fileIdToFetch);
+      if (submission && submission.obj.image_file_ids) {
+        var imageIds = String(submission.obj.image_file_ids || '').split(',');
+        if (imageIds.length > 0 && imageIds[0].trim()) {
+          fileIdToFetch = imageIds[0].trim();
+        }
+      }
+
+      var file = DriveApp.getFileById(fileIdToFetch);
       var blob = file.getBlob();
       var base64 = Utilities.base64Encode(blob.getBytes());
       var mimeType = blob.getContentType() || 'image/jpeg';

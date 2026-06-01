@@ -563,16 +563,14 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReappli
     logAuditEntry(rsoEmail, "APPLICATION_RSO_DENIED", "Application", applicationId,
       "RSO recommended denial of application" + (allowReapplication ? " (reapplication allowed)" : " (permanent)"));
 
-    // Notify board with RSO denial reason and facility-access warning (board makes final call)
+    // Notify board with RSO denial reason (board makes final call)
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
     sendEmailFromTemplate("ADM_RSO_APPLICATION_DENIED_TO_BOARD", boardEmail, {
       FIRST_NAME:          "Board",
       APPLICANT_NAME:      application.primary_applicant_name || "",
       APPLICATION_ID:      applicationId,
-      RSO_DENIAL_REASON:   denialMessage,
-      FACILITY_WARNING:    "WARNING: If you approve this application over RSO's recommendation, the applicant will have full access to GEA facilities.",
-      ALLOW_REAPPLICATION: allowReapplication ? "Yes" : "No",
-      REVIEW_DEADLINE:     formatDate(addBusinessDays(new Date(), 5))
+      DENIAL_MESSAGE:      denialMessage,
+      NEXT_STEPS:          "WARNING: If you approve this application over RSO's recommendation, the applicant will have full access to GEA facilities. Please review by " + formatDate(addBusinessDays(new Date(), 5))
     });
     // Applicant is NOT notified at this stage — board contacts them after making the final decision
 

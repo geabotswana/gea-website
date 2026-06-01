@@ -808,35 +808,28 @@ function rsoDecision(applicationId, decision, rsoEmail, privateNotes, publicReas
       });
 
     } else if (decision === "denied") {
-      // RSO rejects — loops back to initial review with feedback
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("denied");
+      // RSO recommends denial — forward to board_final_review for the board to make the final call.
+      // The board will see the RSO reason and a warning before approving.
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("denied_recommendation");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_private_notes")).setValue(privateNotes || "");
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_INITIAL_REVIEW);
-      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_status")).setValue("");
+      appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_FINAL_REVIEW);
+      // NOTE: board_initial_status is intentionally NOT reset — board already approved at that stage
 
-      logAuditEntry(rsoEmail, AUDIT_APPLICATION_RSO_REVIEWED, "Application", applicationId, "RSO rejected - returned for resubmission");
+      logAuditEntry(rsoEmail, AUDIT_APPLICATION_RSO_REVIEWED, "Application", applicationId, "RSO recommended denial - forwarded to board for final decision");
 
-      // Notify board and applicant
+      // Notify board with RSO denial reason (board makes final call)
       var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
       var _appName3      = application.primary_applicant_name || "";
-      var _appFirstName3 = _appName3.split(" ")[0] || "Applicant";
-      sendEmailFromTemplate("ADM_RSO_DOCUMENT_ISSUE_TO_BOARD", boardEmail, {
-        FIRST_NAME:           "Board",
-        APPLICANT_NAME:       _appName3,
-        APPLICATION_ID:       applicationId,
-        ISSUE_DESCRIPTION:    privateNotes || "RSO identified issues with the submitted documents.",
-        DEADLINE_TO_RESOLVE:  formatDate(addBusinessDays(new Date(), 7))
+      sendEmailFromTemplate("ADM_RSO_APPLICATION_DENIED_TO_BOARD", boardEmail, {
+        FIRST_NAME:          "Board",
+        APPLICANT_NAME:      _appName3,
+        APPLICATION_ID:      applicationId,
+        DENIAL_MESSAGE:      privateNotes || "RSO recommended denial of this application.",
+        NEXT_STEPS:          "WARNING: If you approve this application over RSO's recommendation, the applicant will have full access to GEA facilities. Please review by " + formatDate(addBusinessDays(new Date(), 5))
       });
-
-      sendEmailFromTemplate("DOC_DOCUMENT_REJECTED_TO_MEMBER", application.primary_applicant_email, {
-        FIRST_NAME:        _appFirstName3,
-        DOCUMENT_TYPE:     "Document",
-        REJECTION_REASON:  publicReason || "Your submitted documents did not meet our security requirements.",
-        RESUBMIT_DEADLINE: formatDate(addBusinessDays(new Date(), 7)),
-        PORTAL_URL:        getConfigValue("PORTAL_URL") || ""
-      });
+      // Applicant is NOT notified at this stage — board contacts them after making the final decision
     }
 
     return { success: true, message: "Decision recorded." };

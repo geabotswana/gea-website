@@ -291,8 +291,8 @@ function checkApplicationDocumentReadiness(applicationId) {
     var submittedDocs = {};
     var missingDocs = [];
 
-    // Rejected statuses: rso_rejected, gea_rejected — do not count as "submitted"
-    var _rejectedStatuses = ["rso_rejected", "gea_rejected"];
+    // Rejected statuses: rejected, rso_rejected, gea_rejected — do not count as "submitted"
+    var _rejectedStatuses = ["rejected", "rso_rejected", "gea_rejected"];
 
     for (var j = 0; j < submissions.length; j++) {
       var s = submissions[j];

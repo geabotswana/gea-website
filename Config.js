@@ -1059,12 +1059,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.130";
+var SYSTEM_VERSION          = "2.5.131";
 var SYSTEM_BUILD_DATE       = "2026-06-01";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Merge pull request #228 from geabotswana/claude/optimistic-gauss-uJaGG";
-var DEPLOYMENT_TIMESTAMP    = "2026-06-01 15:12:36";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Merge pull request #229 from geabotswana/fix/membership-bugs-batch-1";
+var DEPLOYMENT_TIMESTAMP    = "2026-06-01 23:22:51";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

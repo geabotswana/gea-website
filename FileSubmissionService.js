@@ -537,15 +537,9 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
 
 function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReapplication) {
   try {
-    var readiness = checkRsoDocReadiness(applicationId);
-    if (!readiness.ok) {
-      return { ok: false, message: "Could not check document status." };
-    }
-    if (!readiness.allApproved) {
-      return { ok: false, message: "Not all required documents are approved. Missing: " + readiness.missingDocs.join(", ") };
-    }
-
-    // Get application from ApplicationService
+    // NOTE: No document readiness gate here — RSO can recommend denial at any point,
+    // including when some documents are still pending or rejected. The readiness gate
+    // only applies to approval (rsoApproveApplication).
     var application = _getApplicationById(applicationId);
     if (!application) {
       return { ok: false, message: "Application not found." };
@@ -553,9 +547,13 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReappli
 
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
+    if (appRow === -1) {
+      return { ok: false, message: "Application row not found in sheet." };
+    }
 
-    // Update application status to RSO_APPLICATION_REVIEW with denial flag
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
+    // Advance to board_final_review with a denial recommendation so the board makes the final call.
+    // The board will see the RSO reason and a facility-access warning before approving.
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_FINAL_REVIEW);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("denied_recommendation");
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));
@@ -565,16 +563,18 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReappli
     logAuditEntry(rsoEmail, "APPLICATION_RSO_DENIED", "Application", applicationId,
       "RSO recommended denial of application" + (allowReapplication ? " (reapplication allowed)" : " (permanent)"));
 
-    // Send email to board with denial message
+    // Notify board with RSO denial reason and facility-access warning (board makes final call)
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-    sendEmailFromTemplate("ADM_RSO_APPLICATION_DENIED_TO_BOARD", boardEmail, {
-      FIRST_NAME:       "Board",
-      APPLICANT_NAME:   application.primary_applicant_name || "",
-      APPLICATION_ID:   applicationId,
-      DENIAL_MESSAGE:   denialMessage,
+    sendEmailFromTemplate("ADM_RSO_DENIAL_RECOMMENDATION_TO_BOARD", boardEmail, {
+      FIRST_NAME:          "Board",
+      APPLICANT_NAME:      application.primary_applicant_name || "",
+      APPLICATION_ID:      applicationId,
+      RSO_DENIAL_REASON:   denialMessage,
+      FACILITY_WARNING:    "WARNING: If you approve this application over RSO's recommendation, the applicant will have full access to GEA facilities.",
       ALLOW_REAPPLICATION: allowReapplication ? "Yes" : "No",
-      NEXT_STEPS:       "RSO has recommended denial. You may accept this recommendation or approve the application if you believe it meets requirements. Please contact the applicant with a diplomatic response."
+      REVIEW_DEADLINE:     formatDate(addBusinessDays(new Date(), 5))
     });
+    // Applicant is NOT notified at this stage — board contacts them after making the final decision
 
     return { ok: true, message: "Application denial recommended. Board will review." };
   } catch (e) {

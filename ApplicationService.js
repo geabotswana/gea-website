@@ -446,9 +446,12 @@ function confirmDocumentsUploaded(applicationId, email) {
       return { success: false, message: "Unauthorized." };
     }
 
-    // Guard: only allow confirmation when application is still in awaiting_docs
-    if (application.status !== APP_STATUS_AWAITING_DOCS) {
-      return { success: false, message: "Documents have already been confirmed." };
+    // Guard: allow confirmation from awaiting_docs (initial submission) or
+    // board_initial_review (re-confirmation after RSO rejection sends the app
+    // back here and the portal's confirm button is the entry point).
+    if (application.status !== APP_STATUS_AWAITING_DOCS &&
+        application.status !== APP_STATUS_BOARD_INITIAL_REVIEW) {
+      return { success: false, message: "Documents cannot be confirmed at this stage of the application." };
     }
 
     // P1: Check that all required documents for this category are actually uploaded

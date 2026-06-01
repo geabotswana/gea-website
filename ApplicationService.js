@@ -1189,7 +1189,7 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
         // Set voting_eligible = true only for Full-category Primary/Spouse members aged 17+
         if (isFullCategory && votingRelationships.indexOf(ind.relationship_to_primary) !== -1) {
           var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
-          if (age === null || age >= 17) {
+          if (age !== null && age >= 17) {
             individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
           }
         }

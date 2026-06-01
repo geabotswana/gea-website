@@ -334,7 +334,7 @@ function checkApplicationDocumentReadiness(applicationId) {
 function checkRsoDocReadiness(applicationId) {
   try {
     var allSubmissions = _getAllSubmissions_();
-    var rsoApprovedStatuses = ["rso_approved", "gea_pending", "verified", "approved"];
+    var rsoApprovedStatuses = ["gea_pending", "verified", "approved"];
     var rsoDocTypes = ["passport", "omang"];
     var found = {};
     var approved = {};
@@ -393,7 +393,7 @@ function checkBoardFinalDocReadiness(applicationId) {
     var allSubmissions = _getAllSubmissions_();
     var bestStatus = {};  // docType → best status seen
 
-    var statusRank = { "submitted": 1, "rso_approved": 2, "gea_pending": 3, "verified": 4, "approved": 5 };
+    var statusRank = { "submitted": 1, "gea_pending": 2, "verified": 3, "approved": 4 };
 
     for (var i = 0; i < allSubmissions.length; i++) {
       var s = allSubmissions[i];
@@ -428,7 +428,7 @@ function checkBoardFinalDocReadiness(applicationId) {
       var idDocSatisfied = false;
       for (var n = 0; n < idDocTypes.length; n++) {
         var best = bestStatus[idDocTypes[n]];
-        if (best && statusRank[best] >= statusRank["rso_approved"]) {
+        if (best && statusRank[best] >= statusRank["verified"]) {
           idDocSatisfied = true;
           break;
         }
@@ -1144,6 +1144,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     }
 
     _setSubmissionFields_(found, patchObj);
+    SpreadsheetApp.flush();  // ensure write is visible to the readiness check below
 
     logAuditEntry(rsoEmail,
       approve ? AUDIT_FILE_SUBMISSION_RSO_APPROVED : AUDIT_FILE_SUBMISSION_RSO_REJECTED,
@@ -1151,12 +1152,12 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
       approve ? "Approved via RSO portal" : "Rejected via RSO portal: " + rejectionReason);
 
     var individual = getMemberById(found.obj.individual_id);
-    var boardEmail = EMAIL_BOARD;
+    var notifEmail = EMAIL_BOARD;
 
     if (approve) {
       // RSO approved - notify board as informational notification
       if (individual) {
-        sendEmailFromTemplate("ADM_DOCUMENT_APPROVED_BY_RSO_TO_BOARD", boardEmail, {
+        sendEmailFromTemplate("ADM_DOCUMENT_APPROVED_BY_RSO_TO_BOARD", notifEmail, {
           FIRST_NAME: "Board",
           APPLICANT_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
           DOCUMENT_TYPE: docType,
@@ -1167,7 +1168,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     } else {
       // RSO rejected - notify board with rejection reason
       var applicantName = individual ? (individual.first_name + " " + individual.last_name) : "Unknown";
-      sendEmailFromTemplate("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD", boardEmail, {
+      sendEmailFromTemplate("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD", notifEmail, {
         FIRST_NAME:        "Board",
         APPLICANT_NAME:    applicantName,
         INDIVIDUAL_ID:     found.obj.individual_id,
@@ -1184,22 +1185,19 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
         // Get application to verify it's in RSO_DOCS_REVIEW status
         var app = _getApplicationById(found.obj.application_id);
         if (app && String(app.status || "").toLowerCase() === String(APP_STATUS_RSO_DOCS_REVIEW).toLowerCase()) {
-          // Advance application status so RSO can now review and approve/deny the application
           var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
           var appRow = _findApplicationRow(found.obj.application_id);
           if (appRow !== -1) {
             appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
             logAuditEntry(rsoEmail, "APPLICATION_STATUS_AUTO_ADVANCED", "Application", found.obj.application_id,
               "All required documents RSO-approved; status advanced to rso_application_review");
+            sendEmailFromTemplate("ADM_RSO_ALL_DOCS_APPROVED_TO_BOARD", notifEmail, {
+              FIRST_NAME:     "Board",
+              APPLICANT_NAME: app.primary_applicant_name || "Applicant",
+              APPLICATION_ID: found.obj.application_id,
+              APPROVAL_DATE:  formatDate(new Date())
+            });
           }
-          var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-          var appName = app.primary_applicant_name || "Applicant";
-          sendEmailFromTemplate("ADM_RSO_ALL_DOCS_APPROVED_TO_BOARD", boardEmail, {
-            FIRST_NAME:     "Board",
-            APPLICANT_NAME: appName,
-            APPLICATION_ID: found.obj.application_id,
-            APPROVAL_DATE:  formatDate(new Date())
-          });
         }
       }
     }

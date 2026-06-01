@@ -1176,9 +1176,11 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var individuals = _getIndividualsByHouseholdId(application.household_id);
     var individualSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_INDIVIDUALS);
 
-    // voting_eligible: only Full-category members who are Primary or Spouse and aged 17+
+    // voting_eligible rules for Full membership:
+    // - Primary or Spouse: always eligible (no DOB check needed — known adults)
+    // - Child: only if age is known and ≥ 17
+    // - Staff: never eligible
     var isFullCategory = (application.membership_category === "Full");
-    var votingRelationships = [RELATIONSHIP_PRIMARY, RELATIONSHIP_SPOUSE];
 
     for (var i = 0; i < individuals.length; i++) {
       var ind = individuals[i];
@@ -1186,12 +1188,18 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
       if (indRow > 0) {
         individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "active")).setValue(true);
 
-        // Set voting_eligible = true only for Full-category Primary/Spouse members aged 17+
-        if (isFullCategory && votingRelationships.indexOf(ind.relationship_to_primary) !== -1) {
-          var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
-          if (age !== null && age >= 17) {
+        if (isFullCategory) {
+          if (ind.relationship_to_primary === RELATIONSHIP_PRIMARY || ind.relationship_to_primary === RELATIONSHIP_SPOUSE) {
+            // Primary and Spouse are always voting eligible
             individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
+          } else if (ind.relationship_to_primary === RELATIONSHIP_CHILD) {
+            // Child is eligible only if age is known and ≥ 17
+            var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
+            if (age !== null && age >= 17) {
+              individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
+            }
           }
+          // Staff members are never eligible (no action needed)
         }
       }
     }

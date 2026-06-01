@@ -5362,9 +5362,11 @@ function _handleAdminApplicationRejections(p) {
 
     for (var i = 1; i < appData.length; i++) {
       var app = rowToObject(appHeaders, appData[i]);
-      // RSO-denied applications: status=RSO_APPLICATION_REVIEW, rso_status=denied_recommendation
-      if (app.status === APP_STATUS_RSO_APPLICATION_REVIEW && app.rso_status === "denied_recommendation" &&
-          !app.board_rejection_message) {  // Not yet responded to by board
+      // RSO-denied applications: status may be RSO_APPLICATION_REVIEW or BOARD_FINAL_REVIEW (if denied before docs approved)
+      var isRsoDenied = app.rso_status === "denied_recommendation";
+      var isInRejectionQueue = (app.status === APP_STATUS_RSO_APPLICATION_REVIEW || app.status === APP_STATUS_BOARD_FINAL_REVIEW) && isRsoDenied && !app.board_rejection_message;
+
+      if (isInRejectionQueue) {
         rejections.push({
           application_id: app.application_id,
           applicant_name: app.primary_applicant_name || "",

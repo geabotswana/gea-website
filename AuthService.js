@@ -118,9 +118,9 @@ function login(username, password) {
     }
   }
 
-  // Block access for Expelled (board action) and Resigned (lapsed too long) members
-  if (membershipStatus === "expelled" || membershipStatus === "resigned" ||
-      applicationStatus === "expelled" || applicationStatus === "resigned") {
+  // Block access for Expelled (board action), Resigned (lapsed too long), and Denied members
+  if (membershipStatus === "expelled" || membershipStatus === "resigned" || membershipStatus === "denied" ||
+      applicationStatus === "expelled" || applicationStatus === "resigned" || applicationStatus === "denied") {
     var blockedStatus = applicationStatusRaw || membershipStatusRaw || "Inactive";
     logAuditEntry(member.email, AUDIT_LOGIN_FAILED, "Individual", member.individual_id,
                   "Failed login attempt: membership " + blockedStatus);

@@ -769,6 +769,7 @@ var MEMBERSHIP_STATUS_MEMBER     = "Member";       // Active member, full portal
 var MEMBERSHIP_STATUS_LAPSED     = "Lapsed";       // Membership expired, renewal prompt shown
 var MEMBERSHIP_STATUS_RESIGNED   = "Resigned";     // Member resigned, no portal access
 var MEMBERSHIP_STATUS_EXPELLED   = "Expelled";     // Member expelled, no portal access
+var MEMBERSHIP_STATUS_DENIED     = "Denied";      // Membership application denied at initial or final board review
 
 // Payment reference format for membership dues
 // Format: {LAST_NAME}_{MEMBERSHIP_YEAR}

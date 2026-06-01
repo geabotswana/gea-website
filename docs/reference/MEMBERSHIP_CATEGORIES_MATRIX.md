@@ -33,7 +33,12 @@ GEA has six membership categories determined by a sequential eligibility questio
 
 **Annual Dues:** $50 individual / $100 family
 
-**Rights:** Full voting (age 16+), Board eligibility, full facility access, guest hosting
+**Rights:** Voting eligibility, Board eligibility, full facility access, guest hosting
+
+**Voting Eligibility (Full membership only):**
+- **Primary Applicant & Spouse:** Always voting eligible
+- **Children:** Voting eligible if age 17 or older
+- **Staff/Other household roles:** Never voting eligible
 
 **Regulatory Basis:** 6 FAM 542(a), (b), 538
 

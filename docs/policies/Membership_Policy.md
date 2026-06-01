@@ -48,7 +48,11 @@ Membership year: August 1 – July 31. Dues due by August 31. Facility access su
 
 ## 6. Membership Rights
 ### Voting Rights:
-Full members age 16+ only. All other categories do not have voting rights.
+Full membership only. Voting eligibility rules:
+- **Primary Applicant & Spouse:** Always voting eligible
+- **Children (Full family membership):** Voting eligible if age 17 or older
+- **Staff/Other household roles:** Never voting eligible
+All other membership categories (Associate, Affiliate, Diplomatic, Temporary, Community/Guest) do not have voting rights.
 ### Board Eligibility:
 Full members age 16+ only. All other categories are not eligible for Board positions.
 ### Facility Access:

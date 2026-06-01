@@ -446,6 +446,14 @@ function confirmDocumentsUploaded(applicationId, email) {
       return { success: false, message: "Unauthorized." };
     }
 
+    // Guard: allow confirmation from awaiting_docs (initial submission) or
+    // board_initial_review (re-confirmation after RSO rejection sends the app
+    // back here and the portal's confirm button is the entry point).
+    if (application.status !== APP_STATUS_AWAITING_DOCS &&
+        application.status !== APP_STATUS_BOARD_INITIAL_REVIEW) {
+      return { success: false, message: "Documents cannot be confirmed at this stage of the application." };
+    }
+
     // P1: Check that all required documents for this category are actually uploaded
     var readiness = checkApplicationDocumentReadiness(applicationId);
     if (!readiness.ok) {
@@ -707,17 +715,18 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       var rsoEmail = EMAIL_RSO_APPROVE;
       var _appName1      = application.primary_applicant_name || "";
       var _appFirstName1 = _appName1.split(" ")[0] || "Applicant";
+      var _categoryDocs1 = (APPLICANT_UPLOAD_TYPES[application.membership_category] || []).join(" / ") || "Passport / Omang";
       sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", rsoEmail, {
         FIRST_NAME:       "RSO Team",
         APPLICANT_NAME:   _appName1,
         APPLICATION_ID:   applicationId,
-        DOCUMENT_TYPES:   "Passport / Omang / Photo",
+        DOCUMENT_TYPES:   _categoryDocs1,
         APPROVAL_DEADLINE: formatDate(addBusinessDays(new Date(), 5))
       });
 
       sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.primary_applicant_email, {
         FIRST_NAME:      _appFirstName1,
-        DOCUMENT_TYPES:  "Passport / Omang / Photo",
+        DOCUMENT_TYPES:  _categoryDocs1,
         SUBMISSION_DATE: formatDate(new Date())
       });
 
@@ -732,7 +741,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       // Update household status
       var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
       var hhRow = _findHouseholdRow(application.household_id);
-      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_EXPELLED);
+      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_DENIED);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Denied at initial review. Reason: " + (reason || ""));
 
@@ -925,7 +934,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       // Update household
       var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
       var hhRow = _findHouseholdRow(application.household_id);
-      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_EXPELLED);
+      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_DENIED);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Final denial. Reason: " + (reason || ""));
 
@@ -1167,10 +1176,31 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var individuals = _getIndividualsByHouseholdId(application.household_id);
     var individualSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_INDIVIDUALS);
 
+    // voting_eligible rules for Full membership:
+    // - Primary or Spouse: always eligible (no DOB check needed — known adults)
+    // - Child: only if age is known and ≥ 17
+    // - Staff: never eligible
+    var isFullCategory = (application.membership_category === "Full");
+
     for (var i = 0; i < individuals.length; i++) {
-      var indRow = _findIndividualRow(individuals[i].individual_id);
+      var ind = individuals[i];
+      var indRow = _findIndividualRow(ind.individual_id);
       if (indRow > 0) {
         individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "active")).setValue(true);
+
+        if (isFullCategory) {
+          if (ind.relationship_to_primary === RELATIONSHIP_PRIMARY || ind.relationship_to_primary === RELATIONSHIP_SPOUSE) {
+            // Primary and Spouse are always voting eligible
+            individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
+          } else if (ind.relationship_to_primary === RELATIONSHIP_CHILD) {
+            // Child is eligible only if age is known and ≥ 17
+            var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
+            if (age !== null && age >= 17) {
+              individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
+            }
+          }
+          // Staff members are never eligible (no action needed)
+        }
       }
     }
 

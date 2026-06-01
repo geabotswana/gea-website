@@ -531,6 +531,35 @@ If membership DENIED:
   └─ No portal access to reservations or other member features
 ```
 
+### Voting Eligibility Rules
+
+Voting rights apply **only to Full membership**. The eligibility rules differ by household role:
+
+#### Primary Applicant & Spouse
+- **Always voting eligible** (no age verification required)
+- Assumption: Primary applicants and spouses are known adults by virtue of their role
+- No date-of-birth check is performed at activation
+
+#### Children (Full Family Membership)
+- **Voting eligible if age 17 or older**
+- Must have a date of birth recorded in the Individuals sheet
+- Age is calculated at membership activation
+- If date of birth is missing, the child is not marked voting eligible
+- Age check occurs automatically during `verifyAndActivateMembership()`
+
+#### Household Staff
+- **Never voting eligible** (regardless of age)
+- Staff roles are employment relationships, not membership positions
+
+#### All Other Membership Categories
+- **Associate:** No voting rights
+- **Affiliate:** No voting rights
+- **Diplomatic:** No voting rights
+- **Temporary:** No voting rights
+- **Community/Guest:** No voting rights
+
+**Implementation:** Voting eligibility is set in `ApplicationService.verifyAndActivateMembership()` when the membership is activated. The `voting_eligible` field in the Individuals sheet is updated based on the above rules.
+
 ### STEP 11: Membership Renewal (Nightly Task)
 
 ```
@@ -629,7 +658,7 @@ Board reviews appeal request and can approve reapplication if conditions change
 1. ✅ **Employment Information Fields** — Job title (all), Posting date (Full/Associate/Diplomatic/Temporary), Departure date (same categories), NOT department or employment status
 2. ✅ **Document Requirements by Category** — Photo: 600x600–1200x1200px, 54KB–10MB; Passport/Omang: Diplomatic for Diplomatic members; Pro-rated docs per category in spec
 3. ✅ **Household Staff Details** — Name, DOB, Omang number + expiry, phone (required), email (optional), employment start/end dates
-4. ✅ **Family Member Fields** — Age threshold: 17 years old (not 16); at/above 17 = adult with voting rights
+4. ✅ **Family Member Fields & Voting Eligibility** — Age threshold: 17 years old (not 16); Primary/Spouse always voting eligible; Children voting eligible if 17+; Staff never voting eligible; Full membership only
 5. ✅ **Payment Amounts Confirmation** — Individual: $50 USD; Family: $100 USD (Full/Associate/Affiliate); +$25 for Diplomatic/Community; Temporary $20/month capped 6 months
 6. ✅ **Exchange Rate Mechanism** — Daily update from exchangerate-api.com; Sunday rate applied weekly; both USD and BWP displayed
 7. ✅ **Sponsorship Verification** — Board manually verifies sponsor in directory, checks Full member status, records verification in application record

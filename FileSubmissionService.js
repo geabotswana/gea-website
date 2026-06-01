@@ -264,14 +264,14 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
 }
 
 /**
- * Checks if all required documents for an application are approved (gea_pending or better)
- * Required: photo (approved/verified) AND (passport OR omang) (gea_pending/verified)
+ * Checks that all required documents for an application have been submitted (submitted or better).
+ * Used at initial submission time to verify the applicant has uploaded everything before
+ * the application enters board_initial_review.
  * @param {string} applicationId
- * @returns {Object} { allApproved: bool, missingDocs: [], readyForApproval: bool }
+ * @returns {Object} { ok, allApproved, missingDocs, requiredDocuments, category }
  */
 function checkApplicationDocumentReadiness(applicationId) {
   try {
-    // Get application to determine membership category and required documents
     var application = _getApplicationById(applicationId);
     if (!application) {
       return { ok: false, error: "Application not found" };
@@ -287,35 +287,24 @@ function checkApplicationDocumentReadiness(applicationId) {
       }
     }
 
-    // Determine required documents by category (from Config.js)
     var requiredDocs = APPLICANT_UPLOAD_TYPES[category] || [];
     var submittedDocs = {};
     var missingDocs = [];
 
-    // Track which documents have been submitted with acceptable status
     for (var j = 0; j < submissions.length; j++) {
       var s = submissions[j];
       var status = String(s.status || "").toLowerCase();
       var docType = String(s.document_type || "").toLowerCase();
-
-      // RSO only reviews passport and omang; all other doc types (photo, funding
-      // verification, diplomatic accreditation, etc.) bypass RSO approval entirely,
-      // so "submitted" is the terminal acceptable state for those types.
-      var requiresRsoApproval = (docType === "passport" || docType === "omang");
-      var isAcceptableStatus = requiresRsoApproval
-        ? (status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved")
-        : (status === "submitted" || status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved");
-
-      if (isAcceptableStatus) {
+      var notRejected = (status !== "rejected");
+      if (notRejected) {
         submittedDocs[docType] = true;
       }
     }
 
-    // Check each required document (case-insensitive)
     for (var k = 0; k < requiredDocs.length; k++) {
       var requiredType = String(requiredDocs[k]).toLowerCase();
       if (!submittedDocs[requiredType]) {
-        missingDocs.push(requiredDocs[k]);  // Store original case for display
+        missingDocs.push(requiredDocs[k]);
       }
     }
 
@@ -336,6 +325,119 @@ function checkApplicationDocumentReadiness(applicationId) {
 }
 
 /**
+ * Checks whether RSO has approved all passport/omang documents for an application.
+ * Used to auto-advance the application from rso_docs_review to rso_application_review
+ * when the last RSO-reviewable document is approved. Photos and non-RSO docs are ignored.
+ * @param {string} applicationId
+ * @returns {Object} { ok, allApproved, missingDocs }
+ */
+function checkRsoDocReadiness(applicationId) {
+  try {
+    var allSubmissions = _getAllSubmissions_();
+    var rsoApprovedStatuses = ["rso_approved", "gea_pending", "verified", "approved"];
+    var rsoDocTypes = ["passport", "omang"];
+    var found = {};
+    var approved = {};
+
+    for (var i = 0; i < allSubmissions.length; i++) {
+      var s = allSubmissions[i];
+      if (s.application_id !== applicationId) continue;
+      var docType = String(s.document_type || "").toLowerCase();
+      var status  = String(s.status || "").toLowerCase();
+      if (rsoDocTypes.indexOf(docType) === -1) continue;
+      found[docType] = true;
+      if (rsoApprovedStatuses.indexOf(status) !== -1) {
+        approved[docType] = true;
+      }
+    }
+
+    // At least one RSO doc must exist and all that exist must be approved
+    var foundKeys = Object.keys(found);
+    if (foundKeys.length === 0) {
+      return { ok: true, allApproved: false, missingDocs: ["Passport or Omang"] };
+    }
+
+    var missingDocs = [];
+    for (var d = 0; d < foundKeys.length; d++) {
+      if (!approved[foundKeys[d]]) {
+        missingDocs.push(foundKeys[d]);
+      }
+    }
+
+    return { ok: true, allApproved: missingDocs.length === 0, missingDocs: missingDocs };
+  } catch (e) {
+    Logger.log("ERROR checkRsoDocReadiness: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * Checks that all required documents are fully approved before the board makes a final
+ * decision. Requirements by doc type:
+ *   - passport / omang:  rso_approved or later
+ *   - photo:             submitted or later (non-blocking — just must exist)
+ *   - all others (e.g. funding verification, diplomatic accreditation): gea_pending or later
+ * @param {string} applicationId
+ * @returns {Object} { ok, allApproved, missingDocs }
+ */
+function checkBoardFinalDocReadiness(applicationId) {
+  try {
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { ok: false, error: "Application not found" };
+    }
+
+    var category = application.membership_category || "";
+    var requiredDocs = APPLICANT_UPLOAD_TYPES[category] || [];
+    var allSubmissions = _getAllSubmissions_();
+    var bestStatus = {};  // docType → best status seen
+
+    var statusRank = { "submitted": 1, "rso_approved": 2, "gea_pending": 3, "verified": 4, "approved": 5 };
+
+    for (var i = 0; i < allSubmissions.length; i++) {
+      var s = allSubmissions[i];
+      if (s.application_id !== applicationId) continue;
+      var docType = String(s.document_type || "").toLowerCase();
+      var status  = String(s.status || "").toLowerCase();
+      if (!statusRank[status]) continue;  // skip rejected / unknown
+      if (!bestStatus[docType] || statusRank[status] > statusRank[bestStatus[docType]]) {
+        bestStatus[docType] = status;
+      }
+    }
+
+    var missingDocs = [];
+
+    // Always check photos separately (non-blocking: submitted is enough)
+    if (!bestStatus["photo"]) {
+      missingDocs.push("Photo (not yet submitted)");
+    }
+
+    // Check each category-required doc at its appropriate threshold
+    for (var k = 0; k < requiredDocs.length; k++) {
+      var requiredType = String(requiredDocs[k]).toLowerCase();
+      var best = bestStatus[requiredType];
+      var acceptable;
+
+      if (requiredType === "passport" || requiredType === "omang") {
+        acceptable = best && statusRank[best] >= statusRank["rso_approved"];
+      } else {
+        // funding verification, diplomatic accreditation, etc. — need GEA approval
+        acceptable = best && statusRank[best] >= statusRank["gea_pending"];
+      }
+
+      if (!acceptable) {
+        missingDocs.push(requiredDocs[k] + " (not fully approved)");
+      }
+    }
+
+    return { ok: true, allApproved: missingDocs.length === 0, missingDocs: missingDocs };
+  } catch (e) {
+    Logger.log("ERROR checkBoardFinalDocReadiness: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
  * RSO finalizes approval of an application after all documents are approved
  * Moves application from RSO_REVIEW to RSO_DOCS_APPROVED status
  * @param {string} applicationId
@@ -345,7 +447,7 @@ function checkApplicationDocumentReadiness(applicationId) {
  */
 function rsoApproveApplication(applicationId, rsoEmail, notes) {
   try {
-    var readiness = checkApplicationDocumentReadiness(applicationId);
+    var readiness = checkRsoDocReadiness(applicationId);
     if (!readiness.ok) {
       return { ok: false, message: "Could not check document status." };
     }
@@ -396,7 +498,7 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
 
 function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReapplication) {
   try {
-    var readiness = checkApplicationDocumentReadiness(applicationId);
+    var readiness = checkRsoDocReadiness(applicationId);
     if (!readiness.ok) {
       return { ok: false, message: "Could not check document status." };
     }
@@ -1057,7 +1159,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
 
     // If approved and part of an application, check if all documents are now approved
     if (approve && found.obj.application_id) {
-      var readiness = checkApplicationDocumentReadiness(found.obj.application_id);
+      var readiness = checkRsoDocReadiness(found.obj.application_id);
       if (readiness.ok && readiness.allApproved) {
         // Get application to verify it's in RSO_DOCS_REVIEW status
         var app = _getApplicationById(found.obj.application_id);

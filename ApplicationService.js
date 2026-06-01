@@ -1167,10 +1167,31 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var individuals = _getIndividualsByHouseholdId(application.household_id);
     var individualSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_INDIVIDUALS);
 
+    // voting_eligible rules for Full membership:
+    // - Primary or Spouse: always eligible (no DOB check needed — known adults)
+    // - Child: only if age is known and ≥ 17
+    // - Staff: never eligible
+    var isFullCategory = (application.membership_category === "Full");
+
     for (var i = 0; i < individuals.length; i++) {
-      var indRow = _findIndividualRow(individuals[i].individual_id);
+      var ind = individuals[i];
+      var indRow = _findIndividualRow(ind.individual_id);
       if (indRow > 0) {
         individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "active")).setValue(true);
+
+        if (isFullCategory) {
+          if (ind.relationship_to_primary === RELATIONSHIP_PRIMARY || ind.relationship_to_primary === RELATIONSHIP_SPOUSE) {
+            // Primary and Spouse are always voting eligible
+            individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
+          } else if (ind.relationship_to_primary === RELATIONSHIP_CHILD) {
+            // Child is eligible only if age is known and ≥ 17
+            var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
+            if (age !== null && age >= 17) {
+              individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
+            }
+          }
+          // Staff members are never eligible (no action needed)
+        }
       }
     }
 

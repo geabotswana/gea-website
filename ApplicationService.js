@@ -446,6 +446,11 @@ function confirmDocumentsUploaded(applicationId, email) {
       return { success: false, message: "Unauthorized." };
     }
 
+    // Guard: only allow confirmation when application is still in awaiting_docs
+    if (application.status !== APP_STATUS_AWAITING_DOCS) {
+      return { success: false, message: "Documents have already been confirmed." };
+    }
+
     // P1: Check that all required documents for this category are actually uploaded
     var readiness = checkApplicationDocumentReadiness(applicationId);
     if (!readiness.ok) {
@@ -707,17 +712,18 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       var rsoEmail = EMAIL_RSO_APPROVE;
       var _appName1      = application.primary_applicant_name || "";
       var _appFirstName1 = _appName1.split(" ")[0] || "Applicant";
+      var _categoryDocs1 = (APPLICANT_UPLOAD_TYPES[application.membership_category] || []).join(" / ") || "Passport / Omang";
       sendEmailFromTemplate("ADM_DOCUMENT_APPROVAL_REQUEST_TO_RSO_APPROVE", rsoEmail, {
         FIRST_NAME:       "RSO Team",
         APPLICANT_NAME:   _appName1,
         APPLICATION_ID:   applicationId,
-        DOCUMENT_TYPES:   "Passport / Omang / Photo",
+        DOCUMENT_TYPES:   _categoryDocs1,
         APPROVAL_DEADLINE: formatDate(addBusinessDays(new Date(), 5))
       });
 
       sendEmailFromTemplate("ADM_DOCS_SENT_TO_RSO_TO_MEMBER", application.primary_applicant_email, {
         FIRST_NAME:      _appFirstName1,
-        DOCUMENT_TYPES:  "Passport / Omang / Photo",
+        DOCUMENT_TYPES:  _categoryDocs1,
         SUBMISSION_DATE: formatDate(new Date())
       });
 
@@ -732,7 +738,7 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       // Update household status
       var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
       var hhRow = _findHouseholdRow(application.household_id);
-      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_EXPELLED);
+      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_DENIED);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Denied at initial review. Reason: " + (reason || ""));
 
@@ -925,7 +931,7 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       // Update household
       var householdSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_HOUSEHOLDS);
       var hhRow = _findHouseholdRow(application.household_id);
-      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_EXPELLED);
+      householdSheet.getRange(hhRow, _getColumnIndex(TAB_HOUSEHOLDS, "membership_status")).setValue(MEMBERSHIP_STATUS_DENIED);
 
       logAuditEntry(boardEmail, AUDIT_APPLICATION_DENIED, "Application", applicationId, "Final denial. Reason: " + (reason || ""));
 
@@ -1167,10 +1173,23 @@ function verifyAndActivateMembership(applicationId, treasurerEmail) {
     var individuals = _getIndividualsByHouseholdId(application.household_id);
     var individualSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_INDIVIDUALS);
 
+    // voting_eligible: only Full-category members who are Primary or Spouse and aged 17+
+    var isFullCategory = (application.membership_category === "Full");
+    var votingRelationships = [RELATIONSHIP_PRIMARY, RELATIONSHIP_SPOUSE];
+
     for (var i = 0; i < individuals.length; i++) {
-      var indRow = _findIndividualRow(individuals[i].individual_id);
+      var ind = individuals[i];
+      var indRow = _findIndividualRow(ind.individual_id);
       if (indRow > 0) {
         individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "active")).setValue(true);
+
+        // Set voting_eligible = true only for Full-category Primary/Spouse members aged 17+
+        if (isFullCategory && votingRelationships.indexOf(ind.relationship_to_primary) !== -1) {
+          var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
+          if (age === null || age >= 17) {
+            individualSheet.getRange(indRow, _getColumnIndex(TAB_INDIVIDUALS, "voting_eligible")).setValue(true);
+          }
+        }
       }
     }
 

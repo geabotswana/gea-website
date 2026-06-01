@@ -333,35 +333,57 @@ function checkApplicationDocumentReadiness(applicationId) {
  */
 function checkRsoDocReadiness(applicationId) {
   try {
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { ok: false, error: "Application not found" };
+    }
+
+    // Get all individuals in the household to check each one requiring an ID doc
+    var individuals = application.household_id
+      ? _getIndividualsByHouseholdId(application.household_id)
+      : [];
+    if (individuals.length === 0) {
+      return { ok: false, error: "No individuals found for application" };
+    }
+
     var allSubmissions = _getAllSubmissions_();
     var rsoApprovedStatuses = ["gea_pending", "verified", "approved"];
     var rsoDocTypes = ["passport", "omang"];
-    var found = {};
-    var approved = {};
+
+    // Build per-individual map: individualId → { found: bool, approved: bool }
+    // Only track individuals who are old enough to require an ID doc
+    var individualStatus = {};
+    for (var p = 0; p < individuals.length; p++) {
+      var ind = individuals[p];
+      var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
+      if (age === null || age >= AGE_DOCUMENT_REQUIRED) {
+        individualStatus[ind.individual_id] = { name: (ind.first_name || "") + " " + (ind.last_name || ""), found: false, approved: false };
+      }
+    }
 
     for (var i = 0; i < allSubmissions.length; i++) {
       var s = allSubmissions[i];
       if (s.application_id !== applicationId) continue;
       if (s.is_current === false || s.is_current === "false" || s.is_current === "FALSE") continue;
+      var indId   = s.individual_id;
       var docType = String(s.document_type || "").toLowerCase();
       var status  = String(s.status || "").toLowerCase();
       if (rsoDocTypes.indexOf(docType) === -1) continue;
-      found[docType] = true;
+      if (!individualStatus[indId]) continue;  // individual not old enough / not on this application
+      individualStatus[indId].found = true;
       if (rsoApprovedStatuses.indexOf(status) !== -1) {
-        approved[docType] = true;
+        individualStatus[indId].approved = true;
       }
     }
 
-    // At least one RSO doc must exist and all current ones must be approved
-    var foundKeys = Object.keys(found);
-    if (foundKeys.length === 0) {
-      return { ok: true, allApproved: false, missingDocs: ["Passport or Omang"] };
-    }
-
     var missingDocs = [];
-    for (var d = 0; d < foundKeys.length; d++) {
-      if (!approved[foundKeys[d]]) {
-        missingDocs.push(foundKeys[d]);
+    var indIds = Object.keys(individualStatus);
+    for (var d = 0; d < indIds.length; d++) {
+      var entry = individualStatus[indIds[d]];
+      if (!entry.found) {
+        missingDocs.push(entry.name + ": no Passport or Omang submitted");
+      } else if (!entry.approved) {
+        missingDocs.push(entry.name + ": Passport/Omang pending RSO approval");
       }
     }
 

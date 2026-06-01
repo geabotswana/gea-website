@@ -690,8 +690,8 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       return { success: false, message: "Application row not found in sheet." };
     }
 
-    // Guard: application must be in board_initial_review to process initial decision
-    if (application.status !== APP_STATUS_BOARD_INITIAL_REVIEW) {
+    // Guard: application must be in board_initial_review (or legacy docs_confirmed) to process initial decision
+    if (application.status !== APP_STATUS_BOARD_INITIAL_REVIEW && application.status !== "docs_confirmed") {
       return { success: false, message: "Application is not awaiting board initial review." };
     }
 

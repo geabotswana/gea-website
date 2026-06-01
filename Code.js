@@ -5137,7 +5137,7 @@ function _handleAdminRsoApplicationsReady(p) {
       }
 
       // Check if all documents are approved
-      var readiness = checkApplicationDocumentReadiness(app.application_id);
+      var readiness = checkRsoDocReadiness(app.application_id);
       if (readiness.ok && readiness.allApproved) {
         readyApps.push({
           application_id: app.application_id,

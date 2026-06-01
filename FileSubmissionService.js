@@ -264,14 +264,14 @@ function requestEmploymentVerification(household_id, individual_ids, request_rea
 }
 
 /**
- * Checks if all required documents for an application are approved (gea_pending or better)
- * Required: photo (approved/verified) AND (passport OR omang) (gea_pending/verified)
+ * Checks that all required documents for an application have been submitted (submitted or better).
+ * Used at initial submission time to verify the applicant has uploaded everything before
+ * the application enters board_initial_review.
  * @param {string} applicationId
- * @returns {Object} { allApproved: bool, missingDocs: [], readyForApproval: bool }
+ * @returns {Object} { ok, allApproved, missingDocs, requiredDocuments, category }
  */
 function checkApplicationDocumentReadiness(applicationId) {
   try {
-    // Get application to determine membership category and required documents
     var application = _getApplicationById(applicationId);
     if (!application) {
       return { ok: false, error: "Application not found" };
@@ -287,30 +287,24 @@ function checkApplicationDocumentReadiness(applicationId) {
       }
     }
 
-    // Determine required documents by category (from Config.js)
     var requiredDocs = APPLICANT_UPLOAD_TYPES[category] || [];
     var submittedDocs = {};
     var missingDocs = [];
 
-    // Track which documents have been submitted with acceptable status
     for (var j = 0; j < submissions.length; j++) {
       var s = submissions[j];
       var status = String(s.status || "").toLowerCase();
       var docType = String(s.document_type || "").toLowerCase();
-
-      // Accept documents in submitted or later status (gea_pending, verified, approved)
-      var isAcceptableStatus = (status === "submitted" || status === "gea_pending" || status === "verified" || status === "approved");
-
-      if (isAcceptableStatus) {
+      var notRejected = (status !== "rejected");
+      if (notRejected) {
         submittedDocs[docType] = true;
       }
     }
 
-    // Check each required document (case-insensitive)
     for (var k = 0; k < requiredDocs.length; k++) {
       var requiredType = String(requiredDocs[k]).toLowerCase();
       if (!submittedDocs[requiredType]) {
-        missingDocs.push(requiredDocs[k]);  // Store original case for display
+        missingDocs.push(requiredDocs[k]);
       }
     }
 
@@ -331,6 +325,156 @@ function checkApplicationDocumentReadiness(applicationId) {
 }
 
 /**
+ * Checks whether RSO has approved all passport/omang documents for an application.
+ * Used to auto-advance the application from rso_docs_review to rso_application_review
+ * when the last RSO-reviewable document is approved. Photos and non-RSO docs are ignored.
+ * @param {string} applicationId
+ * @returns {Object} { ok, allApproved, missingDocs }
+ */
+function checkRsoDocReadiness(applicationId) {
+  try {
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { ok: false, error: "Application not found" };
+    }
+
+    // Get all individuals in the household to check each one requiring an ID doc
+    var individuals = application.household_id
+      ? _getIndividualsByHouseholdId(application.household_id)
+      : [];
+    if (individuals.length === 0) {
+      return { ok: false, error: "No individuals found for application" };
+    }
+
+    var allSubmissions = _getAllSubmissions_();
+    var rsoApprovedStatuses = ["gea_pending", "verified", "approved"];
+    var rsoDocTypes = ["passport", "omang"];
+
+    // Build per-individual map: individualId → { found: bool, approved: bool }
+    // Only track individuals who are old enough to require an ID doc
+    var individualStatus = {};
+    for (var p = 0; p < individuals.length; p++) {
+      var ind = individuals[p];
+      var age = ind.date_of_birth ? calculateAge(ind.date_of_birth) : null;
+      if (age === null || age >= AGE_DOCUMENT_REQUIRED) {
+        individualStatus[ind.individual_id] = { name: (ind.first_name || "") + " " + (ind.last_name || ""), found: false, approved: false };
+      }
+    }
+
+    for (var i = 0; i < allSubmissions.length; i++) {
+      var s = allSubmissions[i];
+      if (s.application_id !== applicationId) continue;
+      if (s.is_current === false || s.is_current === "false" || s.is_current === "FALSE") continue;
+      var indId   = s.individual_id;
+      var docType = String(s.document_type || "").toLowerCase();
+      var status  = String(s.status || "").toLowerCase();
+      if (rsoDocTypes.indexOf(docType) === -1) continue;
+      if (!individualStatus[indId]) continue;  // individual not old enough / not on this application
+      individualStatus[indId].found = true;
+      if (rsoApprovedStatuses.indexOf(status) !== -1) {
+        individualStatus[indId].approved = true;
+      }
+    }
+
+    var missingDocs = [];
+    var indIds = Object.keys(individualStatus);
+    for (var d = 0; d < indIds.length; d++) {
+      var entry = individualStatus[indIds[d]];
+      if (!entry.found) {
+        missingDocs.push(entry.name + ": no Passport or Omang submitted");
+      } else if (!entry.approved) {
+        missingDocs.push(entry.name + ": Passport/Omang pending RSO approval");
+      }
+    }
+
+    return { ok: true, allApproved: missingDocs.length === 0, missingDocs: missingDocs };
+  } catch (e) {
+    Logger.log("ERROR checkRsoDocReadiness: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
+ * Checks that all required documents are fully approved before the board makes a final
+ * decision. Requirements by doc type:
+ *   - passport / omang:  rso_approved or later
+ *   - photo:             submitted or later (non-blocking — just must exist)
+ *   - all others (e.g. funding verification, diplomatic accreditation): gea_pending or later
+ * @param {string} applicationId
+ * @returns {Object} { ok, allApproved, missingDocs }
+ */
+function checkBoardFinalDocReadiness(applicationId) {
+  try {
+    var application = _getApplicationById(applicationId);
+    if (!application) {
+      return { ok: false, error: "Application not found" };
+    }
+
+    var category = application.membership_category || "";
+    var requiredDocs = APPLICANT_UPLOAD_TYPES[category] || [];
+    var allSubmissions = _getAllSubmissions_();
+    var bestStatus = {};  // docType → best status seen
+
+    var statusRank = { "submitted": 1, "gea_pending": 2, "verified": 3, "approved": 4 };
+
+    for (var i = 0; i < allSubmissions.length; i++) {
+      var s = allSubmissions[i];
+      if (s.application_id !== applicationId) continue;
+      if (s.is_current === false || s.is_current === "false" || s.is_current === "FALSE") continue;
+      var docType = String(s.document_type || "").toLowerCase();
+      var status  = String(s.status || "").toLowerCase();
+      if (!statusRank[status]) continue;  // skip rejected / unknown
+      if (!bestStatus[docType] || statusRank[status] > statusRank[bestStatus[docType]]) {
+        bestStatus[docType] = status;
+      }
+    }
+
+    var missingDocs = [];
+
+    // For passport/omang: treat as either-or — at least one must be verified+.
+    // Applicants in Associate/Affiliate/Community categories submit one or the other.
+    var idDocTypes = ["passport", "omang"];
+    var categoryRequiresIdDoc = false;
+    for (var m = 0; m < requiredDocs.length; m++) {
+      if (idDocTypes.indexOf(String(requiredDocs[m]).toLowerCase()) !== -1) {
+        categoryRequiresIdDoc = true;
+        break;
+      }
+    }
+    if (categoryRequiresIdDoc) {
+      var idDocSatisfied = false;
+      for (var n = 0; n < idDocTypes.length; n++) {
+        var best = bestStatus[idDocTypes[n]];
+        if (best && statusRank[best] >= statusRank["verified"]) {
+          idDocSatisfied = true;
+          break;
+        }
+      }
+      if (!idDocSatisfied) {
+        missingDocs.push("Passport or Omang (not RSO-approved)");
+      }
+    }
+
+    // Check non-ID required docs at their appropriate threshold
+    for (var k = 0; k < requiredDocs.length; k++) {
+      var requiredType = String(requiredDocs[k]).toLowerCase();
+      if (idDocTypes.indexOf(requiredType) !== -1) continue;  // handled above
+      var docBest = bestStatus[requiredType];
+      // funding verification, diplomatic accreditation, etc. — board approval sets "verified"
+      var acceptable = docBest && statusRank[docBest] >= statusRank["verified"];
+      if (!acceptable) {
+        missingDocs.push(requiredDocs[k] + " (not fully approved)");
+      }
+    }
+
+    return { ok: true, allApproved: missingDocs.length === 0, missingDocs: missingDocs };
+  } catch (e) {
+    Logger.log("ERROR checkBoardFinalDocReadiness: " + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+/**
  * RSO finalizes approval of an application after all documents are approved
  * Moves application from RSO_REVIEW to RSO_DOCS_APPROVED status
  * @param {string} applicationId
@@ -340,7 +484,7 @@ function checkApplicationDocumentReadiness(applicationId) {
  */
 function rsoApproveApplication(applicationId, rsoEmail, notes) {
   try {
-    var readiness = checkApplicationDocumentReadiness(applicationId);
+    var readiness = checkRsoDocReadiness(applicationId);
     if (!readiness.ok) {
       return { ok: false, message: "Could not check document status." };
     }
@@ -360,8 +504,8 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
       return { ok: false, message: "Application row not found in sheet." };
     }
 
-    // Update application status to RSO_APPLICATION_REVIEW (intermediate state)
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
+    // Update application status to BOARD_FINAL_REVIEW — RSO has approved the application
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_FINAL_REVIEW);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("docs_approved");
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));
@@ -391,7 +535,7 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
 
 function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReapplication) {
   try {
-    var readiness = checkApplicationDocumentReadiness(applicationId);
+    var readiness = checkRsoDocReadiness(applicationId);
     if (!readiness.ok) {
       return { ok: false, message: "Could not check document status." };
     }
@@ -1017,6 +1161,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     }
 
     _setSubmissionFields_(found, patchObj);
+    SpreadsheetApp.flush();  // ensure write is visible to the readiness check below
 
     logAuditEntry(rsoEmail,
       approve ? AUDIT_FILE_SUBMISSION_RSO_APPROVED : AUDIT_FILE_SUBMISSION_RSO_REJECTED,
@@ -1024,12 +1169,12 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
       approve ? "Approved via RSO portal" : "Rejected via RSO portal: " + rejectionReason);
 
     var individual = getMemberById(found.obj.individual_id);
-    var boardEmail = EMAIL_BOARD;
+    var notifEmail = EMAIL_BOARD;
 
     if (approve) {
       // RSO approved - notify board as informational notification
       if (individual) {
-        sendEmailFromTemplate("ADM_DOCUMENT_APPROVED_BY_RSO_TO_BOARD", boardEmail, {
+        sendEmailFromTemplate("ADM_DOCUMENT_APPROVED_BY_RSO_TO_BOARD", notifEmail, {
           FIRST_NAME: "Board",
           APPLICANT_NAME: (individual.first_name || "") + " " + (individual.last_name || ""),
           DOCUMENT_TYPE: docType,
@@ -1040,7 +1185,7 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     } else {
       // RSO rejected - notify board with rejection reason
       var applicantName = individual ? (individual.first_name + " " + individual.last_name) : "Unknown";
-      sendEmailFromTemplate("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD", boardEmail, {
+      sendEmailFromTemplate("ADM_DOCUMENT_REJECTED_BY_RSO_TO_BOARD", notifEmail, {
         FIRST_NAME:        "Board",
         APPLICANT_NAME:    applicantName,
         INDIVIDUAL_ID:     found.obj.individual_id,
@@ -1052,20 +1197,24 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
 
     // If approved and part of an application, check if all documents are now approved
     if (approve && found.obj.application_id) {
-      var readiness = checkApplicationDocumentReadiness(found.obj.application_id);
+      var readiness = checkRsoDocReadiness(found.obj.application_id);
       if (readiness.ok && readiness.allApproved) {
-        // Get application to verify it's in RSO_REVIEW status
+        // Get application to verify it's in RSO_DOCS_REVIEW status
         var app = _getApplicationById(found.obj.application_id);
         if (app && String(app.status || "").toLowerCase() === String(APP_STATUS_RSO_DOCS_REVIEW).toLowerCase()) {
-          // All documents approved - notify board that RSO can now finalize application
-          var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-          var appName = app.primary_applicant_name || "Applicant";
-          sendEmailFromTemplate("ADM_RSO_ALL_DOCS_APPROVED_TO_BOARD", boardEmail, {
-            FIRST_NAME:     "Board",
-            APPLICANT_NAME: appName,
-            APPLICATION_ID: found.obj.application_id,
-            APPROVAL_DATE:  formatDate(new Date())
-          });
+          var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+          var appRow = _findApplicationRow(found.obj.application_id);
+          if (appRow !== -1) {
+            appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
+            logAuditEntry(rsoEmail, "APPLICATION_STATUS_AUTO_ADVANCED", "Application", found.obj.application_id,
+              "All required documents RSO-approved; status advanced to rso_application_review");
+            sendEmailFromTemplate("ADM_RSO_ALL_DOCS_APPROVED_TO_BOARD", notifEmail, {
+              FIRST_NAME:     "Board",
+              APPLICANT_NAME: app.primary_applicant_name || "Applicant",
+              APPLICATION_ID: found.obj.application_id,
+              APPROVAL_DATE:  formatDate(new Date())
+            });
+          }
         }
       }
     }

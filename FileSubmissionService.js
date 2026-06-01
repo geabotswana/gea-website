@@ -298,12 +298,13 @@ function checkApplicationDocumentReadiness(applicationId) {
       var status = String(s.status || "").toLowerCase();
       var docType = String(s.document_type || "").toLowerCase();
 
-      // Photos are non-blocking: any submission status is acceptable.
-      // Verification docs (passport, omang, etc.) require rso_approved or later.
-      var isPhoto = (docType === "photo");
-      var isAcceptableStatus = isPhoto
-        ? (status === "submitted" || status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved")
-        : (status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved");
+      // RSO only reviews passport and omang; all other doc types (photo, funding
+      // verification, diplomatic accreditation, etc.) bypass RSO approval entirely,
+      // so "submitted" is the terminal acceptable state for those types.
+      var requiresRsoApproval = (docType === "passport" || docType === "omang");
+      var isAcceptableStatus = requiresRsoApproval
+        ? (status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved")
+        : (status === "submitted" || status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved");
 
       if (isAcceptableStatus) {
         submittedDocs[docType] = true;

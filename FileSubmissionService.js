@@ -431,12 +431,7 @@ function checkBoardFinalDocReadiness(applicationId) {
 
     var missingDocs = [];
 
-    // Always check photos separately (non-blocking: submitted is enough)
-    if (!bestStatus["photo"]) {
-      missingDocs.push("Photo (not yet submitted)");
-    }
-
-    // For passport/omang: treat as either-or — at least one must be rso_approved+.
+    // For passport/omang: treat as either-or — at least one must be verified+.
     // Applicants in Associate/Affiliate/Community categories submit one or the other.
     var idDocTypes = ["passport", "omang"];
     var categoryRequiresIdDoc = false;
@@ -465,8 +460,8 @@ function checkBoardFinalDocReadiness(applicationId) {
       var requiredType = String(requiredDocs[k]).toLowerCase();
       if (idDocTypes.indexOf(requiredType) !== -1) continue;  // handled above
       var docBest = bestStatus[requiredType];
-      // funding verification, diplomatic accreditation, etc. — need GEA approval
-      var acceptable = docBest && statusRank[docBest] >= statusRank["gea_pending"];
+      // funding verification, diplomatic accreditation, etc. — board approval sets "verified"
+      var acceptable = docBest && statusRank[docBest] >= statusRank["verified"];
       if (!acceptable) {
         missingDocs.push(requiredDocs[k] + " (not fully approved)");
       }

@@ -298,8 +298,12 @@ function checkApplicationDocumentReadiness(applicationId) {
       var status = String(s.status || "").toLowerCase();
       var docType = String(s.document_type || "").toLowerCase();
 
-      // Accept documents in submitted or later status (gea_pending, verified, approved)
-      var isAcceptableStatus = (status === "submitted" || status === "gea_pending" || status === "verified" || status === "approved");
+      // Photos are non-blocking: any submission status is acceptable.
+      // Verification docs (passport, omang, etc.) require rso_approved or later.
+      var isPhoto = (docType === "photo");
+      var isAcceptableStatus = isPhoto
+        ? (status === "submitted" || status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved")
+        : (status === "rso_approved" || status === "gea_pending" || status === "verified" || status === "approved");
 
       if (isAcceptableStatus) {
         submittedDocs[docType] = true;
@@ -1054,10 +1058,17 @@ function approveDocumentByRso(submissionId, decision, rejectionReason, rsoEmail,
     if (approve && found.obj.application_id) {
       var readiness = checkApplicationDocumentReadiness(found.obj.application_id);
       if (readiness.ok && readiness.allApproved) {
-        // Get application to verify it's in RSO_REVIEW status
+        // Get application to verify it's in RSO_DOCS_REVIEW status
         var app = _getApplicationById(found.obj.application_id);
         if (app && String(app.status || "").toLowerCase() === String(APP_STATUS_RSO_DOCS_REVIEW).toLowerCase()) {
-          // All documents approved - notify board that RSO can now finalize application
+          // Advance application status so RSO can now review and approve/deny the application
+          var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
+          var appRow = _findApplicationRow(found.obj.application_id);
+          if (appRow !== -1) {
+            appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
+            logAuditEntry(rsoEmail, "APPLICATION_STATUS_AUTO_ADVANCED", "Application", found.obj.application_id,
+              "All required documents RSO-approved; status advanced to rso_application_review");
+          }
           var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
           var appName = app.primary_applicant_name || "Applicant";
           sendEmailFromTemplate("ADM_RSO_ALL_DOCS_APPROVED_TO_BOARD", boardEmail, {

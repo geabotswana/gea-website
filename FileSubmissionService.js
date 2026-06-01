@@ -565,7 +565,7 @@ function rsoDenyApplication(applicationId, rsoEmail, denialMessage, allowReappli
 
     // Notify board with RSO denial reason and facility-access warning (board makes final call)
     var boardEmail = getConfigValue("EMAIL_BOARD") || "board@geabotswana.org";
-    sendEmailFromTemplate("ADM_RSO_DENIAL_RECOMMENDATION_TO_BOARD", boardEmail, {
+    sendEmailFromTemplate("ADM_RSO_APPLICATION_DENIED_TO_BOARD", boardEmail, {
       FIRST_NAME:          "Board",
       APPLICANT_NAME:      application.primary_applicant_name || "",
       APPLICATION_ID:      applicationId,

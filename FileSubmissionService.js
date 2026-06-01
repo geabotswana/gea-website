@@ -342,6 +342,7 @@ function checkRsoDocReadiness(applicationId) {
     for (var i = 0; i < allSubmissions.length; i++) {
       var s = allSubmissions[i];
       if (s.application_id !== applicationId) continue;
+      if (s.is_current === false || s.is_current === "false" || s.is_current === "FALSE") continue;
       var docType = String(s.document_type || "").toLowerCase();
       var status  = String(s.status || "").toLowerCase();
       if (rsoDocTypes.indexOf(docType) === -1) continue;
@@ -351,7 +352,7 @@ function checkRsoDocReadiness(applicationId) {
       }
     }
 
-    // At least one RSO doc must exist and all that exist must be approved
+    // At least one RSO doc must exist and all current ones must be approved
     var foundKeys = Object.keys(found);
     if (foundKeys.length === 0) {
       return { ok: true, allApproved: false, missingDocs: ["Passport or Omang"] };
@@ -397,6 +398,7 @@ function checkBoardFinalDocReadiness(applicationId) {
     for (var i = 0; i < allSubmissions.length; i++) {
       var s = allSubmissions[i];
       if (s.application_id !== applicationId) continue;
+      if (s.is_current === false || s.is_current === "false" || s.is_current === "FALSE") continue;
       var docType = String(s.document_type || "").toLowerCase();
       var status  = String(s.status || "").toLowerCase();
       if (!statusRank[status]) continue;  // skip rejected / unknown
@@ -412,19 +414,37 @@ function checkBoardFinalDocReadiness(applicationId) {
       missingDocs.push("Photo (not yet submitted)");
     }
 
-    // Check each category-required doc at its appropriate threshold
+    // For passport/omang: treat as either-or — at least one must be rso_approved+.
+    // Applicants in Associate/Affiliate/Community categories submit one or the other.
+    var idDocTypes = ["passport", "omang"];
+    var categoryRequiresIdDoc = false;
+    for (var m = 0; m < requiredDocs.length; m++) {
+      if (idDocTypes.indexOf(String(requiredDocs[m]).toLowerCase()) !== -1) {
+        categoryRequiresIdDoc = true;
+        break;
+      }
+    }
+    if (categoryRequiresIdDoc) {
+      var idDocSatisfied = false;
+      for (var n = 0; n < idDocTypes.length; n++) {
+        var best = bestStatus[idDocTypes[n]];
+        if (best && statusRank[best] >= statusRank["rso_approved"]) {
+          idDocSatisfied = true;
+          break;
+        }
+      }
+      if (!idDocSatisfied) {
+        missingDocs.push("Passport or Omang (not RSO-approved)");
+      }
+    }
+
+    // Check non-ID required docs at their appropriate threshold
     for (var k = 0; k < requiredDocs.length; k++) {
       var requiredType = String(requiredDocs[k]).toLowerCase();
-      var best = bestStatus[requiredType];
-      var acceptable;
-
-      if (requiredType === "passport" || requiredType === "omang") {
-        acceptable = best && statusRank[best] >= statusRank["rso_approved"];
-      } else {
-        // funding verification, diplomatic accreditation, etc. — need GEA approval
-        acceptable = best && statusRank[best] >= statusRank["gea_pending"];
-      }
-
+      if (idDocTypes.indexOf(requiredType) !== -1) continue;  // handled above
+      var docBest = bestStatus[requiredType];
+      // funding verification, diplomatic accreditation, etc. — need GEA approval
+      var acceptable = docBest && statusRank[docBest] >= statusRank["gea_pending"];
       if (!acceptable) {
         missingDocs.push(requiredDocs[k] + " (not fully approved)");
       }

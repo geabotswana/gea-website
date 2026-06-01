@@ -1448,9 +1448,10 @@ function convertPdfToImages(pdfFileId, submissionId) {
     }
 
     // Attempt to import PDF into Google Docs and convert to images
-    // This is a best-effort conversion; if it fails, the original PDF remains viewable via Drive preview
+    // This is a best-effort conversion; if it fails, the original PDF remains viewable
+    var tempFolder = null;
     try {
-      var tempFolder = DriveApp.createFolder('_temp_pdf_' + submissionId);
+      tempFolder = DriveApp.createFolder('_temp_pdf_' + submissionId);
       var tempPdfFile = tempFolder.createFile(pdfBlob);
 
       // Try to import via DocumentApp (only works if PDF has text/structured content)
@@ -1460,20 +1461,21 @@ function convertPdfToImages(pdfFileId, submissionId) {
 
       // For now, just mark conversion as attempted
       // Full PDF→images conversion via Google Docs is complex and conversion failures are expected
-      // Fallback: Google Drive preview URL works for all PDFs in the modal
+      // Fallback: Server-side blob data URL works for all PDFs in the modal
 
-      // Clean up temp folder
-      try {
-        tempFolder.setTrashed(true);
-      } catch (cleanupErr) {
-        Logger.log("Warning: Could not delete temp folder: " + cleanupErr);
-      }
-
-      return { ok: false, error: "PDF conversion to images not yet available; using Drive preview" };
+      return { ok: false, error: "PDF conversion to images not yet available" };
     } catch (convErr) {
       Logger.log("Info: PDF conversion failed (expected for most PDFs): " + convErr);
-      Logger.log("Fallback: Using Google Drive preview for PDF display");
-      return { ok: false, error: "Using Drive preview as fallback" };
+      return { ok: false, error: "PDF conversion not available" };
+    } finally {
+      // Clean up temp folder on both success and failure paths
+      if (tempFolder) {
+        try {
+          tempFolder.setTrashed(true);
+        } catch (cleanupErr) {
+          Logger.log("Warning: Could not delete temp folder: " + cleanupErr);
+        }
+      }
     }
   } catch (e) {
     Logger.log("WARNING convertPdfToImages: " + e);

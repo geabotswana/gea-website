@@ -433,16 +433,9 @@ function _routeAction(action, params) {
         }
       }
 
-      // For PDFs: return file_id so viewer can use Google Drive preview (works in sandbox)
-      if (isPdf) {
-        return successResponse({
-          file_id: fileIdToFetch,
-          mime_type: mimeType,
-          file_name: file.getName()
-        });
-      }
-
-      // For other files: return base64-encoded blob
+      // For all files (including PDFs): return base64-encoded blob
+      // This uses the app's server-side file access, so it works for admins
+      // without direct Drive ACLs. Admin.html will handle rendering based on MIME type.
       var blob = file.getBlob();
       var base64 = Utilities.base64Encode(blob.getBytes());
       return successResponse({

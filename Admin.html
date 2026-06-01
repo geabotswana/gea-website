@@ -2561,7 +2561,6 @@
     <div style="flex:1; overflow:auto; border-radius:0 0 8px 8px; background:#1a1a1a; display:flex; align-items:center; justify-content:center;">
       <div id="docViewerLoading" style="color:#aaa; font-family:sans-serif; font-size:14px;">Loading document...</div>
       <img id="docViewerImg" src="" alt="Document" style="display:none; max-width:100%; max-height:100%; object-fit:contain; border-radius:4px;">
-      <embed id="docViewerPdf" src="" type="application/pdf" style="display:none; width:100%; height:100%; border:none;">
       <div id="docViewerError" style="display:none; color:#f88; font-family:sans-serif; font-size:14px; text-align:center; padding:20px;"></div>
     </div>
   </div>
@@ -7765,7 +7764,6 @@
     var titleEl  = document.getElementById('docViewerTitle');
     var loading  = document.getElementById('docViewerLoading');
     var imgEl    = document.getElementById('docViewerImg');
-    var pdfEl    = document.getElementById('docViewerPdf');
     var errorEl  = document.getElementById('docViewerError');
     var newTabBtn = document.getElementById('docViewerNewTabBtn');
 
@@ -7774,8 +7772,6 @@
     loading.style.display = 'block';
     imgEl.style.display = 'none';
     imgEl.src = '';
-    pdfEl.style.display = 'none';
-    pdfEl.src = '';
     errorEl.style.display = 'none';
     newTabBtn.onclick = null;
 
@@ -7789,29 +7785,111 @@
         errorEl.style.display = 'block';
         return;
       }
-      var dataUrl = 'data:' + res.data.mime_type + ';base64,' + res.data.base64;
-      var isPdf = res.data.mime_type.indexOf('pdf') >= 0;
 
-      newTabBtn.onclick = function() { window.open(dataUrl, '_blank'); };
+      // Handle multi-page converted images
+      if (res.data.images && res.data.images.length > 0) {
+        imgEl.style.display = 'block';
+        imgEl.style.marginBottom = '10px';
+
+        // Display all converted image pages
+        var container = imgEl.parentElement;
+        var existingImages = container.querySelectorAll('[data-page-image]');
+        for (var j = 0; j < existingImages.length; j++) {
+          existingImages[j].remove();
+        }
+
+        var blobUrls = [];
+        for (var i = 0; i < res.data.images.length; i++) {
+          var imageData = res.data.images[i];
+          var binaryString = atob(imageData.base64);
+          var bytes = new Uint8Array(binaryString.length);
+          for (var k = 0; k < binaryString.length; k++) {
+            bytes[k] = binaryString.charCodeAt(k);
+          }
+          var blob = new Blob([bytes], { type: imageData.mime_type });
+          var blobUrl = URL.createObjectURL(blob);
+          blobUrls.push(blobUrl);
+
+          if (i === 0) {
+            imgEl.src = blobUrl;
+          } else {
+            var pageImg = document.createElement('img');
+            pageImg.src = blobUrl;
+            pageImg.setAttribute('data-page-image', i);
+            pageImg.style.display = 'block';
+            pageImg.style.maxWidth = '100%';
+            pageImg.style.maxHeight = '100%';
+            pageImg.style.objectFit = 'contain';
+            pageImg.style.borderRadius = '4px';
+            pageImg.style.marginTop = '10px';
+            container.appendChild(pageImg);
+          }
+        }
+
+        newTabBtn.onclick = function() { window.open(blobUrls[0], '_blank'); };
+
+        if (res.data.is_multi_page) {
+          errorEl.innerHTML = '<p style="margin:0; font-size:13px; opacity:0.8;">Showing ' + res.data.images.length + ' page(s)</p>';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      // Single file fallback (original PDF or other format)
+      var isPdf = res.data.mime_type && res.data.mime_type.indexOf('pdf') >= 0;
+
+      try {
+        var binaryString = atob(res.data.base64);
+      } catch (decodeErr) {
+        errorEl.textContent = 'Error decoding document: invalid data received.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      var bytes = new Uint8Array(binaryString.length);
+      for (var i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      var blob = new Blob([bytes], { type: res.data.mime_type });
+      var blobUrl = URL.createObjectURL(blob);
+
+      newTabBtn.onclick = function() { window.open(blobUrl, '_blank'); };
 
       if (isPdf) {
-        pdfEl.src = dataUrl;
-        pdfEl.style.display = 'block';
+        // PDF: show informational message with download option
+        // (PDFs can't be rendered inline in sandbox without plugins)
+        errorEl.innerHTML = '<p style="margin:0; line-height:1.5;">PDF documents cannot be previewed inline in this viewer.</p><p style="margin:10px 0 0 0; font-size:13px; opacity:0.8;">Use "Open in New Tab" to download and view.</p>';
+        errorEl.style.display = 'block';
       } else {
-        imgEl.src = dataUrl;
+        // Non-PDF file: display as image (photos, converted images, etc.)
+        imgEl.src = blobUrl;
         imgEl.style.display = 'block';
       }
     }).catch(function(err) {
       loading.style.display = 'none';
-      errorEl.textContent = 'Error loading document: ' + err.message;
+      errorEl.textContent = 'Error loading document: ' + (err && err.message ? err.message : String(err));
       errorEl.style.display = 'block';
     });
   }
 
   function closeDocViewer() {
     var modal = document.getElementById('docViewerModal');
-    document.getElementById('docViewerImg').src = '';
-    document.getElementById('docViewerPdf').src = '';
+    var imgEl = document.getElementById('docViewerImg');
+
+    // Revoke all blob URLs to free memory (single + multi-page)
+    if (imgEl.src && imgEl.src.startsWith('blob:')) {
+      URL.revokeObjectURL(imgEl.src);
+    }
+
+    var pageImages = modal.querySelectorAll('[data-page-image]');
+    for (var i = 0; i < pageImages.length; i++) {
+      if (pageImages[i].src && pageImages[i].src.startsWith('blob:')) {
+        URL.revokeObjectURL(pageImages[i].src);
+      }
+      pageImages[i].remove();
+    }
+
+    imgEl.src = '';
     modal.style.display = 'none';
   }
 

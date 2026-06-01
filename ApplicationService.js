@@ -863,15 +863,6 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
       return { success: false, message: "Application must be in board_final_review status. RSO must call rsoDecision first. Current status: " + currentStatus };
     }
 
-    // All documents must be fully approved before board can make a final decision
-    var docReadiness = checkBoardFinalDocReadiness(applicationId);
-    if (!docReadiness.ok) {
-      return { success: false, message: "Could not verify documents: " + (docReadiness.error || "Unknown error") };
-    }
-    if (!docReadiness.allApproved) {
-      return { success: false, message: "Not all required documents are fully approved. Outstanding: " + docReadiness.missingDocs.join(", ") };
-    }
-
     var appSheet = SpreadsheetApp.openById(MEMBER_DIRECTORY_ID).getSheetByName(TAB_MEMBERSHIP_APPLICATIONS);
     var appRow = _findApplicationRow(applicationId);
     if (appRow === -1) {
@@ -879,6 +870,14 @@ function boardFinalDecision(applicationId, decision, boardEmail, notes, reason) 
     }
 
     if (decision === "approved") {
+      // All documents must be fully approved before board can approve
+      var docReadiness = checkBoardFinalDocReadiness(applicationId);
+      if (!docReadiness.ok) {
+        return { success: false, message: "Could not verify documents: " + (docReadiness.error || "Unknown error") };
+      }
+      if (!docReadiness.allApproved) {
+        return { success: false, message: "Not all required documents are fully approved. Outstanding: " + docReadiness.missingDocs.join(", ") };
+      }
       // Board final approval — applicant can now submit payment
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_status")).setValue("approved");
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_final_reviewed_by")).setValue(boardEmail);

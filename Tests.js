@@ -3131,6 +3131,15 @@ function createTestApplicantForPaymentTesting() {
     }
     Logger.log("✓ Photo approved by board");
 
+    // Step 5b: Confirm documents uploaded (moves status → board_initial_review)
+    Logger.log("\nStep 5b: Confirming documents uploaded...");
+    var confirmResult = confirmDocumentsUploaded(applicationId, testEmail);
+    if (!confirmResult || !confirmResult.success) {
+      Logger.log("ERROR: confirmDocumentsUploaded failed: " + JSON.stringify(confirmResult));
+      return confirmResult;
+    }
+    Logger.log("\u2713 Documents confirmed (status now: board_initial_review)");
+
     // Step 6: Board initial decision
     Logger.log("\nStep 6: Board initial decision...");
     var boardInitial = boardInitialDecision(applicationId, "approved", "test_board@example.com", "Test data generator approval", "Approved for processing");

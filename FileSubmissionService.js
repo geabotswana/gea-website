@@ -487,8 +487,8 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
       return { ok: false, message: "Application row not found in sheet." };
     }
 
-    // Update application status to RSO_APPLICATION_REVIEW (intermediate state)
-    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_RSO_APPLICATION_REVIEW);
+    // Update application status to BOARD_FINAL_REVIEW — RSO has approved the application
+    appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_FINAL_REVIEW);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("docs_approved");
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_reviewed_by")).setValue(rsoEmail);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_review_date")).setValue(formatDate(new Date(), true));

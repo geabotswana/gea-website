@@ -7836,6 +7836,33 @@
       }
 
       // Single file fallback (original PDF or other format)
+      var isPdf = res.data.mime_type && res.data.mime_type.indexOf('pdf') >= 0;
+
+      if (isPdf && res.data.file_id) {
+        // Display PDF using Google Drive preview (works in sandbox, no plugin required)
+        var previewUrl = 'https://drive.google.com/file/d/' + res.data.file_id + '/preview';
+        var pdfPreviewIframe = document.createElement('iframe');
+        pdfPreviewIframe.src = previewUrl;
+        pdfPreviewIframe.style.width = '100%';
+        pdfPreviewIframe.style.height = '100%';
+        pdfPreviewIframe.style.border = 'none';
+        pdfPreviewIframe.style.borderRadius = '4px';
+
+        var container = imgEl.parentElement;
+        imgEl.style.display = 'none';
+
+        // Remove any previous preview iframe
+        var existingIframe = container.querySelector('[data-pdf-preview]');
+        if (existingIframe) existingIframe.remove();
+
+        pdfPreviewIframe.setAttribute('data-pdf-preview', 'true');
+        container.appendChild(pdfPreviewIframe);
+
+        newTabBtn.onclick = function() { window.open(previewUrl, '_blank'); };
+        return;
+      }
+
+      // Non-PDF file: convert base64 to blob and display
       var binaryString = atob(res.data.base64);
       var bytes = new Uint8Array(binaryString.length);
       for (var i = 0; i < binaryString.length; i++) {
@@ -7843,19 +7870,12 @@
       }
       var blob = new Blob([bytes], { type: res.data.mime_type });
       var blobUrl = URL.createObjectURL(blob);
-      var isPdf = res.data.mime_type.indexOf('pdf') >= 0;
 
       newTabBtn.onclick = function() { window.open(blobUrl, '_blank'); };
 
-      if (isPdf) {
-        // PDF not yet converted; show message but allow download
-        errorEl.innerHTML = '<p style="margin:0; line-height:1.5;">This PDF is still being converted to images.</p><p style="margin:10px 0 0 0; font-size:13px; opacity:0.8;">Use "Open in New Tab" to download and view it now.</p>';
-        errorEl.style.display = 'block';
-      } else {
-        // Display image (native image uploads)
-        imgEl.src = blobUrl;
-        imgEl.style.display = 'block';
-      }
+      // Display image (native image uploads)
+      imgEl.src = blobUrl;
+      imgEl.style.display = 'block';
     }).catch(function(err) {
       loading.style.display = 'none';
       errorEl.textContent = 'Error loading document: ' + (err && err.message ? err.message : String(err));
@@ -7866,6 +7886,7 @@
   function closeDocViewer() {
     var modal = document.getElementById('docViewerModal');
     var imgEl = document.getElementById('docViewerImg');
+    var container = imgEl.parentElement;
 
     // Revoke all blob URLs to free memory (single + multi-page)
     if (imgEl.src && imgEl.src.startsWith('blob:')) {
@@ -7878,6 +7899,12 @@
         URL.revokeObjectURL(pageImages[i].src);
       }
       pageImages[i].remove();
+    }
+
+    // Remove PDF preview iframe
+    var pdfPreview = container.querySelector('[data-pdf-preview]');
+    if (pdfPreview) {
+      pdfPreview.remove();
     }
 
     imgEl.src = '';

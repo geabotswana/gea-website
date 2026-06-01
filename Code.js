@@ -390,9 +390,10 @@ function _routeAction(action, params) {
   
   /**
    * HANDLER: get_file_data
-   * Returns base64-encoded file data + MIME type for authenticated document viewing.
-   * Used by the Admin document viewer to display files inline without an iframe.
-   * If the file is a PDF that has been converted to images, returns all images.
+   * Returns file data for authenticated document viewing.
+   * For PDFs: returns file_id so viewer can use Google Drive preview (works in sandbox).
+   * For converted images: returns all images as base64 array.
+   * For other files: returns base64-encoded blob.
    */
   function _handleGetFileData(p) {
     var auth = requireAuth(p.token);
@@ -402,6 +403,9 @@ function _routeAction(action, params) {
 
     try {
       var fileIdToFetch = String(p.file_id).trim();
+      var file = DriveApp.getFileById(fileIdToFetch);
+      var mimeType = file.getMimeType() || 'application/octet-stream';
+      var isPdf = mimeType.indexOf('pdf') >= 0;
 
       // Check if this file has been converted to images (PII security: serve images instead of PDFs)
       var submission = _findSubmissionByFileId(fileIdToFetch);
@@ -429,12 +433,23 @@ function _routeAction(action, params) {
         }
       }
 
-      // Fallback: return original file (used for non-converted PDFs and other formats)
-      var file = DriveApp.getFileById(fileIdToFetch);
+      // For PDFs: return file_id so viewer can use Google Drive preview (works in sandbox)
+      if (isPdf) {
+        return successResponse({
+          file_id: fileIdToFetch,
+          mime_type: mimeType,
+          file_name: file.getName()
+        });
+      }
+
+      // For other files: return base64-encoded blob
       var blob = file.getBlob();
       var base64 = Utilities.base64Encode(blob.getBytes());
-      var mimeType = blob.getContentType() || 'image/jpeg';
-      return successResponse({ base64: base64, mime_type: mimeType, file_name: file.getName() });
+      return successResponse({
+        base64: base64,
+        mime_type: mimeType,
+        file_name: file.getName()
+      });
     } catch (e) {
       Logger.log("ERROR _handleGetFileData (file_id=" + p.file_id + "): " + e);
       return errorResponse("Could not load file. It may no longer be accessible.", "SERVER_ERROR");

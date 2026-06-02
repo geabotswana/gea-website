@@ -1059,12 +1059,12 @@ var DEFAULT_RULES_SECTIONS = [
 // ============================================================
 
 var SYSTEM_NAME             = "GEA Association Platform";
-var SYSTEM_VERSION          = "2.5.132";
-var SYSTEM_BUILD_DATE       = "2026-06-01";
+var SYSTEM_VERSION          = "2.5.133";
+var SYSTEM_BUILD_DATE       = "2026-06-02";
 var SYSTEM_DEVELOPER        = "Michael Raney, GEA Treasurer";
 var SYSTEM_CONTACT          = "treasurer@geabotswana.org";
-var SYSTEM_LAST_FEATURE     = "Merge pull request #230 from geabotswana/fix/membership-rso-denial";
-var DEPLOYMENT_TIMESTAMP    = "2026-06-01 23:24:06";  // Updated by scripts/update-deploy-timestamp.js before clasp push
+var SYSTEM_LAST_FEATURE     = "Merge pull request #232 from geabotswana/fix/membership-status-guards";
+var DEPLOYMENT_TIMESTAMP    = "2026-06-02 08:15:50";  // Updated by scripts/update-deploy-timestamp.js before clasp push
 var BUILD_ID                = DEPLOYMENT_TIMESTAMP;  // Same as deployment timestamp
 
 // ============================================================

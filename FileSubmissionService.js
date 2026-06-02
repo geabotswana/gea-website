@@ -506,6 +506,11 @@ function rsoApproveApplication(applicationId, rsoEmail, notes) {
       return { ok: false, message: "Application row not found in sheet." };
     }
 
+    // Guard: application must be in rso_application_review before RSO can approve it
+    if (application.status !== APP_STATUS_RSO_APPLICATION_REVIEW) {
+      return { ok: false, message: "Application is not in RSO application review status." };
+    }
+
     // Update application status to BOARD_FINAL_REVIEW — RSO has approved the application
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "status")).setValue(APP_STATUS_BOARD_FINAL_REVIEW);
     appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "rso_status")).setValue("docs_approved");

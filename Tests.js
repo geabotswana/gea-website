@@ -3106,8 +3106,35 @@ function createTestApplicantForPaymentTesting() {
     }
     Logger.log("✓ Omang uploaded: " + omangResult.submission_id);
 
-    // Step 4: RSO approves documents
-    Logger.log("\nStep 4: RSO approving documents...");
+    // Step 4: Board approves photo
+    Logger.log("\nStep 4: Board approving photo...");
+    var boardPhotoApproval = _reviewFileSubmission_(photoResult.submission_id, "approve", "", "test_board@example.com");
+    if (!boardPhotoApproval.ok) {
+      Logger.log("ERROR: Board failed to approve photo: " + boardPhotoApproval.error);
+      return boardPhotoApproval;
+    }
+    Logger.log("✓ Photo approved by board");
+
+    // Step 5: Confirm documents uploaded (moves status → board_initial_review)
+    Logger.log("\nStep 5: Confirming documents uploaded...");
+    var confirmResult = confirmDocumentsUploaded(applicationId, testEmail);
+    if (!confirmResult || !confirmResult.success) {
+      Logger.log("ERROR: confirmDocumentsUploaded failed: " + JSON.stringify(confirmResult));
+      return confirmResult;
+    }
+    Logger.log("\u2713 Documents confirmed (status now: board_initial_review)");
+
+    // Step 6: Board initial decision
+    Logger.log("\nStep 6: Board initial decision...");
+    var boardInitial = boardInitialDecision(applicationId, "approved", "test_board@example.com", "Test data generator approval", "Approved for processing");
+    if (!boardInitial || !boardInitial.success) {
+      Logger.log("ERROR: Board initial decision failed: " + JSON.stringify(boardInitial));
+      return boardInitial;
+    }
+    Logger.log("✓ Board initial decision: approved");
+
+    // Step 7: RSO approves documents (after app is in rso_docs_review)
+    Logger.log("\nStep 7: RSO approving documents...");
     var rsoApprovePassport = approveDocumentByRso(passportResult.submission_id, "approve", "", "test_rso@example.com");
     if (!rsoApprovePassport.ok) {
       Logger.log("ERROR: RSO failed to approve passport: " + rsoApprovePassport.error);
@@ -3120,46 +3147,19 @@ function createTestApplicantForPaymentTesting() {
       Logger.log("ERROR: RSO failed to approve omang: " + rsoApproveOmang.error);
       return rsoApproveOmang;
     }
-    Logger.log("✓ Omang approved by RSO");
+    Logger.log("✓ Omang approved by RSO (all docs approved; status auto-advanced to rso_application_review)");
 
-    // Step 5: Board approves photo
-    Logger.log("\nStep 5: Board approving photo...");
-    var boardPhotoApproval = _reviewFileSubmission_(photoResult.submission_id, "approve", "", "test_board@example.com");
-    if (!boardPhotoApproval.ok) {
-      Logger.log("ERROR: Board failed to approve photo: " + boardPhotoApproval.error);
-      return boardPhotoApproval;
-    }
-    Logger.log("✓ Photo approved by board");
-
-    // Step 6: Board initial decision
-    Logger.log("\nStep 6: Board initial decision...");
-    var boardInitial = boardInitialDecision(applicationId, "approved", "test_board@example.com", "Test data generator approval", "Approved for processing");
-    if (!boardInitial || !boardInitial.success) {
-      Logger.log("ERROR: Board initial decision failed: " + JSON.stringify(boardInitial));
-      return boardInitial;
-    }
-    Logger.log("✓ Board initial decision: approved");
-
-    // Step 7: RSO approves documents
-    Logger.log("\nStep 7: RSO approves documents...");
+    // Step 8: RSO approves application
+    Logger.log("\nStep 8: RSO approving application...");
     var rsoAppReview = rsoApproveApplication(applicationId, "test_rso@example.com", "Test data generation");
     if (!rsoAppReview || !rsoAppReview.ok) {
       Logger.log("ERROR: RSO application review failed: " + JSON.stringify(rsoAppReview));
       return rsoAppReview;
     }
-    Logger.log("✓ RSO approved documents (status now: rso_application_review)");
+    Logger.log("✓ RSO approved application (status now: board_final_review)");
 
-    // Step 7b: RSO decides on application (moves to board final review)
-    Logger.log("\nStep 7b: RSO approves application for board final review...");
-    var rsoDecisionResult = rsoDecision(applicationId, "approved", "test_rso@example.com", "Test data generation", "");
-    if (!rsoDecisionResult || !rsoDecisionResult.success) {
-      Logger.log("ERROR: RSO decision failed: " + JSON.stringify(rsoDecisionResult));
-      return rsoDecisionResult;
-    }
-    Logger.log("✓ RSO decision: approved (status now: board_final_review)");
-
-    // Step 8: Board final decision
-    Logger.log("\nStep 8: Board final decision...");
+    // Step 9: Board final decision
+    Logger.log("\nStep 9: Board final decision...");
     var boardFinal = boardFinalDecision(applicationId, "approved", "test_board@example.com", "Test data generation", "Approved");
     if (!boardFinal || !boardFinal.success) {
       Logger.log("ERROR: Board final decision failed: " + JSON.stringify(boardFinal));
@@ -3167,8 +3167,8 @@ function createTestApplicantForPaymentTesting() {
     }
     Logger.log("✓ Board final decision: approved (status now: approved_pending_payment)");
 
-    // Step 9: Check application status
-    Logger.log("\nStep 9: Checking application status...");
+    // Step 10: Check application status
+    Logger.log("\nStep 10: Checking application status...");
     var appStatus = getApplicationForApplicant(testEmail);
     if (!appStatus || !appStatus.success) {
       Logger.log("ERROR: Failed to get application status: " + JSON.stringify(appStatus));

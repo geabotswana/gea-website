@@ -690,6 +690,11 @@ function boardInitialDecision(applicationId, decision, boardEmail, notes, reason
       return { success: false, message: "Application row not found in sheet." };
     }
 
+    // Guard: application must be in board_initial_review (or legacy docs_confirmed) to process initial decision
+    if (application.status !== APP_STATUS_BOARD_INITIAL_REVIEW && application.status !== "docs_confirmed") {
+      return { success: false, message: "Application is not awaiting board initial review." };
+    }
+
     if (decision === "approved") {
       // Board approves — send to RSO
       appSheet.getRange(appRow, _getColumnIndex(TAB_MEMBERSHIP_APPLICATIONS, "board_initial_status")).setValue("approved");
